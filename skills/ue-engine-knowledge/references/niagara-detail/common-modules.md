@@ -5,6 +5,12 @@
 ## 生成与初始化
 
 - `InitializeParticle`：设置粒子基础属性，如 Lifetime、Sprite Size、Color、Mass、Position。几乎所有粒子 Emitter 都需要。
+- `InitializeParticle` 的 mode 输入决定后续哪个属性分支生效。设置非均匀 Sprite 前必须确认 `Sprite Size Mode=Non-Uniform`；设置随机范围前必须确认对应 Randomness Mode；不要只写目标值而不检查 mode。
+- `Sprite Size Mode` 的有效属性组：
+  - `Uniform` -> `Uniform Sprite Size`
+  - `Random Uniform` -> `Uniform Sprite Size Min / Max`
+  - `Non-Uniform` -> `Sprite Size`
+  - `Random Non-Uniform` -> `Sprite Size Min / Max`
 - `InitializeRibbon`：设置 Ribbon 宽度、朝向和初始属性。
 - `SpawnRate`：持续按时间生成，适合烟、火、雨、环境粒子、持续拖尾。
 - `SpawnBurst_Instantaneous`：单帧爆发，适合爆炸、命中、枪口火、火花。
@@ -40,4 +46,7 @@
 - 先创建最小 System/Emitter，再导出 folder JSON 修改。
 - 修改后 apply，并检查 Stack issue、compile log、runtime probe。
 - 颜色、向量和枚举要用 UE 结构化文本，并检查读回。
+- 枚举不能只看 `NewEnumeratorN`，要看 UI display name；mode / static switch 读回不正确时，后续参数可能写在 inactive branch。
+- 检查属性时按 mode 选择有效属性组。非当前模式的字段即使存在于 JSON，也只能算“已存储”，不能算“运行时生效”。
+- 细长雨线、激光短线、扁平水花等非均匀 Sprite 同时需要非均匀尺寸模式、`Particles.SpriteSize` binding 和合理 renderer 对齐。
 - 出现红色感叹号不要猜，先用 `niagara_get_stack_issues` 读具体内容。

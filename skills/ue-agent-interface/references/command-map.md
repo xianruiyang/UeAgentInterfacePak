@@ -230,6 +230,14 @@
 
 Niagara 完整 authoring 使用 `niagara_export_folder / niagara_apply_folder`、`niagara_emitter_export_folder / niagara_emitter_apply_folder`、`niagara_script_export_folder / niagara_script_apply_folder`。System / Emitter apply 默认随返回带 Stack issue 信息；严格验收看 `warnings`、`stack_error_count`、compile log、runtime probe 和 `validation/coverage_report.json`。
 
+Niagara module input 写入必须检查“控制项 + 活跃分支 + 目标值”三件事：
+
+- mode / enum / static switch 控制目标参数是否生效，例如 `Sprite Size Mode=Non-Uniform` 才会使用 `Module.Sprite Size=(X=...,Y=...)`。
+- 按 mode 校验模式专属属性组：`Uniform -> Uniform Sprite Size`，`Random Uniform -> Uniform Sprite Size Min / Max`，`Non-Uniform -> Sprite Size`，`Random Non-Uniform -> Sprite Size Min / Max`。
+- `module_input_hidden_or_inactive_branch` 表示写入可能在非活跃分支，不应直接忽略；先设置控制项，重新导出，再写分支值。
+- 枚举要看 `enum_value_display_name` 和 `enum_options[]`，不要只凭 `NewEnumeratorN` 判断。
+- Renderer 绑定也要读回；细长 Sprite 至少要确认 `Particles.SpriteSize` binding、速度对齐或等价对齐。
+
 ### Animation Assets / Skeleton
 
 - `anim_sequence_get_info`

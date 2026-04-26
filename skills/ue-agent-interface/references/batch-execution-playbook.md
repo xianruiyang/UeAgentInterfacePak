@@ -92,6 +92,10 @@
 - `niagara_export_folder` / `niagara_emitter_export_folder` 导出真实模板。
 - 修改 folder JSON 后 `niagara_apply_folder` / `niagara_emitter_apply_folder`。
 - 检查 apply 返回的 `warnings`、`stack_error_count`、`stack_issues`。
+- 检查 module input 的控制分支：mode / enum / static switch 必须读回为预期值，目标参数必须位于活跃分支。
+- 按当前 mode 校验有效属性组；非当前 mode 的字段即使 JSON 可读回，也不算验收通过。
+- 遇到 `module_input_hidden_or_inactive_branch` 时不要继续堆模块；先修控制项，重新导出，再写分支值。
+- 对 Sprite 形状类需求，读回 `Sprite Size Mode`、`Module.Sprite Size`、Renderer `SpriteSizeBinding` 和 Alignment，避免“值存在但视觉仍是圆点”。
 - 必要时执行 `niagara_refresh_system`。
 - 执行 `niagara_compile_system`、`niagara_get_compile_log`、`niagara_system_runtime_probe`。
 

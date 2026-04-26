@@ -17,12 +17,13 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 2. 可复用任务优先用 `run`，一次性批处理优先用 `batch`。
 3. `plan / vars / batch / params` 使用 JSON 文件，不要在命令行里内联长 JSON。
 4. 多步骤任务必须 fail fast：`stop_on_error=true`。
-5. 每次写操作后都要读取生成的 report JSON。
-6. 资产写入后必须按资产类型做编译、读回、smoke、截图、runtime probe 或 `coverage_report.json` 验证。
-7. 已支持 JSON / 文件夹式结构化 JSON 的资产 authoring，优先走导出、修改、回写流程，不要用长串原子命令手搓。
-8. 原子写入命令只用于 bootstrap、探针、迁移、schema 边界、局部修补和故障恢复；文档中标为 `Deprecated for authoring` 的命令不得作为完整制作主流程。
-9. 尽量复用已经打开的 UE Editor 会话；除非必要，不启动第二个编辑器实例。
-10. 不运行全屏 game 测试。默认使用最小化、不抢焦点、headless 或 `UnrealEditor-Cmd.exe -NullRHI -unattended` 验证。
+5. 使用任何 UAI 指令前，必须先查清该指令每个参数的意义、默认值、副作用、返回字段和验证方式；不确定时先读对应命令文档或用只读/导出指令获取真实结构。
+6. 每次写操作后都要读取生成的 report JSON。
+7. 资产写入后必须按资产类型做编译、读回、smoke、截图、runtime probe 或 `coverage_report.json` 验证。
+8. 已支持 JSON / 文件夹式结构化 JSON 的资产 authoring，优先走导出、修改、回写流程，不要用长串原子命令手搓。
+9. 原子写入命令只用于 bootstrap、探针、迁移、schema 边界、局部修补和故障恢复；文档中标为 `Deprecated for authoring` 的命令不得作为完整制作主流程。
+10. 尽量复用已经打开的 UE Editor 会话；除非必要，不启动第二个编辑器实例。
+11. 不运行全屏 game 测试。默认使用最小化、不抢焦点、headless 或 `UnrealEditor-Cmd.exe -NullRHI -unattended` 验证。
 
 ## 二进制选择顺序
 
@@ -99,6 +100,8 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 
 不要靠记忆猜 `property_name` 和 `value_text`。先让 UE 生成真实对象，再以导出的 JSON 为模板修改。
 
+Blueprint / UMG / AnimBlueprint 变量统一使用 `pin_category/pin_subcategory/pin_subcategory_object/container_type/value_type`。常用结构体、枚举、对象/类别名已集中在插件 `docs/commands/02_Blueprint.md`；使用前先查清参数含义和目标类型，不要凭印象写字段。
+
 ## JSON 与属性写入诊断
 
 任何 `value_text`、单文件 JSON 或文件夹式 JSON 写入后，都要检查命令返回中存在的诊断字段：
@@ -145,7 +148,12 @@ JSON / 文件夹式 JSON 的解析失败必须在 report 中可见：
 - `niagara_apply_folder` 与 `niagara_emitter_apply_folder` 默认在 apply 后编译并打开/复用 Niagara editor ViewModel 读取 Stack issue。直接检查 `stack_issue_report`、`stack_issues`、`stack_scopes`、`stack_error_count`、`stack_warning_count`、`stack_issue_view_model_source`。
 - UI 红色感叹号与 compile log 不一定一致；读取 UI 同源内容时使用 `niagara_get_stack_issues(prefer_existing_view_model=true, open_editor_if_needed=true)`。
 - 写入后 System 没粒子、必须手动加/删 emitter 才恢复时，先执行 `niagara_refresh_system`，再读 compile log、Stack issue 和 runtime probe。
+- Collision Event / Death Event / Event Handler 这类依赖连续时间推进的效果，验证时先用 `niagara_preview_advance(reset_preview=true,target_frame=...,advance_mode=tick_component,pause_after_advance=true)` 从 0 连续 tick 到目标帧，记录返回的 `preview_state_token`；随后 `niagara_system_runtime_probe(sample_mode=current_preview,expected_preview_state_token=...,expected_frame=...)` 和 `niagara_screenshot(capture_mode=current_preview,expected_preview_state_token=...,expected_frame=...)` 只读同一暂停状态。不要让 probe 和 screenshot 各自重复推进，也不要再用 `reset_preview=false,tick_count=0` 当严格只读采样。
 - Vector / Position / LinearColor 等 module input 必须使用 UE 结构化文本，例如 `(X=...,Y=...,Z=...)`、`(R=...,G=...,B=...,A=...)`，并检查写后 readback。
+- Niagara module input 写入必须同时检查控制分支。`mode / enum / static switch` 决定哪个输入真正生效；例如非均匀 Sprite 必须读回 `Sprite Size Mode=Non-Uniform`，再确认 `Module.Sprite Size`。只读到目标值存在不等于运行时使用它。
+- 写入前必须确认该 mode 对应的有效属性组；apply 后重新 export 并按当前 mode 校验对应字段。例如 `Uniform` 校验 `Uniform Sprite Size`，`Non-Uniform` 校验 `Sprite Size`。非当前 mode 的字段即使读回存在，也不得视为生效。
+- `module_input_hidden_or_inactive_branch` 不得当作噪声忽略；它表示写入可能落在非活跃分支。遇到它时先设置控制项，重新 apply/export/readback，再写分支值。
+- 枚举型输入不能只看 `NewEnumeratorN`；必须结合导出的 `enum_value_display_name`、`override_enum_value_display_name` 和 `enum_options[]` 判断 UI 语义。
 - Collision 相关效果优先使用默认 Ray Trace collision；碰撞后生成粒子应通过 Event Handler 接收碰撞事件，在事件 payload 位置生成，不要用静态位置假冒。
 - Event Handler 中不要无意义重复 `Initialize Particle` 覆盖事件 payload。`Kill Particles` 不应清理承载给后续事件的变量。
 - UE 崩溃后第一优先级是找根因并修复指令/数据路径，不继续堆绕路操作。
