@@ -1,6 +1,8 @@
 [submodule "UeAgentInterface"]
 	path = UeAgentInterface
 	url = https://github.com/xianruiyang/UeAgentInterface.git
+	branch = main
 [submodule "UeAgentInterfaceCMD"]
 	path = UeAgentInterfaceCMD
 	url = https://github.com/xianruiyang/UeAgentInterfaceCMD.git
+	branch = main
