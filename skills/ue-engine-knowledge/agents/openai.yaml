@@ -1,0 +1,6 @@
+interface:
+  display_name: "UE Engine Knowledge"
+  short_description: "官方文档优先的 UE 知识库"
+  icon_small: "./assets/ue-engine-knowledge-small.svg"
+  icon_large: "./assets/ue-engine-knowledge-small.svg"
+  default_prompt: "使用 $ue-engine-knowledge 优先参考 Epic 官方文档，给出 Unreal 实现步骤、验证清单和备选方案。"

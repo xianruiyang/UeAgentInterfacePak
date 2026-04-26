@@ -1,0 +1,6 @@
+interface:
+  display_name: "UE Agent Interface"
+  short_description: "用 UAI JSON 工作流自动化 UE 编辑器"
+  icon_small: "./assets/ue-agent-interface-small.svg"
+  icon_large: "./assets/ue-agent-interface-small.svg"
+  default_prompt: "使用 $ue-agent-interface 通过 uai-cli.exe 编辑 Unreal 资产，优先走 JSON/文件夹式工作流，并用 report、编译或 smoke 验证结果。"

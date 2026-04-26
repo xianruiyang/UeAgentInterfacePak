@@ -1,0 +1,7 @@
+﻿{
+    "base_url":  "http://127.0.0.1:17777",
+    "token":  "87c02cee-403f-2e4e-3b22-d5a3674a3838",
+    "timeout_seconds":  60,
+    "clear_log_on_start":  true,
+    "log_level":  "info"
+}
