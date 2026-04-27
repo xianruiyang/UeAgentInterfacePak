@@ -4,11 +4,12 @@
 
 本包包含三类内容：
 
-| 路径 | 用途 | 是否需要用户安装 |
-| --- | --- | --- |
-| `UeAgentInterface/` | Unreal Editor 插件 submodule。安装到 UE 项目的 `Plugins/UeAgentInterface` 后，在编辑器内提供本地自动化服务。 | 需要 |
-| `skills/` | Codex skill 包。主要使用 `ue-agent-interface`，并附带 `ue-engine-knowledge`、`leveldesign`。 | 需要 |
-| `UeAgentInterfaceCMD/` | CLI 源码和构建产物仓库，主要用于开发和打包 skill 内部工具。 | 不需要单独安装 |
+
+| 路径                   | 用途                                                                                                        | 是否需要用户安装 |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------- |
+| `UeAgentInterface/`    | Unreal Editor 插件 submodule。安装到 UE 项目的`Plugins/UeAgentInterface` 后，在编辑器内提供本地自动化服务。 | 需要             |
+| `skills/`              | Codex skill 包。主要使用`ue-agent-interface`，并附带 `ue-engine-knowledge`、`leveldesign`。                 | 需要             |
+| `UeAgentInterfaceCMD/` | CLI 源码和构建产物仓库，主要用于开发和打包 skill 内部工具。                                                 | 不需要单独安装   |
 
 `UeAgentInterfaceCMD` 只作为 skill 内工具的开发仓库保留。普通使用时不要把它作为独立组件安装；`ue-agent-interface` skill 会使用自身 `tools/uai-cli.exe` 中的工具。
 
@@ -75,6 +76,8 @@ Copy-Item -Recurse -Force .\skills\leveldesign "$SkillRoot\leveldesign"
 
 如果本机已经有同名 skill，复制前先备份旧目录，避免覆盖本地未提交的修改。
 
+要注意，codex安装skill后，要开启新对话才能使用。首次使用时最好显式引用所需的skill，以防模型没有自动加载。
+
 ## 插件开启方法
 
 安装并启用插件后，在 Unreal Editor 中打开目标项目，然后从菜单启动服务：
@@ -82,8 +85,6 @@ Copy-Item -Recurse -Force .\skills\leveldesign "$SkillRoot\leveldesign"
 `Window` -> `UeAgentInterface` -> `Start UeAgentInterface Server`
 
 <img src="docs/images/ue-agent-interface-menu.png" alt="UE 菜单中的 UeAgentInterface 服务入口" width="720">
-
-截图文件位于 `docs/images/ue-agent-interface-menu.png`。README 使用相对路径引用图片，因此在 GitHub、VS Code Markdown 预览和多数 Markdown 渲染器中可以直接显示。
 
 同一菜单还提供：
 

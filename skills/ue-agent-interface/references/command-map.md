@@ -91,6 +91,7 @@
 ### 资产级 JSON
 
 - `asset_duplicate`
+- `asset_import_texture`
 - `asset_import_fbx_skeletal_mesh`
 - `asset_import_fbx_animation`
 - `asset_export_property_json`

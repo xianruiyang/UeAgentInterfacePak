@@ -77,6 +77,7 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 
 1. 单文件 JSON：
    - `asset_export_property_json / asset_apply_property_json`
+   - `curve_export_json / curve_apply_json`
    - `enhanced_input_export_action_json / enhanced_input_apply_action_json`
    - `enhanced_input_export_mapping_context_json / enhanced_input_apply_mapping_context_json`
    - `montage_export_json / montage_apply_json`
@@ -99,6 +100,7 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 `bootstrap -> export -> refine -> apply -> export -> refine -> apply -> verify`
 
 不要靠记忆猜 `property_name` 和 `value_text`。先让 UE 生成真实对象，再以导出的 JSON 为模板修改。
+曲线类资产或曲线属性不要猜 `value_text`；优先使用 `ue_agent_interface.curve.v1`。资产级走 `curve_export_json / curve_apply_json`，属性级走 `asset_export_property_json / asset_apply_property_json` 返回的 `curve_json`；`value_json` 只是兼容别名。导出中两者同时存在时编辑 `curve_json`，apply 失败必须检查 `json_issues[]`，并确认失败没有把资产标脏或产生部分 channel 写入。
 
 Blueprint / UMG / AnimBlueprint 变量统一使用 `pin_category/pin_subcategory/pin_subcategory_object/container_type/value_type`。常用结构体、枚举、对象/类别名已集中在插件 `docs/commands/02_Blueprint.md`；使用前先查清参数含义和目标类型，不要凭印象写字段。
 
@@ -123,11 +125,12 @@ JSON / 文件夹式 JSON 的解析失败必须在 report 中可见：
 - 单文件 `json_file` 读取或解析失败返回 `json_file_not_found`、`load_json_file_failed` 或 `json_parse_failed`。
 - 文件夹式 workflow 的可选 JSON 文件只有“不存在”时可跳过；只要存在但读取或解析失败，apply 必须失败并带文件路径。
 - 可恢复的坏数组项进入 `warnings[] / warning_count` 或 `property_results[]`，不得静默忽略。
+- 曲线 JSON 写入必须检查 `json_issues[]`；未知字段、拼写相近字段、缺 key 值、重复时间、非法插值/切线/外推模式都应视为有效诊断信号。
 
 ## 当前能力地图
 
 - Level / Actor / Component / Viewport：Actor 放置、transform、选择、Outliner folder/tag、截图、screen trace、NavMesh、collision sweep、bounds/vertex/face 对齐。
-- Asset / Editor lifecycle：打开/保存资产、复制/导入部分资产、属性 JSON、dirty resource 列表/处理、安全关闭。
+- Asset / Editor lifecycle：打开/保存资产、复制资产、贴图/FBX 导入、属性 JSON、曲线 JSON、dirty resource 列表/处理、安全关闭。
 - Blueprint：folder workflow、变量、组件、事件/自定义事件、函数调用节点、通用类节点、变量节点、连线/断线、视图/截图辅助。
 - UMG：WidgetBlueprint folder workflow、WidgetTree、常用 widget/slot 属性、变量/函数绑定、常见动画轨道、Blueprint 图复用。
 - StaticMesh：bounds/corners、材质、collision primitive、socket、preview/property 辅助。
@@ -137,7 +140,7 @@ JSON / 文件夹式 JSON 的解析失败必须在 report 中可见：
 - Niagara：`NiagaraSystem / NiagaraEmitter / NiagaraScript` 完整 folder profile；Stack issue 读取、Quick Fix、System refresh、runtime probe、screenshot、compile log、apply 后直接返回红黄感叹号信息。
 - AnimBlueprint：folder workflow、Layer Interface、Anim Layer、State Machine、Transition、图节点、预览 mesh/camera、CDO 属性写入。
 - Montage：单文件 JSON workflow、slot track、segment、section、next-section、notify track/notify/notify state、Skeleton slot/group 辅助。
-- Animation Assets / Skeleton：AnimSequence 信息/截图/settings/curve/bone/metadata/notify/sync marker，Skeleton bone/compatible skeleton/preview mesh/socket/virtual bone。
+- Animation Assets / Skeleton：AnimSequence 信息/截图/settings/float curve JSON/bone/metadata/notify/sync marker，Skeleton bone/compatible skeleton/preview mesh/socket/virtual bone。
 - IK Rig / IK Retargeter：资产创建、preview mesh、goal、retarget root/chain、solver、auto retarget definition、retargeter rig/settings/pose/auto map/duplicate-and-retarget。
 - Modeling：模式激活、选择、active tool property/action、accept/cancel、primitive wrapper、mesh edit wrapper、collision/UV/material helper。
 
@@ -151,6 +154,8 @@ JSON / 文件夹式 JSON 的解析失败必须在 report 中可见：
 - Collision Event / Death Event / Event Handler 这类依赖连续时间推进的效果，验证时先用 `niagara_preview_advance(reset_preview=true,target_frame=...,advance_mode=tick_component,pause_after_advance=true)` 从 0 连续 tick 到目标帧，记录返回的 `preview_state_token`；随后 `niagara_system_runtime_probe(sample_mode=current_preview,expected_preview_state_token=...,expected_frame=...)` 和 `niagara_screenshot(capture_mode=current_preview,expected_preview_state_token=...,expected_frame=...)` 只读同一暂停状态。不要让 probe 和 screenshot 各自重复推进，也不要再用 `reset_preview=false,tick_count=0` 当严格只读采样。
 - Vector / Position / LinearColor 等 module input 必须使用 UE 结构化文本，例如 `(X=...,Y=...,Z=...)`、`(R=...,G=...,B=...,A=...)`，并检查写后 readback。
 - Niagara module input 写入必须同时检查控制分支。`mode / enum / static switch` 决定哪个输入真正生效；例如非均匀 Sprite 必须读回 `Sprite Size Mode=Non-Uniform`，再确认 `Module.Sprite Size`。只读到目标值存在不等于运行时使用它。
+- Niagara Data Interface 的曲线 raw property 必须用 folder workflow 的 `curve_json` 修改。System apply 会在总刷新后回写 DataInterface，检查 `post_refresh_data_interfaces_applied` 和重新 export 的 `data_interfaces.json`，不要只看 apply 前的旧 graph 对象。
+- Niagara Module Input 的 Dynamic Input 也必须用 folder JSON 表达：编辑 `modules[].inputs[].dynamic_input`、`dynamic_input.inputs[]` 和 `dynamic_input.data_interfaces[].raw_properties[].curve_json`。不要再用 `niagara_emitter_set_module_input` 的 Dynamic Input 扩展参数做 authoring 或普通修补；该扩展只保留旧脚本兼容和极端故障恢复。
 - 写入前必须确认该 mode 对应的有效属性组；apply 后重新 export 并按当前 mode 校验对应字段。例如 `Uniform` 校验 `Uniform Sprite Size`，`Non-Uniform` 校验 `Sprite Size`。非当前 mode 的字段即使读回存在，也不得视为生效。
 - `module_input_hidden_or_inactive_branch` 不得当作噪声忽略；它表示写入可能落在非活跃分支。遇到它时先设置控制项，重新 apply/export/readback，再写分支值。
 - 枚举型输入不能只看 `NewEnumeratorN`；必须结合导出的 `enum_value_display_name`、`override_enum_value_display_name` 和 `enum_options[]` 判断 UI 语义。
@@ -161,7 +166,7 @@ JSON / 文件夹式 JSON 的解析失败必须在 report 中可见：
 ## 编辑器会话与关闭卫生
 
 - 优先连接当前 editor；如果已有 editor，先 `doctor`。
-- 通过项目 task 或 `scripts/ue/RunEditor.ps1` 拉起 GUI editor 时默认最小化且不抢焦点。
+- 通过项目 task 或 `scripts/ue/RunEditor.ps1` 拉起 GUI editor 时默认最小化且不抢焦点；默认只在启动瞬间最小化一次，不持续压回 UE 窗口。只有用户明确要求旧行为时才传 `-EnableMinimizeWatchdog`。
 - 如果 C++ / 插件改动需要构建，而 UE 占用 DLL，只有在 dirty resource 已处理后才走安全关闭。
 - 安全关闭流程：
   1. `editor_list_dirty_resources`
