@@ -55,7 +55,10 @@
 - `level_get_actor_property`
 - `level_get_component_property`
 - `actor_set_property`
+- `level_set_actor_property`
 - `component_set_property`
+- `level_set_component_property`
+- `level_set_skeletal_mesh_morph_target`
 - `viewport_get_camera`
 - `viewport_set_camera`
 - `viewport_set_realtime`
@@ -94,6 +97,7 @@
 - `asset_import_texture`
 - `asset_import_fbx_skeletal_mesh`
 - `asset_import_fbx_animation`
+- `asset_import_geometry_cache`
 - `asset_export_property_json`
 - `asset_apply_property_json`
 
@@ -139,6 +143,14 @@
 - `static_mesh_get_local_corners`
 - `static_mesh_open_editor`
 - `static_mesh_get_info`
+- `static_mesh_export_folder`
+- `static_mesh_validate_folder`
+- `static_mesh_apply_folder`
+- `static_mesh_validate_geometry`
+- `static_mesh_validate_uvs`
+- `static_mesh_reimport`
+- `static_mesh_build`
+- `static_mesh_preview_collision`
 - `static_mesh_set_preview_view`
 - `static_mesh_set_material_slot`
 - `static_mesh_set_collision_boxes`
@@ -243,29 +255,116 @@ Niagara module input 写入必须检查“控制项 + 活跃分支 + 目标值�
 
 - `anim_sequence_get_info`
 - `anim_sequence_screenshot`
+- `blendspace_create`
+- `blendspace_get_info`
+- `blendspace_export_json`
+- `blendspace_validate_json`
+- `blendspace_apply_json`
+- `blendspace_preview_sample`
 - `skeleton_get_info`
 - `skeleton_list_bones`
+- `skeleton_export_folder`
+- `skeleton_validate_folder`
+- `skeleton_apply_folder`
 
-纯属性写入优先走 `asset_export_property_json / asset_apply_property_json`；notify、curve、sync marker 等结构命令按 `13_AnimationAssets_Skeleton.md` 判断。
+纯属性写入优先走 `asset_export_property_json / asset_apply_property_json`；Skeleton authoring 优先走 `skeleton_export_folder / skeleton_apply_folder`；notify、curve、sync marker 等结构命令按 `13_AnimationAssets_Skeleton.md` 判断。
+
+### Skeletal Mesh
+
+- `skeletal_mesh_get_info`
+- `skeletal_mesh_export_folder`
+- `skeletal_mesh_validate_folder`
+- `skeletal_mesh_apply_folder`
+- `skeletal_mesh_get_morph_targets`
+- `skeletal_mesh_validate_morph_targets`
+- `skeletal_mesh_preview_morph_target`
+- `skeletal_mesh_remove_morph_target`
+- `skeletal_mesh_import_skin_weight_profile`
+- `skeletal_mesh_remove_skin_weight_profile`
+- `skeletal_mesh_preview_skin_weight_profile`
+
+SkeletalMesh authoring 优先走 folder workflow。材质槽、mesh-only socket、physics asset、post process anim blueprint 和 Morph 删除可回写；raw vertex/index/skin weight/morph delta/cloth 不用普通 JSON 手写。
+
+### Deformer / ML Deformer / Geometry Cache
+
+- `geometry_cache_get_info`
+- `geometry_cache_validate_against_skeletal_mesh`
+- `geometry_cache_screenshot_frame`
+- `deformer_graph_create`
+- `deformer_graph_get_info`
+- `deformer_graph_export_folder`
+- `deformer_graph_validate_folder`
+- `deformer_graph_apply_folder`
+- `deformer_graph_compile`
+- `deformer_graph_get_compile_log`
+- `deformer_source_library_create`
+- `deformer_source_library_export_json`
+- `deformer_source_library_validate_json`
+- `deformer_source_library_apply_json`
+- `mesh_deformer_collection_create`
+- `mesh_deformer_collection_export_json`
+- `mesh_deformer_collection_validate_json`
+- `mesh_deformer_collection_apply_json`
+- `ml_deformer_create`
+- `ml_deformer_get_info`
+- `ml_deformer_export_json`
+- `ml_deformer_validate_json`
+- `ml_deformer_apply_json`
+- `ml_deformer_validate_training_inputs`
+- `ml_deformer_get_training_log`
+- `ml_deformer_train`
+- `ml_deformer_preview`
+
+Deformer/ML authoring 先导出真实 JSON；只回写显式 `apply=true` 的属性项。训练、shader compile、Geometry Cache 逐帧数据都不是普通 JSON 写入面，必须看插件状态、UE version、adapter 状态和日志。
 
 ### IK Rig / IK Retargeter
 
 - `ik_rig_create`
 - `ik_rig_get_info`
-- `ik_rig_set_preview_mesh`
-- `ik_rig_set_goal`
-- `ik_rig_set_retarget_root`
-- `ik_rig_set_retarget_chain`
-- `ik_rig_set_solver`
+- `ik_rig_export_folder`
+- `ik_rig_validate_folder`
+- `ik_rig_apply_folder`
 - `ik_rig_apply_auto_retarget_definition`
+- `ik_rig_preview_solve`
 - `ik_retargeter_create`
 - `ik_retargeter_get_info`
-- `ik_retargeter_set_ik_rig`
-- `ik_retargeter_set_settings`
-- `ik_retargeter_set_pose`
-- `ik_retargeter_set_preview_mesh`
+- `ik_retargeter_export_folder`
+- `ik_retargeter_validate_folder`
+- `ik_retargeter_apply_folder`
 - `ik_retargeter_auto_map_chains`
+- `ik_retargeter_auto_align_pose`
 - `ik_retargeter_duplicate_and_retarget`
+- `retarget_batch_export_json`
+- `retarget_batch_validate_json`
+- `retarget_batch_apply_json`
+
+IK Rig / IK Retargeter authoring 优先走 folder workflow；preview solve、auto retarget definition、auto align pose、auto map、duplicate-and-retarget 是动作语义，按命令或 Retarget Batch JSON 执行。
+
+### Control Rig / Shape Library
+
+- `control_rig_create`
+- `control_rig_get_info`
+- `control_rig_export_folder`
+- `control_rig_validate_folder`
+- `control_rig_apply_folder`
+- `control_rig_compile`
+- `control_rig_get_compile_log`
+- `control_rig_open_editor`
+- `control_rig_graph_get_view`
+- `control_rig_graph_set_view`
+- `control_rig_viewport_get_camera`
+- `control_rig_viewport_set_camera`
+- `control_rig_screenshot`
+- `control_rig_runtime_probe`
+- `control_rig_bake_to_animation`
+- `control_rig_bake_to_control_rig`
+- `control_rig_shape_library_create`
+- `control_rig_shape_library_get_info`
+- `control_rig_shape_library_export_json`
+- `control_rig_shape_library_validate_json`
+- `control_rig_shape_library_apply_json`
+
+Control Rig authoring 优先走 folder workflow；`variables/variables.json`、hierarchy、shape library 引用和 RigVM graph 是当前可回写面。运行时 IK、Trace、AnimBlueprint 接入、动画曲线权重和碰撞语义要按 `references/control-rig-animation-authoring.md` 的分层验证流程处理。Shape Library 是独立资产，走单文件 JSON，然后由 `shape_libraries/references.json` 引入 Control Rig，但它只影响控制形状显示。AnimBlueprint / Sequencer 接入和 bake 是跨资产动作，走对应 folder workflow 或显式 `control_rig_bake_*` 命令；bake 返回必须检查 `binding_preflight`，Bake To Control Rig 还要确认 `is_fk_control_rig` 或 `supports_inverse_event`。Control Rig folder 中未支持回写的 functions、modular、raw/readonly 等 profile 有实际内容时必须返回 `unsupported_apply_profile`。
 
 ### Modeling
 
@@ -329,6 +428,9 @@ Niagara module input 写入必须检查“控制项 + 活跃分支 + 目标值�
 
 - JSON / 结构化 JSON 主流程：`commands/README.md` 的“资产编辑优先级”
 - Niagara folder schema：`commands/15_Niagara_FolderFormat.md`
+- SkeletalMesh folder schema：`commands/16_SkeletalMesh_FolderFormat.md`
+- ControlRig folder schema：`commands/17_ControlRig_FolderFormat.md`
+- Deformer / MLDeformer / GeometryCache：`commands/18_Deformer_MLDeformer_GeometryCache.md`
 - Niagara 红黄感叹号：`commands/07_Niagara_System.md` 的 `niagara_get_stack_issues`
 - 废弃命令归档：`commands/deprecatedCommand/README.md`
 - CLI 使用：`UeAgentInterfaceCMD/docs/USAGE.md`

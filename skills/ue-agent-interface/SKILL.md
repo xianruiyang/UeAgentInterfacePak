@@ -42,6 +42,8 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 6. 本 skill 内置的速查：
    - `references/command-map.md`
    - `references/batch-execution-playbook.md`
+   - `references/niagara-vfx-authoring.md`：制作或修复 Niagara 视觉效果、主形体、分层、材质、锚点、事件链或美术质量问题时读取。
+   - `references/control-rig-animation-authoring.md`：制作或修复 Control Rig、足底/手部 IK、运行时 Trace、AnimBlueprint Control Rig 接入、Shape Library、动画曲线 IK 权重、楼梯/斜坡贴合或 IK 调试时读取。
 
 ## 命令文档路由
 
@@ -60,6 +62,9 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 - Animation Assets / Skeleton：`13_AnimationAssets_Skeleton.md`
 - IK Rig / IK Retargeter：`14_IKRig_IKRetargeter.md`
 - Niagara System / Emitter / Script 文件夹式 JSON：`15_Niagara_FolderFormat.md`
+- Skeletal Mesh 文件夹式 JSON：`16_SkeletalMesh_FolderFormat.md`
+- Control Rig / Shape Library 文件夹式 JSON：`17_ControlRig_FolderFormat.md`
+- Deformer / ML Deformer / Geometry Cache：`18_Deformer_MLDeformer_GeometryCache.md`
 - 废弃写入命令归档：`deprecatedCommand/README.md`
 
 ## 标准工作流
@@ -92,6 +97,14 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
    - `niagara_export_folder / niagara_apply_folder`
    - `niagara_emitter_export_folder / niagara_emitter_apply_folder`
    - `niagara_script_export_folder / niagara_script_apply_folder`
+   - `skeleton_export_folder / skeleton_apply_folder`
+   - `static_mesh_export_folder / static_mesh_apply_folder`
+   - `skeletal_mesh_export_folder / skeletal_mesh_apply_folder`
+   - `ik_rig_export_folder / ik_rig_apply_folder`
+   - `ik_retargeter_export_folder / ik_retargeter_apply_folder`
+   - `control_rig_export_folder / control_rig_apply_folder`
+   - `deformer_graph_export_folder / deformer_graph_apply_folder`
+   - `control_rig_shape_library_export_json / control_rig_shape_library_apply_json`
 3. 原子命令：
    - 只用于创建最小骨架、读取 live 信息、探针验证、迁移脚本、schema 边界字段和回写失败后的定点补修。
 
@@ -133,20 +146,24 @@ JSON / 文件夹式 JSON 的解析失败必须在 report 中可见：
 - Asset / Editor lifecycle：打开/保存资产、复制资产、贴图/FBX 导入、属性 JSON、曲线 JSON、dirty resource 列表/处理、安全关闭。
 - Blueprint：folder workflow、变量、组件、事件/自定义事件、函数调用节点、通用类节点、变量节点、连线/断线、视图/截图辅助。
 - UMG：WidgetBlueprint folder workflow、WidgetTree、常用 widget/slot 属性、变量/函数绑定、常见动画轨道、Blueprint 图复用。
-- StaticMesh：bounds/corners、材质、collision primitive、socket、preview/property 辅助。
+- StaticMesh：folder workflow 覆盖材质、socket、simple collision、lightmap、Nanite 安全字段；reimport 和 collision preview 有显式命令；raw geometry / UV / Nanite 内部数据只读摘要或走导入/建模命令。
 - EnhancedInput：InputAction 与 InputMappingContext 创建/编辑，以及单文件 JSON round-trip。
 - Material：Material / Material Instance / Material Function folder workflow、表达式图、统一参数设置。
 - Sequence：Level Sequence folder workflow、actor/component/spawnable binding 恢复、property/spawn track、outliner folder、camera cut、subsequence、cinematic shot、UMG animation helper。
 - Niagara：`NiagaraSystem / NiagaraEmitter / NiagaraScript` 完整 folder profile；Stack issue 读取、Quick Fix、System refresh、runtime probe、screenshot、compile log、apply 后直接返回红黄感叹号信息。
 - AnimBlueprint：folder workflow、Layer Interface、Anim Layer、State Machine、Transition、图节点、预览 mesh/camera、CDO 属性写入。
 - Montage：单文件 JSON workflow、slot track、segment、section、next-section、notify track/notify/notify state、Skeleton slot/group 辅助。
-- Animation Assets / Skeleton：AnimSequence 信息/截图/settings/float curve JSON/bone/metadata/notify/sync marker，Skeleton bone/compatible skeleton/preview mesh/socket/virtual bone。
-- IK Rig / IK Retargeter：资产创建、preview mesh、goal、retarget root/chain、solver、auto retarget definition、retargeter rig/settings/pose/auto map/duplicate-and-retarget。
+- Animation Assets / Skeleton：AnimSequence 信息/截图/settings/float curve JSON/bone/metadata/notify/sync marker，BlendSpace 单文件 JSON workflow，Skeleton folder workflow 覆盖 preview/compatible/socket/virtual bone/retargeting。
+- SkeletalMesh：folder workflow 覆盖材质槽、mesh-only socket、physics asset、post process anim blueprint、Morph Target 删除；Morph / Skin Weight Profile 预览、Skin Weight Profile 导入/删除使用显式动作命令；raw vertex/index/skin weight/morph delta/cloth 只做摘要或导入策略，不用普通 JSON 手写。
+- Deformer / ML Deformer / Geometry Cache：Geometry Cache 导入/信息/引用验证；Deformer Graph folder workflow；Source Library、Mesh Deformer Collection、ML Deformer 单文件 JSON 通过显式 `apply=true` 的属性项复用 `asset_apply_property_json`。训练和 shader compile 只走显式命令并检查插件状态、UE version、adapter 状态与日志。
+- IK Rig / IK Retargeter：folder workflow 覆盖 IK Rig preview/root/goal/chain/solver 和 IK Retargeter rigs/preview/settings/mapping/pose；preview solve、auto align pose、auto map 和 duplicate-retarget 属于动作命令；retarget batch 使用单文件 JSON。
+- Control Rig：folder workflow 覆盖 preview、Shape Library 引用、hierarchy bones/nulls/controls/curves、variables、基础 RigVM graph node/link/pin default；Shape Library 使用单文件 JSON；runtime probe、editor view/screenshot、Sequencer bake 使用显式动作命令并检查 `binding_preflight`，未支持回写的 functions/modular/raw 等 profile 必须返回 `unsupported_apply_profile`。
 - Modeling：模式激活、选择、active tool property/action、accept/cancel、primitive wrapper、mesh edit wrapper、collision/UV/material helper。
 
 ## Niagara 专项规则
 
 - 完整 Niagara 效果制作必须走文件夹式结构化 JSON，不用零散原子命令手搓完整 System。
+- 制作或修复 Niagara 视觉效果时，先读 `references/niagara-vfx-authoring.md`。先定义视觉语义、Emitter 分层、Renderer/材质、锚点、运动和生命周期，再写 JSON；不要用堆模块或堆 emitter 替代视觉设计。
 - `validation/coverage_report.json` 是覆盖状态源真相；完整 profile 应为 `implementation_status=complete_folder_profile`、`is_complete_target_schema=true`、空 `pending_profiles`、空 `blocking_gaps`。
 - `niagara_apply_folder` 与 `niagara_emitter_apply_folder` 默认在 apply 后编译并打开/复用 Niagara editor ViewModel 读取 Stack issue。直接检查 `stack_issue_report`、`stack_issues`、`stack_scopes`、`stack_error_count`、`stack_warning_count`、`stack_issue_view_model_source`。
 - UI 红色感叹号与 compile log 不一定一致；读取 UI 同源内容时使用 `niagara_get_stack_issues(prefer_existing_view_model=true, open_editor_if_needed=true)`。
@@ -154,14 +171,24 @@ JSON / 文件夹式 JSON 的解析失败必须在 report 中可见：
 - Collision Event / Death Event / Event Handler 这类依赖连续时间推进的效果，验证时先用 `niagara_preview_advance(reset_preview=true,target_frame=...,advance_mode=tick_component,pause_after_advance=true)` 从 0 连续 tick 到目标帧，记录返回的 `preview_state_token`；随后 `niagara_system_runtime_probe(sample_mode=current_preview,expected_preview_state_token=...,expected_frame=...)` 和 `niagara_screenshot(capture_mode=current_preview,expected_preview_state_token=...,expected_frame=...)` 只读同一暂停状态。不要让 probe 和 screenshot 各自重复推进，也不要再用 `reset_preview=false,tick_count=0` 当严格只读采样。
 - Vector / Position / LinearColor 等 module input 必须使用 UE 结构化文本，例如 `(X=...,Y=...,Z=...)`、`(R=...,G=...,B=...,A=...)`，并检查写后 readback。
 - Niagara module input 写入必须同时检查控制分支。`mode / enum / static switch` 决定哪个输入真正生效；例如非均匀 Sprite 必须读回 `Sprite Size Mode=Non-Uniform`，再确认 `Module.Sprite Size`。只读到目标值存在不等于运行时使用它。
+- Renderer 是视觉行为的一部分。Sprite / Mesh / Ribbon / Light 的选择必须服务于主形体和数据流；材质、贴图、SubUV、opacity、emissive、pivot 和 binding 都要纳入验收，不要只看粒子数量。
 - Niagara Data Interface 的曲线 raw property 必须用 folder workflow 的 `curve_json` 修改。System apply 会在总刷新后回写 DataInterface，检查 `post_refresh_data_interfaces_applied` 和重新 export 的 `data_interfaces.json`，不要只看 apply 前的旧 graph 对象。
 - Niagara Module Input 的 Dynamic Input 也必须用 folder JSON 表达：编辑 `modules[].inputs[].dynamic_input`、`dynamic_input.inputs[]` 和 `dynamic_input.data_interfaces[].raw_properties[].curve_json`。不要再用 `niagara_emitter_set_module_input` 的 Dynamic Input 扩展参数做 authoring 或普通修补；该扩展只保留旧脚本兼容和极端故障恢复。
 - 写入前必须确认该 mode 对应的有效属性组；apply 后重新 export 并按当前 mode 校验对应字段。例如 `Uniform` 校验 `Uniform Sprite Size`，`Non-Uniform` 校验 `Sprite Size`。非当前 mode 的字段即使读回存在，也不得视为生效。
 - `module_input_hidden_or_inactive_branch` 不得当作噪声忽略；它表示写入可能落在非活跃分支。遇到它时先设置控制项，重新 apply/export/readback，再写分支值。
 - 枚举型输入不能只看 `NewEnumeratorN`；必须结合导出的 `enum_value_display_name`、`override_enum_value_display_name` 和 `enum_options[]` 判断 UI 语义。
 - Collision 相关效果优先使用默认 Ray Trace collision；碰撞后生成粒子应通过 Event Handler 接收碰撞事件，在事件 payload 位置生成，不要用静态位置假冒。
+- 事件、碰撞、命中、尾迹和后续爆裂必须验证 payload 位置、速度、法线和时间推进；截图和 runtime probe 只能作为证据之一，不能替代 Stack、compile、readback、Renderer/material 检查。
 - Event Handler 中不要无意义重复 `Initialize Particle` 覆盖事件 payload。`Kill Particles` 不应清理承载给后续事件的变量。
 - UE 崩溃后第一优先级是找根因并修复指令/数据路径，不继续堆绕路操作。
+
+## Control Rig / 动画 IK 专项规则
+
+- 制作或修复运行时 IK 前先读 `references/control-rig-animation-authoring.md`，把问题拆成 Control Rig 求解、AnimBlueprint 接入、动画曲线权重、碰撞/Trace 语义四层分别验证。
+- Control Rig authoring 走 `control_rig_export_folder -> 修改 folder JSON -> control_rig_validate_folder -> control_rig_apply_folder -> export/readback`；替换求解图时使用导出的真实 graph 模板，并检查 `replace_nodes`、`compile_report`、`readback` 和 `issues[]`。
+- AnimBlueprint 接入 Control Rig 不由 `control_rig_apply_folder` 隐式完成；必须通过 `anim_blueprint_export_folder / anim_blueprint_apply_folder` 验证 `Node.ControlRigClass`、`Node.DefaultControlRigClass`、`Node.bExecute` 和输入/输出 Pose 同步设置。
+- IK Trace 必须先确认目标 RigVM unit 的空间语义、Trace channel/object types、自身过滤、no-hit fallback 和运行时权重。截图只能辅助判断，不能替代 compile、readback、probe、曲线回读和碰撞查询。
+- Control Rig Shape Library 只影响编辑器控制形状的显示，不参与求解、不改变运行时 IK 逻辑。
 
 ## 编辑器会话与关闭卫生
 
