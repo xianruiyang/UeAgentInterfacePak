@@ -42,6 +42,7 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 6. 本 skill 内置的速查：
    - `references/command-map.md`
    - `references/batch-execution-playbook.md`
+   - `references/cli-diagnostics-release.md`：排查 CLI 失败、黑图、crash capture、命令覆盖矩阵或 Pak 发布验证时读取。
    - `references/niagara-vfx-authoring.md`：制作或修复 Niagara 视觉效果、主形体、分层、材质、锚点、事件链或美术质量问题时读取。
    - `references/control-rig-animation-authoring.md`：制作或修复 Control Rig、足底/手部 IK、运行时 Trace、AnimBlueprint Control Rig 接入、Shape Library、动画曲线 IK 权重、楼梯/斜坡贴合或 IK 调试时读取。
 
@@ -65,6 +66,9 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 - Skeletal Mesh 文件夹式 JSON：`16_SkeletalMesh_FolderFormat.md`
 - Control Rig / Shape Library 文件夹式 JSON：`17_ControlRig_FolderFormat.md`
 - Deformer / ML Deformer / Geometry Cache：`18_Deformer_MLDeformer_GeometryCache.md`
+- AI Behavior / Blackboard / StateTree / EQS / Navigation / SmartObject：`19_AI_Behavior_Blackboard_StateTree_EQS_Navigation_SmartObject.md`
+- Audio：`20_Audio.md`
+- Texture / RenderTarget / Media：`21_Texture_RenderTarget_Media.md`
 - 废弃写入命令归档：`deprecatedCommand/README.md`
 
 ## 标准工作流
@@ -104,6 +108,30 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
    - `ik_retargeter_export_folder / ik_retargeter_apply_folder`
    - `control_rig_export_folder / control_rig_apply_folder`
    - `deformer_graph_export_folder / deformer_graph_apply_folder`
+   - `sound_cue_export_folder / sound_cue_apply_folder`
+   - `metasound_export_folder / metasound_apply_folder`
+   - `sound_attenuation_export_json / sound_attenuation_apply_json`
+   - `sound_concurrency_export_json / sound_concurrency_apply_json`
+   - `sound_class_export_json / sound_class_apply_json`
+   - `sound_mix_export_json / sound_mix_apply_json`
+   - `sound_submix_export_folder / sound_submix_apply_folder`
+   - `audio_effect_preset_export_json / audio_effect_preset_apply_json`
+   - `runtime_virtual_texture_export_json / runtime_virtual_texture_apply_json`
+   - `texture_array_export_folder / texture_array_apply_folder`
+   - `texture_cube_export_folder / texture_cube_apply_folder`
+   - `texture_cube_array_export_folder / texture_cube_array_apply_folder`
+   - `volume_texture_export_folder / volume_texture_apply_folder`
+   - `render_target_export_json / render_target_apply_json`
+   - `media_source_export_json / media_source_apply_json`
+   - `media_player_export_json / media_player_apply_json`
+   - `media_texture_export_json / media_texture_apply_json`
+   - `texture_graph_export_folder / texture_graph_apply_folder`
+   - `subuv_animation_export_json / subuv_animation_apply_json`
+   - `paper_sprite_export_json / paper_sprite_apply_json`
+   - `paper_flipbook_export_json / paper_flipbook_apply_json`
+   - `paper_tileset_export_folder / paper_tileset_apply_folder`
+   - `paper_tilemap_export_folder / paper_tilemap_apply_folder`
+   - `texture_collection_export_json / texture_collection_apply_json`
    - `control_rig_shape_library_export_json / control_rig_shape_library_apply_json`
 3. 原子命令：
    - 只用于创建最小骨架、读取 live 信息、探针验证、迁移脚本、schema 边界字段和回写失败后的定点补修。
@@ -156,6 +184,8 @@ JSON / 文件夹式 JSON 的解析失败必须在 report 中可见：
 - Animation Assets / Skeleton：AnimSequence 信息/截图/settings/float curve JSON/bone/metadata/notify/sync marker，BlendSpace 单文件 JSON workflow，Skeleton folder workflow 覆盖 preview/compatible/socket/virtual bone/retargeting。
 - SkeletalMesh：folder workflow 覆盖材质槽、mesh-only socket、physics asset、post process anim blueprint、Morph Target 删除；Morph / Skin Weight Profile 预览、Skin Weight Profile 导入/删除使用显式动作命令；raw vertex/index/skin weight/morph delta/cloth 只做摘要或导入策略，不用普通 JSON 手写。
 - Deformer / ML Deformer / Geometry Cache：Geometry Cache 导入/信息/引用验证；Deformer Graph folder workflow；Source Library、Mesh Deformer Collection、ML Deformer 单文件 JSON 通过显式 `apply=true` 的属性项复用 `asset_apply_property_json`。训练和 shader compile 只走显式命令并检查插件状态、UE version、adapter 状态与日志。
+- Audio：SoundWave 导入/重导入/信息读回；SoundCue folder workflow；MetaSound Source/Patch 成员 workflow；SoundAttenuation、SoundConcurrency、SoundClass、SoundMix、AudioEffectPreset 单文件 JSON；SoundSubmix folder workflow；AudioComponent/AmbientSound/AudioVolume setup validate；runtime probe、submix meter 和 submix record。AudioComponent authoring、AmbientSound/AudioVolume 放置和普通属性继续复用 Blueprint / Actor / Component / Asset Property JSON 指令。
+- Texture / RenderTarget / Media：Texture 重导入、像素统计、图片导出；TextureArray/Cube/CubeArray/VolumeTexture folder workflow；RVT、RenderTarget、Media、TextureGraph、SubUV、Paper2D、TextureCollection JSON/folder workflow；RT draw/read/export/static texture 与 TextureGraph bake 依赖有效 RHI，NullRHI 下必须返回明确诊断。
 - IK Rig / IK Retargeter：folder workflow 覆盖 IK Rig preview/root/goal/chain/solver 和 IK Retargeter rigs/preview/settings/mapping/pose；preview solve、auto align pose、auto map 和 duplicate-retarget 属于动作命令；retarget batch 使用单文件 JSON。
 - Control Rig：folder workflow 覆盖 preview、Shape Library 引用、hierarchy bones/nulls/controls/curves、variables、基础 RigVM graph node/link/pin default；Shape Library 使用单文件 JSON；runtime probe、editor view/screenshot、Sequencer bake 使用显式动作命令并检查 `binding_preflight`，未支持回写的 functions/modular/raw 等 profile 必须返回 `unsupported_apply_profile`。
 - Modeling：模式激活、选择、active tool property/action、accept/cancel、primitive wrapper、mesh edit wrapper、collision/UV/material helper。
