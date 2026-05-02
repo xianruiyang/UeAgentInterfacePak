@@ -69,6 +69,7 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 - AI Behavior / Blackboard / StateTree / EQS / Navigation / SmartObject：`19_AI_Behavior_Blackboard_StateTree_EQS_Navigation_SmartObject.md`
 - Audio：`20_Audio.md`
 - Texture / RenderTarget / Media：`21_Texture_RenderTarget_Media.md`
+- Project Settings / Config：`22_ProjectSettings_Config.md`
 - 废弃写入命令归档：`deprecatedCommand/README.md`
 
 ## 标准工作流
@@ -132,6 +133,7 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
    - `paper_tileset_export_folder / paper_tileset_apply_folder`
    - `paper_tilemap_export_folder / paper_tilemap_apply_folder`
    - `texture_collection_export_json / texture_collection_apply_json`
+   - `project_settings_export_index / project_settings_export_page / project_settings_validate_page / project_settings_diff_page / project_settings_apply_page`
    - `control_rig_shape_library_export_json / control_rig_shape_library_apply_json`
 3. 原子命令：
    - 只用于创建最小骨架、读取 live 信息、探针验证、迁移脚本、schema 边界字段和回写失败后的定点补修。
@@ -186,6 +188,7 @@ JSON / 文件夹式 JSON 的解析失败必须在 report 中可见：
 - Deformer / ML Deformer / Geometry Cache：Geometry Cache 导入/信息/引用验证；Deformer Graph folder workflow；Source Library、Mesh Deformer Collection、ML Deformer 单文件 JSON 通过显式 `apply=true` 的属性项复用 `asset_apply_property_json`。训练和 shader compile 只走显式命令并检查插件状态、UE version、adapter 状态与日志。
 - Audio：SoundWave 导入/重导入/信息读回；SoundCue folder workflow；MetaSound Source/Patch 成员 workflow；SoundAttenuation、SoundConcurrency、SoundClass、SoundMix、AudioEffectPreset 单文件 JSON；SoundSubmix folder workflow；AudioComponent/AmbientSound/AudioVolume setup validate；runtime probe、submix meter 和 submix record。AudioComponent authoring、AmbientSound/AudioVolume 放置和普通属性继续复用 Blueprint / Actor / Component / Asset Property JSON 指令。
 - Texture / RenderTarget / Media：Texture 重导入、像素统计、图片导出；TextureArray/Cube/CubeArray/VolumeTexture folder workflow；RVT、RenderTarget、Media、TextureGraph、SubUV、Paper2D、TextureCollection JSON/folder workflow；RT draw/read/export/static texture 与 TextureGraph bake 依赖有效 RHI，NullRHI 下必须返回明确诊断。
+- Project Settings / Config：通过 `ISettingsModule` 实时反射 Project Settings index/page，支持结构化 JSON 导出、validate/diff/apply、保存与读回；没有 Settings UObject 的自定义 UI 页返回明确 unsupported；裸 `.ini` 只走受限 `config_export_section / config_apply_section` fallback。
 - IK Rig / IK Retargeter：folder workflow 覆盖 IK Rig preview/root/goal/chain/solver 和 IK Retargeter rigs/preview/settings/mapping/pose；preview solve、auto align pose、auto map 和 duplicate-retarget 属于动作命令；retarget batch 使用单文件 JSON。
 - Control Rig：folder workflow 覆盖 preview、Shape Library 引用、hierarchy bones/nulls/controls/curves、variables、基础 RigVM graph node/link/pin default；Shape Library 使用单文件 JSON；runtime probe、editor view/screenshot、Sequencer bake 使用显式动作命令并检查 `binding_preflight`，未支持回写的 functions/modular/raw 等 profile 必须返回 `unsupported_apply_profile`。
 - Modeling：模式激活、选择、active tool property/action、accept/cancel、primitive wrapper、mesh edit wrapper、collision/UV/material helper。
