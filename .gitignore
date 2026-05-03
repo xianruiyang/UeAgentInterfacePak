@@ -1,1 +1,39 @@
+# UeAgentInterfacePak release package: keep source refs, skills and docs;
+# ignore generated runtime, test and local package artifacts.
+
+# Runtime logs and temporary outputs
+runtimeLogs/
+logs/
+tmp/
+temp/
+build_tmp/
+*.log
+*.tmp
+*.cache
+
+# Reports: keep only intentional placeholders
+reports/*.json
+reports/**/*.json
+!reports/.gitkeep
+reports/_tmp/
+
+# Python/test generated outputs
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Skill/package runtime records must not be distributed
 skills/runtimeLogs/
+skills/**/runtimeLogs/
+
+# Unreal generated outputs if copied into the package root by mistake
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/

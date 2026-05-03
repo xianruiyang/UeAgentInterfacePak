@@ -70,6 +70,11 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 - Audio：`20_Audio.md`
 - Texture / RenderTarget / Media：`21_Texture_RenderTarget_Media.md`
 - Project Settings / Config：`22_ProjectSettings_Config.md`
+- Level Content JSON：`23_LevelContent_JSON.md`
+- DataAsset / PrimaryAsset / DataTable：`24_DataDriven_DataAsset_DataTable.md`
+- Level Topology / Streaming / World Partition / DataLayer / HLOD：`25_LevelTopology_Streaming_WorldPartition_DataLayer_HLOD.md`
+- Physics / Chaos 基础：`26_Physics_Baseline.md`
+- Localization / Packaging / Platform Profiles：`27_Localization_Packaging_PlatformProfiles.md`
 - 废弃写入命令归档：`deprecatedCommand/README.md`
 
 ## 标准工作流
@@ -91,6 +96,8 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
    - `enhanced_input_export_action_json / enhanced_input_apply_action_json`
    - `enhanced_input_export_mapping_context_json / enhanced_input_apply_mapping_context_json`
    - `montage_export_json / montage_apply_json`
+   - `data_asset_export_json / data_asset_apply_json`
+   - `data_table_export_json / data_table_apply_json`
 2. 文件夹式结构化 JSON：
    - `blueprint_export_folder / blueprint_apply_folder`
    - `umg_export_folder / umg_apply_folder`
@@ -135,6 +142,9 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
    - `texture_collection_export_json / texture_collection_apply_json`
    - `project_settings_export_index / project_settings_export_page / project_settings_validate_page / project_settings_diff_page / project_settings_apply_page`
    - `control_rig_shape_library_export_json / control_rig_shape_library_apply_json`
+   - `physical_material_export_json / physical_material_apply_json`
+   - `physics_constraint_export_json / physics_constraint_apply_json`
+   - `physics_asset_export_folder / physics_asset_apply_folder`
 3. 原子命令：
    - 只用于创建最小骨架、读取 live 信息、探针验证、迁移脚本、schema 边界字段和回写失败后的定点补修。
 
@@ -189,6 +199,9 @@ JSON / 文件夹式 JSON 的解析失败必须在 report 中可见：
 - Audio：SoundWave 导入/重导入/信息读回；SoundCue folder workflow；MetaSound Source/Patch 成员 workflow；SoundAttenuation、SoundConcurrency、SoundClass、SoundMix、AudioEffectPreset 单文件 JSON；SoundSubmix folder workflow；AudioComponent/AmbientSound/AudioVolume setup validate；runtime probe、submix meter 和 submix record。AudioComponent authoring、AmbientSound/AudioVolume 放置和普通属性继续复用 Blueprint / Actor / Component / Asset Property JSON 指令。
 - Texture / RenderTarget / Media：Texture 重导入、像素统计、图片导出；TextureArray/Cube/CubeArray/VolumeTexture folder workflow；RVT、RenderTarget、Media、TextureGraph、SubUV、Paper2D、TextureCollection JSON/folder workflow；RT draw/read/export/static texture 与 TextureGraph bake 依赖有效 RHI，NullRHI 下必须返回明确诊断。
 - Project Settings / Config：通过 `ISettingsModule` 实时反射 Project Settings index/page，支持结构化 JSON 导出、validate/diff/apply、保存与读回；没有 Settings UObject 的自定义 UI 页返回明确 unsupported；裸 `.ini` 只走受限 `config_export_section / config_apply_section` fallback。
+- Level Content JSON：通过 `level_content_*_json` 统一查询、校验、计划、应用、diff、snapshot、delete scope、merge、repair 场景实例内容；Actor-only 兼容别名为 `level_actor_*_json`。
+- Physics / Chaos 基础：基础 Physics 能力查询、PrimitiveComponent 物理状态 query/validate/LevelContent patch plan、PhysicalMaterial 单文件 JSON、PhysicsConstraint 单文件 JSON、PhysicsAsset folder workflow、editor world runtime probe；可选插件类 Chaos Vehicles/Geometry Collection/Field System/Cloth/Flesh/PhysicsControl/ChaosVD 不在基础主流程内。
+- Localization / Packaging / Platform Profiles：Localization target/StringTable/PO/report/culture preview，UE 项目 UAT packaging plan/run/status/log/artifact/cleanup，以及 TargetPlatform、受控平台 config、DeviceProfile、Scalability 与 packaging 前置验证；普通 Project Settings 字段仍走 `project_settings_*`。
 - IK Rig / IK Retargeter：folder workflow 覆盖 IK Rig preview/root/goal/chain/solver 和 IK Retargeter rigs/preview/settings/mapping/pose；preview solve、auto align pose、auto map 和 duplicate-retarget 属于动作命令；retarget batch 使用单文件 JSON。
 - Control Rig：folder workflow 覆盖 preview、Shape Library 引用、hierarchy bones/nulls/controls/curves、variables、基础 RigVM graph node/link/pin default；Shape Library 使用单文件 JSON；runtime probe、editor view/screenshot、Sequencer bake 使用显式动作命令并检查 `binding_preflight`，未支持回写的 functions/modular/raw 等 profile 必须返回 `unsupported_apply_profile`。
 - Modeling：模式激活、选择、active tool property/action、accept/cancel、primitive wrapper、mesh edit wrapper、collision/UV/material helper。

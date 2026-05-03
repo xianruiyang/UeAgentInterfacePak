@@ -91,6 +91,78 @@
 - `level_align_actor_by_bounds`
 - `level_align_face_to_face`
 
+### Level Content / Level Topology JSON
+
+- `level_content_query_json`
+- `level_content_validate_json`
+- `level_content_plan_json`
+- `level_content_apply_json`
+- `level_content_diff_json`
+- `level_content_snapshot_json`
+- `level_content_delete_scope`
+- `level_content_merge_json`
+- `level_content_repair_json`
+- `level_topology_export_json`
+- `level_topology_validate_json`
+- `level_topology_diff_json`
+- `level_topology_apply_json`
+- `level_topology_set_actor_assignments`
+- `level_streaming_query`
+- `level_streaming_create_level`
+- `level_streaming_add_existing`
+- `level_streaming_remove`
+- `level_streaming_set_state`
+- `level_streaming_move_actors`
+- `level_streaming_save`
+- `level_streaming_validate`
+- `data_layer_query`
+- `data_layer_create_asset`
+- `data_layer_apply_asset_json`
+- `data_layer_create_instance`
+- `data_layer_delete_instance`
+- `data_layer_set_state`
+- `data_layer_set_actor_membership`
+- `data_layer_validate`
+- `world_partition_query`
+- `world_partition_set_streaming_enabled`
+- `world_partition_load_region`
+- `world_partition_unload_region`
+- `world_partition_load_actors`
+- `world_partition_unload_actors`
+- `world_partition_list_loaded_regions`
+- `world_partition_check_errors`
+- `world_partition_generate_streaming`
+- `world_partition_resave_actors`
+- `hlod_layer_create_json`
+- `hlod_layer_export_json`
+- `hlod_layer_validate_json`
+- `hlod_layer_apply_json`
+- `hlod_assign_actors`
+- `hlod_query_actors`
+- `hlod_build`
+- `hlod_validate_build`
+
+Level Content JSON 管 Actor 本体终态；Level Topology 管子关卡、DataLayer、World Partition、HLOD、Runtime Grid 和 Spatially Loaded 等拓扑关系。
+
+### Physics / Chaos 基础
+
+- `physics_capabilities_query`
+- `physics_component_query`
+- `physics_component_validate`
+- `physics_component_plan_patch`
+- `physical_material_export_json`
+- `physical_material_validate_json`
+- `physical_material_apply_json`
+- `physics_constraint_export_json`
+- `physics_constraint_validate_json`
+- `physics_constraint_apply_json`
+- `physics_asset_export_folder`
+- `physics_asset_validate_folder`
+- `physics_asset_apply_folder`
+- `physics_runtime_probe`
+
+基础 Physics authoring 优先走 PhysicalMaterial 单文件 JSON、PhysicsConstraint 单文件 JSON、PhysicsAsset folder workflow。Level 中 PrimitiveComponent 物理状态通过 `physics_component_plan_patch -> level_content_apply_json` 落地；Chaos Vehicles、Geometry Collection、Field System、Cloth/Flesh、PhysicsControl、ChaosVD 等可选插件不属于基础分册。
+
 ### 资产级 JSON
 
 - `asset_duplicate`
