@@ -1,4 +1,0 @@
-interface:
-  display_name: "LevelDesign"
-  short_description: "白盒关卡设计工作流"
-  default_prompt: "使用 $leveldesign 规划、审查或迭代一个可玩的白盒关卡。"

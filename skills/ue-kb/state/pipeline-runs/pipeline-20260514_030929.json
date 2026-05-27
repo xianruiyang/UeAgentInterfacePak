@@ -1,0 +1,84 @@
+{
+  "kb_id": "ue5-7-official-docs",
+  "manifest_path": "kb-manifest.json",
+  "recipe": "local-docs",
+  "run_id": "pipeline-20260514_030929",
+  "started_at": "2026-05-14T03:09:29Z",
+  "step_results": [
+    {
+      "data": {
+        "sources": [
+          {
+            "changed": false,
+            "current_fingerprint": "sha256:c97b2f54f236675d",
+            "fingerprint": "sha256:c97b2f54f236675d",
+            "last_seen": "2026-05-14T03:09:30Z",
+            "path": "references\\UE5_7Doc\\docs",
+            "source_id": "ue5-7-doc",
+            "status": "active",
+            "title": "Unreal Engine 5.7 官方 Markdown 正文",
+            "type": "markdown",
+            "updated_at": "2026-05-14T03:09:21Z"
+          },
+          {
+            "changed": false,
+            "current_fingerprint": "sha256:76f1d6ac5125feaf",
+            "fingerprint": "sha256:76f1d6ac5125feaf",
+            "last_seen": "2026-05-14T03:09:30Z",
+            "path": "references\\UE5_7Doc\\index.md",
+            "source_id": "ue5-7-doc-index",
+            "status": "active",
+            "title": "Unreal Engine 5.7 官方 Markdown 文档集索引",
+            "type": "markdown",
+            "updated_at": "2026-05-14T03:09:21Z"
+          }
+        ]
+      },
+      "passed": true,
+      "step": "source sync"
+    }
+  ],
+  "steps": [
+    {
+      "ordinal": 1,
+      "step": "source sync"
+    },
+    {
+      "ordinal": 2,
+      "step": "ingest"
+    },
+    {
+      "ordinal": 3,
+      "step": "chunk"
+    },
+    {
+      "ordinal": 4,
+      "step": "content build"
+    },
+    {
+      "ordinal": 5,
+      "step": "content lint"
+    },
+    {
+      "ordinal": 6,
+      "step": "index build"
+    },
+    {
+      "ordinal": 7,
+      "step": "index verify"
+    },
+    {
+      "ordinal": 8,
+      "step": "validate"
+    },
+    {
+      "ordinal": 9,
+      "step": "eval coverage"
+    },
+    {
+      "ordinal": 10,
+      "step": "package verify"
+    }
+  ],
+  "target": "fts"
+}

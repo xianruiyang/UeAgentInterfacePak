@@ -1,0 +1,118 @@
+{
+  "authority_policy": {
+    "prefer_official_sources": true,
+    "require_source_backing": true,
+    "source_order": [
+      "Epic Developer Community Unreal Engine 5.7 Documentation local markdown",
+      "UE supplemental Rendering community tutorials",
+      "UE supplemental PCG community tutorials",
+      "UE supplemental Niagara knowledge cards",
+      "UE supplemental Animation knowledge cards",
+      "UE supplemental Level Design whitebox methodology"
+    ]
+  },
+  "chunking": {
+    "max_tokens": 1400,
+    "overlap_tokens": 120,
+    "preserve_code_blocks": true,
+    "preserve_tables": true,
+    "strategy": "heading-aware",
+    "target_tokens": 900
+  },
+  "content": {
+    "markdown_map": "content/maps/markdown-map.jsonl",
+    "markdown_root": "content/markdown",
+    "mirror_policy": "required",
+    "standalone_required": true
+  },
+  "content_version": "0.2.3",
+  "data": {
+    "chunk_links": "chunks/chunk-links.jsonl",
+    "chunk_metadata": "chunks/chunk-metadata.jsonl",
+    "chunks": "chunks/chunks.jsonl",
+    "doc_parts": "data/normalized/doc-parts.jsonl",
+    "docs": "data/normalized/docs.jsonl",
+    "sources": "data/normalized/sources.jsonl"
+  },
+  "display_name": "UE KB",
+  "domain": "unreal-engine",
+  "embedding": {
+    "dimension": 1024,
+    "endpoint": "http://127.0.0.1:8765/v1/embeddings",
+    "format": "onnx",
+    "index_batch_size": 16,
+    "max_tokens": 1536,
+    "model": "BAAI/bge-m3",
+    "normalize": true,
+    "precision": "fp32",
+    "provider": "kb-vector-service"
+  },
+  "embedding_text": {
+    "asset_path_policy": "metadata_only",
+    "bare_url_policy": "drop",
+    "image_policy": "alt_or_filename",
+    "link_policy": "label_only",
+    "video_policy": "caption_or_filename"
+  },
+  "evidence_policy": {
+    "require_source": true
+  },
+  "indexes": {
+    "fts": {
+      "path": "indexes/fts.sqlite",
+      "type": "sqlite"
+    },
+    "vector": {
+      "collection": "ue-kb",
+      "mode": "server",
+      "type": "qdrant",
+      "url": "http://127.0.0.1:6333"
+    }
+  },
+  "kb_id": "ue-kb",
+  "payload_schema": {
+    "filter_enforced": true,
+    "required_fields": [
+      "kb_id",
+      "chunk_id",
+      "doc_id",
+      "source_id",
+      "title",
+      "source_path",
+      "language",
+      "adapter",
+      "chunk_fingerprint",
+      "embedding_fingerprint"
+    ],
+    "required_payload_indexes": [
+      "kb_id",
+      "source_id",
+      "doc_id",
+      "chunk_id",
+      "language"
+    ]
+  },
+  "primary_language": "zh-CN",
+  "publish": {
+    "alias": "ue_kb_active",
+    "profile": "local",
+    "staging_prefix": "ue_kb__staging"
+  },
+  "query_language_policy": "source-primary-with-original-terms",
+  "retrieval": {
+    "candidate_k": 40,
+    "default_mode": "hybrid",
+    "rerank_enabled": false,
+    "rerank_required": false,
+    "top_k": 8
+  },
+  "root_policy": {
+    "allow_external_paths": false,
+    "base": "."
+  },
+  "schema_version": "0.1.0",
+  "source_languages": [
+    "zh-CN",
+    "en"
+  ]
+}

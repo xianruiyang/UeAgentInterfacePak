@@ -1,6 +1,6 @@
 ---
 name: ue-agent-interface
-description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal Editor 服务。适用于 UE 编辑器自动化、资产制作、JSON/文件夹式结构化工作流、Blueprint/UMG/Material/Sequence/Niagara/Animation/IK/Modeling 指令、smoke 验证和安全的编辑器生命周期操作。不要直接调用 HTTP。
+description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal Editor 服务。适用于 UE 编辑器自动化、资产制作、JSON/文件夹式结构化工作流、Blueprint/UMG/Material/Sequence/Niagara/Animation/IK/Modeling/PCG/NodeGraph 指令、smoke 验证和安全的编辑器生命周期操作。不要直接调用 HTTP。
 ---
 
 # UeAgentInterface Skill
@@ -75,6 +75,9 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 - Level Topology / Streaming / World Partition / DataLayer / HLOD：`25_LevelTopology_Streaming_WorldPartition_DataLayer_HLOD.md`
 - Physics / Chaos 基础：`26_Physics_Baseline.md`
 - Localization / Packaging / Platform Profiles：`27_Localization_Packaging_PlatformProfiles.md`
+- Node Graph 通用节点图排布：`28_NodeGraph.md`
+- PCG：`29_PCG.md`
+- PCG Graph 文件夹式 JSON：`30_PCG_FolderFormat.md`
 - 废弃写入命令归档：`deprecatedCommand/README.md`
 
 ## 标准工作流
@@ -105,6 +108,7 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
    - `material_export_folder / material_apply_folder`
    - `material_instance_export_folder / material_instance_apply_folder`
    - `material_function_export_folder / material_function_apply_folder`
+   - `pcg_graph_export_folder / pcg_graph_apply_folder`
    - `sequence_export_folder / sequence_apply_folder`
    - `niagara_export_folder / niagara_apply_folder`
    - `niagara_emitter_export_folder / niagara_emitter_apply_folder`

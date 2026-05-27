@@ -1,0 +1,40 @@
+# 主题地图
+
+[Reference 入口](../index.md) / [查询指南](../guides/querying.md) / [来源结构](source-layout.md)
+
+此文件用于快速选择查询词和真实文档路径。路径指向按官方面包屑结构重建后的 Markdown 目录。
+
+| 主题 | 推荐查询词 | 主要路径 |
+| --- | --- | --- |
+| 入门、模板、项目创建 | `入门 Get Started Template Project` | [get-started](../UE5_7Doc/docs/get-started/index.md), [projects and templates](../UE5_7Doc/docs/understanding-the-basics/working-with-projects-and-templates/index.md) |
+| Blueprint | `蓝图 Blueprint Visual Scripting Variable Function Macro Interface` | [blueprints](../UE5_7Doc/docs/blueprints-visual-scripting/index.md), [Blueprint API](../UE5_7Doc/docs/unreal-engine-blueprint-api-reference/index.md) |
+| C++ | `C++ Gameplay Framework UObject Actor Component Module` | [cpp-programming](../UE5_7Doc/docs/cpp-programming/index.md), [C++ API](../UE5_7Doc/docs/unreal-engine-c-api-reference/index.md) |
+| Gameplay、GAS | `Gameplay Ability System GAS Actor Pawn Controller GameMode` | [gameplay-systems](../UE5_7Doc/docs/gameplay-systems/index.md), [gameplay-framework](../UE5_7Doc/docs/gameplay-systems/gameplay-framework/index.md), [GAS](../UE5_7Doc/docs/gameplay-systems/gameplay-ability-system/index.md) |
+| Animation、Skeletal Mesh、Control Rig、IK | `动画 Animation Blueprint State Machine Skeletal Mesh Control Rig IK Retargeting Root Motion motion_strategy` | [animation](../UE5_7Doc/docs/animating-characters-and-objects/index.md), [skeletal mesh animation](../UE5_7Doc/docs/animating-characters-and-objects/skeletal-mesh-animation-system/index.md), [animation blueprints](../UE5_7Doc/docs/animating-characters-and-objects/skeletal-mesh-animation-system/animation-blueprints/index.md), [Animation supplemental](../Supplemental/Animation/animation-ik.md) |
+| Niagara、VFX | `Niagara Emitter System Module Particle GPU Ribbon Beam InitializeParticle Sprite Size Mode Niagara Fluids Data Channels Scalability Cache HLSL C++ Blueprint Export` | [visual-effects](../UE5_7Doc/docs/visual-effects/index.md), [getting started in Niagara](../UE5_7Doc/docs/visual-effects/getting-started-in-niagara-effects/index.md), [Niagara module reference](../UE5_7Doc/docs/visual-effects/reference-for-niagara-effects/system-and-emitter-module-reference-for-niagara-effects/index.md), [Niagara supplemental](../Supplemental/Niagara/niagara.md), [Niagara community practice](../Supplemental/Niagara/community-practice/README.md) |
+| UMG、Slate、CommonUI | `UMG Slate CommonUI Activatable Widget Input Action` | [user-interfaces](../UE5_7Doc/docs/user-interfaces/index.md), [CommonUI input](../UE5_7Doc/docs/user-interfaces/plugins-for-ui-development/common-ui/input-fundamentals-for-commonui/index.md) |
+| Physics、Collision、Trace | `碰撞 Collision Preset Object Channel Trace Channel Physics Chaos` | [physics](../UE5_7Doc/docs/gameplay-systems/physics/index.md), [collision](../UE5_7Doc/docs/gameplay-systems/physics/collision/index.md), [collision settings](../UE5_7Doc/docs/understanding-the-basics/project-settings/engine-settings-in-the-unreal-engine-project-settings/collision-settings-in-the-unreal-engine-project-settings/index.md) |
+| Networking、Replication、RPC | `网络复制 Networking Replication RPC Actor Relevancy Ownership` | [networking](../UE5_7Doc/docs/gameplay-systems/networking-and-multiplayer/index.md), [network debugging](../UE5_7Doc/docs/gameplay-systems/networking-and-multiplayer/network-debugging/index.md), [Unreal Insights](../UE5_7Doc/docs/testing-and-optimizing-content/unreal-insights/index.md) |
+| Rendering、Material、Lighting | `渲染 Rendering Material Lighting Lumen Nanite Post Process Movie Render Graph Movie Render Queue Render Pass Custom Depth` | [rendering and graphics](../UE5_7Doc/docs/designing-visuals-rendering-and-graphics/index.md), [materials](../UE5_7Doc/docs/designing-visuals-rendering-and-graphics/unreal-engine-materials/index.md), [lighting](../UE5_7Doc/docs/building-virtual-worlds/lighting-the-environment/index.md), [Rendering supplemental](../Supplemental/Rendering/README.md) |
+| World、Level、Landscape、PCG | `关卡 Level World Partition Landscape PCG Biome Graph Blueprint Element Compute Graph Actor Tags Spline Room` | [building virtual worlds](../UE5_7Doc/docs/building-virtual-worlds/index.md), [landscape](../UE5_7Doc/docs/building-virtual-worlds/landscape-outdoor-terrain/index.md), [PCG](../UE5_7Doc/docs/building-virtual-worlds/procedural-content-generation/index.md), [PCG supplemental](../Supplemental/PCG/README.md) |
+| Level Design、Whitebox、Blockout | `关卡设计 Level Design Whitebox Blockout Metrics Critical Path Loop Landmark Pacing Lock Key` | [Level Design supplemental](../Supplemental/LevelDesign/README.md), [whitebox workflow](../Supplemental/LevelDesign/core/whitebox-workflow.md), [automated level design](../Supplemental/LevelDesign/core/automated-level-design.md), [common structural errors](../Supplemental/LevelDesign/references/whitebox-common-structural-errors.md) |
+| Content、Asset Pipeline、Datasmith | `资产 Asset Content Browser Asset Manager Datasmith Import` | [working with content](../UE5_7Doc/docs/working-with-content/index.md), [static meshes](../UE5_7Doc/docs/working-with-content/static-meshes/index.md), [Datasmith](../UE5_7Doc/docs/working-with-content/datasmith/index.md) |
+| Audio、Media | `音频 Audio MetaSound Sound Cue Media Player Sequencer` | [audio](../UE5_7Doc/docs/working-with-audio/index.md), [media](../UE5_7Doc/docs/working-with-media/index.md), [media framework](../UE5_7Doc/docs/working-with-media/integrating-media/media-framework/index.md) |
+| Editor、Project Settings、Tools | `编辑器 Editor Project Settings Plugins Tools Viewport` | [basics](../UE5_7Doc/docs/understanding-the-basics/index.md), [project settings](../UE5_7Doc/docs/understanding-the-basics/project-settings/index.md), [editor scripting](../UE5_7Doc/docs/production-pipeline/scripting-and-automating-the-unreal-editor/index.md) |
+| Platform、Packaging、Mobile、XR | `打包 Packaging Cooking Android iOS XR Platform` | [sharing and releasing](../UE5_7Doc/docs/sharing-and-releasing-projects/index.md), [mobile](../UE5_7Doc/docs/mobile-development/index.md), [XR](../UE5_7Doc/docs/sharing-and-releasing-projects/developing-for-xr-experiences/index.md) |
+| Performance、Insights、Profiling | `性能 Performance Unreal Insights Trace Profiling Optimization` | [testing and optimizing](../UE5_7Doc/docs/testing-and-optimizing-content/index.md), [Unreal Insights](../UE5_7Doc/docs/testing-and-optimizing-content/unreal-insights/index.md), [scalability](../UE5_7Doc/docs/designing-visuals-rendering-and-graphics/optimizing-and-debugging-projects-for-realtime-rendering/scalability/index.md) |
+
+## 高价值具体入口
+
+- [Niagara 快速开始](../UE5_7Doc/docs/visual-effects/getting-started-in-niagara-effects/quick-start-for-niagara-effects/index.md)
+- [Niagara 系统和发射器模块参考](../UE5_7Doc/docs/visual-effects/reference-for-niagara-effects/system-and-emitter-module-reference-for-niagara-effects/index.md)
+- [Niagara 补充知识卡](../Supplemental/Niagara/niagara.md)
+- [Niagara 社区实践专题](../Supplemental/Niagara/community-practice/README.md)
+- [动画状态机](../UE5_7Doc/docs/animating-characters-and-objects/skeletal-mesh-animation-system/animation-blueprints/state-machines/index.md)
+- [Animation 补充知识卡](../Supplemental/Animation/animation-ik.md)
+- [Level Design 补充文档](../Supplemental/LevelDesign/README.md)
+- [CommonUI 输入基础](../UE5_7Doc/docs/user-interfaces/plugins-for-ui-development/common-ui/input-fundamentals-for-commonui/index.md)
+- [碰撞设置](../UE5_7Doc/docs/understanding-the-basics/project-settings/engine-settings-in-the-unreal-engine-project-settings/collision-settings-in-the-unreal-engine-project-settings/index.md)
+- [PCG Biome 快速开始](../UE5_7Doc/docs/building-virtual-worlds/procedural-content-generation/pcg-biome/procedural-content-generation-pcg-biome-core-an-13ad5c74/index.md)
+- [PCG 补充专题](../Supplemental/PCG/README.md)
+- [Rendering 补充专题](../Supplemental/Rendering/README.md)

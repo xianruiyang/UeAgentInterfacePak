@@ -8,7 +8,7 @@
 | 路径                   | 用途                                                                                                        | 是否需要用户安装 |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------- |
 | `UeAgentInterface/`    | Unreal Editor 插件 submodule。安装到 UE 项目的`Plugins/UeAgentInterface` 后，在编辑器内提供本地自动化服务。 | 需要             |
-| `skills/`              | Codex skill 包。主要使用`ue-agent-interface`，并附带 `ue-engine-knowledge`、`leveldesign`。                 | 需要             |
+| `skills/`              | Codex skill 包。包含 `ue-agent-interface` 和 `ue-kb`；`ue-kb` 汇总 UE 官方文档 KB 与补充专题。             | 需要             |
 | `UeAgentInterfaceCMD/` | CLI 源码和构建产物仓库，主要用于开发和打包 skill 内部工具。                                                 | 不需要单独安装   |
 
 `UeAgentInterfaceCMD` 只作为 skill 内工具的开发仓库保留。普通使用时不要把它作为独立组件安装；`ue-agent-interface` skill 会使用自身 `tools/uai-cli.exe` 中的工具。
@@ -64,15 +64,13 @@ git clone https://github.com/xianruiyang/UeAgentInterface.git .\Plugins\UeAgentI
 $SkillRoot = "$env:USERPROFILE\.codex\skills"
 New-Item -ItemType Directory -Force -Path $SkillRoot | Out-Null
 Copy-Item -Recurse -Force .\skills\ue-agent-interface "$SkillRoot\ue-agent-interface"
-Copy-Item -Recurse -Force .\skills\ue-engine-knowledge "$SkillRoot\ue-engine-knowledge"
-Copy-Item -Recurse -Force .\skills\leveldesign "$SkillRoot\leveldesign"
+Copy-Item -Recurse -Force .\skills\ue-kb "$SkillRoot\ue-kb"
 ```
 
 安装后重启 Codex 会话或重新加载 skills。常用方式：
 
 - 使用 `$ue-agent-interface` 执行 UE 编辑器自动化、JSON/folder 结构化资产编辑、截图、smoke 验证等。
-- 使用 `$ue-engine-knowledge` 查询 UE 领域知识和官方文档优先的实现建议。
-- 使用 `$leveldesign` 处理白盒关卡设计和关卡结构审查。
+- 使用 `$ue-kb` 查询 UE 5.7 官方文档本地 KB，以及 Niagara、Animation、PCG、Level Design 等补充专题。
 
 如果本机已经有同名 skill，复制前先备份旧目录，避免覆盖本地未提交的修改。
 
@@ -116,8 +114,7 @@ UeAgentInterfacePak/
     ue-agent-interface-menu.png
   skills/
     ue-agent-interface/
-    ue-engine-knowledge/
-    leveldesign/
+    ue-kb/
   UeAgentInterface/
   UeAgentInterfaceCMD/
 ```
@@ -125,6 +122,6 @@ UeAgentInterfacePak/
 ## 开发说明
 
 - `UeAgentInterface/` 和 `UeAgentInterfaceCMD/` 是 Git submodule，更新它们时应先在各自仓库提交，再回到本包仓库更新 gitlink。
-- `skills/` 是本包直接分发的 skill 内容，更新后需要同步到真实 Codex skills 目录再验证。
+- `skills/` 是本包直接分发的 skill 内容，更新后需要同步到真实 Codex skills 目录再验证；同步脚本默认分发集合为 `ue-agent-interface,ue-kb`。
 - `UeAgentInterfaceCMD/` 面向 skill 内部工具开发和 `uai-cli.exe` 打包，不作为最终用户安装步骤。
 - 初步代码由 GPT 辅助编写，后续维护应以真实编译、自动化测试、UE 内验证和文档同步为准。

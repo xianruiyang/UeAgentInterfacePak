@@ -1,0 +1,27 @@
+---
+title: "2D"
+source_url: "https://dev.epicgames.com/documentation/unreal-engine/2d-settings-in-the-unreal-engine-project-settings"
+breadcrumbs: ["虚幻引擎5.7文档", "理解基础知识", "项目设置", "Editor", "2D"]
+---
+
+# 2D
+
+> 路径：虚幻引擎5.7文档 / 理解基础知识 / 项目设置 / Editor / 2D
+
+> 原始页面：https://dev.epicgames.com/documentation/unreal-engine/2d-settings-in-the-unreal-engine-project-settings
+
+## 2D
+
+### 通用
+
+| **分段** | **说明** |
+| --- | --- |
+| **启用2D组合平移+旋转控件（Enable 2D Combined Translate + Rotate Widget）** | 如果启用，将在视口工具栏中显示2D组合平移和旋转工具。 |
+
+### 层对齐
+
+| **分段** | **说明** |
+| --- | --- |
+| **启用对齐层（Enable Snap Layers）** | 如果启用，将在视口工具栏中显示2D层对齐功能按钮。 |
+| **对齐轴（Snap Axis）** | 设置2D对齐层的世界空间轴。 |
+| **对齐层（Snap Layers）** | 对齐视口工具栏中显示的层。 |

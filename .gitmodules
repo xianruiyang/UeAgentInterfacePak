@@ -6,3 +6,7 @@
 	path = UeAgentInterfaceCMD
 	url = https://github.com/xianruiyang/UeAgentInterfaceCMD.git
 	branch = main
+[submodule "skills/kbcli-knowledge-base"]
+	path = skills/kbcli-knowledge-base
+	url = D:/program/RagTest/kbcli-knowledge-base
+	branch = master

@@ -1,0 +1,40 @@
+{
+  "pages_written": 2482,
+  "empty_pages": 2,
+  "frontmatter_records": 2482,
+  "copied_image_files": 7517,
+  "copied_image_bytes": 776443558,
+  "kept_image_references": 7764,
+  "skipped_thumbnail_images": 0,
+  "skipped_animated_images": 827,
+  "skipped_large_images": 46,
+  "skipped_unlabeled_images": 3997,
+  "skipped_page_image_cap": 7021,
+  "skipped_unknown_images": 0,
+  "external_or_unresolved_images": 0,
+  "missing_image_files": 0,
+  "link_repair": {
+    "changed_files": 11,
+    "repaired_targets": 10,
+    "stripped_wrappers": 5,
+    "escaped_lambda_captures": 0,
+    "fixed_malformed_image_links": 3
+  },
+  "known_content_fixes": {
+    "fixed_files": 5,
+    "replacements_applied": 5
+  },
+  "path_quality": {
+    "directory_count": 2550,
+    "non_ascii_directories": 0,
+    "section_directories": 0,
+    "fallback_category_directories": 0
+  },
+  "copied_image_mib": 740.474,
+  "generated_at": "2026-05-14T14:11:16+0800",
+  "source_doc_root": "D:\\program\\RagTest\\UeDocRaw\\UE5_7LocalDoc",
+  "output_root": "D:\\program\\RagTest\\skills\\ue5-7-official-docs-kb\\references\\UE5_7Doc",
+  "max_static_image_bytes": 2097152,
+  "max_images_per_page": 8,
+  "path_mode": "official"
+}

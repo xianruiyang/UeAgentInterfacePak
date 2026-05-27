@@ -1,0 +1,16 @@
+# 掌握虚幻引擎 5.5：逼真渲染和光照终极指南（续 2）
+
+## 来源与状态
+
+- 原始 URL：https://dev.epicgames.com/community/learning/tutorials/23Kj/fortnite-fab-mastering-unreal-engine-5-5-ultimate-guide-to-realistic-rendering-and-lighting
+- 原始文件：fortnite-fab-mastering-unreal-engine-5-5-ultimate-guide-to-realistic-rendering-and-lighting.origin.md
+- 分段：第 2/2 段
+
+- 细节级别 (LOD) 调整资源上的 LOD，以动态减少远离相机的对象的多边形数量。这可以减少 GPU 负载，而不会影响视觉保真度。细节级别 (LOD) 调整资源上的 LOD，以动态减少远离相机的对象的多边形数量。这可以减少 GPU 负载，而不会影响视觉保真度。 - 调整可扩展性设置使用主工具栏中“设置”下的可扩展性设置可根据您的硬件平衡性能和质量。调整可扩展性设置使用主工具栏中“设置”下的可扩展性设置可根据您的硬件平衡性能和质量。 - 使用路径跟踪进行最终渲染如果您的目标是高质量的电影渲染，请切换到视图模式下的路径跟踪。此模式使用光线追踪来提供物理上精确的照明，但资源密集型，最适合最终渲染。使用路径跟踪进行最终渲染如果您的目标是获得高质量的电影渲染，请切换到视图模式下的路径跟踪。此模式使用光线追踪来提供物理上精确的照明，但资源密集型，最适合最终渲染。 - 渲染输出进入Cinematics → Movie Render Queue进行渲染。选择输出格式和分辨率以满足您的要求。调整抗锯齿以获得平滑边缘，并根据需要启用运动模糊。渲染输出进入 Cinematics → Movie Render Queue 进行渲染。选择输出格式和分辨率以满足您的要求。调整抗锯齿以获得平滑边缘，并根据需要启用运动模糊。 - 灯光 - nanite - 插件 - 构建 - 镇定 - 电影
+
+## 相关链接
+
+- [Step 1: Setting Up Your Scene](https://dev.epicgames.com/community/learning/tutorials/23Kj/fortnite-fab-mastering-unreal-engine-5-5-ultimate-guide-to-realistic-rendering-and-lighting#step1:settingupyourscene)
+- [Step 2: Configuring Lumen for Enhanced Lighting](https://dev.epicgames.com/community/learning/tutorials/23Kj/fortnite-fab-mastering-unreal-engine-5-5-ultimate-guide-to-realistic-rendering-and-lighting#step2:configuringlumenforenhancedlighting)
+- [Step 3: Using Post-Processing Effects](https://dev.epicgames.com/community/learning/tutorials/23Kj/fortnite-fab-mastering-unreal-engine-5-5-ultimate-guide-to-realistic-rendering-and-lighting#step3:usingpost-processingeffects)
+- [Step 4: Optimizing Performance and Final Rendering](https://dev.epicgames.com/community/learning/tutorials/23Kj/fortnite-fab-mastering-unreal-engine-5-5-ultimate-guide-to-realistic-rendering-and-lighting#step4:optimizingperformanceandfinalrendering)

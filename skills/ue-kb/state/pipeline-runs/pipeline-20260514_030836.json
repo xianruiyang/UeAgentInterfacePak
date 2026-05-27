@@ -1,0 +1,75 @@
+{
+  "kb_id": "ue5-7-official-docs",
+  "manifest_path": "kb-manifest.json",
+  "recipe": "local-docs",
+  "run_id": "pipeline-20260514_030836",
+  "started_at": "2026-05-14T03:08:36Z",
+  "step_results": [
+    {
+      "data": {
+        "sources": [
+          {
+            "changed": false,
+            "current_fingerprint": "sha256:c81c67e4541cf6a9",
+            "exclude": [
+              "conversion-report.json"
+            ],
+            "fingerprint": "sha256:c81c67e4541cf6a9",
+            "last_seen": "2026-05-14T03:08:43Z",
+            "path": "references\\UE5_7Doc",
+            "source_id": "ue5-7-doc",
+            "status": "active",
+            "title": "Unreal Engine 5.7 官方 Markdown 文档",
+            "type": "markdown",
+            "updated_at": "2026-05-14T03:01:21Z"
+          }
+        ]
+      },
+      "passed": true,
+      "step": "source sync"
+    }
+  ],
+  "steps": [
+    {
+      "ordinal": 1,
+      "step": "source sync"
+    },
+    {
+      "ordinal": 2,
+      "step": "ingest"
+    },
+    {
+      "ordinal": 3,
+      "step": "chunk"
+    },
+    {
+      "ordinal": 4,
+      "step": "content build"
+    },
+    {
+      "ordinal": 5,
+      "step": "content lint"
+    },
+    {
+      "ordinal": 6,
+      "step": "index build"
+    },
+    {
+      "ordinal": 7,
+      "step": "index verify"
+    },
+    {
+      "ordinal": 8,
+      "step": "validate"
+    },
+    {
+      "ordinal": 9,
+      "step": "eval coverage"
+    },
+    {
+      "ordinal": 10,
+      "step": "package verify"
+    }
+  ],
+  "target": "fts"
+}

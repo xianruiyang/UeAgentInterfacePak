@@ -1,0 +1,127 @@
+# 在虚幻引擎 5.4 中直接在网格表面上创建具有渲染屏幕的可交互监视器（续 2）
+
+## 来源与状态
+
+- 原始 URL：https://dev.epicgames.com/community/learning/tutorials/V2Lq/creating-an-interactable-monitor-with-a-rendered-screen-directly-on-a-mesh-surface-in-unreal-engine-5-4
+- 原始文件：creating-an-interactable-monitor-with-a-rendered-screen-directly-on-a-mesh-surface-in-unreal-engine-5-4.origin.md
+- 分段：第 2/3 段
+
+转到“项目设置”->“引擎”->“物理”->“优化”部分，启用“支持来自命中结果的 UV”选项并确保选中它。
+
+您需要重新启动编辑器才能应用此设置。
+
+完成后，将监视器网格和纹理导入到项目中。
+
+完成后，请确保在进入下一部分之前您已经创建了屏幕材质和渲染目标。
+
+对于纹理，更新图像压缩类型以保持其清晰，并且稍后在 UI 小部件上不会出现伪影。另外，请记住设置最大纹理大小，这也会根据您所需的分辨率进行更改，但会保持平铺和比例受到检查。
+
+接下来，编辑显示器资源并在我们的 3D 软件中设置屏幕设计所在插槽中的颜色材质和屏幕材质。
+
+完成后，接下来，让我们继续讨论第一个蓝图，即 UI 的小部件。
+
+在这个简短的演示中，我制作了一个准系统版本，如果您决定为您的项目复制此版本，您可以稍后扩展以满足您的需求。
+
+在“测试按钮”中，我做了一个简单的交互来更改背景图像，这样我们就知道按钮何时被按下。
+
+这也只是一个示例，因为如果我们可以按下按钮，我们基本上就可以使用 UI Widget 执行我们想要的操作。
+
+继续设置显示器蓝图，首先，为了在播放器和显示器之间进行通信，我使用了线路广播，如前所述。
+
+当玩家与屏幕交互或注视屏幕时，该演员将触发界面事件。
+
+在展示中，我使用勾选事件来触发线路广播，如果成功，则告诉屏幕根据播放器蓝图上的上下文进行更新或交互。回到我们的监视器，组件在场景根下排列如下。
+
+- 监视器网格。
+
+监控网格。
+
+- UI 将被渲染到的小部件。
+
+UI 将被渲染到的 Widget。
+
+- 作为 UI 小部件的子项，小部件交互，放置在检测所需的偏移量处。
+
+作为 UI 小部件的子项，小部件交互，放置在检测所需的偏移量处。
+
+- 作为小部件交互子项的箭头可帮助调试和可视化指针。
+
+作为小组件交互的子项的箭头可帮助调试和可视化指针。
+
+- 最后是一个 SceneCaptureComponent2D 作为 UI Widget 的子级，并带有偏移量，用于将屏幕记录到纹理以供以后使用。
+
+最后，将 SceneCaptureComponent2D 作为 UI Widget 的子级，并带有偏移量，用于将屏幕记录到纹理以供以后使用。
+
+我在场景捕捉中使用正交投影，以保持事物平坦且不变形。
+
+关于小部件交互的一个非常重要的细节是确保每个监视器都有不同的“指针索引”，因为如果多个监视器共享相同的索引，它将无法工作。
+
+至于小部件和相机投影，请随意使用纹理所需的大小。
+
+最有可能的是，正交投影值将与纹理的值相同，即
+
+1024 纹理尺寸将是 1024 正交尺寸。
+
+因此，您可以从那里开始并根据需要进行调整。
+
+这里我使用 1024x1024 作为我的纹理。
+
+使所需的每个对象（除了监视器）都成为 Widget 子项的主要原因是，稍后只需拖动一个对象即可将其隐藏在玩家的视图之外，并使所有内容自动对齐，而无需稍后编辑每个组件坐标。
+
+这样，我们的屏幕上应该已经有一些东西了，正如您在预览中和监视器网格编辑器中看到的那样。
+
+如果没有，我建议将显示器放置在您的游戏世界中并对其进行游戏测试，以便让渲染目标更新，以防它没有显示。
+
+如果仍然无法正常工作，那么现在是在开始编码之前仔细检查并进行一些调试的好时机。
+
+对我来说，这种方法允许图像成为显示器的一部分，而不仅仅是顶部的重叠。
+
+例如，如果您使用 CRT 或曲面屏幕，它也会遵循其几何形状。
+
+我添加了第二个带有曲面屏幕的模型来说明这一点。
+
+![“支持命中结果的 UV”选项。](assets/creating-an-interactable-monitor-with-a-rendered-screen-directly-on-a-mesh-surface-in-unreal-engine-5-4/image-04.jpg)
+
+![虚幻引擎中的纹理配置。](assets/creating-an-interactable-monitor-with-a-rendered-screen-directly-on-a-mesh-surface-in-unreal-engine-5-4/image-05.jpg)
+
+![分配了渲染目标的屏幕材质。](assets/creating-an-interactable-monitor-with-a-rendered-screen-directly-on-a-mesh-surface-in-unreal-engine-5-4/image-06.jpg)
+
+![监视虚幻中的网格材质设置。](assets/creating-an-interactable-monitor-with-a-rendered-screen-directly-on-a-mesh-surface-in-unreal-engine-5-4/image-07.jpg)
+
+![该项目的 UI Widget 设置。](assets/creating-an-interactable-monitor-with-a-rendered-screen-directly-on-a-mesh-surface-in-unreal-engine-5-4/image-08.jpg)
+
+![小部件的蓝图。](assets/creating-an-interactable-monitor-with-a-rendered-screen-directly-on-a-mesh-surface-in-unreal-engine-5-4/image-09.jpg)
+
+![播放器蓝图上调用的接口。](assets/creating-an-interactable-monitor-with-a-rendered-screen-directly-on-a-mesh-surface-in-unreal-engine-5-4/image-10.jpg)
+
+### 4. 虚幻设置 — 第二部分。
+
+现在剩下的就是一些蓝图工作，将所有内容连接在一起并使其本身充当屏幕。
+
+请记住，我在这里不讨论如何制作玩家控制器，所以我只会展示与该系统相关的部分，其他一切都取决于你。
+
+那么，如果我们的线路广播与显示器相交，还记得用于与显示器通信的接口吗？
+
+这是其中的另一部分，展示了我们如何将 UV 位置传递到我们的显示器蓝图。
+
+您将希望在项目中使用“Find Collision UV”节点和 Linecast 执行相同的操作。
+
+我将其封装到一个函数中，以保持主蓝图中的内容整洁。
+
+正如您所看到的，它将结果从 Linecast 传递到“Find Collision UV”节点，因此它将返回碰撞的 UV 坐标。
+
+这就是为什么我们的纹理适合整个 UV 贴图非常重要，因为它将在我们在 3D 软件中映射的屏幕平面的 X 和 Y 上以其完整范围 (0–1) 工作。
+
+屏幕坐标的方向（来自 UV 碰撞）似乎也基于网格的映射方式，但需要更多测试来确认这一点，因此您可能需要稍后在代码上尝试不同的坐标设置，因为水平可能会映射到垂直，反之亦然。
+
+在这里，我为转换的值设置变量，因此我拥有的其他函数也可以共享单个 Linecast 的计算。
+
+另外，确保选中“Trace Complex”也很重要，否则 Linecast 不会测试 UV，因此它将无法工作。
+
+随着 UV 坐标和交互命令通过我们的界面发送到监视器，现在是时候从另一端对蓝图进行编程了。
+
+首先，首先保存 Widget Interaction 的相对位置，并在偏移组件位置时将其用作我们的基本位置。
+
+在这里还可以编写界面单击命令。
+
+您还可以让它执行的不仅仅是单击操作。

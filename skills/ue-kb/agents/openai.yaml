@@ -1,0 +1,3 @@
+display_name: UE KB
+short_description: 查询项目本地 UE 官方文档与 Niagara/Animation/PCG/Level Design 补充知识库
+default_prompt: 使用 $ue-kb 按 Hybrid-first 查询 UE KB，先通过 $kbcli-knowledge-base 解析随包 kbCli 运行时，再 search/fetch 证据，用中文回答并引用 chunk_id/source_path；官方文档优先，Niagara 知识卡、Niagara 社区实践、Animation、PCG 与 Level Design 补充内容作为独立来源使用。

@@ -1,0 +1,105 @@
+{
+  "build_id": "sha256:3a3af241b3d01fb1",
+  "chunk_fingerprint": "sha256:fbe5888bec584c4c",
+  "chunks": {
+    "stale": false
+  },
+  "docs": {
+    "stale": false
+  },
+  "embedding_fingerprint": "sha256:5c509eb1c0747b0d",
+  "fts": {
+    "available": true,
+    "path": "C:\\Users\\gzxt\\.codex\\skills\\ue-kb\\indexes\\fts.sqlite",
+    "stale": false
+  },
+  "schema_version": "0.1.0",
+  "updated_at": "2026-05-27T13:54:54Z",
+  "vector": {
+    "available": true,
+    "collection": "ue-kb",
+    "collection_info": {
+      "result": {
+        "config": {
+          "hnsw_config": {
+            "ef_construct": 100,
+            "full_scan_threshold": 10000,
+            "m": 16,
+            "max_indexing_threads": 0,
+            "on_disk": false
+          },
+          "optimizer_config": {
+            "default_segment_number": 0,
+            "deleted_threshold": 0.2,
+            "flush_interval_sec": 5,
+            "indexing_threshold": 10000,
+            "max_optimization_threads": null,
+            "max_segment_size": null,
+            "memmap_threshold": null,
+            "prevent_unoptimized": null,
+            "vacuum_min_vector_number": 1000
+          },
+          "params": {
+            "on_disk_payload": true,
+            "replication_factor": 1,
+            "shard_number": 1,
+            "vectors": {
+              "distance": "Cosine",
+              "size": 1024
+            },
+            "write_consistency_factor": 1
+          },
+          "quantization_config": null,
+          "wal_config": {
+            "wal_capacity_mb": 32,
+            "wal_retain_closed": 1,
+            "wal_segments_ahead": 0
+          }
+        },
+        "indexed_vectors_count": 0,
+        "optimizer_status": "ok",
+        "payload_schema": {
+          "chunk_id": {
+            "data_type": "keyword",
+            "points": 12926
+          },
+          "doc_id": {
+            "data_type": "keyword",
+            "points": 12926
+          },
+          "kb_id": {
+            "data_type": "keyword",
+            "points": 12926
+          },
+          "language": {
+            "data_type": "keyword",
+            "points": 12926
+          },
+          "source_id": {
+            "data_type": "keyword",
+            "points": 12926
+          }
+        },
+        "points_count": 12926,
+        "segments_count": 8,
+        "status": "green",
+        "update_queue": {
+          "length": 0
+        }
+      },
+      "status": "ok",
+      "time": 0.001343246
+    },
+    "embedding_fingerprint": "sha256:5c509eb1c0747b0d",
+    "payload_indexes": [
+      "kb_id",
+      "source_id",
+      "doc_id",
+      "chunk_id",
+      "language"
+    ],
+    "point_count": 12926,
+    "qdrant_url": "http://127.0.0.1:6333",
+    "stale": false
+  }
+}
