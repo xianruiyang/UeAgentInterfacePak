@@ -1,0 +1,30 @@
+# 技术说明：工具链 14.31.31103 与 UE5 不兼容
+
+## 来源与状态
+
+- 原始 URL：https://dev.epicgames.com/community/learning/knowledge-base/moJb/unreal-engine-tech-note-toolchain-14-31-31103-is-not-compatible-with-ue5
+
+## 运行时分类
+
+- 类型：图文教程
+- 判断：API 未识别到核心视频信号，可整理正文约 1683 字符。
+
+## 摘要
+
+本文由 Martin S 撰写。 说明（已更新）： VS2022 最新版本附带的 14.31.31103 工具链无法编译 UE5.0.0 和 UE5.0.1 的某些目标。潜在影响：[主要]：任何操作……
+
+## 中文整理
+
+### 概览
+
+*本文由 [Martin S.](https://dev.epicgames.com/community/profile/Jonn/Svegn2) 撰写* **说明（已更新）：** VS2022 最新版本附带的 14.31.31103 工具链无法编译 UE5.0.0 和 UE5.0.1 的某些目标。 **潜在影响：** [主要]：任何涉及编译 UE5 代码库或项目的操作都可能因“内部编译器错误”而失败。 **解决方案：** 从 Visual Studio 安装程序安装更新版本的工具链，或者在 14.29.30133 上进行回退，该版本在“单独组件”面板中被引用为“MSVC v142 - VS2019 C++ x64/x86 构建工具 (v14.29-16.11)”。 UBT 将自动选择 14.29 或最新版本（如果不存在）。确保清理您的解决方案以避免奇怪的链接问题。 **5.0.0 和 5.0.1 的解决方法（2022 年 4 月 25 日）：** 开发团队已找到针对 GetTocChunkInfo 中发生错误的情况的修复（文件：IOStore.cpp）
+
+```cpp
+2344: const uint64 CompressionBlockSize = TocResource.Header.CompressionBlockSize;
+
+2345:*** int32 FirstBlockIndex = int32(ChunkInfo.Offset / CompressionBlockSize);
+
+2346:*** int32 LastBlockIndex = int32((Align(ChunkInfo.Offset + ChunkInfo.Size, CompressionBlockSize) - 1) / CompressionBlockSize);
+```
+
+更新 2 (5/3/2022)：代码修复已在 //UE5/Release-5.0 流中提交为 CL19982190。该修复将成为 UE5.0.2 稍后发布时的一部分。在[知识库！](https://forums.unrealengine.com/docs) 中获取更多答案

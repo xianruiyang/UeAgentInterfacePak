@@ -1,11 +1,11 @@
 ---
 name: ue-kb
-description: 项目本地 Unreal Engine 知识库 skill。以 UE 5.7 官方网页文档 Markdown 转换版为主来源，并包含独立整理的 Niagara、Animation、PCG、Level Design 与 Rendering 补充内容；Niagara 覆盖知识卡和社区实践教程，Rendering 覆盖 Movie Render Graph、Movie Render Queue、Render Pass、Lighting、Lumen、Material 等社区教程；适合 Blueprint、C++、Niagara、Animation、PCG、Level Design/Whitebox、UMG、Physics、Collision、Networking、Editor、Rendering、Asset Pipeline 等版本敏感问题；默认 Hybrid-first、中文 source-language 检索、fetch 后再回答。使用 kbCli 时必须按 kbcli-knowledge-base skill 解析随包 `$KbExe`，不要依赖 PATH 中的 `kb`。此 skill 不会自动安装到 Codex。
+description: 项目本地 Unreal Engine 知识库 skill。以 UE 5.7 官方网页文档 Markdown 转换版为主来源，并包含独立整理的 Niagara、Animation、Character/Animation、World Creation、Programming/Scripting、Platforms/Builds、Pipeline/Plugins、Asset Creation、Audio、Cinematics/Media、PCG、Level Design 与 Rendering 补充内容；Niagara 覆盖知识卡和社区实践教程，Character/Animation 覆盖 Control Rig、Motion Matching、Chaos Cloth、MetaHuman、Mutable、Live Link、Mocap、Mass/Crowds 与 Skeletal Mesh 社区教程；World Creation 覆盖 World Partition、Landscape、Water、Dataprep、Datasmith、RealityCapture、建筑建模、样条与世界构建社区教程；Programming/Scripting 覆盖 Blueprint/C++、K2Node、Editor Utility、Enhanced Input、Gameplay Tags、插件和 Pak；Platforms/Builds 覆盖 packaging、cooking、DLC、UBA、Horde、Linux/Windows/移动端部署；Pipeline/Plugins 覆盖插件打包、跨版本编译、Interchange/gLTF 管线、NNE、Editor Utility Widget、编辑器工具扩展和自定义窗口；Asset Creation 覆盖导入、资产工具和内容制作流程；Audio 覆盖 MetaSound、Sound Cue、listener 与音频工作流；Cinematics/Media 覆盖 Sequencer、Level Sequence、Movie Render Queue、nDisplay、ICVFX、Virtual Camera、Media Capture、SMPTE 2110 与 Switchboard；Rendering 覆盖 Movie Render Graph、Movie Render Queue、Render Pass、Lighting、Lumen、Material 等社区教程；适合 Blueprint、C++、Niagara、Animation、Character、World Partition、Landscape、PCG、Level Design/Whitebox、UMG、Physics、Collision、Networking、Editor、Rendering、Asset Pipeline、Plugins、Audio、Cinematics、Media、Packaging 等版本敏感问题；默认 Hybrid-first、中文 source-language 检索、fetch 后再回答。使用 kbCli 时必须按 kbcli-knowledge-base skill 解析随包 `$KbExe`，不要依赖 PATH 中的 `kb`。此 skill 不会自动安装到 Codex。
 ---
 
 # UE KB
 
-这是项目本地 KB skill，主来源为 `UeDocRaw/UE5_7LocalDoc` 转换出的 UE 5.7 官方网页文档 Markdown 集，并附带独立整理的 Niagara、Animation、PCG、Level Design 与 Rendering 补充内容。
+这是项目本地 KB skill，主来源为 `UeDocRaw/UE5_7LocalDoc` 转换出的 UE 5.7 官方网页文档 Markdown 集，并附带独立整理的 Niagara、Animation、Character/Animation、World Creation、Programming/Scripting、Platforms/Builds、Pipeline/Plugins、Asset Creation、Audio、Cinematics/Media、PCG、Level Design 与 Rendering 补充内容。
 
 不要假设此 skill 已安装到 Codex。使用时从项目路径显式定位 manifest。
 
@@ -24,6 +24,14 @@ description: 项目本地 Unreal Engine 知识库 skill。以 UE 5.7 官方网�
 - PCG 补充专题：`references/Supplemental/PCG/...`，社区教程和实践案例，与官方文档分离。
 - Level Design 补充文档：`references/Supplemental/LevelDesign/...`，来自 `leveldesign` skill，用于白盒、Blockout、关卡结构、自动化搭建与审查；不是 Epic 官方文档。
 - Rendering 补充专题：`references/Supplemental/Rendering/...`，来自 Epic Developer Community 渲染类社区教程整理，覆盖 Movie Render Graph、Movie Render Queue、Render Pass、Lighting、Lumen、Material、Post Process、Custom Depth 和性能/故障处理；不是官方 UE 5.7 文档正文。
+- Character/Animation 补充专题：`references/Supplemental/characteAndAnimation/...`，来自 Epic Developer Community 角色与动画类社区教程整理，覆盖 Control Rig、Motion Matching、Chaos Cloth、Panel Cloth、MetaHuman、Mutable、Live Link、Mocap、Mass/Crowds、Skeletal Mesh 和相关技术说明；不是官方 UE 5.7 文档正文。
+- World Creation 补充专题：`references/Supplemental/worldCreation/...`，来自 Epic Developer Community 世界构建类社区教程整理，覆盖 World Partition、HLOD、Level Streaming、Landscape、Water、Dataprep、Datasmith、RealityCapture/RealityScan、建筑建模、样条、动态天气和编辑器可视化；不是官方 UE 5.7 文档正文。
+- Programming/Scripting 补充专题：`references/Supplemental/programmingAndScripting/...`，来自 Epic Developer Community 编程与脚本类社区教程整理，覆盖 Blueprint/C++ 暴露、K2Node、Editor Utility、Enhanced Input、Gameplay Tags、插件、Pak、保存/归档和调试工作流；不是官方 UE 5.7 文档正文。
+- Platforms/Builds 补充专题：`references/Supplemental/PlatformsAndBuilds/...`，来自 Epic Developer Community 平台、构建、打包和发布类社区教程整理，覆盖 packaging、cooking、DLC、UBA、Horde、Linux/Windows/移动端和跨平台部署；不是官方 UE 5.7 文档正文。
+- Pipeline/Plugins 补充专题：`references/Supplemental/pipelineAndPlugins/...`，来自 Epic Developer Community 管线与插件类社区教程整理，覆盖插件打包、跨版本编译、UnrealBuildTool packaging crash、Interchange/gLTF 管线、NNE neural post processing、Editor Utility Widget、编辑器工具按钮、对象选择器、文件对话框、缩略图导出、nDisplay 辅助 UV、Niagara 插件开发和自定义编辑器窗口；不是官方 UE 5.7 文档正文。
+- Asset Creation 补充专题：`references/Supplemental/assetCreation/...`，来自 Epic Developer Community 资产创建与内容管线类社区教程整理，覆盖导入、资产工具、插件/内容排除、运行时资产处理和制作流程；不是官方 UE 5.7 文档正文。
+- Audio 补充专题：`references/Supplemental/audio/...`，来自 Epic Developer Community 音频类社区教程整理，覆盖 MetaSound、Sound Cue、Audio Listener、音乐节点、生成器节点和 C++ MetaSound 节点工作流；不是官方 UE 5.7 文档正文。
+- Cinematics/Media 补充专题：`references/Supplemental/cinematicsAndMedia/...`，来自 Epic Developer Community 影视与媒体类社区教程整理，覆盖 Sequencer、Level Sequence、Movie Render Queue、nDisplay、ICVFX、Virtual Camera、Media Capture、SMPTE 2110、Switchboard 和 Twinmotion 到 UE 虚拟摄影机流程；不是官方 UE 5.7 文档正文。
 - 资源：`references/UE5_7Doc/assets/...` 只保留精选静态图片；GIF 和动画 WebP 默认不复制，正文中保留文字占位。
 - 主语言：中文 `zh-CN`。保留 Unreal API、类名、节点名、属性名、模块名和英文编辑器标签。
 
@@ -94,6 +102,14 @@ $KbExe = $Runtime.kb_exe
 - PCG 补充专题入口：`references/Supplemental/PCG/README.md`
 - Level Design 补充文档入口：`references/Supplemental/LevelDesign/README.md`
 - Rendering 补充专题入口：`references/Supplemental/Rendering/README.md`
+- Character/Animation 补充专题入口：`references/Supplemental/characteAndAnimation/README.md`
+- World Creation 补充专题入口：`references/Supplemental/worldCreation/README.md`
+- Programming/Scripting 补充专题入口：`references/Supplemental/programmingAndScripting/README.md`
+- Platforms/Builds 补充专题入口：`references/Supplemental/PlatformsAndBuilds/README.md`
+- Pipeline/Plugins 补充专题入口：`references/Supplemental/pipelineAndPlugins/README.md`
+- Asset Creation 补充专题入口：`references/Supplemental/assetCreation/README.md`
+- Audio 补充专题入口：`references/Supplemental/audio/README.md`
+- Cinematics/Media 补充专题入口：`references/Supplemental/cinematicsAndMedia/README.md`
 - 转换报告：`references/UE5_7Doc/conversion-report.json`
 
 ## 维护规则

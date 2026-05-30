@@ -5,8 +5,16 @@
     "source_order": [
       "Epic Developer Community Unreal Engine 5.7 Documentation local markdown",
       "UE supplemental Rendering community tutorials",
+      "UE supplemental World Creation community tutorials",
+      "UE supplemental Programming and Scripting community tutorials",
+      "UE supplemental Platforms and Builds community tutorials",
+      "UE supplemental Pipeline and Plugins community tutorials",
+      "UE supplemental Asset Creation community tutorials",
+      "UE supplemental Audio community tutorials",
+      "UE supplemental Cinematics and Media community tutorials",
       "UE supplemental PCG community tutorials",
       "UE supplemental Niagara knowledge cards",
+      "UE supplemental Character and Animation community tutorials",
       "UE supplemental Animation knowledge cards",
       "UE supplemental Level Design whitebox methodology"
     ]

@@ -1,0 +1,251 @@
+# 使用 33 个脚本化操作实用程序实现自动化
+
+## 来源与状态
+
+- 原始 URL：https://dev.epicgames.com/community/learning/tutorials/1x0V/unreal-engine-automate-with-33-scripted-action-utilities
+
+## 运行时分类
+
+- 类型：图文教程
+- 判断：API 未识别到核心视频信号，可整理正文约 9334 字符。
+
+## 摘要
+
+了解如何创建脚本化操作，以帮助自动执行内容浏览器中的大量资产和关卡中的参与者的重复任务。本教程还包括 33 个虚幻引擎 5.1 脚本动作下载，为脚本动作开发提供了一个起点。
+
+## 中文整理
+
+### 介绍
+
+脚本操作是编辑器实用程序蓝图，可用于内容浏览器中的资源或您在关卡中选择的 Actor。主要优点之一是您可以在一次激活中对大量文件使用脚本操作。本教程介绍如何从头开始创建您自己的脚本操作。它还包含资源和 Actor 操作实用程序（脚本操作）的混合，可以通过项目文件部分中的两个框链接下载。本教程包括使用测试数据集的每个脚本操作的简短概述。这里的目的是为您自己探索脚本操作开发提供起点。
+
+### 创建资产操作实用程序蓝图
+
+要创建资产操作实用程序，请在内容浏览器中右键单击，导航至编辑器实用程序部分。创建编辑器实用程序蓝图
+
+![内容浏览器右键菜单](assets/unreal-engine-automate-with-33-scripted-action-utilities/image-01.jpg)
+
+从选择父类 UI 中选择 **资产操作实用程序**
+
+![选择父类 UI](assets/unreal-engine-automate-with-33-scripted-action-utilities/image-02.jpg)
+
+双击新创建的资产将其打开打开后，创建一个新函数。您在此处设置的函数名称将充当激活脚本操作后从右键单击菜单中可见的名称。
+
+![资产操作实用程序蓝图编辑器 UI](assets/unreal-engine-automate-with-33-scripted-action-utilities/image-03.jpg)
+
+![新创建的函数](assets/unreal-engine-automate-with-33-scripted-action-utilities/image-04.jpg)
+
+您可以在此处添加您想要激活的蓝图逻辑。下面是脚本操作函数中蓝图逻辑的示例实现。首先，它获取所有选定的资产并返回一个数组。然后我们循环遍历数组并获取每个数组项的显示名称。然后将这些名称发送到输出日志。请注意，如果您要创建资产操作实用程序，请包括“获取选定资产”节点；如果您要创建“演员操作实用程序”，请包括“获取选定演员”节点。如果您使用“复制完整代码片段”白色按钮复制下面代码片段的内容，您就可以将其粘贴到虚幻引擎中新创建的函数中。
+
+**记录资产名称功能**
+
+```
+Begin Object Class=/Script/BlueprintGraph.K2Node_FunctionEntry Name="K2Node_FunctionEntry_0"
+   MetaData=(bCallInEditor=True)
+   ExtraFlags=201457664
+   FunctionReference=(MemberName="Log asset names")
+   bIsEditable=True
+   NodePosX=-448
+   NodePosY=-48
+   NodeGuid=4B3D0CC347284C42C454F9A346DADA8C
+   CustomProperties Pin (PinId=9B38FA1B40EBB5CAD804A9B1159DA5B4,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,LinkedTo=(K2Node_CallFunction_1 0B4548244F83F5078B21B3A15EA66361,),PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+End Object
+```
+
+本教程中的一些示例包括名为 GetSupportedClass 的函数覆盖。此函数覆盖的目的是允许您需要脚本操作支持的特定类。例如，如果您只想定位静态网格物体，请将其添加到 GetSupportedClass 返回节点返回值中。您应用此功能的脚本操作将仅在选择静态网格体时出现在菜单中。下面是如何在 GetSupportedClass 函数覆盖中进行配置的示例。
+
+**GetSupportedClass 函数覆盖**
+
+```
+Begin Object Class=/Script/BlueprintGraph.K2Node_FunctionEntry Name="K2Node_FunctionEntry_0"
+   ExtraFlags=1342177280
+   FunctionReference=(MemberParent=/Script/CoreUObject.Class'"/Script/Blutility.AssetActionUtility"',MemberName="GetSupportedClass")
+   NodePosX=304
+   NodePosY=-48
+   NodeGuid=C1D4C6F241F13B262CC70F924C385CD4
+   CustomProperties Pin (PinId=96BC44EA4FCE63439053CAA7E85CE682,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,LinkedTo=(K2Node_FunctionResult_0 F912B029495F394FC31FE3A489B1F13B,),PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_FunctionResult Name="K2Node_FunctionResult_0"
+   FunctionReference=(MemberParent=/Script/CoreUObject.Class'"/Script/Blutility.AssetActionUtility"',MemberName="GetSupportedClass")
+```
+
+添加蓝图逻辑后，进行编译，然后保存资产操作实用程序
+
+![记录资产名称 资产操作实用程序蓝图 UI](assets/unreal-engine-automate-with-33-scripted-action-utilities/image-05.jpg)
+
+### 创建 Actor 动作实用程序蓝图
+
+要创建 Actor Action Utility，请在内容浏览器中右键单击，导航至编辑器实用程序部分。创建编辑器实用程序蓝图。
+
+![内容浏览器右键菜单](assets/unreal-engine-automate-with-33-scripted-action-utilities/image-06.jpg)
+
+从选择父类 UI 中选择 **Actor Action Utility**
+
+![选择父类 UI](assets/unreal-engine-automate-with-33-scripted-action-utilities/image-07.jpg)
+
+从此处，按照上述创建资产操作实用程序蓝图部分中所述的步骤进行操作。只需确保如果您要创建 Actor Action Utility，请包含“获取选定的 Actors”节点；如果您要创建资产操作实用程序，请包括“获取选定的资产”节点。您还会注意到两者之间的一些 BP 逻辑选项有所不同。作为本教程一部分的可下载内容应该为您探索差异提供一个良好的起点。
+
+### 激活资产操作实用程序蓝图
+
+在内容浏览器中，选择一些资源（如果您设置了 GetSupportedClass 覆盖函数，请确保选择正确类型的资源）。右键单击，您应该会看到一个新的脚本化资产操作部分，其中包含新创建的资产操作实用程序函数名称。单击此处的功能名称可激活所选资产。
+
+![大纲资源右键菜单](assets/unreal-engine-automate-with-33-scripted-action-utilities/image-08.jpg)
+
+### 激活 Actor 动作实用程序蓝图
+
+选择关卡中的一些角色（如果您设置了 GetSupportedClass 覆盖函数，请确保选择正确类型的角色）。右键单击，您应该会看到一个新的 Scripted Actor Actions 部分，其中包含您的 Actor Action Utility 函数名称。单击此处的函数名称可在选定的参与者上激活。
+
+![大纲演员/演员右键菜单](assets/unreal-engine-automate-with-33-scripted-action-utilities/image-09.jpg)
+
+或者，如果在视口中选择了演员，则右键单击它们时将可以使用相同的脚本化资产操作部分，如下所示。
+
+![视口右键菜单](assets/unreal-engine-automate-with-33-scripted-action-utilities/image-10.jpg)
+
+### 可下载的资产操作实用程序蓝图
+
+从下面的链接下载资产操作实用程序。该 zip 文件包含所有资产操作实用程序 **.uasset** 文件。要在您自己的虚幻引擎 5.1 项目中使用这些文件，请通过 Windows 文件资源管理器将 .uasset 文件复制到您项目的内容文件夹中。 - [下载资产操作实用程序](https://epicgames.box.com/v/AssetActionUtilities) 一些脚本操作利用其他本机插件的功能。为了确保本教程中的所有脚本操作正常运行，请导航至虚幻引擎中的“编辑”->“插件”菜单，然后打开“几何脚本”（实验性）和“数据准备编辑器”插件。
+
+### AssetAU_FlipNormals
+
+从内容浏览器中批量翻转选定静态网格物体的法线
+
+### AssetAU_CollisionComplexity
+
+从内容浏览器中批量设置选定静态网格物体的碰撞复杂度。注意：AssetAU_CollisionComplexity 引用 Dataprep 函数，因此需要启用 Dataprep 编辑器插件。
+
+### AssetAU_FillAllMeshHoles
+
+填充内容浏览器中选定网格上的所有网格孔
+
+### AssetAU_PNTessellation
+
+从内容浏览器对选定的网格应用 PN 细分
+
+### AssetAU_TriangleLoopSubD
+
+对内容浏览器中选定的网格应用三角形循环细分
+
+### AssetAU_LogAssetNames
+
+将内容浏览器中所有选定资产的名称记录到输出日志中
+
+### AssetAU_GetMeshVolumeArea
+
+从内容浏览器获取选定静态网格物体的网格体积和表面积
+
+### AssetAU_Scale
+
+从内容浏览器中批量缩放选定的网格
+
+### AssetAU_MeshShell
+
+将网格壳添加到内容浏览器中选定的网格
+
+### AssetAU_SimplifyToTriCount
+
+将内容浏览器中选定的静态网格物体简化为目标三角形数量
+
+### AssetAU_SimplifyToVertexCount
+
+将内容浏览器中选定的静态网格物体简化为目标顶点数
+
+### AssetAU_DiscardMeshAttrib
+
+丢弃内容浏览器中所有选定静态网格物体的网格属性
+
+### AssetAU_GetVertexCount
+
+记录内容浏览器中选定静态网格物体的顶点计数
+
+### AssetAU_GetAllVertexPositions
+
+在内容浏览器中记录选定静态网格物体的所有顶点位置
+
+### AssetAU_GetTriangleCount
+
+记录内容浏览器中每个选定静态网格物体的三角形计数
+
+### AssetAU_GetMaterialStatistics
+
+在内容浏览器中记录所选材料的材料统计信息
+
+### AssetAU_GetUsedTextures
+
+记录内容浏览器中选择的材质使用的纹理（主材质可见的选项）
+
+### 可下载的 Actor 动作实用程序蓝图
+
+从下面的链接下载 Actor Action Utilities。该 zip 文件包含所有资产操作实用程序 .uasset 文件。要在您自己的虚幻引擎 5.1 项目中使用这些文件，请通过 Windows 文件资源管理器将 .uasset 文件复制到您项目的内容文件夹中。 - [下载 Actor Action Utilities](https://epicgames.box.com/v/ActorActionUtilities)
+
+### ActorAU_RndRotation
+
+随机旋转关卡中选定演员的 Z 轴
+
+### ActorAU_SetMobility
+
+设置关卡中选定演员的移动性
+
+### ActorAU_SpawnDecalAtLocation
+
+在关卡中选定演员的每个位置生成贴花。这包括每个轴的比例输入值
+
+### ActorAU_AddActorToLayer
+
+将关卡中每个选定的角色添加到特定图层
+
+### ActorAU_SpawnCineCamAtLoc
+
+在关卡中选择的每个演员位置生成电影摄影机和用户定义的名称。
+
+### ActorAU_SpawnSpotlightAtLoc
+
+在关卡中选择的每个演员位置生成聚光灯
+
+### ActorAU_AddToLevelSeq
+
+将关卡中选择的演员添加到当前打开的关卡序列中
+
+### ActorAU_ExchangeMes​​h
+
+为关卡中选定的每个静态网格体 Actor 设置一个新的静态网格体。
+
+### ActorAU_DistanceLog
+
+记录关卡中每个选定演员之间的距离
+
+### ActorAU_SetMetadata
+
+为关卡中选择的每个演员设置元数据键和值对
+
+### ActorAU_GetMetadata
+
+记录关卡中所选参与者中存在的任何元数据
+
+### ActorAU_SearchSelByMetadata
+
+搜索元数据标签和值。这将取消选择关卡中与搜索结果不匹配的任何选定演员
+
+### ActorAU_ClearMetadata
+
+清除关卡中选定演员的所有元数据
+
+### ActorAU_SnapToGrid
+
+将关卡中选定的静态网格体捕捉到指定的网格大小
+
+### ActorAU_RndMaterial
+
+将四个选项中的材质随机分配到关卡中选定的静态网格物体上
+
+### ActorAU_RndMesh
+
+将四个选项中的静态网格物体随机分配到关卡中选定的静态网格物体上
+
+### 概括
+
+我希望这 33 个脚本操作能够作为那些希望在 UE 编辑器中自动执行任务的人的起点。可以扩展脚本操作，以自动执行对项目中大量资产/参与者处理的复杂活动组合。玩得开心！亲切的问候，西蒙·布莱克尼|技术客户经理 | Epic Games [Linkedin](https://www.linkedin.com/in/simonkblakeney) [ArtStation](https://simonblakeney.artstation.com/)
+
+## 相关链接
+
+- [Download Asset Action Utilities](https://epicgames.box.com/v/AssetActionUtilities)
+- [Download Actor Action Utilities](https://epicgames.box.com/v/ActorActionUtilities)

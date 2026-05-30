@@ -1,0 +1,82 @@
+# 自定义蓝图节点：使用 UFunction 将 C++ 暴露给蓝图 (Part 1/6)
+
+# 自定义蓝图节点：使用 UFunction 将 C++ 暴露给蓝图 (Part 1/6)
+
+Source file: `unreal-engine-custom-blueprint-nodes-exposing-c-to-blueprint-with-ufunction.origin.md`.
+
+This document was split during ue-kb import to keep source chunks buildable.
+
+## 来源与状态
+
+- 原始 URL：https://dev.epicgames.com/community/learning/tutorials/Klde/unreal-engine-custom-blueprint-nodes-exposing-c-to-blueprint-with-ufunction
+## 运行时分类
+
+- 类型：图文教程
+- 判断：API 未识别到核心视频信号，可整理正文约 5503 字符。
+## 摘要
+
+有关如何将 C++ 公开给 Blueprint 的分步深入教程。
+## 中文整理
+### 1. 暴露函数
+
+公开 C++ 函数有两种用例： 1. 在蓝图中实现函数 - 使用 *BlueprintImplementableEvent* 或 *BlueprintNativeEvent* 2. 在蓝图中使用函数 - 使用 *BlueprintCallable* 或 *BlueprintPure* **BlueprintImplementableEvent** 该方法只能在蓝图中实现。 - 生成一个默认的 C++ 实现，它只返回默认值。 **BlueprintNativeEvent** 该方法可以在蓝图和C++中实现。 - 该方法需要有 C++ 实现。 - C++ 方法名称由 *_implementation* 扩展。 **BlueprintCallable** 该方法可以在蓝图中执行。 - 该节点有一个执行引脚。 **BlueprintPure** 该方法可以在蓝图中使用。 - 该节点没有执行引脚。 - 该函数承诺不会修改任何内容。 - 不强制 - 不能在接口上使用。 - 补救措施： *Callable *specifier *+ const *function* * **备注** - 蓝图：事件或函数 - 无输出 - 可以是事件和函数 - （可以在 BP 中切换） - 有输出 - 只能是函数
+
+**公开函数：示例**
+
+```cpp
+UFUNCTION(BlueprintImplementableEvent)
+void Implementable();
+UFUNCTION(BlueprintNativeEvent)
+void Native();
+UFUNCTION(BlueprintCallable)
+void Callable();
+UFUNCTION(BlueprintPure)
+bool Pure();
+```
+
+**公开函数：示例**
+
+```
+Begin Object Class=/Script/BlueprintGraph.K2Node_Event Name="K2Node_Event_1"
+   EventReference=(MemberParent=Class'"/Script/GettingStarted.CustomNodesActor"',MemberName="Implementable")
+   bOverrideFunction=True
+   NodePosX=-1936
+   NodePosY=-144
+   NodeGuid=E3B5B0384198A76D16E22E8AE70A6F39
+   CustomProperties Pin (PinId=9EE233874326B98F7D6CB68ED48F06CB,PinName="OutputDelegate",Direction="EGPD_Output",PinType.PinCategory="delegate",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(MemberParent=Class'"/Script/GettingStarted.CustomNodesActor"',MemberName="Implementable"),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=D012822E4415C492EDCFCD809F6C42A0,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_Event Name="K2Node_Event_2"
+```
+### 2. 参数（基础）
+
+函数参数有两种方式： 输入和输出引脚 **输入引脚** - 所有*非引用*和*常量引用*参数。 - 非引用参数可以有默认值 - 常量引用是强制输入 - 输入字段或选择下拉列表被删除 **输出引脚** - *返回值*和所有非常量引用。 - 输入和输出参数之间的顺序并不重要（通常）。 - 具有默认值的输入参数需要放在最后。
+
+**参数（基础）：示例**
+
+```cpp
+UFUNCTION(BlueprintPure, BlueprintImplementableEvent)
+bool Parameters(
+	int32 Int32Input,
+	const float& ConstFloatInput,
+	int64& Int64Output,
+	double& DoubleOutput,
+	double DoubleInput = 3.14
+);
+```
+
+**参数（基础）：示例**
+
+```
+Begin Object Class=/Script/BlueprintGraph.K2Node_FunctionEntry Name="K2Node_FunctionEntry_0"
+   ExtraFlags=268435456
+   FunctionReference=(MemberParent=Class'"/Script/GettingStarted.CustomNodesActor"',MemberName="Parameters")
+   NodeGuid=2C77507042BBA71551CDBE8D11D0FCAD
+   CustomProperties Pin (PinId=996F60B1459D7C0C05D5A581C214632D,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,LinkedTo=(K2Node_FunctionResult_0 08B965D44244F64B756CA6BE8766D7D9,),PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=F5989DF1480265A89ACDDCB3AD81863E,PinName="Int32Input",PinToolTip="Int 32Input\nInteger",Direction="EGPD_Output",PinType.PinCategory="int",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,DefaultValue="0",AutogeneratedDefaultValue="0",PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=C39929184A5A8CAF20BBBBAFE70B710D,PinName="ConstFloatInput",PinToolTip="Const Float Input\nFloat (single-precision) (by ref)",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="float",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=True,PinType.bIsConst=True,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,DefaultValue="0.0",AutogeneratedDefaultValue="0.0",PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=ADDC0C374DA0E586090B1A9C9FD2B6C0,PinName="DoubleInput",PinToolTip="Double Input\nFloat (double-precision)",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,DefaultValue="0.0",AutogeneratedDefaultValue="0.0",PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_FunctionResult Name="K2Node_FunctionResult_0"
+```
+

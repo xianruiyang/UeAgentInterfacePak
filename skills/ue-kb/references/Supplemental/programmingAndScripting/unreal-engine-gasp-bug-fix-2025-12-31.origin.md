@@ -1,0 +1,20 @@
+# GASP 错误修复 2025-12-31
+
+## 来源与状态
+
+- 原始 URL：https://dev.epicgames.com/community/learning/tutorials/39R6/unreal-engine-gasp-bug-fix-2025-12-31
+
+## 运行时分类
+
+- 类型：图文教程
+- 判断：API 未识别到核心视频信号，可整理正文约 620 字符。
+
+## 摘要
+
+修复 GASP 错误
+
+## 中文整理
+
+### 概览
+
+[G]ame [A]nimation [S]ample [P]roject 5.7.1 ## 自定义相机会破坏它 - Content/Blueprints/Data/S_CharacterPropertiesForCamera 也许该结构自发布以来已被损坏。创建一个新的并删除依赖关系。不要忘记更改选择器 (CHT_CameraRig) 中的 CameraStyle 和 CameraMode 按钮。 ## 发货构建后，滑动嵌入地板中 - /Game/Blueprints/SandboxCharacter_Mover - Update_FloorValues: Break Hit Result - Impact Point -> Location - Impact Normal -> Normal [https://blueprintue.com/blueprint/ym4xa1u_/](https://blueprintue.com/blueprint/ym4xa1u_/)

@@ -19,6 +19,14 @@
 - [PCG 补充专题](Supplemental/PCG/README.md)：PCG Blueprint Element、Compute Graph、Actor Tag、BiomeGenerator、样条房间、PVE 与技术美术实践补充内容。
 - [Level Design 补充文档](Supplemental/LevelDesign/README.md)：白盒、Blockout、关卡结构、自动化搭建和质量审查规则。
 - [Rendering 补充专题](Supplemental/Rendering/README.md)：Movie Render Graph、Movie Render Queue、Render Pass、Lighting、Lumen、Material、Post Process 与渲染问题处理社区教程整理。
+- [Character/Animation 补充专题](Supplemental/characteAndAnimation/README.md)：Control Rig、Motion Matching、Chaos Cloth、MetaHuman、Mutable、Live Link、Mocap、Mass/Crowds、Skeletal Mesh 与角色动画社区教程整理。
+- [World Creation 补充专题](Supplemental/worldCreation/README.md)：World Partition、HLOD、Level Streaming、Landscape、Water、Dataprep、Datasmith、RealityCapture、建筑建模、样条与世界构建社区教程整理。
+- [Programming/Scripting 补充专题](Supplemental/programmingAndScripting/README.md)：Blueprint/C++、K2Node、Editor Utility、Enhanced Input、Gameplay Tags、插件、Pak、保存/归档与调试工作流社区教程整理。
+- [Platforms/Builds 补充专题](Supplemental/PlatformsAndBuilds/README.md)：Packaging、Cooking、DLC、UBA、Horde、Linux/Windows/移动端与跨平台部署社区教程整理。
+- [Pipeline/Plugins 补充专题](Supplemental/pipelineAndPlugins/README.md)：插件打包、跨版本编译、UnrealBuildTool packaging crash、Interchange/gLTF 管线、NNE、Editor Utility Widget、编辑器工具扩展和自定义窗口社区教程整理。
+- [Asset Creation 补充专题](Supplemental/assetCreation/README.md)：导入、资产工具、插件/内容排除、运行时资产处理与内容制作管线社区教程整理。
+- [Audio 补充专题](Supplemental/audio/README.md)：MetaSound、Sound Cue、Audio Listener、音乐节点、生成器节点与 C++ MetaSound 节点工作流社区教程整理。
+- [Cinematics/Media 补充专题](Supplemental/cinematicsAndMedia/README.md)：Sequencer、Level Sequence、Movie Render Queue、nDisplay、ICVFX、Virtual Camera、Media Capture、SMPTE 2110、Switchboard 与 Twinmotion 虚拟摄影机流程社区教程整理。
 - [转换报告](UE5_7Doc/conversion-report.json)：转换统计、图片筛选和链接修复结果。
 
 ## 机器入口
