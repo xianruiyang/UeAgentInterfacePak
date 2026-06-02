@@ -1,6 +1,6 @@
 {
-  "build_id": "sha256:a397c7667be5eefe",
-  "chunk_fingerprint": "sha256:49b60a6b35b2d950",
+  "build_id": "sha256:45e32c16f361c6a9",
+  "chunk_fingerprint": "sha256:269147a3bf9a3700",
   "chunks": {
     "stale": false
   },
@@ -10,11 +10,11 @@
   "embedding_fingerprint": "sha256:5c509eb1c0747b0d",
   "fts": {
     "available": true,
-    "path": "C:\\Users\\gzxt\\.codex\\skills\\ue-kb\\indexes\\fts.sqlite",
+    "path": "D:\\program\\UE\\GptProjectTest\\UeAgentInterfacePak\\skills\\ue-kb\\indexes\\fts.sqlite",
     "stale": false
   },
   "schema_version": "0.1.0",
-  "updated_at": "2026-05-28T17:37:21Z",
+  "updated_at": "2026-05-31T12:39:19Z",
   "vector": {
     "available": true,
     "collection": "ue-kb",
@@ -61,26 +61,26 @@
         "payload_schema": {
           "chunk_id": {
             "data_type": "keyword",
-            "points": 14335
+            "points": 15126
           },
           "doc_id": {
             "data_type": "keyword",
-            "points": 14335
+            "points": 15126
           },
           "kb_id": {
             "data_type": "keyword",
-            "points": 14335
+            "points": 15126
           },
           "language": {
             "data_type": "keyword",
-            "points": 14335
+            "points": 15126
           },
           "source_id": {
             "data_type": "keyword",
-            "points": 14335
+            "points": 15126
           }
         },
-        "points_count": 14335,
+        "points_count": 15126,
         "segments_count": 8,
         "status": "green",
         "update_queue": {
@@ -88,7 +88,7 @@
         }
       },
       "status": "ok",
-      "time": 0.000557136
+      "time": 0.001206263
     },
     "embedding_fingerprint": "sha256:5c509eb1c0747b0d",
     "payload_indexes": [
@@ -98,7 +98,7 @@
       "chunk_id",
       "language"
     ],
-    "point_count": 14335,
+    "point_count": 15126,
     "qdrant_url": "http://127.0.0.1:6333",
     "stale": false
   }

@@ -16,3 +16,7 @@
 ## 取舍
 
 已排除低作用度文档：`boosting-productivity-scriptable-tools-pcg`、`pcg-create-village`、`pcg-foundation-ue5-7`、`understanding-pcg`。这些内容与官方 PCG overview、node reference 或 PVE 文档重复较多，或正文信息密度不足。
+
+## 视频转写教程
+
+- [Bilibili PCG Video Tutorials](bilibili-pcg-video-tutorials/README.md)：从 `D:\program\videoReader\bilibiliVideo\PCG\finalMd` 导入的 PCG 主体教程，保留原始分集目录结构和图片资源。包含 PCG 基础、节点实战、体积/网格/样条流程、程序化建筑、城市、道路、隧道和大型案例。

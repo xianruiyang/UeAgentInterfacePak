@@ -52,6 +52,7 @@
 | [Supplemental/Niagara/community-practice](../Supplemental/Niagara/community-practice/README.md) | Niagara Fluids、性能优化、Data Channels、HLSL/C++、Blueprint 集成、Cache/Sequencer、迁移和具体效果案例 |
 | [Supplemental/Animation](../Supplemental/Animation/animation-ik.md) | Animation Blueprint、Montage、BlendSpace、IK Rig、Control Rig、Root Motion 和动画通知补充规则 |
 | [Supplemental/PCG](../Supplemental/PCG/README.md) | PCG Blueprint Element、Compute Graph、Actor Tag、BiomeGenerator、样条房间、PVE 和技术美术实践补充专题 |
+| [Supplemental/IntegratedTutorials](../Supplemental/IntegratedTutorials/README.md) | 综合型 UE 教程：跨 PCG、资产制作、材质、Landscape、Spline/Blueprint 工具、灯光、渲染和完整环境制作的端到端流程 |
 | [Supplemental/LevelDesign](../Supplemental/LevelDesign/README.md) | Level Design、Whitebox、Blockout、关卡结构、自动化搭建、跨楼层连接、锁钥设计和常见结构错误补充规则 |
 | [Supplemental/Rendering](../Supplemental/Rendering/README.md) | Epic Developer Community 渲染类社区教程整理：Movie Render Graph、Movie Render Queue、Render Pass、Lighting、Lumen、Material、Post Process、Custom Depth 和 GPU/PSO 问题处理 |
 | [Supplemental/characteAndAnimation](../Supplemental/characteAndAnimation/README.md) | Epic Developer Community 角色与动画类社区教程整理：Control Rig、Motion Matching、Chaos Cloth、Panel Cloth、MetaHuman、Mutable、Live Link、Mocap、Mass/Crowds、Skeletal Mesh 和相关技术说明 |

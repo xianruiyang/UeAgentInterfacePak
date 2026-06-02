@@ -21,7 +21,7 @@
 
 以下是要遵循的步骤： 1. 转到包含相机和连接到相机的“springarm”的蓝图
 
-![(2)](assets/unreal-engine-how-to-fix-collisioncylinder-in-bp-thirdpersoncharacter-blueprint-isn-t-static-so-cameraboom-which-is-static-can-t-attach-aborting/image-01.jpg)
+![(2)](assets/fix-collisioncylinder-cameraboom-attach-abort/image-01.jpg)
 
 2. 删除两者 3. 单击“添加”并添加“springarm” 4. 再次单击“添加”，选择“springarm”并添加“相机” 您已更正了错误，只需用相机等重做设置...
 

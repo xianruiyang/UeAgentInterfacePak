@@ -1,0 +1,119 @@
+# 10 - 增强PCG变换点节点的功能
+
+# 10 - 增强PCG变换点节点的功能
+
+## 知识目标
+
+- 围绕“10 - 增强PCG变换点节点的功能”整理 UE PCG 建筑生成系列第 10 集：把建筑点云、属性、过滤和生成规则转成可复现的中文操作文档。
+
+## 可复现主流程
+
+- 把本集放进 PCG 建筑系列主线：先确定建筑输入范围，再把墙、门、楼层、屋顶、房间、楼梯、家具或室内细节拆成独立分支。
+- 阅读分段时优先记录点类型、属性、过滤条件、Bounds 和生成器设置，避免把多个建筑部件混在同一批点上。
+- Transform Points 的关键是位置、旋转、缩放和轴向空间；要记录每个随机范围作用在哪个坐标轴。
+- 复现时先只开启一种变换，确认方向正确后再叠加随机性。
+
+## 关键术语
+
+- `PCG`
+- `Blueprint`
+- `蓝图`
+- `Static Mesh`
+- `Mesh`
+- `Point Filter`
+- `Spline`
+- `Transform`
+- `Point`
+- `Attribute`
+- `Actor`
+- `Spawn`
+- `Grid`
+- `Density`
+- `Random`
+- `Loop`
+- `Graph`
+- `样条`
+
+## 操作步骤与要点
+
+### 把本集放进 PCG 建筑系列主线：先确定建筑输入范围，再把墙、门、楼层、屋顶、房间、楼梯、家具或室内细节拆成独立分支
+
+**内容要点：**
+
+- 把本集放进 PCG 建筑系列主线：先确定建筑输入范围，再把墙、门、楼层、屋顶、房间、楼梯、家具或室内细节拆成独立分支。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue53-pcg-procedural-building-series-p10/s01-01-S01_1_00_00_10.jpg)
+![关键截图 2](../assets/ue53-pcg-procedural-building-series-p10/s01-02-S01_2_00_02_26.jpg)
+
+
+**参数、节点和风险点：**
+
+- `PCG`
+- `Blueprint`
+- `蓝图`
+- `Spline`
+- `Point`
+- `Graph`
+- `样条`
+- `网格`
+- `采样`
+- `节点`
+
+### 阅读分段时优先记录点类型、属性、过滤条件、Bounds 和生成器设置，避免把多个建筑部件混在同一批点上
+
+**内容要点：**
+
+- 阅读分段时优先记录点类型、属性、过滤条件、Bounds 和生成器设置，避免把多个建筑部件混在同一批点上。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue53-pcg-procedural-building-series-p10/s02-01-S02_1_00_05_02.jpg)
+![关键截图 2](../assets/ue53-pcg-procedural-building-series-p10/s02-02-S02_2_00_07_18.jpg)
+
+
+**参数、节点和风险点：**
+
+- `PCG`
+- `Blueprint`
+- `Spline`
+- `Transform`
+- `Point`
+- `Loop`
+- `Graph`
+- `节点`
+- `Asset`
+- `View`
+
+### Transform Points 的关键是位置、旋转、缩放和轴向空间；要记录每个随机范围作用在哪个坐标轴
+
+**内容要点：**
+
+- Transform Points 的关键是位置、旋转、缩放和轴向空间；要记录每个随机范围作用在哪个坐标轴。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue53-pcg-procedural-building-series-p10/s03-01-S03_1_00_09_55.jpg)
+![关键截图 2](../assets/ue53-pcg-procedural-building-series-p10/s03-02-S03_2_00_11_15.jpg)
+
+
+**参数、节点和风险点：**
+
+- `PCG`
+- `Random`
+- `节点`
+- `生成`
+- `InvertScale`
+- `EnableInvert`
+- `Original`
+- `Scale`
+- `Optiono`
+- `RetunValue`
+
+## 复现检查清单
+
+- 墙、门、楼层、屋顶、房间、楼梯和家具要用点类型或属性拆开，不要共享同一批未分类点。
+- 所有模块资产的 Pivot、尺寸和朝向必须统一，否则 PCG 规则正确也会出现错位。
+- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+

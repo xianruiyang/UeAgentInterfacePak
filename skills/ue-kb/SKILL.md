@@ -1,11 +1,11 @@
 ---
 name: ue-kb
-description: 项目本地 Unreal Engine 知识库 skill。以 UE 5.7 官方网页文档 Markdown 转换版为主来源，并包含独立整理的 Niagara、Animation、Character/Animation、World Creation、Programming/Scripting、Platforms/Builds、Pipeline/Plugins、Asset Creation、Audio、Cinematics/Media、PCG、Level Design 与 Rendering 补充内容；Niagara 覆盖知识卡和社区实践教程，Character/Animation 覆盖 Control Rig、Motion Matching、Chaos Cloth、MetaHuman、Mutable、Live Link、Mocap、Mass/Crowds 与 Skeletal Mesh 社区教程；World Creation 覆盖 World Partition、Landscape、Water、Dataprep、Datasmith、RealityCapture、建筑建模、样条与世界构建社区教程；Programming/Scripting 覆盖 Blueprint/C++、K2Node、Editor Utility、Enhanced Input、Gameplay Tags、插件和 Pak；Platforms/Builds 覆盖 packaging、cooking、DLC、UBA、Horde、Linux/Windows/移动端部署；Pipeline/Plugins 覆盖插件打包、跨版本编译、Interchange/gLTF 管线、NNE、Editor Utility Widget、编辑器工具扩展和自定义窗口；Asset Creation 覆盖导入、资产工具和内容制作流程；Audio 覆盖 MetaSound、Sound Cue、listener 与音频工作流；Cinematics/Media 覆盖 Sequencer、Level Sequence、Movie Render Queue、nDisplay、ICVFX、Virtual Camera、Media Capture、SMPTE 2110 与 Switchboard；Rendering 覆盖 Movie Render Graph、Movie Render Queue、Render Pass、Lighting、Lumen、Material 等社区教程；适合 Blueprint、C++、Niagara、Animation、Character、World Partition、Landscape、PCG、Level Design/Whitebox、UMG、Physics、Collision、Networking、Editor、Rendering、Asset Pipeline、Plugins、Audio、Cinematics、Media、Packaging 等版本敏感问题；默认 Hybrid-first、中文 source-language 检索、fetch 后再回答。使用 kbCli 时必须按 kbcli-knowledge-base skill 解析随包 `$KbExe`，不要依赖 PATH 中的 `kb`。此 skill 不会自动安装到 Codex。
+description: 项目本地 Unreal Engine 知识库 skill。以 UE 5.7 官方网页文档 Markdown 转换版为主来源，并包含独立整理的 Niagara、Animation、Character/Animation、World Creation、Programming/Scripting、Platforms/Builds、Pipeline/Plugins、Asset Creation、Audio、Cinematics/Media、PCG、Integrated Tutorials、Level Design 与 Rendering 补充内容；Niagara 覆盖知识卡和社区实践教程，Character/Animation 覆盖 Control Rig、Motion Matching、Chaos Cloth、MetaHuman、Mutable、Live Link、Mocap、Mass/Crowds 与 Skeletal Mesh 社区教程；World Creation 覆盖 World Partition、Landscape、Water、Dataprep、Datasmith、RealityCapture、建筑建模、样条与世界构建社区教程；PCG 覆盖 PCG Framework、Graph、节点实战、程序化建筑/城市/道路/隧道和视频转写实操教程；Integrated Tutorials 覆盖跨 PCG、资产、材质、Landscape、Spline/Blueprint、灯光、渲染和完整环境制作的综合流程；Programming/Scripting 覆盖 Blueprint/C++、K2Node、Editor Utility、Enhanced Input、Gameplay Tags、插件和 Pak；Platforms/Builds 覆盖 packaging、cooking、DLC、UBA、Horde、Linux/Windows/移动端部署；Pipeline/Plugins 覆盖插件打包、跨版本编译、Interchange/gLTF 管线、NNE、Editor Utility Widget、编辑器工具扩展和自定义窗口；Asset Creation 覆盖导入、资产工具和内容制作流程；Audio 覆盖 MetaSound、Sound Cue、listener 与音频工作流；Cinematics/Media 覆盖 Sequencer、Level Sequence、Movie Render Queue、nDisplay、ICVFX、Virtual Camera、Media Capture、SMPTE 2110 与 Switchboard；Rendering 覆盖 Movie Render Graph、Movie Render Queue、Render Pass、Lighting、Lumen、Material 等社区教程；适合 Blueprint、C++、Niagara、Animation、Character、World Partition、Landscape、PCG、Integrated Tutorials、Level Design/Whitebox、UMG、Physics、Collision、Networking、Editor、Rendering、Asset Pipeline、Plugins、Audio、Cinematics、Media、Packaging 等版本敏感问题；默认 Hybrid-first、中文 source-language 检索、fetch 后再回答。使用 kbCli 时必须按 kbcli-knowledge-base skill 解析随包 `$KbExe`，不要依赖 PATH 中的 `kb`。此 skill 不会自动安装到 Codex。
 ---
 
 # UE KB
 
-这是项目本地 KB skill，主来源为 `UeDocRaw/UE5_7LocalDoc` 转换出的 UE 5.7 官方网页文档 Markdown 集，并附带独立整理的 Niagara、Animation、Character/Animation、World Creation、Programming/Scripting、Platforms/Builds、Pipeline/Plugins、Asset Creation、Audio、Cinematics/Media、PCG、Level Design 与 Rendering 补充内容。
+这是项目本地 KB skill，主来源为 `UeDocRaw/UE5_7LocalDoc` 转换出的 UE 5.7 官方网页文档 Markdown 集，并附带独立整理的 Niagara、Animation、Character/Animation、World Creation、Programming/Scripting、Platforms/Builds、Pipeline/Plugins、Asset Creation、Audio、Cinematics/Media、PCG、Integrated Tutorials、Level Design 与 Rendering 补充内容。
 
 不要假设此 skill 已安装到 Codex。使用时从项目路径显式定位 manifest。
 
@@ -22,6 +22,7 @@ description: 项目本地 Unreal Engine 知识库 skill。以 UE 5.7 官方网�
 - Niagara 补充内容：`references/Supplemental/Niagara/...`，包含知识卡、内置模块整理和社区实践教程，与官方文档分离。
 - Animation 补充知识卡：`references/Supplemental/Animation/...`，与官方文档分离。
 - PCG 补充专题：`references/Supplemental/PCG/...`，社区教程和实践案例，与官方文档分离。
+- Integrated Tutorials 补充专题：`references/Supplemental/IntegratedTutorials/...`，综合型 UE 教程，覆盖跨 PCG、资产制作、材质、Landscape、Spline/Blueprint 工具、灯光、渲染和完整环境制作的端到端流程；不是官方 UE 5.7 文档正文。
 - Level Design 补充文档：`references/Supplemental/LevelDesign/...`，来自 `leveldesign` skill，用于白盒、Blockout、关卡结构、自动化搭建与审查；不是 Epic 官方文档。
 - Rendering 补充专题：`references/Supplemental/Rendering/...`，来自 Epic Developer Community 渲染类社区教程整理，覆盖 Movie Render Graph、Movie Render Queue、Render Pass、Lighting、Lumen、Material、Post Process、Custom Depth 和性能/故障处理；不是官方 UE 5.7 文档正文。
 - Character/Animation 补充专题：`references/Supplemental/characteAndAnimation/...`，来自 Epic Developer Community 角色与动画类社区教程整理，覆盖 Control Rig、Motion Matching、Chaos Cloth、Panel Cloth、MetaHuman、Mutable、Live Link、Mocap、Mass/Crowds、Skeletal Mesh 和相关技术说明；不是官方 UE 5.7 文档正文。
@@ -100,6 +101,7 @@ $KbExe = $Runtime.kb_exe
 - Niagara 补充入口：`references/Supplemental/Niagara/niagara.md`
 - Niagara 社区实践专题入口：`references/Supplemental/Niagara/community-practice/README.md`
 - PCG 补充专题入口：`references/Supplemental/PCG/README.md`
+- Integrated Tutorials 补充专题入口：`references/Supplemental/IntegratedTutorials/README.md`
 - Level Design 补充文档入口：`references/Supplemental/LevelDesign/README.md`
 - Rendering 补充专题入口：`references/Supplemental/Rendering/README.md`
 - Character/Animation 补充专题入口：`references/Supplemental/characteAndAnimation/README.md`

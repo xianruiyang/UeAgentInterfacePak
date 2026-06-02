@@ -1,0 +1,48 @@
+# 8.如何在虚幻引擎 5 中保持 PCG 树木直立？
+
+# 8.如何在虚幻引擎 5 中保持 PCG 树木直立？
+
+## 知识目标
+
+- 解决 PCG 树木在斜坡上跟随地表法线倾斜的问题。
+- 用 Transform Points 的 Absolute Rotation 保持树干竖直。
+
+## 可复现主流程
+
+1. 找到树木分支中 Static Mesh Spawner 前的位置。
+2. 如果没有 Transform Points，先插入 Transform Points。
+3. 在 Transform Points 中启用 Absolute Rotation。
+4. 设置需要的旋转或随机 Yaw，让树木不再继承 Landscape 法线倾斜。
+5. 重新 Generate，检查斜坡上的树干是否保持竖直。
+
+## 关键术语
+
+- `Transform Points`
+- `Static Mesh Spawner`
+- `Absolute Rotation`
+- `Landscape Normal`
+- `Slope Alignment`
+- `Yaw`
+
+## 操作步骤与要点
+
+### 斜坡树木保持竖直
+
+- 这是一个单点技巧：把 Transform Points 放在 Static Mesh Spawner 前，并启用 Absolute Rotation。
+- 它会阻止树木直接跟随斜坡法线倾倒，只保留需要的旋转控制。
+
+**内容要点：**
+
+- 斜坡树木保持竖直。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-pcg-landscape-optimization-recipes-p08/s01-01-S01_1_00_00_08.jpg)
+![关键截图 2](../assets/ue5-pcg-landscape-optimization-recipes-p08/s01-02-S01_2_00_00_20.jpg)
+
+## 复现检查清单
+
+- Absolute Rotation 要在树木进入 Static Mesh Spawner 前生效。
+- 启用后检查随机 Yaw 是否仍符合预期。
+- 如果树种本身模型轴向不标准，需要先修模型朝向或在 Transform 中补偿。
+

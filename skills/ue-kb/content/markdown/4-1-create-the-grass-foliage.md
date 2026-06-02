@@ -1,0 +1,385 @@
+# 4-1 - Create the Grass Foliage
+
+# 4-1 - Create the Grass Foliage
+
+## 知识目标
+
+- 本文整理“4-1 - Create the Grass Foliage”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+
+## 可复现主流程
+
+- 制作草叶模型或卡片，控制草丛轮廓、密度、朝向和多变体组合。
+- 设置 UV、顶点色或权重，用于后续风动画、颜色变化和 subsurface。
+- 准备不同高度、弯曲和稀疏程度的草丛变体，服务于 PCG 或 foliage 分布。
+- 检查三角面数、透明区域和材质槽，保证实时环境可用。
+
+## 关键术语
+
+- `Mesh`
+- `Transform`
+- `Point`
+- `Random`
+- `Mask`
+- `Material`
+- `Landscape`
+- `more`
+- `grass`
+
+## 操作步骤与要点
+
+### 制作草叶模型或卡片，控制草丛轮廓、密度、朝向和多变体组合
+
+**内容要点：**
+
+- 制作草叶模型或卡片，控制草丛轮廓、密度、朝向和多变体组合。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s01-01-S01_1_00_00_10.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s01-02-S01_2_00_01_59.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Mesh`
+- `grass`
+- `vibrant`
+- `leaf`
+- `show`
+- `speed`
+- `tree`
+
+### 制作草叶模型或卡片，控制草丛轮廓、密度、朝向和多变体组合（2）
+
+**内容要点：**
+
+- 制作草叶模型或卡片，控制草丛轮廓、密度、朝向和多变体组合（2）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s02-01-S02_1_00_04_11.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s02-02-S02_2_00_05_38.jpg)
+
+
+**参数、节点和风险点：**
+
+- `scale`
+- `them`
+- `Ctrl`
+- `white`
+- `would`
+
+### 制作草叶模型或卡片，控制草丛轮廓、密度、朝向和多变体组合（3）
+
+**内容要点：**
+
+- 制作草叶模型或卡片，控制草丛轮廓、密度、朝向和多变体组合（3）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s03-01-S03_1_00_07_28.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s03-02-S03_2_00_08_55.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Mask`
+- `care`
+- `exposure`
+- `mask`
+- `paint`
+- `grass`
+- `color`
+- `layer`
+- `know`
+- `black`
+
+### 制作草叶模型或卡片，控制草丛轮廓、密度、朝向和多变体组合（4）
+
+**内容要点：**
+
+- 制作草叶模型或卡片，控制草丛轮廓、密度、朝向和多变体组合（4）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s04-01-S04_1_00_10_47.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s04-02-S04_2_00_12_05.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Mask`
+- `blur`
+- `call`
+- `case`
+- `believe`
+- `edges`
+- `Unreal`
+- `Engine`
+- `think`
+
+### 设置 UV、顶点色或权重，用于后续风动画、颜色变化和 subsurface
+
+**内容要点：**
+
+- 设置 UV、顶点色或权重，用于后续风动画、颜色变化和 subsurface。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s05-01-S05_1_00_13_47.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s05-02-S05_2_00_15_03.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Point`
+- `Mask`
+- `normal`
+- `brighten`
+- `blur`
+- `keep`
+- `cone`
+
+### 设置 UV、顶点色或权重，用于后续风动画、颜色变化和 subsurface（2）
+
+**内容要点：**
+
+- 设置 UV、顶点色或权重，用于后续风动画、颜色变化和 subsurface（2）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s06-01-S06_1_00_16_43.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s06-02-S06_2_00_18_30.jpg)
+
+
+**参数、节点和风险点：**
+
+- `more`
+- `think`
+- `believe`
+- `roughness`
+- `grass`
+- `trunk`
+
+### 设置 UV、顶点色或权重，用于后续风动画、颜色变化和 subsurface（3）
+
+**内容要点：**
+
+- 设置 UV、顶点色或权重，用于后续风动画、颜色变化和 subsurface（3）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s07-01-S07_1_00_20_38.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s07-02-S07_2_00_21_55.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Random`
+- `randomize`
+- `more`
+- `height`
+- `curl`
+- `change`
+- `grass`
+- `means`
+- `important`
+
+### 设置 UV、顶点色或权重，用于后续风动画、颜色变化和 subsurface（4）
+
+**内容要点：**
+
+- 设置 UV、顶点色或权重，用于后续风动画、颜色变化和 subsurface（4）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s08-01-S08_1_00_23_36.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s08-02-S08_2_00_24_54.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Random`
+- `much`
+- `grass`
+- `zigzag`
+- `randomize`
+- `more`
+- `curl`
+- `important`
+- `variations`
+
+### 准备不同高度、弯曲和稀疏程度的草丛变体，服务于 PCG 或 foliage 分布
+
+**内容要点：**
+
+- 准备不同高度、弯曲和稀疏程度的草丛变体，服务于 PCG 或 foliage 分布。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s09-01-S09_1_00_26_33.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s09-02-S09_2_00_27_52.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Mesh`
+- `Transform`
+- `Random`
+- `Mask`
+- `more`
+- `looking`
+- `Blender`
+- `noise`
+- `segments`
+- `skinny`
+
+### 准备不同高度、弯曲和稀疏程度的草丛变体，服务于 PCG 或 foliage 分布（2）
+
+**内容要点：**
+
+- 准备不同高度、弯曲和稀疏程度的草丛变体，服务于 PCG 或 foliage 分布（2）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s10-01-S10_1_00_29_34.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s10-02-S10_2_00_31_13.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Mesh`
+- `Random`
+- `Material`
+- `selected`
+- `grass`
+- `select`
+- `random`
+- `scale`
+- `same`
+
+### 准备不同高度、弯曲和稀疏程度的草丛变体，服务于 PCG 或 foliage 分布（3）
+
+**内容要点：**
+
+- 准备不同高度、弯曲和稀疏程度的草丛变体，服务于 PCG 或 foliage 分布（3）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s11-01-S11_1_00_33_12.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s11-02-S11_2_00_34_37.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Point`
+- `Random`
+- `Material`
+- `select`
+- `everything`
+- `material`
+- `random`
+- `them`
+- `opacity`
+- `coordinate`
+
+### 准备不同高度、弯曲和稀疏程度的草丛变体，服务于 PCG 或 foliage 分布（4）
+
+**内容要点：**
+
+- 准备不同高度、弯曲和稀疏程度的草丛变体，服务于 PCG 或 foliage 分布（4）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s12-01-S12_1_00_36_29.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s12-02-S12_2_00_38_44.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Random`
+- `Material`
+- `front`
+- `segments`
+- `everything`
+- `less`
+
+### 检查三角面数、透明区域和材质槽，保证实时环境可用
+
+**内容要点：**
+
+- 检查三角面数、透明区域和材质槽，保证实时环境可用。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s13-01-S13_1_00_41_22.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s13-02-S13_2_00_42_53.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Mesh`
+- `Landscape`
+- `more`
+- `bend`
+- `five`
+- `curl`
+- `plane`
+- `think`
+- `trunk`
+- `spine`
+
+### 检查三角面数、透明区域和材质槽，保证实时环境可用（2）
+
+**内容要点：**
+
+- 检查三角面数、透明区域和材质槽，保证实时环境可用（2）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s14-01-S14_1_00_44_44.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s14-02-S14_2_00_45_59.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Mesh`
+- `Random`
+- `more`
+- `less`
+- `gravity`
+- `doing`
+- `trunk`
+- `first`
+- `important`
+
+### 检查三角面数、透明区域和材质槽，保证实时环境可用（3）
+
+**内容要点：**
+
+- 检查三角面数、透明区域和材质槽，保证实时环境可用（3）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p28/s15-01-S15_1_00_47_43.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p28/s15-02-S15_2_00_48_48.jpg)
+
+
+**参数、节点和风险点：**
+
+- `grass`
+- `more`
+- `trunk`
+- `export`
+- `much`
+- `club`
+- `gravity`
+- `Alright`
+- `nice`
+
+## 复现检查清单
+
+- 草资产需要大量实例化，模型复杂度和透明排序问题必须提前控制。
+- 所有 UE5 资产都要检查比例、pivot、材质槽、贴图色彩空间和实例化性能。
+- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+

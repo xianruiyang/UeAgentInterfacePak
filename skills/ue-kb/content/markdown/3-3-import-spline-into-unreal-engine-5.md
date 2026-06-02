@@ -1,0 +1,416 @@
+# 3-3 - Import Spline into Unreal Engine 5
+
+# 3-3 - Import Spline into Unreal Engine 5
+
+## 知识目标
+
+- 本文整理“3-3 - Import Spline into Unreal Engine 5”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+
+## 可复现主流程
+
+- 将样条 Mesh、贴图和材质导入 UE5，检查比例、pivot、forward axis 和碰撞。
+- 创建材质实例，接入纹理、RVT 混合和必要的位移/视差逻辑。
+- 把 Mesh 放入测试 Spline，确认弯曲、UV 和边缘融合都正确。
+- 整理资产目录，为后续 PCG Spline Path 或手工样条铺设做准备。
+
+## 关键术语
+
+- `Static Mesh`
+- `Mesh`
+- `Spline`
+- `Transform`
+- `Point`
+- `Mask`
+- `Material`
+- `Instance`
+- `Landscape`
+
+## 操作步骤与要点
+
+### 将样条 Mesh、贴图和材质导入 UE5，检查比例、pivot、forward axis 和碰撞
+
+**内容要点：**
+
+- 将样条 Mesh、贴图和材质导入 UE5，检查比例、pivot、forward axis 和碰撞。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s01-01-S01_1_00_00_10.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s01-02-S01_2_00_01_30.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Material`
+- `Landscape`
+- `landscape`
+- `small`
+- `material`
+- `path`
+- `project`
+- `complete`
+- `case`
+
+### 将样条 Mesh、贴图和材质导入 UE5，检查比例、pivot、forward axis 和碰撞（2）
+
+**内容要点：**
+
+- 将样条 Mesh、贴图和材质导入 UE5，检查比例、pivot、forward axis 和碰撞（2）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s02-01-S02_1_00_03_12.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s02-02-S02_2_00_05_16.jpg)
+
+
+**参数、节点和风险点：**
+
+- `grass`
+- `textures`
+
+### 将样条 Mesh、贴图和材质导入 UE5，检查比例、pivot、forward axis 和碰撞（3）
+
+**内容要点：**
+
+- 将样条 Mesh、贴图和材质导入 UE5，检查比例、pivot、forward axis 和碰撞（3）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s03-01-S03_1_00_07_40.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s03-02-S03_2_00_09_04.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Material`
+- `intensity`
+- `parallax`
+- `occlusion`
+- `near`
+- `distance`
+- `Fresnel`
+- `Roughness`
+- `Normal`
+- `better`
+
+### 将样条 Mesh、贴图和材质导入 UE5，检查比例、pivot、forward axis 和碰撞（4）
+
+**内容要点：**
+
+- 将样条 Mesh、贴图和材质导入 UE5，检查比例、pivot、forward axis 和碰撞（4）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s04-01-S04_1_00_10_52.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s04-02-S04_2_00_12_14.jpg)
+
+
+**参数、节点和风险点：**
+
+- `good`
+- `always`
+- `already`
+- `distance`
+- `intensity`
+- `white`
+- `second`
+- `layer`
+- `soil`
+- `doesn`
+
+### 创建材质实例，接入纹理、RVT 混合和必要的位移/视差逻辑
+
+**内容要点：**
+
+- 创建材质实例，接入纹理、RVT 混合和必要的位移/视差逻辑。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s05-01-S05_1_00_13_57.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s05-02-S05_2_00_15_16.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Landscape`
+- `shadow`
+- `light`
+- `vector`
+- `shadows`
+- `depends`
+- `texture`
+- `tiling`
+- `already`
+
+### 创建材质实例，接入纹理、RVT 混合和必要的位移/视差逻辑（2）
+
+**内容要点：**
+
+- 创建材质实例，接入纹理、RVT 混合和必要的位移/视差逻辑（2）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s06-01-S06_1_00_17_03.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s06-02-S06_2_00_18_19.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Material`
+- `more`
+- `view`
+- `move`
+- `light`
+- `vector`
+
+### 创建材质实例，接入纹理、RVT 混合和必要的位移/视差逻辑（3）
+
+**内容要点：**
+
+- 创建材质实例，接入纹理、RVT 混合和必要的位移/视差逻辑（3）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s07-01-S07_1_00_19_59.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s07-02-S07_2_00_21_17.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Material`
+- `mean`
+- `always`
+- `good`
+- `important`
+- `lighting`
+- `change`
+- `think`
+
+### 创建材质实例，接入纹理、RVT 混合和必要的位移/视差逻辑（4）
+
+**内容要点：**
+
+- 创建材质实例，接入纹理、RVT 混合和必要的位移/视差逻辑（4）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s08-01-S08_1_00_22_58.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s08-02-S08_2_00_24_15.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Material`
+- `skylight`
+- `light`
+- `direction`
+- `lighting`
+- `important`
+- `difference`
+- `course`
+
+### 把 Mesh 放入测试 Spline，确认弯曲、UV 和边缘融合都正确
+
+**内容要点：**
+
+- 把 Mesh 放入测试 Spline，确认弯曲、UV 和边缘融合都正确。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s09-01-S09_1_00_26_01.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s09-02-S09_2_00_27_18.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Static Mesh`
+- `Mesh`
+- `Spline`
+- `Material`
+- `mesh`
+- `import`
+- `spline`
+- `delete`
+- `folder`
+- `light`
+
+### 把 Mesh 放入测试 Spline，确认弯曲、UV 和边缘融合都正确（2）
+
+**内容要点：**
+
+- 把 Mesh 放入测试 Spline，确认弯曲、UV 和边缘融合都正确（2）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s10-01-S10_1_00_28_59.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s10-02-S10_2_00_30_20.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Spline`
+- `Landscape`
+- `displacement`
+- `think`
+- `spline`
+- `landscape`
+- `scale`
+- `reference`
+- `nice`
+- `fine`
+
+### 把 Mesh 放入测试 Spline，确认弯曲、UV 和边缘融合都正确（3）
+
+**内容要点：**
+
+- 把 Mesh 放入测试 Spline，确认弯曲、UV 和边缘融合都正确（3）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s11-01-S11_1_00_32_04.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s11-02-S11_2_00_33_28.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Spline`
+- `Mask`
+- `Material`
+- `mask`
+- `textures`
+- `base`
+- `apply`
+- `texture`
+- `spline`
+- `track`
+
+### 把 Mesh 放入测试 Spline，确认弯曲、UV 和边缘融合都正确（4）
+
+**内容要点：**
+
+- 把 Mesh 放入测试 Spline，确认弯曲、UV 和边缘融合都正确（4）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s12-01-S12_1_00_35_14.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s12-02-S12_2_00_36_33.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Mesh`
+- `Spline`
+- `Mask`
+- `Material`
+- `Landscape`
+- `mask`
+- `bright`
+- `swap`
+- `textures`
+- `boom`
+
+### 整理资产目录，为后续 PCG Spline Path 或手工样条铺设做准备
+
+**内容要点：**
+
+- 整理资产目录，为后续 PCG Spline Path 或手工样条铺设做准备。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s13-01-S13_1_00_38_17.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s13-02-S13_2_00_39_37.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Point`
+- `Material`
+- `Instance`
+- `brightness`
+- `tire`
+- `tracks`
+- `material`
+- `instance`
+- `open`
+- `saturation`
+
+### 整理资产目录，为后续 PCG Spline Path 或手工样条铺设做准备（2）
+
+**内容要点：**
+
+- 整理资产目录，为后续 PCG Spline Path 或手工样条铺设做准备（2）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s14-01-S14_1_00_41_18.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s14-02-S14_2_00_42_35.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Transform`
+- `Material`
+- `always`
+- `specular`
+- `call`
+- `darken`
+- `sure`
+- `green`
+- `channel`
+- `correct`
+
+### 整理资产目录，为后续 PCG Spline Path 或手工样条铺设做准备（3）
+
+**内容要点：**
+
+- 整理资产目录，为后续 PCG Spline Path 或手工样条铺设做准备（3）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s15-01-S15_1_00_44_25.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s15-02-S15_2_00_45_14.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Material`
+- `Instance`
+- `after`
+- `first`
+- `annoying`
+- `Tint`
+- `adjust`
+- `brightness`
+- `open`
+
+### 整理资产目录，为后续 PCG Spline Path 或手工样条铺设做准备（4）
+
+**内容要点：**
+
+- 整理资产目录，为后续 PCG Spline Path 或手工样条铺设做准备（4）。
+
+**关键截图：**
+
+![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p26/s16-01-S16_1_00_47_23.jpg)
+![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p26/s16-02-S16_2_00_48_17.jpg)
+
+
+**参数、节点和风险点：**
+
+- `Mesh`
+- `Spline`
+- `Mask`
+- `Material`
+- `Landscape`
+- `more`
+- `vibrance`
+- `giving`
+- `texture`
+- `spline`
+
+## 复现检查清单
+
+- 导入阶段要特别检查 forward axis、UV 拉伸和 Spline Mesh 拉伸设置。
+- 所有 UE5 资产都要检查比例、pivot、材质槽、贴图色彩空间和实例化性能。
+- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+
