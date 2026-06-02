@@ -67,6 +67,13 @@ Copy-Item -Recurse -Force .\skills\ue-agent-interface "$SkillRoot\ue-agent-inter
 Copy-Item -Recurse -Force .\skills\ue-kb "$SkillRoot\ue-kb"
 ```
 
+在 `GptProjectTest` 开发工作区内维护 skill 时，优先使用项目同步脚本，而不是手工只复制一边：
+
+```powershell
+python .\scripts\skills\sync_codex_skills.py --mode check --direction pak-to-installed --skills ue-agent-interface
+python .\scripts\skills\sync_codex_skills.py --mode sync --direction pak-to-installed --skills ue-agent-interface --prune
+```
+
 安装后重启 Codex 会话或重新加载 skills。常用方式：
 
 - 使用 `$ue-agent-interface` 执行 UE 编辑器自动化、JSON/folder 结构化资产编辑、截图、smoke 验证等。
@@ -92,7 +99,9 @@ Copy-Item -Recurse -Force .\skills\ue-kb "$SkillRoot\ue-kb"
 启动后可以用 skill 内工具做连接检查：
 
 ```powershell
-.\skills\ue-agent-interface\tools\uai-cli.exe doctor --json-output
+$UserWorkDir = Get-Location
+New-Item -ItemType Directory -Force -Path (Join-Path $UserWorkDir "runtimeLogs") | Out-Null
+.\skills\ue-agent-interface\tools\uai-cli.exe --report-file (Join-Path $UserWorkDir "runtimeLogs/uai_doctor.json") doctor --json-output
 ```
 
 实际自动化工作应通过 `ue-agent-interface` skill 调用 `uai-cli.exe`，不要直接调用 HTTP 接口。
@@ -100,10 +109,11 @@ Copy-Item -Recurse -Force .\skills\ue-kb "$SkillRoot\ue-kb"
 ## 推荐工作流
 
 1. 先启动 UE 项目，并通过菜单开启 `UeAgentInterface Server`。
-2. 在 Codex 中使用 `$ue-agent-interface` skill。
-3. 创建或修改资产时优先走 JSON 或 folder 结构化 JSON 工作流。
-4. 应用后检查命令返回中的错误、warning、Niagara Stack issue、compile log 和 dirty resource。
-5. 需要窗口验证时，默认最小化或不抢焦点启动 UE，避免影响当前桌面操作。
+2. 在 Codex 中使用 `$ue-agent-interface` skill；skill 只使用自身 `tools/uai-cli.exe`，不从项目 `UeAgentInterfaceCMD/dist/` 或 PATH 选择 CLI。
+3. 临时 `plan`、`vars`、`batch` 和 params JSON 放在用户工作目录的 `tmp/uai_params/`，report 和 runtime log 放在用户工作目录的 `runtimeLogs/`。
+4. 创建或修改资产时优先走 JSON 或 folder 结构化 JSON 工作流。
+5. 应用后检查命令返回中的错误、warning、Niagara Stack issue、compile log 和 dirty resource。
+6. 需要窗口验证时，默认最小化或不抢焦点启动 UE，避免影响当前桌面操作。
 
 ## 目录说明
 
@@ -124,4 +134,6 @@ UeAgentInterfacePak/
 - `UeAgentInterface/` 和 `UeAgentInterfaceCMD/` 是 Git submodule，更新它们时应先在各自仓库提交，再回到本包仓库更新 gitlink。
 - `skills/` 是本包直接分发的 skill 内容，更新后需要同步到真实 Codex skills 目录再验证；同步脚本默认分发集合为 `ue-agent-interface,ue-kb`。
 - `UeAgentInterfaceCMD/` 面向 skill 内部工具开发和 `uai-cli.exe` 打包，不作为最终用户安装步骤。
+- `ue-agent-interface` skill 内的 `docs/` 是插件/CLI 正式文档的同步副本；同步时不得复制 `commands/deprecatedCommand/**` 或 generated 覆盖矩阵。
+- 更新 `UeAgentInterfaceCMD` 后，如该 CLI 变更应进入 skill，需要重新构建并刷新 `skills/ue-agent-interface/tools/uai-cli.exe` 及默认配置，再同步 installed skill。
 - 初步代码由 GPT 辅助编写，后续维护应以真实编译、自动化测试、UE 内验证和文档同步为准。

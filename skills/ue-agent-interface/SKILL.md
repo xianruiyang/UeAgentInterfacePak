@@ -25,26 +25,40 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 10. 尽量复用已经打开的 UE Editor 会话；除非必要，不启动第二个编辑器实例。
 11. 不运行全屏 game 测试。默认使用最小化、不抢焦点、headless 或 `UnrealEditor-Cmd.exe -NullRHI -unattended` 验证。
 
-## 二进制选择顺序
+## 路径与 CLI 选择
 
-1. `<ProjectRoot>/UeAgentInterfaceCMD/dist/uai-cli.exe`
-2. `C:/Users/gzxt/.codex/skills/ue-agent-interface/tools/uai-cli.exe`
+- `SkillDir`：当前 `SKILL.md` 所在目录。
+- `UserWorkDir`：用户当前工作目录或当前任务工作区，用于生成临时 JSON、report、runtime log 和任务记录。
+- `ProjectRoot`：目标 UE 项目根目录，仅用于确认目标项目、读取 `.uproject`、可选启动 Editor、定位项目资产或项目级记录。
+
+`uai-cli.exe` 只使用 skill 内置副本：
+
+`<SkillDir>/tools/uai-cli.exe`
+
+不要使用 `<ProjectRoot>/UeAgentInterfaceCMD/dist/uai-cli.exe`，也不要从 PATH 调用裸 `uai-cli.exe`。如果 `<SkillDir>/tools/uai-cli.exe` 不存在，应停止并修复 skill 分发内容，不临时改用项目内 CLI。
+
+临时输入文件和 report 默认放在用户工作目录：
+
+- `<UserWorkDir>/tmp/uai_params/`
+- `<UserWorkDir>/runtimeLogs/`
 
 ## 阅读顺序
 
 1. `<ProjectRoot>/readme.md`
-2. `<ProjectRoot>/Plugins/UeAgentInterface/docs/UeAgentInterface_Status.md`
-3. `<ProjectRoot>/Plugins/UeAgentInterface/docs/UeAgentInterface_Usage.md`
-4. 只打开当前任务需要的分册：`<ProjectRoot>/Plugins/UeAgentInterface/docs/commands/`
+2. `<SkillDir>/docs/UeAgentInterface/UeAgentInterface_Status.md`
+3. `<SkillDir>/docs/UeAgentInterface/UeAgentInterface_Usage.md`
+4. 只打开当前任务需要的分册：`<SkillDir>/docs/UeAgentInterface/commands/`
 5. CLI 细节按需读取：
-   - `<ProjectRoot>/Plugins/UeAgentInterface/docs/Workflow_ExecBatch_Practice.md`
-   - `<ProjectRoot>/UeAgentInterfaceCMD/docs/USAGE.md`
+   - `<SkillDir>/docs/UeAgentInterface/Workflow_ExecBatch_Practice.md`
+   - `<SkillDir>/docs/UeAgentInterfaceCMD/USAGE.md`
 6. 本 skill 内置的速查：
    - `references/command-map.md`
    - `references/batch-execution-playbook.md`
    - `references/cli-diagnostics-release.md`：排查 CLI 失败、黑图、crash capture、命令覆盖矩阵或 Pak 发布验证时读取。
    - `references/niagara-vfx-authoring.md`：制作或修复 Niagara 视觉效果、主形体、分层、材质、锚点、事件链或美术质量问题时读取。
    - `references/control-rig-animation-authoring.md`：制作或修复 Control Rig、足底/手部 IK、运行时 Trace、AnimBlueprint Control Rig 接入、Shape Library、动画曲线 IK 权重、楼梯/斜坡贴合或 IK 调试时读取。
+
+项目内 `Plugins/UeAgentInterface/docs/` 只用于排查同步差异，不作为日常事实来源。skill 内同步文档不包含 `deprecatedCommand/**`；废弃指令不得作为资产制作主流程。
 
 ## 命令文档路由
 
@@ -78,15 +92,14 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 - Node Graph 通用节点图排布：`28_NodeGraph.md`
 - PCG：`29_PCG.md`
 - PCG Graph 文件夹式 JSON：`30_PCG_FolderFormat.md`
-- 废弃写入命令归档：`deprecatedCommand/README.md`
 
 ## 标准工作流
 
 1. 确认 UE Editor 已运行。
 2. 确认插件服务已启动：`Window -> UeAgentInterface -> Start UeAgentInterface Server`。
-3. 先运行 `uai-cli.exe doctor --json-output`。
-4. 可复用/参数化任务使用 `uai-cli.exe run --plan <plan.json> --vars <vars.json> --json-output`。
-5. 临时批处理任务使用 `uai-cli.exe batch --file <batch.json> --json-output`。
+3. 先运行 `<SkillDir>/tools/uai-cli.exe --report-file <UserWorkDir>/runtimeLogs/uai_doctor.json doctor --json-output`。
+4. 可复用/参数化任务使用 `<SkillDir>/tools/uai-cli.exe --report-file <UserWorkDir>/runtimeLogs/<task>.json run --plan <UserWorkDir>/tmp/uai_params/<plan.json> --vars <UserWorkDir>/tmp/uai_params/<vars.json> --json-output`。
+5. 临时批处理任务使用 `<SkillDir>/tools/uai-cli.exe --report-file <UserWorkDir>/runtimeLogs/<task>.json batch --file <UserWorkDir>/tmp/uai_params/<batch.json> --json-output`。
 6. 读取 report JSON；如果失败，先根据 `failed_index / failed_command / failed_error` 定位根因，再继续。
 
 ## 资产编辑优先级
@@ -159,7 +172,7 @@ description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal
 不要靠记忆猜 `property_name` 和 `value_text`。先让 UE 生成真实对象，再以导出的 JSON 为模板修改。
 曲线类资产或曲线属性不要猜 `value_text`；优先使用 `ue_agent_interface.curve.v1`。资产级走 `curve_export_json / curve_apply_json`，属性级走 `asset_export_property_json / asset_apply_property_json` 返回的 `curve_json`；`value_json` 只是兼容别名。导出中两者同时存在时编辑 `curve_json`，apply 失败必须检查 `json_issues[]`，并确认失败没有把资产标脏或产生部分 channel 写入。
 
-Blueprint / UMG / AnimBlueprint 变量统一使用 `pin_category/pin_subcategory/pin_subcategory_object/container_type/value_type`。常用结构体、枚举、对象/类别名已集中在插件 `docs/commands/02_Blueprint.md`；使用前先查清参数含义和目标类型，不要凭印象写字段。
+Blueprint / UMG / AnimBlueprint 变量统一使用 `pin_category/pin_subcategory/pin_subcategory_object/container_type/value_type`。常用结构体、枚举、对象/类别名已集中在 `<SkillDir>/docs/UeAgentInterface/commands/02_Blueprint.md`；使用前先查清参数含义和目标类型，不要凭印象写字段。
 
 ## JSON 与属性写入诊断
 
@@ -265,25 +278,28 @@ JSON / 文件夹式 JSON 的解析失败必须在 report 中可见：
 
 触发条件：
 
-- `tmp/*.json` 超过 120 个
-- `dist/reports/*.json` 超过 200 个
+- `<UserWorkDir>/tmp/uai_params/*.json` 超过 120 个
+- `<UserWorkDir>/runtimeLogs/*.json` 超过 200 个
 
 保留策略：
 
-- `tmp` 保留最新 40 个
-- `dist/reports` 保留最新 120 个
+- `tmp/uai_params` 保留最新 40 个
+- `runtimeLogs` 中的 JSON report 保留最新 120 个
 
 使用：
 
-`scripts/cleanup_uai_json.ps1 -ProjectRoot <ProjectRoot>`
+`<SkillDir>/scripts/cleanup_uai_json.ps1 -UserWorkDir <UserWorkDir>`
+
+该脚本默认 dry-run，仅报告 `would_remove`。确认范围正确后，显式传 `-Apply` 才会删除旧 JSON。
 
 ## 输出要求
 
 每次使用本 skill 完成 UAI 操作后必须说明：
 
-1. 使用模式：`run` 或 `batch`
-2. 输入 JSON 路径
-3. report JSON 路径
-4. 成功/失败和失败索引
-5. 已执行的验证
-6. 剩余 warning、dirty resource 或 editor/process 清理状态
+1. 使用的 CLI 路径：`<SkillDir>/tools/uai-cli.exe`
+2. 使用模式：`run` 或 `batch`
+3. 输入 JSON 路径，默认位于 `<UserWorkDir>/tmp/uai_params/`
+4. report JSON 路径，默认位于 `<UserWorkDir>/runtimeLogs/`
+5. 成功/失败和失败索引
+6. 已执行的验证
+7. 剩余 warning、dirty resource 或 editor/process 清理状态

@@ -111,10 +111,18 @@
 ## 最小 PowerShell 调用
 
 ```powershell
-pwsh scripts/uai_exec.ps1 `
-  -ProjectRoot "D:\program\UE\GptProjectTest" `
-  -Command "exec_batch" `
-  -ParamsJson '{"stop_on_error":true,"commands":[{"request_id":"s1","command":"list_actors","params":{"limit":5}}]}'
+$SkillDir = "<SkillDir>"
+$UserWorkDir = "<UserWorkDir>"
+$UaiCli = Join-Path $SkillDir "tools/uai-cli.exe"
+$ParamDir = Join-Path $UserWorkDir "tmp/uai_params"
+$RuntimeLogs = Join-Path $UserWorkDir "runtimeLogs"
+New-Item -ItemType Directory -Force -Path $ParamDir, $RuntimeLogs | Out-Null
+
+$BatchFile = Join-Path $ParamDir "list_actors.batch.json"
+$ReportFile = Join-Path $RuntimeLogs "list_actors_report.json"
+
+# 将 batch JSON 写入 $BatchFile，随后执行：
+& $UaiCli --report-file $ReportFile batch --file $BatchFile --json-output
 ```
 
-更推荐把参数写入 JSON 文件，再用 `uai-cli.exe batch --file <batch.json> --json-output` 执行。
+参数必须写入 `<UserWorkDir>/tmp/uai_params/` 下的 JSON 文件，再用 `<SkillDir>/tools/uai-cli.exe batch --file <batch.json> --json-output` 执行。report 默认写入 `<UserWorkDir>/runtimeLogs/`。

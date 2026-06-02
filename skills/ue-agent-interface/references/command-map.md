@@ -1,19 +1,19 @@
 # UeAgentInterface 指令速查
 
-本文件是快速路由表，不替代插件文档。完整参数、返回字段和边界以项目内文档为准：
+本文件是快速路由表，不替代 skill 内同步的插件文档。完整参数、返回字段和边界以 `<SkillDir>/docs/` 为准：
 
-- `Plugins/UeAgentInterface/docs/UeAgentInterface_Usage.md`
-- `Plugins/UeAgentInterface/docs/commands/README.md`
-- `Plugins/UeAgentInterface/docs/commands/*.md`
-- `UeAgentInterfaceCMD/docs/USAGE.md`
+- `<SkillDir>/docs/UeAgentInterface/UeAgentInterface_Usage.md`
+- `<SkillDir>/docs/UeAgentInterface/commands/README.md`
+- `<SkillDir>/docs/UeAgentInterface/commands/*.md`
+- `<SkillDir>/docs/UeAgentInterfaceCMD/USAGE.md`
 
 ## 调用原则
 
-- 自动化调用使用 `UeAgentInterfaceCMD/dist/uai-cli.exe`。
+- 自动化调用使用已解析的 `$UaiCli`，固定为 `<SkillDir>/tools/uai-cli.exe`。
 - 两步以上任务优先 `batch` 或 `run`。
 - 写入任务使用 JSON 文件输入，读取 report JSON 输出。
 - 能被单文件 JSON 或文件夹式结构化 JSON 覆盖的资产 authoring，不使用零散写入命令作为主流程。
-- 文档中归档到 `commands/deprecatedCommand/` 的命令仍保留兼容，但只用于 bootstrap、诊断、迁移、schema 边界和局部修补。
+- skill 内不同步 `commands/deprecatedCommand/`。若历史兼容排查确实需要废弃命令，必须回到插件仓库归档文档确认边界，并明确它不是 authoring 主流程。
 
 ## 主流程命令
 
@@ -504,5 +504,4 @@ Control Rig authoring 优先走 folder workflow；`variables/variables.json`、h
 - ControlRig folder schema：`commands/17_ControlRig_FolderFormat.md`
 - Deformer / MLDeformer / GeometryCache：`commands/18_Deformer_MLDeformer_GeometryCache.md`
 - Niagara 红黄感叹号：`commands/07_Niagara_System.md` 的 `niagara_get_stack_issues`
-- 废弃命令归档：`commands/deprecatedCommand/README.md`
-- CLI 使用：`UeAgentInterfaceCMD/docs/USAGE.md`
+- CLI 使用：`<SkillDir>/docs/UeAgentInterfaceCMD/USAGE.md`
