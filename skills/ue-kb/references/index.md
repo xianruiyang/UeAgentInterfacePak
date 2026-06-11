@@ -19,7 +19,7 @@
 - [PCG 补充专题](Supplemental/PCG/README.md)：PCG Blueprint Element、Compute Graph、Actor Tag、BiomeGenerator、样条房间、PVE 与技术美术实践补充内容。
 - [Integrated Tutorials 补充专题](Supplemental/IntegratedTutorials/README.md)：综合型 UE 教程入口，收纳跨 PCG、资产、材质、地形、蓝图/样条、灯光、渲染和完整环境制作的端到端流程。
 - [Level Design 补充文档](Supplemental/LevelDesign/README.md)：白盒、Blockout、关卡结构、自动化搭建和质量审查规则。
-- [Rendering 补充专题](Supplemental/Rendering/README.md)：Movie Render Graph、Movie Render Queue、Render Pass、Lighting、Lumen、Material、Post Process 与渲染问题处理社区教程整理。
+- [Rendering 补充专题](Supplemental/Rendering/README.md)：Movie Render Graph、Movie Render Queue、Render Pass、Lighting、Lumen、Material、Substrate 水面、fake-normal 折射、Post Process 与渲染问题处理社区教程整理。
 - [Character/Animation 补充专题](Supplemental/characteAndAnimation/README.md)：Control Rig、Motion Matching、Chaos Cloth、MetaHuman、Mutable、Live Link、Mocap、Mass/Crowds、Skeletal Mesh 与角色动画社区教程整理。
 - [World Creation 补充专题](Supplemental/worldCreation/README.md)：World Partition、HLOD、Level Streaming、Landscape、Water、Dataprep、Datasmith、RealityCapture、建筑建模、样条与世界构建社区教程整理。
 - [Programming/Scripting 补充专题](Supplemental/programmingAndScripting/README.md)：Blueprint/C++、K2Node、Editor Utility、Enhanced Input、Gameplay Tags、插件、Pak、保存/归档与调试工作流社区教程整理。

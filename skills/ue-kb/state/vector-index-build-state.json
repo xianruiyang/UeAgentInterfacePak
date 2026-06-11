@@ -1,7 +1,7 @@
 {
   "build_mode": "bucket",
   "build_scope": "delta",
-  "chunk_fingerprint": "sha256:269147a3bf9a3700",
+  "chunk_fingerprint": "sha256:cbe18a8ae201bd4d",
   "collection": "ue-kb",
   "collection_info": {
     "result": {
@@ -46,26 +46,26 @@
       "payload_schema": {
         "chunk_id": {
           "data_type": "keyword",
-          "points": 15126
+          "points": 15148
         },
         "doc_id": {
           "data_type": "keyword",
-          "points": 15126
+          "points": 15148
         },
         "kb_id": {
           "data_type": "keyword",
-          "points": 15126
+          "points": 15148
         },
         "language": {
           "data_type": "keyword",
-          "points": 15126
+          "points": 15148
         },
         "source_id": {
           "data_type": "keyword",
-          "points": 15126
+          "points": 15148
         }
       },
-      "points_count": 15126,
+      "points_count": 15148,
       "segments_count": 8,
       "status": "green",
       "update_queue": {
@@ -73,103 +73,103 @@
       }
     },
     "status": "ok",
-    "time": 0.001206263
+    "time": 0.001135843
   },
-  "completed_items": 792,
-  "deleted_stale_points": 1,
+  "completed_items": 22,
+  "deleted_stale_points": 0,
   "embedding_fingerprint": "sha256:5c509eb1c0747b0d",
   "embedding_text_policy_fingerprint": "sha256:18893d59dcf186e7",
-  "existing_points_scanned": 14335,
+  "existing_points_scanned": 15126,
   "kb_id": "ue-kb",
-  "pending_items": 792,
-  "point_count": 15126,
+  "pending_items": 22,
+  "point_count": 15148,
   "qdrant_url": "http://127.0.0.1:6333",
   "remaining_items": 0,
   "resume_supported": true,
   "schema_version": "0.1.0",
-  "skipped_unchanged": 14334,
+  "skipped_unchanged": 15126,
   "status": "complete",
   "timings": {
     "batches_total": {
-      "attach_vectors_ms": 4.621800000000001,
-      "avg_batch_ms": 1311.8603257048096,
-      "avg_item_ms": 998.8027479797983,
-      "batches": 603,
+      "attach_vectors_ms": 0.1223,
+      "avg_batch_ms": 2920.50236923077,
+      "avg_item_ms": 1725.7514000000003,
+      "batches": 13,
       "direct_upsert_attempt_ms": 0.0,
       "direct_upsert_batches": 0,
-      "embedding_ms": 783803.8324,
-      "items": 792,
-      "items_per_sec": 1.0011986871508147,
-      "managed_batches": 603,
-      "max_batch_ms": 4374.1318,
-      "point_shell_ms": 46.168999999999954,
-      "qdrant_upsert_ms": 7192.597000000003,
-      "total_ms": 791051.7764000002
+      "embedding_ms": 37632.7364,
+      "items": 22,
+      "items_per_sec": 0.5794577364966934,
+      "managed_batches": 13,
+      "max_batch_ms": 4763.9728,
+      "point_shell_ms": 1.2504,
+      "qdrant_upsert_ms": 332.3231,
+      "total_ms": 37966.53080000001
     },
-    "elapsed_ms": 796974.8331,
+    "elapsed_ms": 42559.9164,
     "stages": {
       "classify_existing_points_ms": {
-        "avg_ms": 183.7765,
+        "avg_ms": 235.5064,
         "count": 1,
-        "total_ms": 183.7765
+        "total_ms": 235.5064
       },
       "delete_stale_points_ms": {
-        "avg_ms": 24.0112,
+        "avg_ms": 0.0053,
         "count": 1,
-        "total_ms": 24.0112
+        "total_ms": 0.0053
       },
       "embedding_binding_ms": {
-        "avg_ms": 1.3412,
+        "avg_ms": 0.7691,
         "count": 1,
-        "total_ms": 1.3412
+        "total_ms": 0.7691
       },
       "fingerprint_and_chunk_map_ms": {
-        "avg_ms": 963.3186,
+        "avg_ms": 874.733,
         "count": 1,
-        "total_ms": 963.3186
+        "total_ms": 874.733
       },
       "load_chunks_ms": {
-        "avg_ms": 1001.8083,
+        "avg_ms": 913.1621,
         "count": 1,
-        "total_ms": 1001.8083
+        "total_ms": 913.1621
       },
       "load_optimization_profile_ms": {
-        "avg_ms": 10.2115,
+        "avg_ms": 12.1123,
         "count": 1,
-        "total_ms": 10.2115
+        "total_ms": 12.1123
       },
       "managed_service_startup_ms": {
-        "avg_ms": 42.3167,
-        "count": 2,
-        "total_ms": 84.6334
+        "avg_ms": 85.4708,
+        "count": 1,
+        "total_ms": 85.4708
       },
       "prepare_vector_items_ms": {
-        "avg_ms": 10.3526,
+        "avg_ms": 5.7792,
         "count": 1,
-        "total_ms": 10.3526
+        "total_ms": 5.7792
       },
       "progress_write_ms": {
-        "avg_ms": 1.160039735099338,
-        "count": 604,
-        "total_ms": 700.6640000000002
+        "avg_ms": 1.2063642857142856,
+        "count": 14,
+        "total_ms": 16.8891
       },
       "qdrant_collection_ms": {
-        "avg_ms": 124.891,
+        "avg_ms": 240.3942,
         "count": 1,
-        "total_ms": 124.891
+        "total_ms": 240.3942
       },
       "scan_existing_points_ms": {
-        "avg_ms": 685.7761,
+        "avg_ms": 1165.3066,
         "count": 1,
-        "total_ms": 685.7761
+        "total_ms": 1165.3066
       },
       "sort_vector_items_ms": {
-        "avg_ms": 0.0993,
+        "avg_ms": 0.002,
         "count": 1,
-        "total_ms": 0.0993
+        "total_ms": 0.002
       }
     }
   },
-  "total_chunks": 15126,
-  "updated_at": "2026-05-31T12:39:18Z"
+  "total_chunks": 15148,
+  "updated_at": "2026-06-11T10:28:58Z"
 }

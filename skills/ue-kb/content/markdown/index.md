@@ -713,6 +713,7 @@
 - [虚幻引擎 5.6 中的 Petzval Bokeh](5-6-petzval-bokeh.md)
 - [🛠️ 技术说明：修复虚幻引擎 5.5 中 Lumen 中的 GPU 崩溃问题](5-5-lumen-gpu.md)
 - [技术说明：修复虚幻引擎 5.5 中 Nvidia 硬件上的 PSO 管理问题](5-5-nvidia-pso.md)
+- [UE Substrate 水面材质制作教程](ue-substrate.md)
 - [调整景观草出现的速度](item.md)
 - [动画中心](item.md)
 - [将 OpenColorIO 设置应用于多种视口类型](opencolorio.md)
