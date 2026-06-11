@@ -56,7 +56,10 @@
   - `/Game/Materials/M_Door` -> `Saved/UeAssetFolders/MaterialGraph/Game/Materials/M_Door`
 - `material_apply_folder` 第一版对表达式图采用“删除现有表达式，再按文件夹描述重建”的方式。
 - 材质根对象左侧 `Details` 面板参数归 `settings/material.json`。
+- `graphs/MaterialGraph.json` 的 `root_inputs[].material_property` 支持传统根属性，也支持 Substrate 根输入 `FrontMaterial`；`FrontMaterial` 会映射到 UE 的 `MP_FrontMaterial`，用于把 Substrate BSDF 节点接入材质根节点。
+- 非 DefaultLit 材质应在 `settings/material.json` 同时保留 `ShadingModel` 和 `ShadingModels`。例如 Single Layer Water 使用 `ShadingModel=MSM_SingleLayerWater` 与 `ShadingModels=(ShadingModelField=1024)`；apply 会在写入 `ShadingModels` 后同步调用 `UMaterial::SetShadingModel`，避免 `PostEditChange` 重建 shading model bitfield 时退回旧单枚举值。
 - `material_apply_folder` 返回 `warning_count` / `warnings`。根属性和表达式属性缺少 `property_name` / `value_text`、写后读回不一致等情况会进入 warnings，方便定位结构化 JSON 中的解析或规范化问题。
+- `material_set_property` 写入材质根属性后会返回 `PostEditChange` 之后的最终读回值；如果最终值与请求值不一致，应以返回的最终值为准继续排查。
 - Material 三个 folder apply 的可选 JSON（如 `settings/material.json`、`parameters/interface.json`、`parameters/overrides.json`、`function.json`）只有不存在时才会跳过；文件存在但读取失败或 JSON 语法解析失败会直接失败返回并带文件路径。
 - `material_instance_apply_folder` 和 `material_function_apply_folder` 也返回 `warning_count / warnings`；数组条目不是 object 或缺 `id/name/property_name/value_text/parameter_type` 等关键字段时会写入 warnings，不再静默丢弃。
 

@@ -121,9 +121,10 @@
 | `level_align_actor_vertex_to_vertex` | 按网格顶点把 Actor 对齐到目标顶点 | `source_actor_id`、`target_actor_id`、顶点选择参数 | 白盒模块拼接时做精确顶点对齐 |
 | `mesh_get_closest_vertex` | 查询 Actor 网格中最接近世界点的顶点 | `id`、`world_position` | 对齐前定位候选顶点 |
 | `mesh_get_vertex_world_position` | 读取 Actor 网格指定顶点的世界坐标 | `id`、`vertex_index` | 顶点对齐、几何诊断和留证 |
-| `screenshot_viewport` | 抓取当前 Level Viewport 普通截图 | 可选 `format/quality/max_size` | 视觉验收和问题留证 |
-| `screenshot_viewport_buffer` | 抓取深度/法线/底色等调试 buffer | `buffer`、可选 `format/quality/max_size` | 更稳定地检查遮挡、悬空、穿插和深度问题 |
+| `screenshot_viewport` | 抓取当前 Level Viewport 普通 lit 截图 | 可选 `format`、`quality`、`max_size`、`output_file`、`warmup_frames`、`render_warmup_frames` | 视觉验收和问题留证 |
+| `screenshot_viewport_buffer` | 抓取深度/法线/底色等调试 buffer | `buffer`、可选 `format`、`quality`、`max_size`、`output_file`、`depth_mode`、`depth_near_cm`、`depth_far_cm`、`depth_auto_pct_low`、`depth_auto_pct_high`、`invert` | 更稳定地检查遮挡、悬空、穿插和深度问题 |
 | `viewport_get_camera` | 读取当前 Level Viewport 相机 | 无 | 保存当前取景状态 |
+| `viewport_get_warnings` | 读取当前 Level Viewport renderer warning/probe | 可选 `include_suppressed` | 诊断全局裁剪平面、forward shading 主光等渲染告警 |
 | `viewport_set_camera` | 设置当前 Level Viewport 相机 | `location`、`rotation`、可选 `fov` | 复现固定视角并截图 |
 | `viewport_focus_actor` | 聚焦单个 Actor | `id`、可选 `padding` | 快速定位目标 Actor |
 | `viewport_focus_actor_safe` | 防卡墙的稳健 Actor 聚焦 | `id`、可选 `collision_aware/look_at/auto_fallback` | 室内或遮挡复杂场景的取景 |
@@ -132,11 +133,36 @@
 | `viewport_frame_folder` | 按 Outliner folder 聚合 bounds 取景 | `folder_path`、可选 `include_child_folders/padding/collision_aware` | 白盒区域或托管资源整组留证 |
 | `viewport_frame_selection` | 按当前选择集聚合 bounds 取景 | 可选 `padding` | 人工选择后自动留证 |
 | `viewport_set_game_view` | 切换 Game View | `game_view` | 截图前隐藏或恢复编辑器辅助显示 |
-| `viewport_set_realtime` | 切换视口实时刷新 | `enabled` | 需要 Niagara/动画预览或稳定截图时控制实时性 |
+| `viewport_set_realtime` | 切换视口实时刷新 | `realtime`；兼容 `enabled` | 需要 Niagara/动画预览或稳定截图时控制实时性 |
 | `viewport_deproject_screen_to_world` | 屏幕坐标反投影到世界射线 | `screen_x`、`screen_y` | 视口拾取和屏幕点诊断 |
 | `viewport_trace_screen_point` | 从屏幕点发起世界 Trace | `screen_x`、`screen_y`、可选 `trace_channel/trace_distance` | 根据截图坐标定位命中 Actor |
 
 `screenshot_viewport`、`screenshot_viewport_buffer` 以及复用该写图路径的命令在输出 `png/jpg/webp` 时默认写出不透明图片；即使底层 viewport readback 返回透明 alpha，最终文件也会把 alpha 归一为 `255`，避免在深色 UI 或报告里被合成为黑图。
+
+### `screenshot_viewport`
+
+抓取当前 Level Viewport 的普通 lit/backbuffer 截图，用于验证用户实际看到的最终画面，包括后期处理、反射合成、Single Layer Water 和 PlanarReflection 等主视口效果。
+
+- `format`：可选，`jpg` 默认；支持 `png`、`jpg`、`webp`。
+- `quality`：可选，`jpg/webp` 压缩质量，默认 `85`。
+- `max_size`：可选，最长边缩放上限，默认 `1024`。
+- `output_file`：可选；相对路径按项目根目录解析。若未显式传 `format`，会优先使用 `output_file` 的 `png/jpg/webp` 扩展名；若同时传了 `format`，扩展名必须一致。
+- `warmup_frames`：可选，默认 `2`，范围 `0..8`。截图前额外绘制并 flush 若干帧，让 PlanarReflection、TAA、反射历史和场景捕获类效果先更新，再读取最终 backbuffer。
+- `render_warmup_frames`：`warmup_frames` 的兼容别名。
+
+返回字段：
+
+- `capture_mode="level_viewport_lit"`。
+- `final_lit_composition=true`。
+- `warmup_frames_requested`。
+- `viewport`：本次实际使用的 LevelViewportClient 摘要，包含 `selection_reason`、`viewport_client_index`、`viewport_type`、`view_mode_value`、`location`、`rotation`、`fov`、`realtime`、`game_view` 和 `size`。
+- `capture`：截图执行细节，包含 `render_path="level_viewport_backbuffer"`、`draws_performed`、`temporary_realtime_override` 和同一份 `viewport` 信息。
+
+行为说明：
+
+- 目标 viewport 选择优先级：当前 active viewport -> `GCurrentLevelEditingViewportClient` -> 面积最大的透视 viewport -> 面积最大的任意 viewport -> 第一个有效 viewport。返回的 `viewport.selection_reason` 用于核对是否抓到了人工正在看的视口。
+- 该命令读取最终 Level Viewport backbuffer，适合判断 PlanarReflection、SSR、后期处理和 Single Layer Water 最终观感。
+- 如果只需要深度、法线或底色诊断，不要用此命令；使用 `screenshot_viewport_buffer`。
 
 ### 组件碰撞属性写入
 
@@ -279,6 +305,8 @@
 
 抓取当前视口的“深度/法线/底色”等调试截图（默认深度图），用于更可靠地发现白盒空间错误：穿插、悬空、遮挡、缝隙、楼梯被挡等。
 
+> 注意：该命令返回的是调试 buffer，不是最终 lit 画面。`SceneDepth/DeviceDepth/WorldNormal/BaseColor` 默认走 `SceneCapture2D`，不会包含 Level Viewport 的最终反射/后期合成，不能用来判断 `PlanarReflection`、SSR 或 Single Layer Water 最终画面是否生效。需要判断最终画面时使用 `screenshot_viewport`。
+
 - `buffer`：可选，默认 `SceneDepth`。常用：
   - `SceneDepth`
   - `DeviceDepth`
@@ -306,7 +334,7 @@
 
 - **优先 SceneCapture（推荐）**：直接用当前 Level Viewport 的相机（位置/旋转/FOV）做一次 SceneCapture，并读取 RenderTarget 得到对应 buffer；不依赖 `Buffer Visualization` 的 debug 材质。
 - **回退 Buffer Visualization（实验）**：临时切换当前 Level Viewport 到 `Buffer Visualization` 模式并设置 `<buffer>`；截图完成后恢复原 view mode 与原 Buffer Visualization Mode。
-- 返回字段会带 `buffer` 与 `method`（`scene_capture` / `buffer_visualization`），便于批量留证与回归对比。
+- 返回字段会带 `capture_mode="scene_capture_buffer"`、`final_lit_composition=false`、`scene_capture_buffer=true`、`validation_scope="debug_buffer_only"`、`buffer`、`method`（`scene_capture` / `buffer_visualization`）和实际使用的 `viewport`，便于批量留证与回归对比。
 - 目标 viewport 选择：优先当前正在编辑的 Level Viewport；若无法获取“当前”，则选择面积最大的透视视口（避免抓到隐藏/未渲染视口导致纯黑截图）。
 
 ### `viewport_frame_actor`
