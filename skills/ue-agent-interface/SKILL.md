@@ -1,305 +1,120 @@
 ---
 name: ue-agent-interface
-description: 使用 uai-cli.exe 驱动当前项目内的 UeAgentInterface Unreal Editor 服务。适用于 UE 编辑器自动化、资产制作、JSON/文件夹式结构化工作流、Blueprint/UMG/Material/Sequence/Niagara/Animation/IK/Modeling/PCG/NodeGraph 指令、smoke 验证和安全的编辑器生命周期操作。不要直接调用 HTTP。
+description: 优先使用已定位的 UeAgentInterfaceCMD 仓库中的 uai_core Python API 驱动当前项目内的 UeAgentInterface Unreal Editor 服务；UeAgentInterfaceCMD 通常在项目根目录但不保证如此，找不到时必须先向用户确认是否已安装及安装路径，确认没有可用 UeAgentInterfaceCMD 后再回退到 skill 内置 uai-cli.exe。适用于 UE 编辑器自动化、资产制作、JSON/文件夹式结构化工作流、Blueprint/UMG/Material/Sequence/Niagara/Animation/IK/Modeling/PCG/NodeGraph 指令、smoke 验证和安全的编辑器生命周期操作。不要直接调用 HTTP。
 ---
-
 # UeAgentInterface Skill
 
-## 适用范围
+本 skill 是 UAI 工作流入口和安全路由，不是命令参数手册。完整参数、返回字段、示例和边界以 `<SkillDir>/docs/` 中同步的正式文档为准。
 
-当需要通过项目内 `UeAgentInterface` 插件控制 Unreal Editor 时使用本 skill。
+## 核心规则
 
-本 skill 是工作流指南，不是完整参数手册。命令参数、覆盖范围、示例和最新边界以项目内插件文档为准。
+1. 优先使用已定位 `UeAgentInterfaceCMD` 仓库中的 Python `uai_core`；不要直接调用 HTTP。
+2. `UaiCmdRoot` 是 `UeAgentInterfaceCMD` 仓库根目录，默认候选是 `<ProjectRoot>/UeAgentInterfaceCMD`，但不能写死。
+3. 自动找不到 `UeAgentInterfaceCMD` 时，先问用户安装路径；只有用户确认没有可用 UAICMD 或明确要求回退时，才用 `<SkillDir>/tools/uai-cli.exe`。
+4. Python 直连模式优先调用 `uai_core.commands.*`；多步骤任务用 `ue.batch(..., stop_on_error=True)` 或等价 fail-fast 批处理。
+5. 长 JSON、plan、vars、batch、folder payload、report 和任务脚本写入 `<UserWorkDir>/tmp/uai_params/` 与 `<UserWorkDir>/runtimeLogs/`，不要写到 skill 目录。
+6. 写操作前先查清命令参数、默认值、副作用、返回字段和验证方式；不确定时先读正式命令文档或导出/readback。
+7. 每次写操作后读取 `CommandResult.response`、`BatchResult.response` 或 CLI report JSON；失败时根据 `failed_index / failed_command / failed_error` 定位根因。
+8. 支持结构化 JSON / folder authoring 的资产，优先导出后直接编辑 `authoring` / `minimal_authoring` JSON；新增内容只写最小 authoring 结果，再 apply/readback 补全，不手写完整 readback。
+9. 原子命令只用于 bootstrap、只读探针、迁移、schema 边界、局部修补和故障恢复；deprecated 命令不能作为新 authoring 主流程。
+10. 新增节点、模块、组件、控件、Material expression 或 Niagara dynamic input 前，优先用 `node_catalog_search` 获取 `kind/name/full_name/json_authoring` seed；必要时再用 `node_origin_resolve` 查资产或源码路径。
+11. 复用当前 UE Editor 会话；除非必要，不启动第二个编辑器实例。需要启动时使用项目既有最小化/no-activate 入口。
+12. 不运行全屏 game 测试；默认使用最小化、headless、readback、runtime probe、截图或 `UnrealEditor-Cmd.exe -NullRHI -unattended` 验证。
+13. 资产写入后按资产类型做编译、读回、smoke、截图、runtime probe、coverage 或 Stack issue 验证；不能只看命令成功。
 
-## 硬性规则
-
-1. 必须使用 `uai-cli.exe`，不要直接调用 HTTP。
-2. 可复用任务优先用 `run`，一次性批处理优先用 `batch`。
-3. `plan / vars / batch / params` 使用 JSON 文件，不要在命令行里内联长 JSON。
-4. 多步骤任务必须 fail fast：`stop_on_error=true`。
-5. 使用任何 UAI 指令前，必须先查清该指令每个参数的意义、默认值、副作用、返回字段和验证方式；不确定时先读对应命令文档或用只读/导出指令获取真实结构。
-6. 每次写操作后都要读取生成的 report JSON。
-7. 资产写入后必须按资产类型做编译、读回、smoke、截图、runtime probe 或 `coverage_report.json` 验证。
-8. 已支持 JSON / 文件夹式结构化 JSON 的资产 authoring，优先走导出、修改、回写流程，不要用长串原子命令手搓。
-9. 原子写入命令只用于 bootstrap、探针、迁移、schema 边界、局部修补和故障恢复；文档中标为 `Deprecated for authoring` 的命令不得作为完整制作主流程。
-10. 尽量复用已经打开的 UE Editor 会话；除非必要，不启动第二个编辑器实例。
-11. 不运行全屏 game 测试。默认使用最小化、不抢焦点、headless 或 `UnrealEditor-Cmd.exe -NullRHI -unattended` 验证。
-
-## 路径与 CLI 选择
+## 路径约定
 
 - `SkillDir`：当前 `SKILL.md` 所在目录。
-- `UserWorkDir`：用户当前工作目录或当前任务工作区，用于生成临时 JSON、report、runtime log 和任务记录。
-- `ProjectRoot`：目标 UE 项目根目录，仅用于确认目标项目、读取 `.uproject`、可选启动 Editor、定位项目资产或项目级记录。
+- `UserWorkDir`：用户当前工作目录或当前任务工作区。
+- `ProjectRoot`：目标 UE 项目根目录；从当前目录向上查找 `.uproject` 或使用用户明确路径。
+- `UaiCmdRoot`：已定位的 `UeAgentInterfaceCMD` 仓库根目录。
+- `UAICorePath`：`<UaiCmdRoot>/cli/uai_core`。
+- `FallbackCli`：`<SkillDir>/tools/uai-cli.exe`，只在确认不能使用 UAICMD 后使用。
 
-`uai-cli.exe` 只使用 skill 内置副本：
+`UaiCmdRoot` 定位顺序：
 
-`<SkillDir>/tools/uai-cli.exe`
+1. 用户本轮明确给出的路径。
+2. `<ProjectRoot>/UeAgentInterfaceCMD`。
+3. `<UserWorkDir>` 及其父目录下的 `UeAgentInterfaceCMD`。
+4. 当前工作区内可低成本确认的候选。
+5. 仍找不到时向用户确认，不直接回退 CLI。
 
-不要使用 `<ProjectRoot>/UeAgentInterfaceCMD/dist/uai-cli.exe`，也不要从 PATH 调用裸 `uai-cli.exe`。如果 `<SkillDir>/tools/uai-cli.exe` 不存在，应停止并修复 skill 分发内容，不临时改用项目内 CLI。
+## 必读路由
 
-临时输入文件和 report 默认放在用户工作目录：
+按任务只读需要的文件，不全量加载无关文档：
 
-- `<UserWorkDir>/tmp/uai_params/`
-- `<UserWorkDir>/runtimeLogs/`
+- 日常命令速查：`references/command-map.md`
+- Python `uai_core` 定位、模板和脚本写法：`references/uai-core-python-playbook.md`
+- 批处理和 fail-fast：`references/batch-execution-playbook.md`
+- CLI 回退、crash、release gate：`references/cli-diagnostics-release.md`
+- Niagara 视觉效果制作/修复：`references/niagara-vfx-authoring.md`
+- Control Rig、动画 IK、Shape Library：`references/control-rig-animation-authoring.md`
+- 结构化 JSON 总入口：`docs/UeAgentInterface/JsonAuthoring_Guide.md`
+- 直接 JSON authoring 主链路：`docs/UeAgentInterface/json-authoring/00_DirectJsonAuthoring.md`
+- 具体命令参数和返回字段：`docs/UeAgentInterface/commands/*.md`
+- CLI 细节：`docs/UeAgentInterfaceCMD/USAGE.md`
 
-## 阅读顺序
+skill 内同步文档不包含 `deprecatedCommand/**`。如历史兼容确实要读 deprecated 文档，必须回到插件仓库归档文档确认边界，并说明迁移理由。
 
-1. `<ProjectRoot>/readme.md`
-2. `<SkillDir>/docs/UeAgentInterface/UeAgentInterface_Status.md`
-3. `<SkillDir>/docs/UeAgentInterface/UeAgentInterface_Usage.md`
-4. 只打开当前任务需要的分册：`<SkillDir>/docs/UeAgentInterface/commands/`
-5. CLI 细节按需读取：
-   - `<SkillDir>/docs/UeAgentInterface/Workflow_ExecBatch_Practice.md`
-   - `<SkillDir>/docs/UeAgentInterfaceCMD/USAGE.md`
-6. 本 skill 内置的速查：
-   - `references/command-map.md`
-   - `references/batch-execution-playbook.md`
-   - `references/cli-diagnostics-release.md`：排查 CLI 失败、黑图、crash capture、命令覆盖矩阵或 Pak 发布验证时读取。
-   - `references/niagara-vfx-authoring.md`：制作或修复 Niagara 视觉效果、主形体、分层、材质、锚点、事件链或美术质量问题时读取。
-   - `references/control-rig-animation-authoring.md`：制作或修复 Control Rig、足底/手部 IK、运行时 Trace、AnimBlueprint Control Rig 接入、Shape Library、动画曲线 IK 权重、楼梯/斜坡贴合或 IK 调试时读取。
+## UE 工作流程
 
-项目内 `Plugins/UeAgentInterface/docs/` 只用于排查同步差异，不作为日常事实来源。skill 内同步文档不包含 `deprecatedCommand/**`；废弃指令不得作为资产制作主流程。
+1. 分析用户需求：明确资产、效果、编辑范围、风险、验收方式和是否涉及空间语义。
+2. 涉及 UE 概念、资产体系、Blueprint、Material、Niagara、动画、渲染或调试时，先读 `ue-essential-knowledge` 相关分类；再按需读 `ue-kb` 和其它相关 skill。结构化 JSON / UAI 指令内部实现以本地 UAI 源码、正式文档和实测为准，不用 KB 替代。
+3. 查找需要的 UAI 指令，确认参数、默认值、副作用、返回字段和验证方式。
+4. 如涉及节点或模块，先用当前 UE 真实查询能力确认候选；不要凭记忆拼名称。
+5. 涉及位置、方向、坐标、transform、屏幕/UI 布局、视觉构图或截图验收时，必须使用 `understand-space` 建立空间语义和读写/验收坐标系。
+6. 拟定可执行方案：资产路径、命令序列、JSON 修改点、预期读回字段、验收方法和失败处理。
+7. 执行时 fail fast；发现方案与真实读回冲突时先修正方案。
+8. 完成后验收 response/report、编译结果、日志/Stack、关键参数读回、runtime probe、截图、dirty resource 和保存状态。
+9. 验收失败时先补证据再定位根因，不继续堆无关命令。
 
-## 命令文档路由
+## 结构化 JSON Authoring
 
-- Core / Level / Viewport / Assets / Landscape：`01_Core_Level_Assets_Landscape.md`
-- Blueprint：`02_Blueprint.md`
-- UMG / WidgetBlueprint：`03_UMG.md`
-- StaticMesh / EnhancedInput：`04_StaticMesh_EnhancedInput.md`
-- Material / Material Instance / Material Function：`05_Material.md`
-- Level Sequence / UMG Animation / Sequencer：`06_Sequence.md`
-- Niagara System：`07_Niagara_System.md`
-- Niagara Emitter / Renderer / Event / Parameter：`08_Niagara_Emitter.md`
-- Niagara Stage Graph / Module Input：`09_Niagara_StageGraph.md`
-- Modeling Mode：`10_Modeling.md`
-- AnimBlueprint：`11_AnimBlueprint.md`
-- Montage：`12_Montage.md`
-- Animation Assets / Skeleton：`13_AnimationAssets_Skeleton.md`
-- IK Rig / IK Retargeter：`14_IKRig_IKRetargeter.md`
-- Niagara System / Emitter / Script 文件夹式 JSON：`15_Niagara_FolderFormat.md`
-- Skeletal Mesh 文件夹式 JSON：`16_SkeletalMesh_FolderFormat.md`
-- Control Rig / Shape Library 文件夹式 JSON：`17_ControlRig_FolderFormat.md`
-- Deformer / ML Deformer / Geometry Cache：`18_Deformer_MLDeformer_GeometryCache.md`
-- AI Behavior / Blackboard / StateTree / EQS / Navigation / SmartObject：`19_AI_Behavior_Blackboard_StateTree_EQS_Navigation_SmartObject.md`
-- Audio：`20_Audio.md`
-- Texture / RenderTarget / Media：`21_Texture_RenderTarget_Media.md`
-- Project Settings / Config：`22_ProjectSettings_Config.md`
-- Level Content JSON：`23_LevelContent_JSON.md`
-- DataAsset / PrimaryAsset / DataTable：`24_DataDriven_DataAsset_DataTable.md`
-- Level Topology / Streaming / World Partition / DataLayer / HLOD：`25_LevelTopology_Streaming_WorldPartition_DataLayer_HLOD.md`
-- Physics / Chaos 基础：`26_Physics_Baseline.md`
-- Localization / Packaging / Platform Profiles：`27_Localization_Packaging_PlatformProfiles.md`
-- Node Graph 通用节点图排布：`28_NodeGraph.md`
-- PCG：`29_PCG.md`
-- PCG Graph 文件夹式 JSON：`30_PCG_FolderFormat.md`
+默认路线：
 
-## 标准工作流
+`export/readback -> 直接编辑 authoring/minimal_authoring JSON -> validate/lint/adapter -> apply -> export/readback -> 类型化验收`
 
-1. 确认 UE Editor 已运行。
-2. 确认插件服务已启动：`Window -> UeAgentInterface -> Start UeAgentInterface Server`。
-3. 先运行 `<SkillDir>/tools/uai-cli.exe --report-file <UserWorkDir>/runtimeLogs/uai_doctor.json doctor --json-output`。
-4. 可复用/参数化任务使用 `<SkillDir>/tools/uai-cli.exe --report-file <UserWorkDir>/runtimeLogs/<task>.json run --plan <UserWorkDir>/tmp/uai_params/<plan.json> --vars <UserWorkDir>/tmp/uai_params/<vars.json> --json-output`。
-5. 临时批处理任务使用 `<SkillDir>/tools/uai-cli.exe --report-file <UserWorkDir>/runtimeLogs/<task>.json batch --file <UserWorkDir>/tmp/uai_params/<batch.json> --json-output`。
-6. 读取 report JSON；如果失败，先根据 `failed_index / failed_command / failed_error` 定位根因，再继续。
+- 用 `node_catalog_search` 的 `json_authoring` 或 seed 新增可支持对象；只补必要上下文和值，apply 后重新读回；JSON 主身份字段是 `kind/name/full_name`。
+- `node_origin_resolve` 只用于查路径和解析状态，不打开 IDE、不聚焦 Content Browser、不做 UI 操作。
+- Python 可辅助批量生成、参数化调用、adapter 调试或重复变量替换，但不应代替直接 JSON authoring 成为主流程。
+- 旧字段只用于 adapter 兼容、readback 或 legacy 输出；新教程和新 authoring 不以旧字段作为主路径。
+- 写入前后都要读回；只读到“字段存在”不等于运行时使用它，特别是 Niagara mode/static switch、Renderer binding、UMG slot、Blueprint pin、Material root input 等分支。
 
-## 资产编辑优先级
+## 调用摘要
 
-优先级从高到低：
+Python 直连：
 
-1. 单文件 JSON：
-   - `asset_export_property_json / asset_apply_property_json`
-   - `curve_export_json / curve_apply_json`
-   - `enhanced_input_export_action_json / enhanced_input_apply_action_json`
-   - `enhanced_input_export_mapping_context_json / enhanced_input_apply_mapping_context_json`
-   - `montage_export_json / montage_apply_json`
-   - `data_asset_export_json / data_asset_apply_json`
-   - `data_table_export_json / data_table_apply_json`
-2. 文件夹式结构化 JSON：
-   - `blueprint_export_folder / blueprint_apply_folder`
-   - `umg_export_folder / umg_apply_folder`
-   - `anim_blueprint_export_folder / anim_blueprint_apply_folder`
-   - `material_export_folder / material_apply_folder`
-   - `material_instance_export_folder / material_instance_apply_folder`
-   - `material_function_export_folder / material_function_apply_folder`
-   - `pcg_graph_export_folder / pcg_graph_apply_folder`
-   - `sequence_export_folder / sequence_apply_folder`
-   - `niagara_export_folder / niagara_apply_folder`
-   - `niagara_emitter_export_folder / niagara_emitter_apply_folder`
-   - `niagara_script_export_folder / niagara_script_apply_folder`
-   - `skeleton_export_folder / skeleton_apply_folder`
-   - `static_mesh_export_folder / static_mesh_apply_folder`
-   - `skeletal_mesh_export_folder / skeletal_mesh_apply_folder`
-   - `ik_rig_export_folder / ik_rig_apply_folder`
-   - `ik_retargeter_export_folder / ik_retargeter_apply_folder`
-   - `control_rig_export_folder / control_rig_apply_folder`
-   - `deformer_graph_export_folder / deformer_graph_apply_folder`
-   - `sound_cue_export_folder / sound_cue_apply_folder`
-   - `metasound_export_folder / metasound_apply_folder`
-   - `sound_attenuation_export_json / sound_attenuation_apply_json`
-   - `sound_concurrency_export_json / sound_concurrency_apply_json`
-   - `sound_class_export_json / sound_class_apply_json`
-   - `sound_mix_export_json / sound_mix_apply_json`
-   - `sound_submix_export_folder / sound_submix_apply_folder`
-   - `audio_effect_preset_export_json / audio_effect_preset_apply_json`
-   - `runtime_virtual_texture_export_json / runtime_virtual_texture_apply_json`
-   - `texture_array_export_folder / texture_array_apply_folder`
-   - `texture_cube_export_folder / texture_cube_apply_folder`
-   - `texture_cube_array_export_folder / texture_cube_array_apply_folder`
-   - `volume_texture_export_folder / volume_texture_apply_folder`
-   - `render_target_export_json / render_target_apply_json`
-   - `media_source_export_json / media_source_apply_json`
-   - `media_player_export_json / media_player_apply_json`
-   - `media_texture_export_json / media_texture_apply_json`
-   - `texture_graph_export_folder / texture_graph_apply_folder`
-   - `subuv_animation_export_json / subuv_animation_apply_json`
-   - `paper_sprite_export_json / paper_sprite_apply_json`
-   - `paper_flipbook_export_json / paper_flipbook_apply_json`
-   - `paper_tileset_export_folder / paper_tileset_apply_folder`
-   - `paper_tilemap_export_folder / paper_tilemap_apply_folder`
-   - `texture_collection_export_json / texture_collection_apply_json`
-   - `project_settings_export_index / project_settings_export_page / project_settings_validate_page / project_settings_diff_page / project_settings_apply_page`
-   - `control_rig_shape_library_export_json / control_rig_shape_library_apply_json`
-   - `physical_material_export_json / physical_material_apply_json`
-   - `physics_constraint_export_json / physics_constraint_apply_json`
-   - `physics_asset_export_folder / physics_asset_apply_folder`
-3. 原子命令：
-   - 只用于创建最小骨架、读取 live 信息、探针验证、迁移脚本、schema 边界字段和回写失败后的定点补修。
+1. 定位 `ProjectRoot` 和 `UaiCmdRoot`。
+2. 将 `<UaiCmdRoot>/cli` 加入 `sys.path`。
+3. `from uai_core import UaiCore`。
+4. `ue = UaiCore.from_config(require_token=True)`。
+5. 先 `ue.doctor()`，失败则停止写操作。
+6. 调用 `uai_core.commands.*` 或 `ue.batch(..., stop_on_error=True)`。
+7. 将 response/report 用 UTF-8 写入 `<UserWorkDir>/runtimeLogs/`。
 
-对属性面很大的资产使用固定节奏：
+CLI 回退：
 
-`bootstrap -> export -> refine -> apply -> export -> refine -> apply -> verify`
+1. 只使用 `<SkillDir>/tools/uai-cli.exe`。
+2. 先跑 doctor/compat 类只读检查。
+3. `run` 用于可复用 plan，`batch` 用于一次性批处理。
+4. 所有 report 写入 `<UserWorkDir>/runtimeLogs/`。
 
-不要靠记忆猜 `property_name` 和 `value_text`。先让 UE 生成真实对象，再以导出的 JSON 为模板修改。
-曲线类资产或曲线属性不要猜 `value_text`；优先使用 `ue_agent_interface.curve.v1`。资产级走 `curve_export_json / curve_apply_json`，属性级走 `asset_export_property_json / asset_apply_property_json` 返回的 `curve_json`；`value_json` 只是兼容别名。导出中两者同时存在时编辑 `curve_json`，apply 失败必须检查 `json_issues[]`，并确认失败没有把资产标脏或产生部分 channel 写入。
+## 领域专项入口
 
-Blueprint / UMG / AnimBlueprint 变量统一使用 `pin_category/pin_subcategory/pin_subcategory_object/container_type/value_type`。常用结构体、枚举、对象/类别名已集中在 `<SkillDir>/docs/UeAgentInterface/commands/02_Blueprint.md`；使用前先查清参数含义和目标类型，不要凭印象写字段。
-
-## JSON 与属性写入诊断
-
-任何 `value_text`、单文件 JSON 或文件夹式 JSON 写入后，都要检查命令返回中存在的诊断字段：
-
-- `requested_value_text`
-- `applied_value_text`
-- `property_value_read_back`
-- `property_import_status`
-- `property_import_verified`
-- `property_import_error`
-- `value_text_exact_match`
-- `value_text_changed_after_import`
-- `cpp_type`
-
-把 `property_import_status=property_not_found` 或 `property_import_status=import_failed` 当成硬失败处理。`value_text_changed_after_import=true` 需要人工复核；它可能只是 UE 规范化文本，也可能说明向量、颜色、枚举或对象引用实际回退。
-
-JSON / 文件夹式 JSON 的解析失败必须在 report 中可见：
-
-- 单文件 `json_file` 读取或解析失败返回 `json_file_not_found`、`load_json_file_failed` 或 `json_parse_failed`。
-- 文件夹式 workflow 的可选 JSON 文件只有“不存在”时可跳过；只要存在但读取或解析失败，apply 必须失败并带文件路径。
-- 可恢复的坏数组项进入 `warnings[] / warning_count` 或 `property_results[]`，不得静默忽略。
-- 曲线 JSON 写入必须检查 `json_issues[]`；未知字段、拼写相近字段、缺 key 值、重复时间、非法插值/切线/外推模式都应视为有效诊断信号。
-
-## 当前能力地图
-
-- Level / Actor / Component / Viewport：Actor 放置、transform、选择、Outliner folder/tag、截图、screen trace、NavMesh、collision sweep、bounds/vertex/face 对齐。
-- Asset / Editor lifecycle：打开/保存资产、复制资产、贴图/FBX 导入、属性 JSON、曲线 JSON、dirty resource 列表/处理、安全关闭。
-- Blueprint：folder workflow、变量、组件、事件/自定义事件、函数调用节点、通用类节点、变量节点、连线/断线、视图/截图辅助。
-- UMG：WidgetBlueprint folder workflow、WidgetTree、常用 widget/slot 属性、变量/函数绑定、常见动画轨道、Blueprint 图复用。
-- StaticMesh：folder workflow 覆盖材质、socket、simple collision、lightmap、Nanite 安全字段；reimport 和 collision preview 有显式命令；raw geometry / UV / Nanite 内部数据只读摘要或走导入/建模命令。
-- EnhancedInput：InputAction 与 InputMappingContext 创建/编辑，以及单文件 JSON round-trip。
-- Material：Material / Material Instance / Material Function folder workflow、表达式图、统一参数设置。
-- Sequence：Level Sequence folder workflow、actor/component/spawnable binding 恢复、property/spawn track、outliner folder、camera cut、subsequence、cinematic shot、UMG animation helper。
-- Niagara：`NiagaraSystem / NiagaraEmitter / NiagaraScript` 完整 folder profile；Stack issue 读取、Quick Fix、System refresh、runtime probe、screenshot、compile log、apply 后直接返回红黄感叹号信息。
-- AnimBlueprint：folder workflow、Layer Interface、Anim Layer、State Machine、Transition、图节点、预览 mesh/camera、CDO 属性写入。
-- Montage：单文件 JSON workflow、slot track、segment、section、next-section、notify track/notify/notify state、Skeleton slot/group 辅助。
-- Animation Assets / Skeleton：AnimSequence 信息/截图/settings/float curve JSON/bone/metadata/notify/sync marker，BlendSpace 单文件 JSON workflow，Skeleton folder workflow 覆盖 preview/compatible/socket/virtual bone/retargeting。
-- SkeletalMesh：folder workflow 覆盖材质槽、mesh-only socket、physics asset、post process anim blueprint、Morph Target 删除；Morph / Skin Weight Profile 预览、Skin Weight Profile 导入/删除使用显式动作命令；raw vertex/index/skin weight/morph delta/cloth 只做摘要或导入策略，不用普通 JSON 手写。
-- Deformer / ML Deformer / Geometry Cache：Geometry Cache 导入/信息/引用验证；Deformer Graph folder workflow；Source Library、Mesh Deformer Collection、ML Deformer 单文件 JSON 通过显式 `apply=true` 的属性项复用 `asset_apply_property_json`。训练和 shader compile 只走显式命令并检查插件状态、UE version、adapter 状态与日志。
-- Audio：SoundWave 导入/重导入/信息读回；SoundCue folder workflow；MetaSound Source/Patch 成员 workflow；SoundAttenuation、SoundConcurrency、SoundClass、SoundMix、AudioEffectPreset 单文件 JSON；SoundSubmix folder workflow；AudioComponent/AmbientSound/AudioVolume setup validate；runtime probe、submix meter 和 submix record。AudioComponent authoring、AmbientSound/AudioVolume 放置和普通属性继续复用 Blueprint / Actor / Component / Asset Property JSON 指令。
-- Texture / RenderTarget / Media：Texture 重导入、像素统计、图片导出；TextureArray/Cube/CubeArray/VolumeTexture folder workflow；RVT、RenderTarget、Media、TextureGraph、SubUV、Paper2D、TextureCollection JSON/folder workflow；RT draw/read/export/static texture 与 TextureGraph bake 依赖有效 RHI，NullRHI 下必须返回明确诊断。
-- Project Settings / Config：通过 `ISettingsModule` 实时反射 Project Settings index/page，支持结构化 JSON 导出、validate/diff/apply、保存与读回；没有 Settings UObject 的自定义 UI 页返回明确 unsupported；裸 `.ini` 只走受限 `config_export_section / config_apply_section` fallback。
-- Level Content JSON：通过 `level_content_*_json` 统一查询、校验、计划、应用、diff、snapshot、delete scope、merge、repair 场景实例内容；Actor-only 兼容别名为 `level_actor_*_json`。
-- Physics / Chaos 基础：基础 Physics 能力查询、PrimitiveComponent 物理状态 query/validate/LevelContent patch plan、PhysicalMaterial 单文件 JSON、PhysicsConstraint 单文件 JSON、PhysicsAsset folder workflow、editor world runtime probe；可选插件类 Chaos Vehicles/Geometry Collection/Field System/Cloth/Flesh/PhysicsControl/ChaosVD 不在基础主流程内。
-- Localization / Packaging / Platform Profiles：Localization target/StringTable/PO/report/culture preview，UE 项目 UAT packaging plan/run/status/log/artifact/cleanup，以及 TargetPlatform、受控平台 config、DeviceProfile、Scalability 与 packaging 前置验证；普通 Project Settings 字段仍走 `project_settings_*`。
-- IK Rig / IK Retargeter：folder workflow 覆盖 IK Rig preview/root/goal/chain/solver 和 IK Retargeter rigs/preview/settings/mapping/pose；preview solve、auto align pose、auto map 和 duplicate-retarget 属于动作命令；retarget batch 使用单文件 JSON。
-- Control Rig：folder workflow 覆盖 preview、Shape Library 引用、hierarchy bones/nulls/controls/curves、variables、基础 RigVM graph node/link/pin default；Shape Library 使用单文件 JSON；runtime probe、editor view/screenshot、Sequencer bake 使用显式动作命令并检查 `binding_preflight`，未支持回写的 functions/modular/raw 等 profile 必须返回 `unsupported_apply_profile`。
-- Modeling：模式激活、选择、active tool property/action、accept/cancel、primitive wrapper、mesh edit wrapper、collision/UV/material helper。
-
-## Niagara 专项规则
-
-- 完整 Niagara 效果制作必须走文件夹式结构化 JSON，不用零散原子命令手搓完整 System。
-- 制作或修复 Niagara 视觉效果时，先读 `references/niagara-vfx-authoring.md`。先定义视觉语义、Emitter 分层、Renderer/材质、锚点、运动和生命周期，再写 JSON；不要用堆模块或堆 emitter 替代视觉设计。
-- `validation/coverage_report.json` 是覆盖状态源真相；完整 profile 应为 `implementation_status=complete_folder_profile`、`is_complete_target_schema=true`、空 `pending_profiles`、空 `blocking_gaps`。
-- `niagara_apply_folder` 与 `niagara_emitter_apply_folder` 默认在 apply 后编译并打开/复用 Niagara editor ViewModel 读取 Stack issue。直接检查 `stack_issue_report`、`stack_issues`、`stack_scopes`、`stack_error_count`、`stack_warning_count`、`stack_issue_view_model_source`。
-- UI 红色感叹号与 compile log 不一定一致；读取 UI 同源内容时使用 `niagara_get_stack_issues(prefer_existing_view_model=true, open_editor_if_needed=true)`。
-- 写入后 System 没粒子、必须手动加/删 emitter 才恢复时，先执行 `niagara_refresh_system`，再读 compile log、Stack issue 和 runtime probe。
-- Collision Event / Death Event / Event Handler 这类依赖连续时间推进的效果，验证时先用 `niagara_preview_advance(reset_preview=true,target_frame=...,advance_mode=tick_component,pause_after_advance=true)` 从 0 连续 tick 到目标帧，记录返回的 `preview_state_token`；随后 `niagara_system_runtime_probe(sample_mode=current_preview,expected_preview_state_token=...,expected_frame=...)` 和 `niagara_screenshot(capture_mode=current_preview,expected_preview_state_token=...,expected_frame=...)` 只读同一暂停状态。不要让 probe 和 screenshot 各自重复推进，也不要再用 `reset_preview=false,tick_count=0` 当严格只读采样。
-- Vector / Position / LinearColor 等 module input 必须使用 UE 结构化文本，例如 `(X=...,Y=...,Z=...)`、`(R=...,G=...,B=...,A=...)`，并检查写后 readback。
-- Niagara module input 写入必须同时检查控制分支。`mode / enum / static switch` 决定哪个输入真正生效；例如非均匀 Sprite 必须读回 `Sprite Size Mode=Non-Uniform`，再确认 `Module.Sprite Size`。只读到目标值存在不等于运行时使用它。
-- Renderer 是视觉行为的一部分。Sprite / Mesh / Ribbon / Light 的选择必须服务于主形体和数据流；材质、贴图、SubUV、opacity、emissive、pivot 和 binding 都要纳入验收，不要只看粒子数量。
-- Niagara Data Interface 的曲线 raw property 必须用 folder workflow 的 `curve_json` 修改。System apply 会在总刷新后回写 DataInterface，检查 `post_refresh_data_interfaces_applied` 和重新 export 的 `data_interfaces.json`，不要只看 apply 前的旧 graph 对象。
-- Niagara Module Input 的 Dynamic Input 也必须用 folder JSON 表达：编辑 `modules[].inputs[].dynamic_input`、`dynamic_input.inputs[]` 和 `dynamic_input.data_interfaces[].raw_properties[].curve_json`。不要再用 `niagara_emitter_set_module_input` 的 Dynamic Input 扩展参数做 authoring 或普通修补；该扩展只保留旧脚本兼容和极端故障恢复。
-- 写入前必须确认该 mode 对应的有效属性组；apply 后重新 export 并按当前 mode 校验对应字段。例如 `Uniform` 校验 `Uniform Sprite Size`，`Non-Uniform` 校验 `Sprite Size`。非当前 mode 的字段即使读回存在，也不得视为生效。
-- `module_input_hidden_or_inactive_branch` 不得当作噪声忽略；它表示写入可能落在非活跃分支。遇到它时先设置控制项，重新 apply/export/readback，再写分支值。
-- 枚举型输入不能只看 `NewEnumeratorN`；必须结合导出的 `enum_value_display_name`、`override_enum_value_display_name` 和 `enum_options[]` 判断 UI 语义。
-- Collision 相关效果优先使用默认 Ray Trace collision；碰撞后生成粒子应通过 Event Handler 接收碰撞事件，在事件 payload 位置生成，不要用静态位置假冒。
-- 事件、碰撞、命中、尾迹和后续爆裂必须验证 payload 位置、速度、法线和时间推进；截图和 runtime probe 只能作为证据之一，不能替代 Stack、compile、readback、Renderer/material 检查。
-- Event Handler 中不要无意义重复 `Initialize Particle` 覆盖事件 payload。`Kill Particles` 不应清理承载给后续事件的变量。
-- UE 崩溃后第一优先级是找根因并修复指令/数据路径，不继续堆绕路操作。
-
-## Control Rig / 动画 IK 专项规则
-
-- 制作或修复运行时 IK 前先读 `references/control-rig-animation-authoring.md`，把问题拆成 Control Rig 求解、AnimBlueprint 接入、动画曲线权重、碰撞/Trace 语义四层分别验证。
-- Control Rig authoring 走 `control_rig_export_folder -> 修改 folder JSON -> control_rig_validate_folder -> control_rig_apply_folder -> export/readback`；替换求解图时使用导出的真实 graph 模板，并检查 `replace_nodes`、`compile_report`、`readback` 和 `issues[]`。
-- AnimBlueprint 接入 Control Rig 不由 `control_rig_apply_folder` 隐式完成；必须通过 `anim_blueprint_export_folder / anim_blueprint_apply_folder` 验证 `Node.ControlRigClass`、`Node.DefaultControlRigClass`、`Node.bExecute` 和输入/输出 Pose 同步设置。
-- IK Trace 必须先确认目标 RigVM unit 的空间语义、Trace channel/object types、自身过滤、no-hit fallback 和运行时权重。截图只能辅助判断，不能替代 compile、readback、probe、曲线回读和碰撞查询。
-- Control Rig Shape Library 只影响编辑器控制形状的显示，不参与求解、不改变运行时 IK 逻辑。
-
-## 编辑器会话与关闭卫生
-
-- 优先连接当前 editor；如果已有 editor，先 `doctor`。
-- 通过项目 task 或 `scripts/ue/RunEditor.ps1` 拉起 GUI editor 时默认最小化且不抢焦点；默认只在启动瞬间最小化一次，不持续压回 UE 窗口。只有用户明确要求旧行为时才传 `-EnableMinimizeWatchdog`。
-- 如果 C++ / 插件改动需要构建，而 UE 占用 DLL，只有在 dirty resource 已处理后才走安全关闭。
-- 安全关闭流程：
-  1. `editor_list_dirty_resources`
-  2. `editor_resolve_dirty_resources`
-  3. `editor_close`
-- 不要把配置文件已改当成当前 editor 会话已加载；必须用 live editor 状态验证。
-- smoke 后确认没有残留 `UnrealEditor` 或 `UnrealEditor-Cmd` 进程。
-
-## 服务不可用处理
-
-如果 `doctor` 失败：
-
-1. 停止写操作。
-2. 如果没有 editor，使用项目 task 或 `scripts/ue/RunEditor.ps1` 的最小化/no-activate 默认路径启动。
-3. 如果 editor 已运行，请用户从 `Window -> UeAgentInterface -> Start UeAgentInterface Server` 启动服务。
-4. 重新运行 `doctor`，成功后再写入。
-
-## 清理策略
-
-触发条件：
-
-- `<UserWorkDir>/tmp/uai_params/*.json` 超过 120 个
-- `<UserWorkDir>/runtimeLogs/*.json` 超过 200 个
-
-保留策略：
-
-- `tmp/uai_params` 保留最新 40 个
-- `runtimeLogs` 中的 JSON report 保留最新 120 个
-
-使用：
-
-`<SkillDir>/scripts/cleanup_uai_json.ps1 -UserWorkDir <UserWorkDir>`
-
-该脚本默认 dry-run，仅报告 `would_remove`。确认范围正确后，显式传 `-Apply` 才会删除旧 JSON。
+- Niagara：完整效果制作走 folder JSON；先读 `references/niagara-vfx-authoring.md`，再读 Niagara command docs。重点验收 compile log、Stack issue、module input 活跃分支、Renderer/material、runtime probe 和截图。
+- Control Rig / 动画 IK：先读 `references/control-rig-animation-authoring.md`。Control Rig、AnimBlueprint、AnimSequence 曲线、Trace/Collision 分层验证，不用单张截图替代读回。
+- Blueprint / UMG / Material / Sequence / PCG：优先导出 folder JSON；新增节点先走 `node_catalog_search`，再把 seed 写进 JSON。
+- Project Settings / Config、DataAsset、DataTable、Curve、Montage 等单文件资产：优先单文件 JSON round-trip。
+- 资产删除、编辑器关闭、release、crash 排查等高风险操作：先读对应命令文档或 diagnostics reference，确认 dry-run、dirty、引用、路径范围和清理策略。
 
 ## 输出要求
 
-每次使用本 skill 完成 UAI 操作后必须说明：
+完成 UAI 操作后说明：
 
-1. 使用的 CLI 路径：`<SkillDir>/tools/uai-cli.exe`
-2. 使用模式：`run` 或 `batch`
-3. 输入 JSON 路径，默认位于 `<UserWorkDir>/tmp/uai_params/`
-4. report JSON 路径，默认位于 `<UserWorkDir>/runtimeLogs/`
-5. 成功/失败和失败索引
-6. 已执行的验证
-7. 剩余 warning、dirty resource 或 editor/process 清理状态
+1. 调用入口：`<UaiCmdRoot>/cli/uai_core` 或 `<SkillDir>/tools/uai-cli.exe`。
+2. `UaiCmdRoot` 来源；若使用 CLI 回退，说明用户已确认无可用 UAICMD 或明确要求回退。
+3. 使用模式：Python wrapper、Python batch、CLI run 或 CLI batch。
+4. Python 脚本、输入 JSON、folder JSON、response/report 路径。
+5. 成功/失败、失败索引和关键错误。
+6. 已执行验证。
+7. 剩余 warning、dirty resource、editor/process 清理状态。

@@ -108,7 +108,7 @@
 - 碰到失败先查根因，不继续堆新操作。
 - 批处理 report 必须落盘并在最终回复中说明路径。
 
-## 最小 PowerShell 调用
+## CLI 回退的最小 PowerShell 调用
 
 ```powershell
 $SkillDir = "<SkillDir>"
@@ -125,4 +125,4 @@ $ReportFile = Join-Path $RuntimeLogs "list_actors_report.json"
 & $UaiCli --report-file $ReportFile batch --file $BatchFile --json-output
 ```
 
-参数必须写入 `<UserWorkDir>/tmp/uai_params/` 下的 JSON 文件，再用 `<SkillDir>/tools/uai-cli.exe batch --file <batch.json> --json-output` 执行。report 默认写入 `<UserWorkDir>/runtimeLogs/`。
+Python `uai_core` 可直接传结构化参数或读取 JSON；只有 CLI 回退时，才必须把参数写入 `<UserWorkDir>/tmp/uai_params/` 下的 JSON 文件，再用 `<SkillDir>/tools/uai-cli.exe batch --file <batch.json> --json-output` 执行。report 默认写入 `<UserWorkDir>/runtimeLogs/`。

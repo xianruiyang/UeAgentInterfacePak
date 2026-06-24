@@ -10,9 +10,10 @@
 
 优先顺序：
 
-1. `UeAgentInterfaceCMD/dist/uai-cli.exe doctor`
-2. `UeAgentInterfaceCMD/dist/uai-cli.exe run --plan ... --vars ...`
-3. `UeAgentInterfaceCMD/dist/uai-cli.exe batch --file ...`
+1. Python `uai_core`：`<UaiCmdRoot>/cli/uai_core`，脚本中导入 `UaiCore` 和 `uai_core.commands.*` wrapper；`UaiCmdRoot` 通常在 `<ProjectRoot>/UeAgentInterfaceCMD`，但可以是用户确认的其他安装路径。
+2. Python 多步骤：`ue.batch(..., stop_on_error=True)`。
+3. 自动候选找不到 UAICMD 时，先向用户确认是否安装以及路径。
+4. CLI 回退：只有确认没有可用 UAICMD 或用户明确要求回退时，skill 场景使用 `<SkillDir>/tools/uai-cli.exe doctor|run|batch`；CLI 仓库开发或发布验证场景才按 `UeAgentInterfaceCMD/docs/USAGE.md` 使用对应 CLI 入口。
 
 不推荐：
 
@@ -63,8 +64,9 @@
 - `vars/`：可复用变量样例
 - `tmp/`：本次临时输入
 - 报告与日志：
-  - 打包版（`dist/uai-cli.exe`）：`dist/reports/`、`dist/logs/`
-  - 开发态（`python run_uai_cli.py`）：`reports/`、`logs/`
+  - Python `uai_core`：任务脚本显式写入 `<UserWorkDir>/runtimeLogs/`
+  - skill CLI 回退：用 `--report-file <UserWorkDir>/runtimeLogs/<task>.json`
+  - CLI 仓库开发/发布验证：按 `UeAgentInterfaceCMD/docs/USAGE.md` 使用对应 `reports/`、`logs/` 规则
 
 对复杂任务建议按阶段拆批次：
 
@@ -111,14 +113,16 @@
 
 ## 7. 推荐执行顺序
 
-1. 打开 UE Editor 工程
+1. 打开 UE Editor 工程。
 2. 在 UE 中启动：
    - `Window -> UeAgentInterface -> Start UeAgentInterface Server`
-3. 先跑：
-   - `uai-cli.exe doctor --json-output`
-4. 再跑 `run` 或 `batch`
-5. 查看报告并按失败点定位
-6. 任务结束前按需清理临时 JSON
+3. 定位 `UaiCmdRoot`；如果默认候选找不到，先向用户确认 UAICMD 是否已安装以及安装路径。
+4. 首选 Python 直连：
+   - 导入 `UaiCore` 后运行 `ue.doctor()`。
+5. 再执行 wrapper 或 `ue.batch(..., stop_on_error=True)`。
+6. 只有确认没有可用 UAICMD 或用户明确要求回退时，才使用 skill 内置 CLI `doctor`、`run` 或 `batch`。
+7. 查看 Python response 或 CLI report，并按失败点定位。
+8. 任务结束前按需清理临时 JSON。
 
 ## 8. 临时文件清理
 

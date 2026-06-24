@@ -9,10 +9,11 @@
 
 ## 调用原则
 
-- 自动化调用使用已解析的 `$UaiCli`，固定为 `<SkillDir>/tools/uai-cli.exe`。
-- 两步以上任务优先 `batch` 或 `run`。
-- 写入任务使用 JSON 文件输入，读取 report JSON 输出。
-- 能被单文件 JSON 或文件夹式结构化 JSON 覆盖的资产 authoring，不使用零散写入命令作为主流程。
+- 自动化调用优先使用已定位 `UeAgentInterfaceCMD` 的 Python `uai_core`；默认候选找不到时先向用户确认安装路径，确认没有可用 UAICMD 后才使用已解析的 `$UaiCli`，且固定为 `<SkillDir>/tools/uai-cli.exe`。
+- 两步以上任务优先 `ue.batch(..., stop_on_error=True)`；CLI 回退时再用 `batch` 或 `run`。
+- 写入任务使用结构化参数或 JSON 文件输入，读取 `CommandResult.response` / `BatchResult.response`；CLI 回退时读取 report JSON。
+- 能被单文件 JSON 或文件夹式结构化 JSON 覆盖的资产 authoring，优先直接编辑导出的 `authoring` / `minimal_authoring` JSON，不使用零散写入命令作为主流程。
+- 新增节点、模块、组件、控件、Material expression 或 Niagara dynamic input 前，先用 `node_catalog_search` 获取 `kind/name/full_name/json_authoring`，再把 `json_authoring` 或 `seed` 写入 JSON。
 - skill 内不同步 `commands/deprecatedCommand/`。若历史兼容排查确实需要废弃命令，必须回到插件仓库归档文档确认边界，并明确它不是 authoring 主流程。
 
 ## 主流程命令
@@ -498,7 +499,7 @@ Control Rig authoring 优先走 folder workflow；`variables/variables.json`、h
 
 ## 常用文档入口
 
-- JSON / 结构化 JSON 主流程：`commands/README.md` 的“资产编辑优先级”
+- JSON / 结构化 JSON 主流程：`JsonAuthoring_Guide.md` 与 `json-authoring/00_DirectJsonAuthoring.md`
 - Niagara folder schema：`commands/15_Niagara_FolderFormat.md`
 - SkeletalMesh folder schema：`commands/16_SkeletalMesh_FolderFormat.md`
 - ControlRig folder schema：`commands/17_ControlRig_FolderFormat.md`

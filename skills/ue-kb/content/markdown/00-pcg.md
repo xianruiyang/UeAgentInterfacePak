@@ -1,71 +1,52 @@
-# 00-PCG基础课程
+# 00 PCG基础课程
 
-# 00-PCG基础课程
+# 00 PCG基础课程
 
 ## 知识目标
 
-- 本集是 PCG 基础课程的导览和概念入口，不是具体节点实操课。
-- 需要掌握的核心定义是：PCG（Procedural Content Generation）用规则和逻辑自动生成内容，修改图表或参数后，所有使用该图表的实例都能随之更新。
-- 本集还说明 PCG 的价值边界：它适合做可复用、可参数化、可批量更新的场景内容，而不是手工逐个摆放对象。
+- 围绕“00 PCG基础课程”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 确认项目中启用了 Procedural Content Generation Framework 插件。
-- 理解 PCG 的基本工作方式：图表定义规则，点和属性承载中间数据，Spawner 或蓝图负责把规则变成可见结果。
-- 记住后续课程的阅读顺序：先学点、Bounds、调试和数据流，再学采样、过滤、属性、参数、投射、生成、优化和大规模分区。
-- 复现任何后续案例前，都应先用 Debug/Inspect 看点数据，而不是直接从最终生成结果判断对错。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
+- 涉及运行时、World Partition、Hierarchical Generation 或 GPU 节点时，单独验证触发模式、缓存和性能。
 
 ## 关键术语
 
-- `PCG`
-- `Procedural Content Generation`
-- `PCG Graph`
-- `Point`
-- `Bounds`
-- `Attribute`
-- `Static Mesh`
-- `Instanced Static Mesh`
-- `Runtime Generation`
-- `GPU`
-- `Plugin`
+- `PCG`、`Procedural Content Generation`、`PCG Graph`、`Point`、`Bounds`、`Attribute`、`Static Mesh`、`Instanced Static Mesh`、`Runtime Generation`、`GPU`、`Plugin`、`图表`、`组件`、`点`、`生成`、`蓝图`、`网格`、`运行时`
 
-## 操作步骤与要点
+## 分段知识
 
-### 介绍课程安排、PCG 的定义、插件入口，以及为什么 PCG 能提升场景内容的迭代效率
+### 00:00:06-00:03:52 运行时生成、分区与性能
 
-**内容要点：**
+- 本段定位：运行时生成、分区与性能。
+- 知识点：Gaea 输出高度图和遮罩贴图后，需要在 UE 中正确导入并绑定到 Landscape/材质层，PCG 再按图层信息控制地貌与植被。
+- 知识点：Niagara 或组件输出应挂在筛选后的 PCG 点上，先核对点位置、随机偏移和实例数量，再接入 Niagara Component。
+- 知识点：GPU PCG 节点能提升运行时生成吞吐，但 CPU/GPU 数据传输会形成边界，图表中要减少不必要的跨设备传递。
+- 知识点：PCG 是运用规则和逻辑自动生成内容的程序化生成技术。
+- 知识点：PCG 可通过实例化静态网格体降低大量重复网格的渲染成本。
+- 知识点：PCG 生成的网格可交由实例化静态网格体组件管理，减少手动合并和实例化步骤。
+- 知识点：PCG 可在支持的节点上使用 GPU 执行，适合点处理、运行时生成和静态网格生成等高并发任务。
+- 知识点：启用 Procedural Content Generation Framework 插件后，项目才能创建和运行 PCG Graph。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 复现要点：运行时、分区或 GPU 生成需要单独验证缓存、触发时机、平台支持和性能预算。
+- 核对对象：`PCG`、`GPU`、`图表`、`组件`、`点`、`分区`、`生成`、`蓝图`、`网格`、`运行时`。
 
-- 开头说明这是一个系列课程，后续教程会持续加入播放列表，因此本集应当作为目录和概念入口阅读。
-- 视频把 PCG 定义为“运用规则和逻辑自动生成内容的技术”。这句话是后续所有节点操作的基础：图表不是单次生成脚本，而是可重复执行的规则系统。
-- 口播强调修改图表后，所有使用该图表放置的内容都会更新；这说明 PCG 的优势在于批量一致性和可维护性。
-- 提到实例化静态网格体和运行时 GPU 生成，说明 PCG 不只是编辑器摆放工具，也可能参与性能友好的实例化和运行时生成方案。
-- 对初学者来说，本集最重要的行动是先找到并启用 PCG 框架插件，再进入后续课程学习点数据、采样、过滤和生成。
-
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue56-pcg-fundamentals-course-p01/s01-01-S01_1_00_00_16.jpg)
 ![关键截图 2](../assets/ue56-pcg-fundamentals-course-p01/s01-02-S01_2_00_01_59.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `PCG Graph` 是规则容器，不是单个生成结果。
-- `Point`、`Bounds`、`Attribute` 是后续所有节点链的核心数据结构。
-- Runtime/GPU 生成与编辑器生成不是同一个问题，后续复现时要区分目标场景。
-- 插件未启用时，PCG 节点、图表和组件可能不会出现在编辑器中。
-
-## 复现检查清单
-
-- 新项目先确认 PCG 插件已启用，并能创建 PCG Graph / PCG Component。
-- 学后续课程时，先看点和 Bounds，再看过滤、属性和生成；不要只盯最终生成出来的模型。
-- 如果修改图表后实例没有更新，优先检查图表是否绑定到正确 Actor、组件是否需要重新生成，以及运行时/编辑器生成模式是否一致。
-- 涉及运行时 GPU 生成时，需要额外确认项目版本、平台和性能预算。
-
-## 后续学习路线
-
-- 先学数据基础：理解 Point、Bounds、Attribute 和 Debug/Inspect，否则后续节点看起来会像黑盒。
-- 再学采样来源：表面、样条、纹理和体积采样决定点从哪里来，也决定生成结果是否贴合场景。
-- 接着学过滤和属性：过滤决定哪些点留下，属性决定每个点生成什么、怎么旋转缩放、使用什么材质或分类。
-- 最后再看运行时、世界分区、HLSL 和 Geometry Script，这些属于扩展能力，应建立在点数据和调试流程清楚之后。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

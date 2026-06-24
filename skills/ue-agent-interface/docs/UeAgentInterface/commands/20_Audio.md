@@ -68,6 +68,8 @@ validation/issues.json
 
 `metasound_open_editor` 与 SoundCue 相同，在 headless 自动化中返回跳过状态而不是打开 UI；`metasound_apply_folder` 使用 `UMetaSoundEditorSubsystem::FindOrBeginBuilding` 取得资产 builder，写回后注册 graph，不使用只能覆盖 transient MetaSound 的 `BuildAndOverwriteMetaSound`。
 
+`metasound_apply_folder` 默认 `compile_after_apply=true`。apply 会在最终保存前调用 `metasound_compile(save_after_compile=false)`，响应中的 `compile_report` 来自这次 apply 内编译触发；当前 MetaSound 编译接口只能返回空 `messages[]`、`error_count=0` 的刷新型报告，不能像 Blueprint/Material/Niagara 一样作为可阻断错误日志源。`save_after_apply=true` 只会在 apply 和 compile 调用成功后执行。
+
 MetaSound folder 文件：
 
 ```text

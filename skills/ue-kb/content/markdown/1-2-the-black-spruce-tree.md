@@ -1,108 +1,70 @@
-# 1-2 - The Black Spruce Tree
+# 1 2 The Black Spruce Tree
 
-# 1-2 - The Black Spruce Tree
+# 1 2 The Black Spruce Tree
 
 ## 知识目标
 
-- 本文整理“1-2 - The Black Spruce Tree”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+- 围绕“1 2 The Black Spruce Tree”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 观察黑云杉最终目标：树冠层次、枝条填充、针叶密度、阴影深度和透明背景渲染效果。
-- 明确资产制作顺序：先做枝条和针叶卡片，再做树干，最后组装成整棵树并导入 UE5。
-- 记录要服务于实时环境的约束：轮廓不能太重复、枝条要填满空洞、LOD/材质/风动画要能进入后续场景。
-- 把本集作为后续建模与纹理分 P 的验收基准：每一步都要回看是否能得到同样的树形和自然感。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
 
 ## 关键术语
 
-- `Density`
-- `Mask`
-- `Material`
-- `trees`
-- `million`
-- `show`
-- `branches`
-- `Nanite`
-- `completely`
+- `Density`、`Mask`、`Material`、`trees`、`million`、`show`、`branches`、`Nanite`、`completely`、`Branch`
 
-## 操作步骤与要点
+## 分段知识
 
-### 观察黑云杉最终目标：树冠层次、枝条填充、针叶密度、阴影深度和透明背景渲染效果
+### 00:00:00-00:04:49 属性、过滤与数据分流
 
-**内容要点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：用平面卡片制作针叶基础单元，在编辑模式调整比例、朝向和中心点，作为后续阵列复制与变形的最小构件。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Branch`、`Material`、`属性`、`过滤`。
 
-- 观察黑云杉最终目标：树冠层次、枝条填充、针叶密度、阴影深度和透明背景渲染效果。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p02/s01-01-S01_1_00_00_10.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p02/s01-02-S01_2_00_02_24.jpg)
 
+### 00:04:49-00:07:57 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Density`、`Branch`、`属性`、`过滤`。
 
-- `Material`
-- `trees`
-- `show`
-- `Nanite`
-- `spruce`
-- `already`
-- `model`
-- `course`
-- `background`
-
-### 明确资产制作顺序：先做枝条和针叶卡片，再做树干，最后组装成整棵树并导入 UE5
-
-**内容要点：**
-
-- 明确资产制作顺序：先做枝条和针叶卡片，再做树干，最后组装成整棵树并导入 UE5。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p02/s02-01-S02_1_00_04_59.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p02/s02-02-S02_2_00_06_23.jpg)
 
+### 00:07:57-00:08:48 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Branch`、`属性`、`过滤`。
 
-- `Density`
-- `Mask`
-- `million`
-- `copy`
-- `paste`
-- `rotate`
-- `dead`
-- `mirror`
-- `mask`
-- `gaps`
-
-### 记录要服务于实时环境的约束：轮廓不能太重复、枝条要填满空洞、LOD/材质/风动画要能进入后续场景
-
-**内容要点：**
-
-- 记录要服务于实时环境的约束：轮廓不能太重复、枝条要填满空洞、LOD/材质/风动画要能进入后续场景。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p02/s03-01-S03_1_00_08_07.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p02/s03-02-S03_2_00_08_23.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `completely`
-- `branches`
-- `trunk`
-- `crazy`
-- `chunks`
-- `next`
-- `lecture`
-- `Blender`
-- `enough`
-
-## 复现检查清单
-
-- 本集是概览，重点是最终资产标准和制作路线，不应误写成完整操作教程。
-- 所有 UE5 资产都要检查比例、pivot、材质槽、贴图色彩空间和实例化性能。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

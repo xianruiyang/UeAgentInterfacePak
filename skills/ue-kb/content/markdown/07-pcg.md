@@ -1,216 +1,124 @@
-# 07-停止硬编码PCG：使用参数与角色数据
+# 07 停止硬编码PCG：使用参数与角色数据
 
-# 07-停止硬编码PCG：使用参数与角色数据
+# 07 停止硬编码PCG：使用参数与角色数据
 
 ## 知识目标
 
-- 本文整理“07-停止硬编码PCG：使用参数与角色数据”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+- 围绕“07 停止硬编码PCG：使用参数与角色数据”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 先明确本集在 PCG 基础课中的位置：输入数据是什么、点数据如何产生、属性如何流转、最终由哪个生成节点或蓝图消费。
-- 把硬编码数值迁移为 Graph Parameters、Actor Data 或 Blueprint 暴露参数，让同一图表可被不同 Actor 复用。
-- 复现时检查参数默认值、实例覆盖值和运行时更新路径，避免改了蓝图变量但 PCG 图表没有重新读取。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
 
 ## 关键术语
 
-- `PCG`
-- `Blueprint`
-- `蓝图`
-- `Static Mesh`
-- `Mesh`
-- `Spline`
-- `Transform`
-- `Point`
-- `Attribute`
-- `Actor`
-- `Component`
-- `Spawn`
-- `Grid`
-- `Bounds`
-- `Density`
-- `Random`
-- `Seed`
-- `Graph`
+- `PCG`、`Blueprint`、`蓝图`、`Static Mesh`、`Mesh`、`Spline`、`Transform`、`Point`、`Attribute`、`Actor`、`Component`、`Spawn`、`Grid`、`Bounds`、`Density`、`Random`、`Seed`、`Graph`、`图表`、`组件`、`点`、`属性`、`边界`、`过滤`
 
-## 操作步骤与要点
+## 分段知识
 
-### 先明确本集在 PCG 基础课中的位置：输入数据是什么、点数据如何产生、属性如何流转、最终由哪个生成节点或蓝图消费
+### 00:00:01-00:04:40 属性、过滤与数据分流
 
-**内容要点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：PCG 点默认包含 Position、Rotation、Scale、Bounds、Density、Seed 等属性，自定义属性不带 `$` 前缀，Inspect 时要分清来源。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`PCG`、`Actor`、`图表`、`点`、`属性`、`过滤`、`生成`、`蓝图`。
 
-- 先明确本集在 PCG 基础课中的位置：输入数据是什么、点数据如何产生、属性如何流转、最终由哪个生成节点或蓝图消费。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue56-pcg-fundamentals-course-p08/s01-01-S01_1_00_00_11.jpg)
 ![关键截图 2](../assets/ue56-pcg-fundamentals-course-p08/s01-02-S01_2_00_02_21.jpg)
 
+### 00:04:40-00:09:19 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：PCG 点默认包含 Position、Rotation、Scale、Bounds、Density、Seed 等属性，自定义属性不带 `$` 前缀，Inspect 时要分清来源。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`PCG`、`图表`、`点`、`属性`、`过滤`、`生成`、`蓝图`。
 
-- `PCG`
-- `蓝图`
-- `Actor`
-- `Graph`
-- `实例`
-- `属性`
-- `过滤`
-- `参数`
-- `节点`
-- `生成`
-
-### 先明确本集在 PCG 基础课中的位置：输入数据是什么、点数据如何产生、属性如何流转、最终由哪个生成节点或蓝图消费（2）
-
-**内容要点：**
-
-- 先明确本集在 PCG 基础课中的位置：输入数据是什么、点数据如何产生、属性如何流转、最终由哪个生成节点或蓝图消费（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue56-pcg-fundamentals-course-p08/s02-01-S02_1_00_04_50.jpg)
 ![关键截图 2](../assets/ue56-pcg-fundamentals-course-p08/s02-02-S02_2_00_07_00.jpg)
 
+### 00:09:19-00:14:06 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：Static Mesh Spawner 将点数据实例化为静态网格，复现时要检查 Mesh 清单、Transform、Density、Seed 和材质覆盖。
+- 知识点：Static Mesh Spawner 将点数据实例化为静态网格，复现时要检查 Mesh、Transform、Density 和材质覆盖。
+- 知识点：Transform Points 可调整点的位置、旋转和缩放；使用非统一缩放时要分别检查各轴最小值和最大值。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Bounds`、`图表`、`组件`、`点`、`点数据`、`采样`、`生成`、`蓝图`、`网格`。
 
-- `PCG`
-- `蓝图`
-- `Graph`
-- `Landscape`
-- `实例`
-- `属性`
-- `参数`
-- `节点`
-- `生成`
-- `adding`
-
-### 节点、参数和生成结果校验 03
-
-**内容要点：**
-
-- 节点、参数和生成结果校验 03。
-
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue56-pcg-fundamentals-course-p08/s03-01-S03_1_00_09_29.jpg)
 ![关键截图 2](../assets/ue56-pcg-fundamentals-course-p08/s03-02-S03_2_00_11_42.jpg)
 
+### 00:14:06-00:19:03 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：PCG 点默认包含 Position、Rotation、Scale、Bounds、Density、Seed 等属性，自定义属性不带 `$` 前缀，Inspect 时要分清来源。
+- 知识点：Difference 节点根据连接对象的 Bounds 移除相交点；如果需要保留相交区域，应改用交集或反向过滤逻辑。
+- 知识点：在-Z方向上移动90到130个单位 同时在Y方向上和绕Z轴的旋转上 也加入一点随机性。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`图表`、`点`、`属性`、`边界`、`过滤`、`材质`。
 
-- `PCG`
-- `蓝图`
-- `Actor`
-- `Graph`
-- `网格`
-- `节点`
-- `生成`
-- `Regen`
-- `PCGSeries`
-- `Selection`
-
-### **内容要点：**
-
-- **内容要点：**（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue56-pcg-fundamentals-course-p08/s04-01-S04_1_00_14_16.jpg)
 ![关键截图 2](../assets/ue56-pcg-fundamentals-course-p08/s04-02-S04_2_00_16_34.jpg)
 
+### 00:19:03-00:23:51 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：Difference 节点根据连接对象的 Bounds 移除相交点；如果需要保留相交区域，应改用交集或反向过滤逻辑。
+- 知识点：Static Mesh Spawner 将点数据实例化为静态网格，复现时要检查 Mesh、Transform、Density 和材质覆盖。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Bounds`、`图表`、`点`、`点数据`、`采样`、`生成`、`网格`。
 
-- `PCG`
-- `Transform`
-- `Point`
-- `Actor`
-- `Seed`
-- `Graph`
-- `材质`
-- `属性`
-- `参数`
-- `节点`
-
-### 把硬编码数值迁移为 Graph Parameters、Actor Data 或 Blueprint 暴露参数，让同一图表可被不同 Actor 复用
-
-**内容要点：**
-
-- 把硬编码数值迁移为 Graph Parameters、Actor Data 或 Blueprint 暴露参数，让同一图表可被不同 Actor 复用。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue56-pcg-fundamentals-course-p08/s05-01-S05_1_00_19_13.jpg)
 ![关键截图 2](../assets/ue56-pcg-fundamentals-course-p08/s05-02-S05_2_00_21_27.jpg)
 
+### 00:23:51-00:28:39 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：PCG 点默认包含 Position、Rotation、Scale、Bounds、Density、Seed 等属性，自定义属性不带 `$` 前缀，Inspect 时要分清来源。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`PCG`、`Actor`、`图表`、`组件`、`点`、`属性`、`过滤`、`生成`、`蓝图`。
 
-- `PCG`
-- `Actor`
-- `Graph`
-- `网格`
-- `参数`
-- `节点`
-- `生成`
-- `PCGSeries`
-- `Asset`
-
-### 把硬编码数值迁移为 Graph Parameters、Actor Data 或 Blueprint 暴露参数，让同一图表可被不同 Actor 复用（2）
-
-**内容要点：**
-
-- 把硬编码数值迁移为 Graph Parameters、Actor Data 或 Blueprint 暴露参数，让同一图表可被不同 Actor 复用（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue56-pcg-fundamentals-course-p08/s06-01-S06_1_00_24_01.jpg)
 ![关键截图 2](../assets/ue56-pcg-fundamentals-course-p08/s06-02-S06_2_00_26_15.jpg)
 
+### 00:28:39-00:32:54 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：PCG 点默认包含 Position、Rotation、Scale、Bounds、Density、Seed 等属性，自定义属性不带 `$` 前缀，Inspect 时要分清来源。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`PCG`、`Actor`、`图表`、`点`、`属性`、`过滤`、`蓝图`。
 
-- `PCG`
-- `蓝图`
-- `Actor`
-- `Graph`
-- `实例`
-- `属性`
-- `参数`
-- `节点`
-- `生成`
-- `actor`
-
-### 复现时检查参数默认值、实例覆盖值和运行时更新路径，避免改了蓝图变量但 PCG 图表没有重新读取
-
-**内容要点：**
-
-- 复现时检查参数默认值、实例覆盖值和运行时更新路径，避免改了蓝图变量但 PCG 图表没有重新读取。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue56-pcg-fundamentals-course-p08/s07-01-S07_1_00_28_49.jpg)
 ![关键截图 2](../assets/ue56-pcg-fundamentals-course-p08/s07-02-S07_2_00_30_46.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `PCG`
-- `蓝图`
-- `Actor`
-- `Graph`
-- `实例`
-- `属性`
-- `过滤`
-- `参数`
-- `节点`
-- `PCGSeries`
-
-## 复现检查清单
-
-- 每个示例都要先确认输入点、Bounds、属性和 Debug 结果，再判断生成节点是否有问题。
-- 涉及运行时、分区、HLSL 或 Geometry Script 的内容，要记录 UE 版本、插件和执行环境限制。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

@@ -4,146 +4,63 @@
 
 ## 知识目标
 
-- 使用 VolumeSampler 在体积内采样点，用体积形状驱动实时建筑或格架结构生成。
+- 围绕“【UE5.3 PCG教程】使用体积采样器VolumeSampler 创建实时建筑”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 在关卡中放置可被 PCG 识别的体积 Actor，并给它设置标签或引用。
-- 在 PCG Graph 中获取该体积并用 VolumeSampler 生成内部点集。
-- 根据体积 Bounds、间距和密度控制建筑网格或构件分布。
-- 移动或缩放体积后重新生成，确认建筑结果随体积实时变化。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
 
 ## 关键术语
 
-- `PCG`
-- `Blueprint`
-- `Mesh`
-- `VolumeSampler`
-- `Transform`
-- `Point`
-- `Attribute`
-- `Actor`
-- `Component`
-- `Spawn`
-- `Bounds`
-- `Density`
-- `Seed`
-- `Graph`
-- `Material`
-- `HISM`
-- `Landscape`
-- `体积`
+- `PCG`、`Blueprint`、`Mesh`、`VolumeSampler`、`Transform`、`Point`、`Attribute`、`Actor`、`Component`、`Spawn`、`Bounds`、`Density`、`Seed`、`Graph`、`Material`、`HISM`、`Landscape`、`体积`
 
-## 操作步骤与要点
+## 分段知识
 
-### 在关卡中放置可被 PCG 识别的体积 Actor，并给它设置标签或引用
+### 00:00:00-00:03:00 体积采样与生成范围
 
-**内容要点：**
+- 本段定位：体积采样与生成范围。
+- 知识点：建筑 PCG 子流程需要按点数据、属性分类、过滤条件和构件生成结果逐级核对。
+- 知识点：体积采样与生成范围。
+- 核对对象：`PCG`、`生成`。
 
-- 这一段对应“在关卡中放置可被 PCG 识别的体积 Actor，并给它设置标签或引用。”，主要作用是把本集主题“【UE5.3 PCG教程】使用体积采样器VolumeSampler 创建实时建筑”中的该流程环节落到具体节点、参数或资产操作上。
-
-- 画面线索：`Component`
-- 画面线索：`MyEnvironment`
-- 画面线索：`Tutorial`
-- 画面线索：`BP_Volume`
-- 画面线索：`VIA:`
-- 画面线索：`Platforms`
-- 画面线索：`PerspectiveLitShow`
-- 画面线索：`+2B用50L1020.2501`
-
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue53-pcg-practical-node-recipes-p05/s01-01-S01_1_00_00_10.jpg)
 ![关键截图 2](../assets/ue53-pcg-practical-node-recipes-p05/s01-02-S01_2_00_01_30.jpg)
 
+### 00:03:00-00:06:00 体积采样与生成范围
 
-**参数、节点和风险点：**
+- 本段定位：体积采样与生成范围。
+- 知识点：建筑 PCG 子流程需要按点数据、属性分类、过滤条件和构件生成结果逐级核对。
+- 知识点：体积采样与生成范围。
+- 核对对象：`PCG`、`生成`。
 
-- `Blueprint`
-- `Component`
-- `Tutorial`
-- `BP_Volume`
-- `MyEnvironment`
-- `Platforms`
-- `PerspectiveLitShow`
-- `DetailsxWorld`
-- `ItemLabel`
-- `Type`
-
-### 在 PCG Graph 中获取该体积并用 VolumeSampler 生成内部点集
-
-**内容要点：**
-
-- 这一段对应“在 PCG Graph 中获取该体积并用 VolumeSampler 生成内部点集。”，主要作用是把本集主题“【UE5.3 PCG教程】使用体积采样器VolumeSampler 创建实时建筑”中的该流程环节落到具体节点、参数或资产操作上。
-
-- 画面线索：`BP_Volume`
-- 画面线索：`Hep`
-- 画面线索：`PCG_Volume*`
-- 画面线索：`Asset`
-- 画面线索：`Platforms`
-- 画面线索：`IIPause Regen`
-- 画面线索：`ForceRegen`
-- 画面线索：`Cancel Execution`
-
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue53-pcg-practical-node-recipes-p05/s02-01-S02_1_00_03_10.jpg)
 ![关键截图 2](../assets/ue53-pcg-practical-node-recipes-p05/s02-02-S02_2_00_04_30.jpg)
 
+### 00:06:00-00:08:32 体积采样与生成范围
 
-**参数、节点和风险点：**
+- 本段定位：体积采样与生成范围。
+- 知识点：建筑 PCG 子流程需要按点数据、属性分类、过滤条件和构件生成结果逐级核对。
+- 知识点：体积采样与生成范围。
+- 核对对象：`PCG`、`生成`。
 
-- `PCG`
-- `Transform`
-- `Point`
-- `Bounds`
-- `Graph`
-- `BP_Volume`
-- `PCG_Volume`
-- `Asset`
-- `Platforms`
-- `IIPause`
-
-### 根据体积 Bounds、间距和密度控制建筑网格或构件分布
-
-**内容要点：**
-
-- 这一段对应“根据体积 Bounds、间距和密度控制建筑网格或构件分布。”，主要作用是把本集主题“【UE5.3 PCG教程】使用体积采样器VolumeSampler 创建实时建筑”中的该流程环节落到具体节点、参数或资产操作上。
-
-- 画面线索：`BP_Volume`
-- 画面线索：`Hep`
-- 画面线索：`PCG_Volume*`
-- 画面线索：`Asset`
-- 画面线索：`Platforms`
-- 画面线索：`IPause Regen`
-- 画面线索：`Force Regen`
-- 画面线索：`Cancel Execution`
-
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue53-pcg-practical-node-recipes-p05/s03-01-S03_1_00_06_10.jpg)
 ![关键截图 2](../assets/ue53-pcg-practical-node-recipes-p05/s03-02-S03_2_00_07_16.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `PCG`
-- `Bounds`
-- `Graph`
-- `BP_Volume`
-- `PCG_Volume`
-- `Regen`
-- `Asset`
-- `Platforms`
-- `IPause`
-- `Force`
-
-## 复现检查清单
-
-- 体积标签必须和 PCG 过滤条件一致。
-- 体积采样间距会直接影响生成数量和性能。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

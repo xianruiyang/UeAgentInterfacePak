@@ -1,6 +1,6 @@
 # CLI Diagnostics And Release Checks
 
-本页只记录插件外工具链。具体命令行为以 `<SkillDir>/docs/UeAgentInterfaceCMD/USAGE.md` 为准。`uai-cli.exe` 固定使用 `<SkillDir>/tools/uai-cli.exe`；report、crash capture 和索引默认写入 `<UserWorkDir>/runtimeLogs/`。
+本页只记录 CLI 回退、插件外工具链和发布诊断。日常 UAI 操作优先使用已定位 `UeAgentInterfaceCMD` 的 Python `uai_core`；默认候选找不到时先向用户确认安装路径，确认没有可用 UAICMD 后才进入 CLI 回退。进入 CLI 回退时，具体命令行为以 `<SkillDir>/docs/UeAgentInterfaceCMD/USAGE.md` 为准，`uai-cli.exe` 固定使用 `<SkillDir>/tools/uai-cli.exe`，report、crash capture 和索引默认写入 `<UserWorkDir>/runtimeLogs/`。
 
 ## 快速入口
 
@@ -37,7 +37,7 @@ New-Item -ItemType Directory -Force -Path $RuntimeLogs | Out-Null
 
 ## 判断规则
 
-- 命令清单校验失败时，先检查命令拼写和当前 `$UaiCli` 是否为 `<SkillDir>/tools/uai-cli.exe`。
+- CLI 回退模式下命令清单校验失败时，先检查命令拼写和当前 `$UaiCli` 是否为 `<SkillDir>/tools/uai-cli.exe`。
 - 截图或预览相关失败不能只看文件是否存在；以 report/crash capture 中的 PNG 有效性检查为准。
 - Pak 发布前至少执行一次 `release all`；有 `issues[]` 必须处理，有 `warnings[]` 必须记录是否接受。
 - 发布前优先跑 `release gate --run-tests`；UE 在线时再补 `e2e ue-readonly`。

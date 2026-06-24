@@ -84,6 +84,7 @@
   6. `state_machines/*.json`
   7. `graphs/*.json`
   8. 编译 / 保存
+- 默认 `compile_after_apply=true`。apply 会收集编译日志并返回 `compile_status`、`compile_error_count`、`compile_warning_count`、`compile_has_error`、`compile_messages[]`；如果有编译 error 或 Blueprint 状态为 `BS_Error`，命令失败返回 `compile_failed_after_apply`，并且不会执行最终 `save_after_apply`。
 - 普通逻辑图和成员层当前复用 `blueprint_apply_folder` 代理回写。
 - `AnimLayer / StateMachine` 结构层当前采用“按结构真源重建后再回填图”的策略，不做节点级 diff。
 - 对已存在资产，`target_skeleton / template` 目前只在创建时生效；若与现有资产不一致，apply 会给 warning，不会强改现有资产。
@@ -111,6 +112,7 @@
 说明：
 
 - 普通 K2 节点和普通 AnimGraph 节点应通过 folder JSON 的图节点描述创建，`graph_name` 也支持直接传 `graph_path`。
+- AnimBlueprint 节点 authoring 前必须先用 `anim_blueprint_list_graphs`、`anim_blueprint_inspect_nodes`、`anim_blueprint_export_folder` 或 `node_graph_list(adapter=anim_blueprint)` 读取真实图路径、节点 class、pin 和属性。不能凭 AnimGraph 菜单显示名、截图文字或记忆拼 `node_class`。
 - 结构化图写入仍然不负责创建会附带子图或额外结构初始化的节点；例如 `StateMachine` 这类结构节点应走 AnimBlueprint folder workflow 中的状态机描述。
 - 这一层主要处理 EventGraph / 逻辑函数图 / 宏图 / TransitionGraph，以及不带附属结构的 AnimGraph 节点施工。
 - `anim_blueprint_layout_graph` 是 `blueprint_layout_graph` 的 AnimBlueprint 前缀包装；它只移动图节点坐标，不改状态机结构、AnimGraph 资产引用、transition rule 或业务逻辑。复杂状态机子图建议传 `graph_path`，避免重名。
@@ -127,6 +129,7 @@
   - `Node.bSetRefPoseFromSkeleton` / `Node.AlphaCurveName` / `Node.LODThreshold`
   这意味着 `BlendSpace Player / RotationOffsetBlendSpace / Sequence Player / Sequence Evaluator` 这类资产引用节点，已经能在 `export_folder / apply_folder` 里稳定 round-trip 资产引用；`Sequence Player` 还会保留是否循环播放，避免 Jump/Attack 这类一次性状态在结构化导出后丢失 `Node.bLoopAnimation`。
   `AnimGraphNode_ControlRig` 也已经能稳定 round-trip Control Rig class、执行开关、输入/输出姿态同步设置和基础 Alpha/LOD 设置；完整 exposed variable mapping 仍按后续 profile 扩展处理。
+- 如果某个 AnimGraph 节点不在上述导出模板、inspect 结果或明确支持 profile 中，必须先补 UAI 候选/模板读取能力或人工提供已验证模板；不得让 LLM 自行猜该节点类、内部 `Node.*` 属性和 pin。
 
 ### Control Rig 节点接入验证
 

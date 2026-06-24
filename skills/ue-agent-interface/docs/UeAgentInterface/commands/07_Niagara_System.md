@@ -9,7 +9,6 @@
 | `niagara_list_assets` | 列出 Niagara 资产 | `root_path`、`limit` | 枚举测试目录资产 |
 | `niagara_create_system` | 创建 Niagara System | `asset_path`、`create_default_nodes`、`open_editor` | 新建 NS 测试资产 |
 | `niagara_create_emitter` | 创建 Niagara Emitter | `asset_path`、`add_default_modules_and_renderers` | 新建独立 Emitter 资产 |
-| `niagara_delete_asset` | 删除 Niagara 资产 | `asset_path`、`force_delete`、`use_unchecked_delete` | 清理 AutoTests 临时资产 |
 | `niagara_duplicate_asset` | 复制 Niagara 资产 | `source_asset_path`、`target_asset_path` | 基于模板快速变体 |
 | `niagara_open_editor` | 打开 Niagara 资产编辑器 | `asset_path` | 进入编辑上下文 |
 | `niagara_preview_advance` | 连续推进 Niagara 编辑器预览并暂停 | `asset_path`、`target_frame`、`tick_delta_seconds` | 从 0 连续 tick 到指定帧，供后续 probe / screenshot 只读采样 |
@@ -21,18 +20,6 @@
 | `niagara_refresh_system` | 强制刷新 System 结构状态 | `asset_path`、`compile_after_refresh`、`save_after_refresh` | 修复写入后 overview / emitter execution / compiled data 过期 |
 
 > 安全说明：`niagara_create_system` 的 `create_default_nodes=false` 会创建最原始的 System 资产，SystemSpawn/SystemUpdate 图可能没有 Niagara 输出节点。这种资产可以用于底层结构测试，但不能直接打开 Niagara 编辑器或运行 `niagara_system_runtime_probe`。相关命令现在会在打开编辑器前返回 `unsafe_niagara_system_graph_missing_output_nodes`，避免 UE 在 Niagara Stack 构建阶段崩溃。需要从“空 System”开始做可运行效果时，应使用 `create_default_nodes=true` 创建最小有效 System 图，再手动添加 Emitter、Module 和 Renderer；这不是复制模板。
-
-### `niagara_delete_asset`
-
-用于删除 Niagara System / Emitter / Script。`force_delete=true` 会使用无确认删除路径；当目标包尚未落盘，或显式传 `use_unchecked_delete=true` 时，会走 `delete_objects_unchecked`，避免临时 NiagaraScript 等未保存资产在 UE 的递归引用替换路径中长时间阻塞 UAI 服务。删除返回成功后会清理同路径残留的非公开/非 standalone UObject，避免同一编辑器会话内立刻重建时报 `asset_already_exists`。
-
-关键参数：
-
-- `asset_path`：必填，Niagara 资产路径。
-- `force_delete`：可选，默认 `false`；测试清理和临时资产删除建议传 `true`。
-- `use_unchecked_delete`：可选，默认 `false`；强制使用 unchecked 删除路径。未落盘资产会自动启用该路径。
-
-返回字段包含 `deleted_asset_path`、`deleted_object_path`、`asset_kind`、`force_delete`、`package_exists_on_disk`、`use_unchecked_delete`、`delete_strategy`、`found_residual_object_after_delete`、`detached_residual_object_after_delete`。
 
 ### `niagara_preview_advance`
 
@@ -48,6 +35,7 @@
 - `tick_delta_seconds` / `preview_tick_delta_seconds`：可选，默认约 `1/60`。
 - `advance_mode` / `preview_advance_mode`：可选，默认 `tick_component`；也支持 `advance_simulation`，但事件/碰撞类效果优先使用 `tick_component`。
 - `pause_after_advance` / `pause_preview_after_advance`：可选，默认 `true`。
+- `restore_preview_after_advance` / `resume_preview_after_advance` / `restore_interactive_preview`：可选，默认 `false`。保持默认时命令会把预览停在目标帧并返回 `preview_state_token`，供后续 `sample_mode=current_preview` 只读；若只是临时采样、不需要后续读取同一暂停帧，可显式传 `true`，命令结束后恢复 Niagara 编辑器交互预览。
 
 返回字段包含：
 
@@ -55,6 +43,7 @@
 - `target_frame`、`advanced_frame_count`、`tick_delta_seconds`、`system_age`、`current_frame_estimate`。
 - `advance_semantics`：`continuous_from_zero` 或 `continuous_from_current`。
 - `used_seek=false`：确认没有使用 seek / 直接跳时间轴。
+- `restore_preview_after_advance`、`preview_state_token_invalidated_by_restore`、`preview_restore`：当显式恢复交互预览时返回；恢复会清空 UAI 预览令牌，因此不能再用该令牌做 `current_preview` 定帧读取。
 - `stats`：目标帧暂停后的当前组件统计。
 
 45 帧截图和 probe 的推荐流程：
@@ -109,8 +98,9 @@
 - `expected_preview_state_token`：可选，必须与 `niagara_preview_advance` 返回值一致，否则返回 `preview_state_token_mismatch`。
 - `expected_frame` / `target_frame`：可选，按 `preview_tick_delta_seconds` 估算当前帧，不匹配时返回 `preview_frame_mismatch`。
 - `require_paused`：可选，`current_preview` 默认 `true`；当前预览未暂停时返回 `preview_component_not_paused`。
+- `restore_preview_after_capture` / `resume_preview_after_capture` / `restore_interactive_preview`：可选，默认 `true`。截图成功或截图中途失败后都会把 Niagara 编辑器预览恢复到可交互播放状态，避免截图后 UI 预览卡在定帧；需要连续多条命令复用同一个暂停帧时才显式传 `false`。
 
-返回字段包含 `file_path`、`width`、`height`、`bytes`、`target`、`capture_mode`、`legacy_backbuffer_capture=disabled`、`preview_prepare_requested`、`pre_preview_redraw_performed`、`capture_redraw_performed`。序列帧模式额外返回 `frame_count`、`frames[]`、`advance_semantics=continuous_from_zero`、`frame_sequence_capture_mode=continuous_from_zero_once`、`frame_capture_renderer`、`pixel_signature`、`pixel_signal`、`changed_pixel_count_from_previous` 和 `visual_duplicate_of_previous`；`preview_scene_capture` 还会返回 `render_dependency_wait`，包含 warmup capture 次数、等待前后 asset/shader 剩余任务数。多帧默认 `file_path` 指向总览图，并返回 `frame_sheet_created`、`frame_sheet_file_path`、`sequence_frame_image_path`、`individual_frame_files_created=false` 和 `frame_sheet{file_path,width,height,columns,rows,tile_width,tile_height,padding,label_scale}`。`columns` 与 `rows` 固定为最小正方形网格边长，等于 `ceil(sqrt(frame_count))`，不足格子为空。截图路径不会调用 `FSlateApplication::TakeScreenshot`，也不会强制 redraw 真实 Slate 窗口；`window_backbuffer_safe` 只作为诊断字段保留。
+返回字段包含 `file_path`、`width`、`height`、`bytes`、`target`、`capture_mode`、`legacy_backbuffer_capture=disabled`、`preview_prepare_requested`、`pre_preview_redraw_performed`、`capture_redraw_performed`、`restore_preview_after_capture`、`preview_restore`。`preview_restore.restored=true` 且 `preview_restore.is_paused=false` 表示命令结束后已把预览恢复到交互播放态。序列帧模式额外返回 `frame_count`、`frames[]`、`advance_semantics=continuous_from_zero`、`frame_sequence_capture_mode=continuous_from_zero_once`、`frame_capture_renderer`、`pixel_signature`、`pixel_signal`、`changed_pixel_count_from_previous` 和 `visual_duplicate_of_previous`；`preview_scene_capture` 还会返回 `render_dependency_wait`，包含 warmup capture 次数、等待前后 asset/shader 剩余任务数。多帧默认 `file_path` 指向总览图，并返回 `frame_sheet_created`、`frame_sheet_file_path`、`sequence_frame_image_path`、`individual_frame_files_created=false` 和 `frame_sheet{file_path,width,height,columns,rows,tile_width,tile_height,padding,label_scale}`。`columns` 与 `rows` 固定为最小正方形网格边长，等于 `ceil(sqrt(frame_count))`，不足格子为空。截图路径不会调用 `FSlateApplication::TakeScreenshot`，也不会强制 redraw 真实 Slate 窗口；`window_backbuffer_safe` 只作为诊断字段保留。
 
 只读第 45 帧截图示例：
 
@@ -165,12 +155,14 @@
 - `expected_preview_state_token`：可选，必须与 `niagara_preview_advance` 返回值一致，否则返回 `preview_state_token_mismatch`。
 - `expected_frame` / `target_frame`：可选，按 `tick_delta_seconds` 估算当前帧，不匹配时返回 `preview_frame_mismatch`。
 - `require_paused`：可选，`current_preview` 默认 `true`；当前预览未暂停时返回 `preview_component_not_paused`。
+- `restore_preview_after_probe` / `resume_preview_after_probe` / `restore_interactive_preview`：可选。`sample_mode=simulate` 且 `pause_after_probe=false` 时默认 `true`，探针结束后恢复 Niagara 编辑器交互预览；`sample_mode=current_preview` 默认 `false`，保持严格只读，需要读完当前暂停帧后立即恢复时可显式传 `true`。
 
 返回字段包含：
 
 - `initial_stats` / `final_stats`：本次探针首尾统计。
 - `summary.emitter_peaks[]`：每个 emitter 在本次探针采样期间的峰值统计，包括 `max_particle_count`、`max_total_spawned_particles`、`max_spawn_info_total_count` 及对应 snapshot label。
 - `snapshots[]`：当 `include_snapshots=true` 时返回各阶段快照。
+- `restore_preview_after_probe`、`preview_restore`：当本次探针恢复交互预览时返回；`preview_restore.is_paused=false` 表示命令没有把编辑器预览留在暂停态。
 
 读取结果时不要只看最终快照。对 Collision Event、Death Event、短 lifetime 水花/火花这类瞬时粒子，最终帧可能已经归零，应优先看 `summary.emitter_peaks[]`。
 
@@ -211,7 +203,9 @@
 - `include_system_scope`：可选，默认 `true`；读取 System scope stack。
 - `include_emitters`：可选，默认 `true`；读取 System 内 emitter handle stack。
 - `emitter_name` / `emitter_id` / `emitter_index`：可选，限制只读取某个 emitter。
-- `compile_before_read`：可选，读取前触发 System 编译。
+- `compile_before_read`：可选，读取前触发 System 编译；System 资产会先打开/创建 Niagara ViewModel，再按 `force_compile` / `wait_for_complete` 编译，避免 ViewModel 初始化后又把 emitter 标为 dirty。
+- `force_compile`：可选，默认 `true`。
+- `wait_for_complete`：可选，默认 `true`。
 
 返回字段包含：
 
@@ -219,6 +213,7 @@
 - `scope_count`、`visited_stack_entry_count`
 - `total_issue_count`、`returned_issue_count`
 - `total_error_count`、`total_warning_count`、`total_info_count`
+- 编译字段：`compile_before_read`、`force_compile`、`wait_for_complete`、`compilation_requested`、`compilation_complete`、`has_outstanding_compilation_requests`
 - `scopes[]`：每个 System / Emitter scope 的 `root_total_error_count`、`root_total_warning_count`、`root_total_info_count`、`message_store_source_count`、`message_store_candidate_message_count`、`message_store_added_issue_count`、`stack_issue_icon_kind`、`stack_issue_tooltip_summary`、`root_collected_issue_count_mismatch`
 - Emitter scope 额外包含 `emitter_latest_compile_status`、`emitter_handle_error_text`、`emitter_handle_error_color`、`emitter_handle_error_visibility`，用于区分 Stack issue 图标和 emitter 编译/状态提示
 - System scope 额外包含 `system_latest_compile_status`
@@ -227,6 +222,7 @@
 注意：
 
 - `niagara_get_compile_log` 读取的是 Niagara 编译事件；Stack 面板红色感叹号可能来自 live Stack ViewModel 的依赖校验，不一定出现在 compile log。
+- `compile_before_read=true` 的编译发生在 ViewModel 可用之后；如果打开 Niagara 编辑器本身触发异步编译，这一步会把该状态纳入等待结果。
 - `stack_issue_icon_kind` 按 UE `SNiagaraStackIssueIcon` 的优先级输出：有 error 时为 `error`，否则有 warning 时为 `warning`，否则有 info 时为 `info`，否则为 `none`。`stack_issue_tooltip_summary` 对应该图标悬停摘要，例如 `1 error`、`2 infos`。
 - `root_total_*` 是 Stack root 当前聚合计数；`total_*` 会再合并 MessageStore issue。若 `root_collected_issue_count_mismatch=true` 且 `message_store_added_issue_count>0`，通常表示 UI tooltip 中包含了资产消息，例如 `未能从父发射器合并变更`。
 - 要尽量匹配 UI 里鼠标悬停看到的红色感叹号文本，建议使用 `prefer_existing_view_model=true` 且 `open_editor_if_needed=true`。
@@ -259,7 +255,7 @@
 - issue selector：可用 `issue_unique_identifier`、`module_node_guid`、`entry_path`、`scope_type`、`scope_name`、`emitter_name`、`emitter_id`、`emitter_index` 等字段缩小匹配范围。
 - `fix_index` / `fix_unique_identifier`：可选，指定使用哪一个 fix。
 - `apply_first_match`：可选，默认 `false`；多匹配时是否直接使用第一条。
-- `compile_after_apply`、`force_compile`、`wait_for_complete`、`save_after_apply`：可选。
+- `compile_after_apply`、`force_compile`、`wait_for_complete`、`save_after_apply`：可选，`compile_after_apply=true`、`force_compile=true`、`wait_for_complete=true` 是默认门禁。apply 会在最终保存前触发 System 编译并读取 `compile_log`；如果等待后仍有 outstanding compile request，返回 `compile_incomplete_after_apply`；如果 compile log 本身读取失败，返回 `compile_log_read_failed_after_apply`；如果 `compile_log.has_error=true`，返回 `compile_failed_after_apply`。这些失败都会保留 `saved=false` 并且不执行最终保存。
 
 执行 fix 后会调用 System refresh：同步 overview、重算 emitter execution order、失效 cached traversal data，并通知 Niagara ViewModel。
 
@@ -292,8 +288,8 @@ System 属性写入应通过 Niagara folder JSON 主流程表达；apply 结果�
 
 注意：
 
-- `niagara_compile_system` 对 `UNiagaraSystem` 默认 `refresh_before_compile=true`，因此普通编译也会先走上述刷新路径。编译校验默认不主动标记资产 dirty；需要保存编译结果时传 `mark_dirty_after_compile=true` 或 `save_after_compile=true`。
-- `niagara_get_compile_log` 的 `compile_before_read=true` 也可触发读前刷新，但该读路径不会主动标记 System dirty；需要写入语义时使用 `niagara_refresh_system` 或 `niagara_compile_system`。
+- `niagara_compile_system` 对 `UNiagaraSystem` 默认 `refresh_before_compile=true`、`force_compile=true`、`wait_for_complete=true`，因此普通编译也会先刷新再强制校验。编译校验默认不主动标记资产 dirty；需要保存编译结果时传 `mark_dirty_after_compile=true` 或 `save_after_compile=true`。
+- `niagara_get_compile_log` 的 `compile_before_read=true` 默认也使用 `force_compile=true` 并等待 System 编译完成；该读路径不会主动标记 System dirty。需要写入语义时使用 `niagara_refresh_system` 或 `niagara_compile_system`。
 - 对 `mark_dirty=false` 的刷新、默认校验编译、读前编译日志，若 UE 内部刷新/编译过程临时把原本 clean 的包置 dirty，命令会恢复原 dirty 状态并返回 `restored_dirty_state=true`。
 - 若 UI 中出现“新增一个空 emitter 后 system 才恢复”的现象，优先对目标 System 执行 `niagara_refresh_system`，再读 compile log、Stack issue 和 runtime probe。
 
@@ -319,10 +315,10 @@ System 属性写入应通过 Niagara folder JSON 主流程表达；apply 结果�
 1. `niagara_create_system` 创建最小可运行骨架。
 2. `niagara_export_folder` 导出真实模板。
 3. 写入基础 emitter/module/user parameter JSON。
-4. `niagara_apply_folder` 应用并读取返回的 `warnings`、`stack_issues`、`stack_error_count`。
+4. `niagara_apply_folder` 应用并读取返回的 `warnings`、`compile_log`、`stack_issues`、`stack_error_count`。
 5. 再次 `niagara_export_folder`，基于 UE 补全后的 module 属性继续修改。
 6. 再次 `niagara_apply_folder`。
-7. `niagara_get_compile_log` 和 `niagara_system_runtime_probe` 做最终验证。
+7. 需要独立复核时再调用 `niagara_get_compile_log`；最终仍用 `niagara_system_runtime_probe` 做运行验证。
 
 ## 最小请求示例
 

@@ -4,111 +4,53 @@
 
 ## 知识目标
 
-- 把网格顶点颜色当作遮罩，用颜色通道控制 PCG 在哪些区域生成内容。
+- 围绕“【UE5.3 PCG教程】PCG 网格顶点颜色作为遮罩Mask做程序化生成”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 准备带顶点色的网格，并确保目标区域已经绘制对应颜色通道。
-- 在 PCG 中采样网格表面，读取顶点颜色或相关属性。
-- 用阈值或通道过滤保留需要生成的点。
-- 把过滤后的点接入生成节点，使实例只出现在遮罩允许的区域。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
 
 ## 关键术语
 
-- `PCG`
-- `Blueprint`
-- `Static Mesh`
-- `Mesh`
-- `MeshToPoints`
-- `Transform`
-- `Point`
-- `Attribute`
-- `Actor`
-- `Component`
-- `Spawn`
-- `Bounds`
-- `Density`
-- `Seed`
-- `Graph`
-- `Mask`
-- `Material`
-- `Instance`
+- `PCG`、`Blueprint`、`Static Mesh`、`Mesh`、`MeshToPoints`、`Transform`、`Point`、`Attribute`、`Actor`、`Component`、`Spawn`、`Bounds`、`Density`、`Seed`、`Graph`、`Mask`、`Material`、`Instance`
 
-## 操作步骤与要点
+## 分段知识
 
-### 准备带顶点色的网格，并确保目标区域已经绘制对应颜色通道
+### 00:00:00-00:03:00 点数据、Bounds 与采样来源
 
-**内容要点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：点数据流程需要在 Inspect 中核对点数量、Bounds、Density、Transform、Seed 和自定义属性。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 核对对象：`PCG`、`生成`。
 
-- 这一段对应“准备带顶点色的网格，并确保目标区域已经绘制对应颜色通道。”，主要作用是把本集主题“【UE5.3 PCG教程】PCG 网格顶点颜色作为遮罩Mask做程序化生成”中的该流程环节落到具体节点、参数或资产操作上。
-
-- 画面线索：`MyEnvironment`
-- 画面线索：`Platforms`
-- 画面线索：`LitShow`
-- 画面线索：`PlaceActors`
-- 画面线索：`DetailsxLevels`
-- 画面线索：`World..`
-- 画面线索：`Search Clas`
-- 画面线索：`S_Huge_Sandstone_Cliff_vmill+Add`
-
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue53-pcg-practical-node-recipes-p04/s01-01-S01_1_00_00_10.jpg)
 ![关键截图 2](../assets/ue53-pcg-practical-node-recipes-p04/s01-02-S01_2_00_01_30.jpg)
 
+### 00:03:00-00:03:51 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：点数据流程需要在 Inspect 中核对点数量、Bounds、Density、Transform、Seed 和自定义属性。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 核对对象：`PCG`、`生成`。
 
-- `Mesh`
-- `Point`
-- `Actor`
-- `Component`
-- `Instance`
-- `Light`
-- `MyEnvironment`
-- `Platforms`
-- `LitShow`
-- `PlaceActors`
-
-### 用阈值或通道过滤保留需要生成的点
-
-**内容要点：**
-
-- 这一段对应“用阈值或通道过滤保留需要生成的点。”，主要作用是把本集主题“【UE5.3 PCG教程】PCG 网格顶点颜色作为遮罩Mask做程序化生成”中的该流程环节落到具体节点、参数或资产操作上。
-
-- 画面线索：`MyEnvironment`
-- 画面线索：`Platforms`
-- 画面线索：`LitShow`
-- 画面线索：`PlaceActors`
-- 画面线索：`DetailsxLevels`
-- 画面线索：`World..`
-- 画面线索：`Search Clas`
-- 画面线索：`S_Huge_Sandstone_Clif_vmill+Add`
-
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue53-pcg-practical-node-recipes-p04/s02-01-S02_1_00_03_10.jpg)
 ![关键截图 2](../assets/ue53-pcg-practical-node-recipes-p04/s02-02-S02_2_00_03_25.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `Mesh`
-- `Point`
-- `Actor`
-- `Component`
-- `Instance`
-- `Light`
-- `MyEnvironment`
-- `Platforms`
-- `LitShow`
-- `PlaceActors`
-
-## 复现检查清单
-
-- 顶点色通道和阈值要逐项确认，避免把 R/G/B/A 通道用错。
-- 遮罩边缘通常需要密度或随机过滤来避免生硬边界。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

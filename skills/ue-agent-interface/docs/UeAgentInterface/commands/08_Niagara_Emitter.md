@@ -31,6 +31,8 @@
 
 > Emitter、Renderer 和 Event Handler 属性回写都会返回通用属性观测字段：`requested_value_text`、`applied_value_text`、`property_value_read_back`、`property_import_status`、`property_import_error`、`value_text_changed_after_import`、`cpp_type`。属性不存在会返回 `property_not_found`，UE `ImportText` 解析失败会返回 `property_import_failed:<property>:<value>`。
 > Renderer 创建或重建阶段如果初始属性导入失败，apply 必须回滚半成品 renderer，并返回对应清理诊断。
+
+> 仍保留在正式面的原子/兼容写入命令只用于 bootstrap、诊断、迁移脚本和紧急修补。它们的 `compile_after_set` 默认值保持原语义，但只要触发编译，默认 `force_compile=true`、`wait_for_complete=true`，并统一返回 `compile_after_set`、`force_compile`、`wait_for_complete`、`compilation_requested`、`compilation_complete`、`has_outstanding_compilation_requests`。System 级命令会等待 `UNiagaraSystem` outstanding compile 清空；standalone Emitter 脚本编译为同步 `UNiagaraScript::RequestCompile`，完成后应返回 `compilation_complete=true`。
 ## Renderer 管理
 
 | 指令 | 作用 | 关键参数 | 典型用法 |

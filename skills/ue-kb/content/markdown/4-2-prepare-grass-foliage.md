@@ -1,138 +1,86 @@
-# 4-2 - Prepare Grass Foliage
+# 4 2 Prepare Grass Foliage
 
-# 4-2 - Prepare Grass Foliage
+# 4 2 Prepare Grass Foliage
 
 ## 知识目标
 
-- 本文整理“4-2 - Prepare Grass Foliage”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+- 围绕“4 2 Prepare Grass Foliage”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 整理草丛变体、pivot、LOD、碰撞和命名，准备进入 UE5。
-- 为草材质所需的颜色、alpha、normal、roughness 和顶点权重准备贴图或数据。
-- 检查资产尺度，确保草与黑云杉、道路和 Landscape 尺寸匹配。
-- 按后续 PCG/foliage 使用方式分组保存。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
+- 涉及运行时、World Partition、Hierarchical Generation 或 GPU 节点时，单独验证触发模式、缓存和性能。
 
 ## 关键术语
 
-- `Mesh`
-- `Transform`
-- `Point`
-- `Random`
-- `Vertex Color`
-- `Mask`
-- `Material`
-- `Landscape`
-- `mode`
-- `mesh`
-- `more`
-- `color`
-- `everything`
+- `Mesh`、`Transform`、`Point`、`Random`、`Vertex Color`、`Mask`、`Material`、`Landscape`、`mode`、`more`、`color`、`everything`、`GPU`
 
-## 操作步骤与要点
+## 分段知识
 
-### 整理草丛变体、pivot、LOD、碰撞和命名，准备进入 UE5
+### 00:00:00-00:04:55 PCG 数据流与生成规则
 
-**内容要点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：缩放、旋转、倒角或弯曲前后使用 `Ctrl+A > Apply All Transforms` 归一化对象变换，避免非统一缩放影响倒角、弯曲和法线。
+- 知识点：在枝条仍是简单形体时标记接缝并执行 Angle Based Unwrap，先得到干净 UV，再进入复制、弯曲和变体制作。
+- 知识点：在枝条仍是简单形体时标记接缝并做 Angle Based Unwrap，先得到干净 UV，再进入复制、弯曲和变体制作。
+- 核对对象：`PCG`、`Random`、`Material`、`生成`。
 
-- 整理草丛变体、pivot、LOD、碰撞和命名，准备进入 UE5。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p29/s01-01-S01_1_00_00_10.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p29/s01-02-S01_2_00_02_27.jpg)
 
+### 00:04:58-00:08:14 运行时生成、分区与性能
 
-**参数、节点和风险点：**
+- 本段定位：运行时生成、分区与性能。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 复现要点：运行时、分区或 GPU 生成需要单独验证缓存、触发时机、平台支持和性能预算。
+- 核对对象：`GPU`、`Material`、`分区`、`生成`、`运行时`。
 
-- `Mesh`
-- `Transform`
-- `Random`
-- `Material`
-- `Landscape`
-- `more`
-- `select`
-- `everything`
-- `object`
-- `mode`
-
-### 为草材质所需的颜色、alpha、normal、roughness 和顶点权重准备贴图或数据
-
-**内容要点：**
-
-- 为草材质所需的颜色、alpha、normal、roughness 和顶点权重准备贴图或数据。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p29/s02-01-S02_1_00_05_08.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p29/s02-02-S02_2_00_06_36.jpg)
 
+### 00:08:18-00:12:25 PCG 数据流与生成规则
 
-**参数、节点和风险点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：缩放、旋转、倒角或弯曲前后使用 `Ctrl+A > Apply All Transforms` 归一化对象变换，避免非统一缩放影响倒角、弯曲和法线。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 知识点：缩放、旋转、倒角或弯曲前后使用 `Ctrl+A > Apply All Transforms` 归一化对象变换，避免非统一缩放导致倒角、弯曲和法线表现异常。
+- 核对对象：`PCG`、`生成`。
 
-- `Mesh`
-- `Material`
-- `paint`
-- `vertex`
-- `mesh`
-- `mode`
-- `bottom`
-- `sure`
-- `blur`
-
-### 检查资产尺度，确保草与黑云杉、道路和 Landscape 尺寸匹配
-
-**内容要点：**
-
-- 检查资产尺度，确保草与黑云杉、道路和 Landscape 尺寸匹配。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p29/s03-01-S03_1_00_08_28.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p29/s03-02-S03_2_00_10_22.jpg)
 
+### 00:12:29-00:13:25 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：进入 Substance Painter 前检查导出比例、材质槽和 UV，保证树皮、针叶和遮罩贴图能按对象区域正确烘焙与绘制。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Point`、`Bounds`、`点`、`点数据`、`采样`。
 
-- `Mesh`
-- `Transform`
-- `Vertex Color`
-- `Mask`
-- `color`
-- `good`
-- `white`
-- `root`
-- `doesn`
-- `information`
-
-### 按后续 PCG/foliage 使用方式分组保存
-
-**内容要点：**
-
-- 按后续 PCG/foliage 使用方式分组保存。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p29/s04-01-S04_1_00_12_39.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p29/s04-02-S04_2_00_12_57.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `Point`
-- `pivot`
-- `point`
-- `orange`
-- `Unreal`
-- `Engine`
-- `texture`
-- `more`
-- `weird`
-- `looking`
-
-## 复现检查清单
-
-- 草的 pivot 和尺度会影响批量分布、贴地和风动画。
-- 所有 UE5 资产都要检查比例、pivot、材质槽、贴图色彩空间和实例化性能。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

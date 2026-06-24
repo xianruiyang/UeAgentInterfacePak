@@ -4,144 +4,40 @@
 
 ## 知识目标
 
-- 使用 MeshSampler 从网格表面采样点，并基于采样结果放置细节实例。
+- 围绕“【UE5.3 PCG教程】PCG MeshSampler节点在网格表面添加细节”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 把目标网格接入 MeshSampler，明确采样来源和采样模式。
-- 调节采样密度、随机种子和边界限制，得到可控的点分布。
-- 读取采样点的法线、位置或表面属性，用于后续旋转、缩放和过滤。
-- 把采样点接入实例生成节点，检查细节是否贴合网格表面。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
 
 ## 关键术语
 
-- `PCG`
-- `Blueprint`
-- `Static Mesh`
-- `Mesh`
-- `MeshSampler`
-- `Spline`
-- `Transform`
-- `Point`
-- `Attribute`
-- `Actor`
-- `Spawn`
-- `Grid`
-- `Density`
-- `Seed`
-- `Graph`
-- `HISM`
-- `Landscape`
-- `网格`
+- `PCG`、`Blueprint`、`Static Mesh`、`Mesh`、`MeshSampler`、`Spline`、`Transform`、`Point`、`Attribute`、`Actor`、`Spawn`、`Grid`、`Density`、`Seed`、`Graph`、`HISM`、`Landscape`、`网格`
 
-## 操作步骤与要点
+## 分段知识
 
-### 把目标网格接入 MeshSampler，明确采样来源和采样模式
+### 00:00:00-00:00:02 点数据、Bounds 与采样来源
 
-**内容要点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 核对对象：`PCG`、`生成`。
 
-- 这一段对应“把目标网格接入 MeshSampler，明确采样来源和采样模式。”，主要作用是把本集主题“【UE5.3 PCG教程】PCG MeshSampler节点在网格表面添加细节”中的该流程环节落到具体节点、参数或资产操作上。
-
-- 画面线索：`MyEnvironment`
-- 画面线索：`Platforms`
-- 画面线索：`PerspectiveLitShow`
-- 画面线索：`+3#曲1410`
-- 画面线索：`DexWo.`
-- 画面线索：`La..`
-- 画面线索：`Lev`
-- 画面线索：`BP_MeshSample`
-
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue53-pcg-practical-node-recipes-p03/s01-01-S01_1_00_00_00.jpg)
 ![关键截图 2](../assets/ue53-pcg-practical-node-recipes-p03/s01-02-S01_2_00_00_01.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `Blueprint`
-- `Mesh`
-- `Spline`
-- `BP_MeshSample`
-- `MyEnvironment`
-- `Platforms`
-- `PerspectiveLitShow`
-- `DexWo`
-- `ItemLabel`
-- `Type`
-
-### 调节采样密度、随机种子和边界限制，得到可控的点分布
-
-**内容要点：**
-
-- 这一段对应“调节采样密度、随机种子和边界限制，得到可控的点分布。”，主要作用是把本集主题“【UE5.3 PCG教程】PCG MeshSampler节点在网格表面添加细节”中的该流程环节落到具体节点、参数或资产操作上。
-
-- 画面线索：`Hep`
-- 画面线索：`MyEnvironment`
-- 画面线索：`BP_MeshSample`
-- 画面线索：`Platforms`
-- 画面线索：`LitShow`
-- 画面线索：`D3`
-- 画面线索：`De.xWo..`
-- 画面线索：`La.`
-
-
-**关键截图：**
-
-![关键截图 1](../assets/ue53-pcg-practical-node-recipes-p03/s02-01-S02_00_04_30.jpg)
-
-
-**参数、节点和风险点：**
-
-- `Blueprint`
-- `Mesh`
-- `BP_MeshSample`
-- `MyEnvironment`
-- `Platforms`
-- `LitShow`
-- `ItemLabel`
-- `Type`
-- `Self`
-- `Editor`
-
-### 读取采样点的法线、位置或表面属性，用于后续旋转、缩放和过滤
-
-**内容要点：**
-
-- 这一段对应“读取采样点的法线、位置或表面属性，用于后续旋转、缩放和过滤。”，主要作用是把本集主题“【UE5.3 PCG教程】PCG MeshSampler节点在网格表面添加细节”中的该流程环节落到具体节点、参数或资产操作上。
-
-- 画面线索：`Hep`
-- 画面线索：`MyEnvironment`
-- 画面线索：`BP_MeshSample`
-- 画面线索：`Platforms`
-- 画面线索：`PerspectiveLitShow`
-- 画面线索：`De.xWo..`
-- 画面线索：`La..`
-- 画面线索：`Lev..`
-
-
-**关键截图：**
-
-![关键截图 1](../assets/ue53-pcg-practical-node-recipes-p03/s03-01-S03_00_07_09.jpg)
-
-
-**参数、节点和风险点：**
-
-- `Blueprint`
-- `Mesh`
-- `Spline`
-- `BP_MeshSample`
-- `MyEnvironment`
-- `Platforms`
-- `PerspectiveLitShow`
-- `ItemLabel`
-- `Type`
-- `Self`
-
-## 复现检查清单
-
-- MeshSampler 与 MeshToPoints 的输出分布不同，复现时要按画面里的节点名确认。
-- 需要留意局部坐标和世界坐标的转换。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

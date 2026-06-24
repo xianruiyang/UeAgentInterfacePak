@@ -1,171 +1,111 @@
-# 1-4 - Texturing the Branches of the Black Spruce in Substance Painter
+# 1 4 Texturing the Branches of the Black Spruce in Substance Painter
 
-# 1-4 - Texturing the Branches of the Black Spruce in Substance Painter
+# 1 4 Texturing the Branches of the Black Spruce in Substance Painter
 
 ## 知识目标
 
-- 本文整理“1-4 - Texturing the Branches of the Black Spruce in Substance Painter”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+- 围绕“1 4 Texturing the Branches of the Black Spruce in Substance Painter”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 把枝条模型导入 Substance Painter，确认 UV、材质槽、法线和透明区域都正确。
-- 制作枝条/针叶的 Base Color、Normal、Roughness、Alpha 等贴图，并区分树皮与针叶区域。
-- 通过颜色变化、粗糙度和法线细节降低重复感，让枝条在 UE 远近视角都能读出层次。
-- 导出贴图时统一命名与通道格式，为 UE5 材质和后续打包贴图做准备。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
 
 ## 关键术语
 
-- `Mesh`
-- `Point`
-- `Mask`
-- `Material`
-- `color`
-- `case`
-- `more`
-- `change`
-- `needles`
+- `Mesh`、`Point`、`Mask`、`Material`、`color`、`case`、`more`、`change`、`needles`、`Filter`、`Branch`
 
-## 操作步骤与要点
+## 分段知识
 
-### 把枝条模型导入 Substance Painter，确认 UV、材质槽、法线和透明区域都正确
+### 00:00:00-00:03:40 属性、过滤与数据分流
 
-**内容要点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：进入 Substance Painter 前检查导出比例、材质槽和 UV，保证树皮、针叶和遮罩贴图能按对象区域正确烘焙与绘制。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Branch`、`Material`、`属性`、`过滤`。
 
-- 把枝条模型导入 Substance Painter，确认 UV、材质槽、法线和透明区域都正确。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p04/s01-01-S01_1_00_00_10.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p04/s01-02-S01_2_00_01_50.jpg)
 
+### 00:03:40-00:08:35 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Filter`、`Branch`、`Material`、`属性`、`过滤`。
 
-- `Mesh`
-- `Material`
-- `branches`
-- `import`
-- `branch`
-- `inside`
-- `some`
-
-### 把枝条模型导入 Substance Painter，确认 UV、材质槽、法线和透明区域都正确（2）
-
-**内容要点：**
-
-- 把枝条模型导入 Substance Painter，确认 UV、材质槽、法线和透明区域都正确（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p04/s02-01-S02_1_00_03_50.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p04/s02-02-S02_2_00_06_08.jpg)
 
+### 00:08:35-00:13:30 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Point`、`Branch`、`属性`、`过滤`。
 
-- `Material`
-- `color`
-- `case`
-- `change`
-- `already`
-- `fill`
-
-### 制作枝条/针叶的 Base Color、Normal、Roughness、Alpha 等贴图，并区分树皮与针叶区域
-
-**内容要点：**
-
-- 制作枝条/针叶的 Base Color、Normal、Roughness、Alpha 等贴图，并区分树皮与针叶区域。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p04/s03-01-S03_1_00_08_45.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p04/s03-02-S03_2_00_11_03.jpg)
 
+### 00:13:30-00:18:18 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：进入 Substance Painter 前检查导出比例、材质槽和 UV，保证树皮、针叶和遮罩贴图能按对象区域正确烘焙与绘制。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Point`、`Bounds`、`Material`、`点`、`点数据`、`采样`。
 
-- `Point`
-- `Mask`
-- `color`
-- `think`
-- `rotate`
-- `layer`
-- `base`
-
-### 通过颜色变化、粗糙度和法线细节降低重复感，让枝条在 UE 远近视角都能读出层次
-
-**内容要点：**
-
-- 通过颜色变化、粗糙度和法线细节降低重复感，让枝条在 UE 远近视角都能读出层次。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p04/s04-01-S04_1_00_13_40.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p04/s04-02-S04_2_00_15_54.jpg)
 
+### 00:18:18-00:23:14 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Branch`、`Material`、`属性`、`过滤`。
 
-- `Point`
-- `Mask`
-- `Material`
-- `more`
-- `needles`
-- `roughness`
-- `point`
-- `green`
-
-### 通过颜色变化、粗糙度和法线细节降低重复感，让枝条在 UE 远近视角都能读出层次（2）
-
-**内容要点：**
-
-- 通过颜色变化、粗糙度和法线细节降低重复感，让枝条在 UE 远近视角都能读出层次（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p04/s05-01-S05_1_00_18_28.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p04/s05-02-S05_2_00_20_46.jpg)
 
+### 00:23:14-00:23:54 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Branch`、`属性`、`过滤`。
 
-- `Mask`
-- `Material`
-- `snow`
-- `height`
-- `branch`
-- `color`
-- `textures`
-- `play`
-
-### 导出贴图时统一命名与通道格式，为 UE5 材质和后续打包贴图做准备
-
-**内容要点：**
-
-- 导出贴图时统一命名与通道格式，为 UE5 材质和后续打包贴图做准备。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p04/s06-01-S06_1_00_23_22.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p04/s06-02-S06_2_00_23_34.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `some`
-- `cool`
-- `trunk`
-- `show`
-- `sure`
-- `type`
-- `metallic`
-- `roughness`
-- `change`
-- `default`
-
-## 复现检查清单
-
-- 透明枝叶贴图要重点检查 alpha 边缘、mipmap 和双面材质，否则 UE5 中会出现毛边或过暗。
-- 所有 UE5 资产都要检查比例、pivot、材质槽、贴图色彩空间和实例化性能。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

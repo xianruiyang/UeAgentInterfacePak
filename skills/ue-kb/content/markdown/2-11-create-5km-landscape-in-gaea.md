@@ -1,209 +1,113 @@
-# 2-11 - Create 5km Landscape in GAEA
+# 2 11 Create 5km Landscape in GAEA
 
-# 2-11 - Create 5km Landscape in GAEA
+# 2 11 Create 5km Landscape in GAEA
 
 ## 知识目标
 
-- 本文整理“2-11 - Create 5km Landscape in GAEA”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+- 围绕“2 11 Create 5km Landscape in GAEA”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 在 GAEA 中创建或处理 5km 级别地形，高度、侵蚀、坡度和水流遮罩要服务于 UE5 场景。
-- 导出 heightmap 和需要的 mask，记录分辨率、范围和高度比例。
-- 在 UE5 中导入 Landscape，匹配世界尺寸、Z scale 和材质层。
-- 检查大地形中的构图区域、道路空间和后续 PCG 生成范围。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
 
 ## 关键术语
 
-- `Point`
-- `Component`
-- `Density`
-- `Material`
-- `Instance`
-- `Landscape`
-- `height`
-- `landscape`
-- `import`
+- `Point`、`Component`、`Density`、`Material`、`Instance`、`Landscape`、`height`、`import`、`Volume`
 
-## 操作步骤与要点
+## 分段知识
 
-### 在 GAEA 中创建或处理 5km 级别地形，高度、侵蚀、坡度和水流遮罩要服务于 UE5 场景
+### 00:00:00-00:04:28 属性、过滤与数据分流
 
-**内容要点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 核对对象：`PCG`、`Material`、`生成`。
 
-- 在 GAEA 中创建或处理 5km 级别地形，高度、侵蚀、坡度和水流遮罩要服务于 UE5 场景。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p19/s01-01-S01_1_00_00_10.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p19/s01-02-S01_2_00_02_14.jpg)
 
+### 00:04:29-00:09:15 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 核对对象：`PCG`、`生成`。
 
-- `Material`
-- `Landscape`
-- `height`
-- `landscape`
-- `meters`
-- `Unreal`
-- `Engine`
-- `scale`
-- `erosion`
-- `more`
-
-### 在 GAEA 中创建或处理 5km 级别地形，高度、侵蚀、坡度和水流遮罩要服务于 UE5 场景（2）
-
-**内容要点：**
-
-- 在 GAEA 中创建或处理 5km 级别地形，高度、侵蚀、坡度和水流遮罩要服务于 UE5 场景（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p19/s02-01-S02_1_00_04_39.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p19/s02-02-S02_2_00_06_52.jpg)
 
+### 00:09:15-00:13:55 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 核对对象：`PCG`、`生成`。
 
-- `Component`
-- `Landscape`
-- `height`
-- `scale`
-- `Gaia`
-- `landscape`
-- `think`
-- `default`
-- `ratio`
-
-### 导出 heightmap 和需要的 mask，记录分辨率、范围和高度比例
-
-**内容要点：**
-
-- 导出 heightmap 和需要的 mask，记录分辨率、范围和高度比例。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p19/s03-01-S03_1_00_09_25.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p19/s03-02-S03_2_00_11_35.jpg)
 
+### 00:13:56-00:18:46 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`Instance`、`生成`。
 
-- `Landscape`
-- `height`
-- `multiply`
-- `landscape`
-- `actual`
-- `value`
-- `fork`
-- `HDRI`
-- `divided`
-- `reason`
-
-### 导出 heightmap 和需要的 mask，记录分辨率、范围和高度比例（2）
-
-**内容要点：**
-
-- 导出 heightmap 和需要的 mask，记录分辨率、范围和高度比例（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p19/s04-01-S04_1_00_14_06.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p19/s04-02-S04_2_00_16_21.jpg)
 
+### 00:18:46-00:21:52 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Bounds`、`Volume`、`Material`、`点`、`点数据`、`采样`。
 
-- `Material`
-- `Instance`
-- `Landscape`
-- `import`
-- `rock`
-- `file`
-- `info`
-- `Boom`
-- `layer`
-- `delete`
-
-### 在 UE5 中导入 Landscape，匹配世界尺寸、Z scale 和材质层
-
-**内容要点：**
-
-- 在 UE5 中导入 Landscape，匹配世界尺寸、Z scale 和材质层。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p19/s05-01-S05_1_00_18_56.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p19/s05-02-S05_2_00_20_19.jpg)
 
+### 00:21:52-00:26:50 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 复现要点：运行时、分区或 GPU 生成需要单独验证缓存、触发时机、平台支持和性能预算。
+- 核对对象：`Point`、`Density`、`Volume`、`Material`、`属性`、`过滤`。
 
-- `Material`
-- `Landscape`
-- `import`
-- `grass`
-- `lighting`
-- `process`
-- `height`
-- `light`
-- `five`
-- `file`
-
-### 在 UE5 中导入 Landscape，匹配世界尺寸、Z scale 和材质层（2）
-
-**内容要点：**
-
-- 在 UE5 中导入 Landscape，匹配世界尺寸、Z scale 和材质层（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p19/s06-01-S06_1_00_22_02.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p19/s06-02-S06_2_00_24_21.jpg)
 
+### 00:26:50-00:27:04 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`生成`。
 
-- `Point`
-- `Density`
-- `Material`
-- `Landscape`
-- `good`
-- `point`
-- `distance`
-- `fine`
-- `falloff`
-- `landscape`
-
-### 检查大地形中的构图区域、道路空间和后续 PCG 生成范围
-
-**内容要点：**
-
-- 检查大地形中的构图区域、道路空间和后续 PCG 生成范围。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p19/s07-01-S07_1_00_26_53.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p19/s07-02-S07_2_00_26_57.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `Material`
-- `Landscape`
-- `blend`
-- `couple`
-- `landscape`
-- `material`
-- `height`
-- `well`
-- `more`
-- `already`
-
-## 复现检查清单
-
-- GAEA 到 UE5 的高度比例和分辨率必须记录清楚，否则后续道路、植被和镜头都会偏。
-- 所有 UE5 资产都要检查比例、pivot、材质槽、贴图色彩空间和实例化性能。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

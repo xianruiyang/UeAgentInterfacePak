@@ -33,6 +33,7 @@
 | 指令 | 作用 | 关键参数 |
 |---|---|---|
 | `blueprint_inspect_components` | 查看 SCS 组件树 | `asset_path` |
+| `blueprint_list_component_events` | 查询某个 Actor Blueprint 组件可绑定的 BlueprintAssignable 事件 | `asset_path`、`component_name`、`query`、`limit`、`only_unbound`、`include_hidden`、`compile_before_query` |
 
 ## 图与节点
 
@@ -44,9 +45,41 @@
 | `blueprint_layout_all_graphs` | 自动排版一个 Blueprint 资产内的多个/全部图 | `asset_path`、`graph_name`、`graph_path`、`graph_names`、`graphs`、`include_ubergraphs`、`include_function_graphs`、`include_macro_graphs`、`include_delegate_graphs`、`include_nested_graphs`、`skip_empty_graphs`、`stop_on_error`、`include_graph_result_details`、`horizontal_spacing`、`vertical_spacing`、`node_padding`、`origin_x`、`origin_y`、`allow_geometry_view_capture`、`allow_focused_geometry_capture`、`allow_remove_all_reroute_nodes`、`layout_report_file`、`insert_reroute_nodes`、`replace_existing_reroute_nodes`、`compile_after_layout`、`save_after_layout` |
 
 - 当前节点创建能力集中在：标准事件、自定义事件、函数调用、变量节点，以及按类创建的通用非结构节点。
+- Blueprint 节点 authoring 前必须先用 `blueprint_list_graphs`、`blueprint_inspect_nodes`、`blueprint_export_folder` 或 `node_graph_list` 读取真实图、节点、pin 和 node class。不能凭节点菜单显示名、截图文字或记忆拼 `node_class`、`function_name`、`member_name`、pin 名。
+- 当前没有完整 K2 palette / action menu 查询命令。新增未在目标资产或模板资产中导出过的节点时，必须先通过已有 fixture/export、明确 UE class/function reference、或新增 UAI candidate 查询能力取证；不得让 LLM 自己猜可用节点。
 - `blueprint_add_call_function_node` 与 `blueprint_apply_folder` 使用同一套 Construction Script/PCG 安全门禁：默认不允许向 `UserConstructionScript` 添加会触发 PCG 生成或 PCG 参数变更的函数调用；确需导入旧内容时同样必须显式传 `allow_unsafe_construction_script_pcg_generation=true`。
 - `graph_name` 现在既可以传图名，也可以直接传 `graph_path`；对子图、状态机子图、Transition Rule 图优先建议传 `graph_path`，避免重名歧义。
 - 普通图节点、标准事件、自定义事件、变量节点和组件绑定事件都应通过 `graphs/*.json` 的结构化节点描述表达；旧原子图节点入口仅保留在废弃分册。
+
+### `blueprint_list_component_events`
+
+用途：查询 Actor Blueprint 中某个组件变量可绑定的事件，结果和 UE SCS 右键“Add Event”同源：枚举目标组件 class 上 `FMulticastDelegateProperty`，只返回 `BlueprintAssignable` 且非参数属性的 delegate。
+
+输入：
+
+- `asset_path`：Actor Blueprint 路径。
+- `component_name`：组件变量名，例如 `StaticMesh`、`Box`、`CameraBoom`。
+- `query`：可选，按事件名、显示名、分类或 tooltip 过滤。
+- `limit`：默认 `200`；传 `0` 表示不限制返回数量。
+- `only_unbound`：默认 `false`；设为 `true` 时跳过已经存在绑定节点的事件。
+- `include_hidden`：默认 `false`；设为 `true` 时也返回带隐藏/废弃元数据的 delegate。
+- `compile_before_query`：默认 `true`，用于确保 `SkeletonGeneratedClass` 中的组件变量和绑定状态是最新的。
+
+返回重点：
+
+- `target_class`：实际查询的组件 class。
+- `component_property_found` / `can_author_component_bound_event`：是否能直接生成 `component_bound_event`；为 `false` 时通常说明组件变量不可用于事件图绑定。
+- `total_event_count`、`matched_event_count`、`returned_event_count`、`truncated`。
+- `events[]`：每个事件都包含 `name`、`display_name`、`delegate_property_name`、`delegate_owner_class`、`already_bound`、`existing_node_guid`、`parameters[]`，以及可直接写入 `graphs/*.json` 的 `authoring_node`：
+
+```json
+{
+  "node_type": "component_bound_event",
+  "component_name": "StaticMesh",
+  "delegate_property_name": "OnComponentBeginOverlap",
+  "delegate_owner_class": "/Script/Engine.PrimitiveComponent"
+}
+```
 
 ### `blueprint_layout_graph_self_test`
 

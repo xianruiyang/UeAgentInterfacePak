@@ -1,0 +1,54 @@
+{
+  "schema": "ue_agent_interface.smoke_coverage_ledger.v1",
+  "generated_at": "2026-06-19",
+  "entries": [
+    {
+      "command": "anim_sequence_sample_pose",
+      "coverage": "live_uai_smoke",
+      "scenario": "json_authoring_missing_coverage_smoke",
+      "evidence": "runtimeLogs/JSON_AUTHORING_MISSING_COVERAGE_SMOKE_20260619/summary.json",
+      "verified_at": "2026-06-19",
+      "notes": "Sampled Tutorial_Idle at frame 0 and read back root/spine_01 local pose data."
+    },
+    {
+      "command": "level_create_blank",
+      "coverage": "live_uai_smoke",
+      "scenario": "json_authoring_missing_coverage_smoke",
+      "evidence": "runtimeLogs/JSON_AUTHORING_MISSING_COVERAGE_SMOKE_20260619/summary.json",
+      "verified_at": "2026-06-19",
+      "notes": "Created /Game/__UeAgentInterfaceSmoke/LV_JSONAuthoringCoverage as a disposable coverage level."
+    },
+    {
+      "command": "level_open",
+      "coverage": "live_uai_smoke",
+      "scenario": "json_authoring_missing_coverage_smoke",
+      "evidence": "runtimeLogs/JSON_AUTHORING_MISSING_COVERAGE_SMOKE_20260619/summary.json",
+      "verified_at": "2026-06-19",
+      "notes": "Opened the coverage level after creation and verified the returned world path."
+    },
+    {
+      "command": "level_set_skeletal_animation_pose",
+      "coverage": "live_uai_smoke",
+      "scenario": "json_authoring_missing_coverage_smoke",
+      "evidence": "runtimeLogs/JSON_AUTHORING_MISSING_COVERAGE_SMOKE_20260619/summary.json",
+      "verified_at": "2026-06-19",
+      "notes": "Applied Tutorial_Idle to a spawned SkeletalMeshActor and read back scene component pose status."
+    },
+    {
+      "command": "node_catalog_search",
+      "coverage": "live_uai_smoke",
+      "scenario": "palette_search_catalog_smoke",
+      "evidence": "runtimeLogs/UAI_NODE_CATALOG_SEARCH_20260620_DESKTOP-QCNC9PH.md",
+      "verified_at": "2026-06-20",
+      "notes": "Queried Niagara module, Niagara dynamic input, Material expression, and Blueprint transient ActionMenu contexts through UAI; all returned successful responses with counts and recommended write support."
+    },
+    {
+      "command": "node_catalog_categories",
+      "coverage": "live_uai_smoke",
+      "scenario": "palette_search_catalog_smoke",
+      "evidence": "runtimeLogs/UAI_NODE_CATALOG_SEARCH_20260620_DESKTOP-QCNC9PH.md",
+      "verified_at": "2026-06-20",
+      "notes": "Queried Niagara Location module categories through UAI; response returned groups, category_tree, and matching counts."
+    }
+  ]
+}

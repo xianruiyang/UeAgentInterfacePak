@@ -4,146 +4,69 @@
 
 ## 知识目标
 
-- 把 PCG 生成结果和蓝图结合，整理成可保存、复用或转成 Actor/模型的资产流程。
+- 围绕“【UE5.3 PCG教程】PCG生成结合蓝图保存为模型或Actor”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 使用蓝图 Actor 管理 PCG Component 和生成参数。
-- 生成目标结果后检查实例、组件层级和资源引用。
-- 根据需要把结果保存为 Actor、实例组件或可复用资产。
-- 重新加载或复制蓝图，确认生成结果和参数仍然可控。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
 
 ## 关键术语
 
-- `PCG`
-- `Blueprint`
-- `蓝图`
-- `Static Mesh`
-- `Mesh`
-- `SubGraph`
-- `Transform`
-- `Point`
-- `Attribute`
-- `Actor`
-- `Component`
-- `Spawn`
-- `Bounds`
-- `Density`
-- `Seed`
-- `Graph`
-- `Material`
-- `Instance`
+- `PCG`、`Blueprint`、`蓝图`、`Static Mesh`、`Mesh`、`SubGraph`、`Transform`、`Point`、`Attribute`、`Actor`、`Component`、`Spawn`、`Bounds`、`Density`、`Seed`、`Graph`、`Material`、`Instance`
 
-## 操作步骤与要点
+## 分段知识
 
-### 使用蓝图 Actor 管理 PCG Component 和生成参数
+### 00:00:00-00:03:00 生成器输出与蓝图交互
 
-**内容要点：**
+- 本段定位：生成器输出与蓝图交互。
+- 知识点：生成输出流程需要核对 Spawner/Blueprint 的输入点、实例 Transform、网格清单和运行成本。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 知识点：Actor Tag 是把场景对象接入 PCG Graph 的稳定方式，Get Actor Data 的过滤条件必须与关卡标签一致。
+- 核对对象：`PCG`、`生成`。
 
-- 这一段对应“使用蓝图 Actor 管理 PCG Component 和生成参数。”，主要作用是把本集主题“【UE5.3 PCG教程】PCG生成结合蓝图保存为模型或Actor”中的该流程环节落到具体节点、参数或资产操作上。
-
-- 画面线索：`MyEnvironment`
-- 画面线索：`Test*`
-- 画面线索：`Platforms`
-- 画面线索：`PerspectiveLitShow`
-- 画面线索：`+2用50410`
-- 画面线索：`DetailsxLevels`
-- 画面线索：`World Se...`
-- 画面线索：`QSearch.`
-
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue53-pcg-practical-node-recipes-p08/s01-01-S01_1_00_00_10.jpg)
 ![关键截图 2](../assets/ue53-pcg-practical-node-recipes-p08/s01-02-S01_2_00_01_30.jpg)
 
+### 00:03:00-00:06:00 生成器输出与蓝图交互
 
-**参数、节点和风险点：**
+- 本段定位：生成器输出与蓝图交互。
+- 知识点：生成输出流程需要核对 Spawner/Blueprint 的输入点、实例 Transform、网格清单和运行成本。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 知识点：Actor Tag 是把场景对象接入 PCG Graph 的稳定方式，Get Actor Data 的过滤条件必须与关卡标签一致。
+- 核对对象：`PCG`、`生成`。
 
-- `PCG`
-- `Instance`
-- `HISM`
-- `Test`
-- `PCGStamp_4`
-- `MyEnvironment`
-- `Platforms`
-- `PerspectiveLitShow`
-- `DetailsxLevels`
-- `ItemLabel`
-
-### 生成目标结果后检查实例、组件层级和资源引用
-
-**内容要点：**
-
-- 这一段对应“生成目标结果后检查实例、组件层级和资源引用。”，主要作用是把本集主题“【UE5.3 PCG教程】PCG生成结合蓝图保存为模型或Actor”中的该流程环节落到具体节点、参数或资产操作上。
-
-- 画面线索：`Test*`
-- 画面线索：`PCG_AttachToMesh*`
-- 画面线索：`BP_AttachToMesh`
-- 画面线索：`Selection Mode`
-- 画面线索：`NIAI`
-- 画面线索：`Platforms`
-- 画面线索：`FindI Pause Regen`
-- 画面线索：`ForceRegen`
-
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue53-pcg-practical-node-recipes-p08/s02-01-S02_1_00_03_10.jpg)
 ![关键截图 2](../assets/ue53-pcg-practical-node-recipes-p08/s02-02-S02_2_00_04_30.jpg)
 
+### 00:06:00-00:08:15 生成器输出与蓝图交互
 
-**参数、节点和风险点：**
+- 本段定位：生成器输出与蓝图交互。
+- 知识点：生成输出流程需要核对 Spawner/Blueprint 的输入点、实例 Transform、网格清单和运行成本。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 知识点：Actor Tag 是把场景对象接入 PCG Graph 的稳定方式，Get Actor Data 的过滤条件必须与关卡标签一致。
+- 核对对象：`PCG`、`生成`。
 
-- `PCG`
-- `Mesh`
-- `Actor`
-- `Graph`
-- `PCG_AttachToMesh`
-- `BP_AttachToMesh`
-- `Test`
-- `Selection`
-- `Mode`
-- `NIAI`
-
-### 根据需要把结果保存为 Actor、实例组件或可复用资产
-
-**内容要点：**
-
-- 这一段对应“根据需要把结果保存为 Actor、实例组件或可复用资产。”，主要作用是把本集主题“【UE5.3 PCG教程】PCG生成结合蓝图保存为模型或Actor”中的该流程环节落到具体节点、参数或资产操作上。
-
-- 画面线索：`Asset`
-- 画面线索：`Test*`
-- 画面线索：`PCG_AttachToMesh*`
-- 画面线索：`BP_AttachToMesh`
-- 画面线索：`Platforms`
-- 画面线索：`FindIPauseRegen`
-- 画面线索：`ForceRegen`
-- 画面线索：`Cancel Execution`
-
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue53-pcg-practical-node-recipes-p08/s03-01-S03_1_00_06_10.jpg)
 ![关键截图 2](../assets/ue53-pcg-practical-node-recipes-p08/s03-02-S03_2_00_07_07.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `PCG`
-- `Mesh`
-- `Point`
-- `Graph`
-- `PCG_AttachToMesh`
-- `BP_AttachToMesh`
-- `Asset`
-- `Test`
-- `Platforms`
-- `FindIPauseRegen`
-
-## 复现检查清单
-
-- 保存前要区分程序化结果和源 PCG 逻辑。
-- 转为静态结果后通常会失去部分实时可调能力。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

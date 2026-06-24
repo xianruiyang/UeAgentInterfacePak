@@ -1,6 +1,6 @@
 {
-  "build_id": "sha256:5201396060c38653",
-  "chunk_fingerprint": "sha256:cbe18a8ae201bd4d",
+  "build_id": "sha256:615bea6057d93801",
+  "chunk_fingerprint": "sha256:2923434b62f2cfc6",
   "chunks": {
     "stale": false
   },
@@ -14,7 +14,7 @@
     "stale": false
   },
   "schema_version": "0.1.0",
-  "updated_at": "2026-06-11T10:28:58Z",
+  "updated_at": "2026-06-11T18:05:31Z",
   "vector": {
     "available": true,
     "collection": "ue-kb",
@@ -61,26 +61,26 @@
         "payload_schema": {
           "chunk_id": {
             "data_type": "keyword",
-            "points": 15148
+            "points": 15557
           },
           "doc_id": {
             "data_type": "keyword",
-            "points": 15148
+            "points": 15557
           },
           "kb_id": {
             "data_type": "keyword",
-            "points": 15148
+            "points": 15557
           },
           "language": {
             "data_type": "keyword",
-            "points": 15148
+            "points": 15557
           },
           "source_id": {
             "data_type": "keyword",
-            "points": 15148
+            "points": 15557
           }
         },
-        "points_count": 15148,
+        "points_count": 15557,
         "segments_count": 8,
         "status": "green",
         "update_queue": {
@@ -88,7 +88,7 @@
         }
       },
       "status": "ok",
-      "time": 0.001135843
+      "time": 0.000526815
     },
     "embedding_fingerprint": "sha256:5c509eb1c0747b0d",
     "payload_indexes": [
@@ -98,7 +98,7 @@
       "chunk_id",
       "language"
     ],
-    "point_count": 15148,
+    "point_count": 15557,
     "qdrant_url": "http://127.0.0.1:6333",
     "stale": false
   }

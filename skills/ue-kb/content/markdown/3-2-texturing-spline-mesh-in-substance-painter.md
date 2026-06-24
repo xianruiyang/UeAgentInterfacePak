@@ -1,269 +1,184 @@
-# 3-2 - Texturing Spline Mesh in Substance Painter
+# 3 2 Texturing Spline Mesh in Substance Painter
 
-# 3-2 - Texturing Spline Mesh in Substance Painter
+# 3 2 Texturing Spline Mesh in Substance Painter
 
 ## 知识目标
 
-- 本文整理“3-2 - Texturing Spline Mesh in Substance Painter”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+- 围绕“3 2 Texturing Spline Mesh in Substance Painter”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 把样条 Mesh 导入 Substance Painter，确认 UV 能沿道路或溪流方向连续展开。
-- 制作表面颜色、粗糙度、法线、边缘磨损和高度信息。
-- 导出与 UE5 材质函数匹配的贴图，必要时做通道打包。
-- 用预览材质检查贴图在重复铺设时是否会产生明显接缝。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
 
 ## 关键术语
 
-- `Mesh`
-- `Spline`
-- `Point`
-- `Actor`
-- `Mask`
-- `Material`
-- `Landscape`
-- `color`
-- `more`
-- `occlusion`
-- `ambient`
-- `texture`
+- `Mesh`、`Spline`、`Point`、`Actor`、`Mask`、`Material`、`Landscape`、`color`、`more`、`occlusion`、`ambient`、`texture`、`Spline Mesh`、`Filter`、`ISM`
 
-## 操作步骤与要点
+## 分段知识
 
-### 把样条 Mesh 导入 Substance Painter，确认 UV 能沿道路或溪流方向连续展开
+### 00:00:07-00:05:00 Spline 采样与路径生成
 
-**内容要点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：进入 Substance Painter 前检查导出比例、材质槽和 UV，保证树皮、针叶和遮罩贴图能按对象区域正确烘焙与绘制。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 知识点：Spline 输入通常先采样为点，再用属性、距离或索引区分路段、端点、交叉点和曲线段。
+- 复现要点：Spline 流程要单独核对采样间距、切线、端点、交叉点和生成网格的对齐方式。
+- 核对对象：`Spline`、`Spline Mesh`、`Material`、`ISM`、`采样`、`生成`。
 
-- 把样条 Mesh 导入 Substance Painter，确认 UV 能沿道路或溪流方向连续展开。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p25/s01-01-S01_1_00_00_17.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p25/s01-02-S01_2_00_02_34.jpg)
 
+### 00:05:00-00:09:54 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 知识点：Spline 输入通常先采样为点，再用距离、切线或标签过滤道路范围内外的生成点。
+- 知识点：用 Actor Tag 或 Spline 作为外部输入时，应先确认标签命中对象，再检查过滤后的点集。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Actor`、`Filter`、`属性`、`过滤`。
 
-- `Mesh`
-- `Spline`
-- `Material`
-- `base`
-- `texture`
-- `normal`
-- `sand`
-- `some`
-- `mesh`
-- `color`
-
-### 把样条 Mesh 导入 Substance Painter，确认 UV 能沿道路或溪流方向连续展开（2）
-
-**内容要点：**
-
-- 把样条 Mesh 导入 Substance Painter，确认 UV 能沿道路或溪流方向连续展开（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p25/s02-01-S02_1_00_05_10.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p25/s02-02-S02_2_00_07_27.jpg)
 
+### 00:09:54-00:12:56 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 知识点：Spline 输入通常先采样为点，再用距离、切线或标签过滤道路范围内外的生成点。
+- 知识点：用 Actor Tag 或 Spline 作为外部输入时，应先确认标签命中对象，再检查过滤后的点集。
+- 核对对象：`PCG`、`生成`。
 
-- `Actor`
-- `color`
-- `more`
-- `better`
-- `much`
-- `shadow`
-
-### 把样条 Mesh 导入 Substance Painter，确认 UV 能沿道路或溪流方向连续展开（3）
-
-**内容要点：**
-
-- 把样条 Mesh 导入 Substance Painter，确认 UV 能沿道路或溪流方向连续展开（3）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p25/s03-01-S03_1_00_10_04.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p25/s03-02-S03_2_00_11_25.jpg)
 
+### 00:12:56-00:16:42 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 知识点：Spline 输入通常先采样为点，再用距离、切线或标签过滤道路范围内外的生成点。
+- 知识点：用 Actor Tag 或 Spline 作为外部输入时，应先确认标签命中对象，再检查过滤后的点集。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Point`、`Bounds`、`点`、`点数据`、`采样`。
 
-- `Mesh`
-- `occlusion`
-- `texture`
-- `ambient`
-- `color`
-- `nice`
-- `course`
-- `disable`
-- `roughness`
-
-### 制作表面颜色、粗糙度、法线、边缘磨损和高度信息
-
-**内容要点：**
-
-- 制作表面颜色、粗糙度、法线、边缘磨损和高度信息。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p25/s04-01-S04_1_00_13_06.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p25/s04-02-S04_2_00_14_49.jpg)
 
+### 00:16:42-00:21:33 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 知识点：Spline 输入通常先采样为点，再用距离、切线或标签过滤道路范围内外的生成点。
+- 知识点：用 Actor Tag 或 Spline 作为外部输入时，应先确认标签命中对象，再检查过滤后的点集。
+- 核对对象：`PCG`、`生成`。
 
-- `Mesh`
-- `Point`
-- `Mask`
-- `ambient`
-- `occlusion`
-- `color`
-- `invert`
-- `getting`
-- `information`
-- `generator`
-
-### 制作表面颜色、粗糙度、法线、边缘磨损和高度信息（2）
-
-**内容要点：**
-
-- 制作表面颜色、粗糙度、法线、边缘磨损和高度信息（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p25/s05-01-S05_1_00_16_52.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p25/s05-02-S05_2_00_19_07.jpg)
 
+### 00:21:33-00:26:27 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：进入 Substance Painter 前检查导出比例、材质槽和 UV，保证树皮、针叶和遮罩贴图能按对象区域正确烘焙与绘制。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 知识点：Spline 输入通常先采样为点，再用距离、切线或标签过滤道路范围内外的生成点。
+- 知识点：用 Actor Tag 或 Spline 作为外部输入时，应先确认标签命中对象，再检查过滤后的点集。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Point`、`Bounds`、`点`、`点数据`、`采样`。
 
-- `Mask`
-- `more`
-- `paint`
-- `much`
-- `aggressive`
-- `color`
-
-### 导出与 UE5 材质函数匹配的贴图，必要时做通道打包
-
-**内容要点：**
-
-- 导出与 UE5 材质函数匹配的贴图，必要时做通道打包。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p25/s06-01-S06_1_00_21_43.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p25/s06-02-S06_2_00_24_00.jpg)
 
+### 00:26:27-00:31:04 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 知识点：Spline 输入通常先采样为点，再用距离、切线或标签过滤道路范围内外的生成点。
+- 知识点：用 Actor Tag 或 Spline 作为外部输入时，应先确认标签命中对象，再检查过滤后的点集。
+- 核对对象：`PCG`、`生成`。
 
-- `Point`
-- `paint`
-- `island`
-- `honest`
-- `think`
-- `only`
-- `still`
-
-### 导出与 UE5 材质函数匹配的贴图，必要时做通道打包（2）
-
-**内容要点：**
-
-- 导出与 UE5 材质函数匹配的贴图，必要时做通道打包（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p25/s07-01-S07_1_00_26_37.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p25/s07-02-S07_2_00_28_45.jpg)
 
+### 00:31:04-00:34:52 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：进入 Substance Painter 前检查导出比例、材质槽和 UV，保证树皮、针叶和遮罩贴图能按对象区域正确烘焙与绘制。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 知识点：Spline 输入通常先采样为点，再用距离、切线或标签过滤道路范围内外的生成点。
+- 知识点：用 Actor Tag 或 Spline 作为外部输入时，应先确认标签命中对象，再检查过滤后的点集。
+- 核对对象：`PCG`、`生成`。
 
-- `Mesh`
-- `Mask`
-- `paint`
-- `brush`
-- `color`
-- `more`
-- `black`
-
-### 导出与 UE5 材质函数匹配的贴图，必要时做通道打包（3）
-
-**内容要点：**
-
-- 导出与 UE5 材质函数匹配的贴图，必要时做通道打包（3）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p25/s08-01-S08_1_00_31_14.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p25/s08-02-S08_2_00_32_58.jpg)
 
+### 00:34:52-00:39:43 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 知识点：将 Static Mesh 或生成参数暴露为 Blueprint 变量/Graph 参数后，可在不同实例中替换生成资产。
+- 知识点：Static Mesh Spawner 负责把点数据实例化为网格；替换 Mesh 时要同步检查 Transform、Density 和材质覆盖。
+- 知识点：Spline 输入通常先采样为点，再用距离、切线或标签过滤道路范围内外的生成点。
+- 知识点：用 Actor Tag 或 Spline 作为外部输入时，应先确认标签命中对象，再检查过滤后的点集。
+- 核对对象：`PCG`、`生成`。
 
-- `Mesh`
-- `Mask`
-- `normal`
-- `green`
-- `channel`
-- `color`
-- `flip`
-- `only`
-
-### 用预览材质检查贴图在重复铺设时是否会产生明显接缝
-
-**内容要点：**
-
-- 用预览材质检查贴图在重复铺设时是否会产生明显接缝。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p25/s09-01-S09_1_00_35_02.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p25/s09-02-S09_2_00_37_17.jpg)
 
+### 00:39:43-00:41:57 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 知识点：Spline 输入通常先采样为点，再用属性、距离或索引区分路段、端点、交叉点和曲线段。
+- 复现要点：Spline 流程要单独核对采样间距、切线、端点、交叉点和生成网格的对齐方式。
+- 核对对象：`Spline`、`Spline Mesh`、`Material`、`采样`、`生成`。
 
-- `Mask`
-- `clouds`
-- `more`
-- `some`
-- `multiply`
-- `color`
-- `fill`
-- `stone`
-
-### 用预览材质检查贴图在重复铺设时是否会产生明显接缝（2）
-
-**内容要点：**
-
-- 用预览材质检查贴图在重复铺设时是否会产生明显接缝（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p25/s10-01-S10_1_00_39_53.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p25/s10-02-S10_2_00_40_50.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `Mesh`
-- `Spline`
-- `Mask`
-- `Material`
-- `Landscape`
-- `nice`
-- `save`
-- `export`
-- `texture`
-- `episode`
-
-## 复现检查清单
-
-- 样条 Mesh 的纹理方向必须与 UE5 Spline 前向方向一致。
-- 所有 UE5 资产都要检查比例、pivot、材质槽、贴图色彩空间和实例化性能。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

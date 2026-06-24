@@ -1,113 +1,63 @@
-# 2-2 - Distance Blend Function
+# 2 2 Distance Blend Function
 
-# 2-2 - Distance Blend Function
+# 2 2 Distance Blend Function
 
 ## 知识目标
 
-- 本文整理“2-2 - Distance Blend Function”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+- 围绕“2 2 Distance Blend Function”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 创建近景/远景纹理混合逻辑，减少 Landscape 远距离重复图案。
-- 用 Camera Distance 或距离衰减参数在不同 tiling 之间过渡。
-- 把距离、过渡宽度、近景尺度和远景尺度暴露为参数。
-- 在视口中检查近距离细节和远距离大形是否自然衔接。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
 
 ## 关键术语
 
-- `Material`
-- `Instance`
-- `Landscape`
-- `blend`
-- `distance`
-- `tiling`
-- `texture`
-- `material`
-- `near`
-- `function`
-- `fade`
-- `input`
+- `Material`、`Instance`、`Landscape`、`blend`、`distance`、`tiling`、`texture`、`near`、`function`、`fade`、`input`
 
-## 操作步骤与要点
+## 分段知识
 
-### 创建近景/远景纹理混合逻辑，减少 Landscape 远距离重复图案
+### 00:00:00-00:04:49 PCG 数据流与生成规则
 
-**内容要点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`Instance`、`生成`。
 
-- 创建近景/远景纹理混合逻辑，减少 Landscape 远距离重复图案。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p10/s01-01-S01_1_00_00_10.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p10/s01-02-S01_2_00_02_24.jpg)
 
+### 00:04:49-00:09:01 PCG 数据流与生成规则
 
-**参数、节点和风险点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`Instance`、`生成`。
 
-- `Material`
-- `Instance`
-- `Landscape`
-- `material`
-- `function`
-- `blend`
-- `distance`
-- `texture`
-- `hook`
-- `scalar`
-
-### 用 Camera Distance 或距离衰减参数在不同 tiling 之间过渡
-
-**内容要点：**
-
-- 用 Camera Distance 或距离衰减参数在不同 tiling 之间过渡。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p10/s02-01-S02_1_00_04_59.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p10/s02-02-S02_2_00_06_55.jpg)
 
+### 00:09:04-00:11:26 PCG 数据流与生成规则
 
-**参数、节点和风险点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`Instance`、`生成`。
 
-- `Material`
-- `Instance`
-- `Landscape`
-- `near`
-- `distance`
-- `tiling`
-- `texture`
-- `blend`
-- `input`
-- `function`
-
-### 把距离、过渡宽度、近景尺度和远景尺度暴露为参数
-
-**内容要点：**
-
-- 把距离、过渡宽度、近景尺度和远景尺度暴露为参数。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p10/s03-01-S03_1_00_09_14.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p10/s03-02-S03_2_00_10_15.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `Material`
-- `Instance`
-- `Landscape`
-- `tiling`
-- `fade`
-- `bigger`
-- `distance`
-- `blend`
-- `texture`
-- `zoom`
-
-## 复现检查清单
-
-- 距离混合不要产生明显分界线；过渡宽度和纹理尺度需要随场景尺寸调整。
-- 所有 UE5 资产都要检查比例、pivot、材质槽、贴图色彩空间和实例化性能。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

@@ -24,20 +24,22 @@ Saved/UeAssetFolders/NiagaraScript
 - `NiagaraScript` 导出/回写覆盖脚本元数据、raw reflected fields、graph nodes、graph links、Custom HLSL 节点文本。
 - 不把外部资产内容复制进 Niagara 文件夹；Material、Mesh、Parameter Collection、Effect Type、Data Channel 等仍以引用和依赖记录保存。
 - `validation/coverage_report.json` 现在以 `implementation_status=complete_folder_profile`、`is_complete_target_schema=true`、空 `pending_profiles`、空 `blocking_gaps` 作为完成口径。实际资产缺失、坏引用、UE `ImportText` 无法导入的字段仍会进入 `warnings`；`strict=true` 会把这些运行时 warning 转为失败。
-- `niagara_apply_folder` 和 `niagara_emitter_apply_folder` 默认在 apply 后读取 Niagara Stack issue，并把红色感叹号/黄色警告信息随 apply 返回；`strict=true` 默认遇到 Stack error 也会失败。
+- `niagara_apply_folder`、`niagara_emitter_apply_folder`、`niagara_script_apply_folder` 默认在 apply 后强制编译并读取 compile log；`compile_log.has_error=true` 时返回 `compile_failed_after_apply`，不会执行最终保存。若 compile log 本身读取失败，返回 `compile_log_read_failed_after_apply` 并保留 `compile_log_read_error`。
+- `niagara_apply_folder` 和 `niagara_emitter_apply_folder` 默认在 apply 后读取 Niagara Stack issue，并把红色感叹号/黄色警告信息随 apply 返回；`strict=true` 默认遇到 Stack error 也会失败。保存发生在编译和 Stack 门禁之后。
 
 ## 标准工作流
 
 Niagara authoring 必须优先走文件夹式结构化 JSON，不再用零散原子命令直接手搓完整效果：
 
 1. 创建最小 Niagara System / Emitter / Script 骨架。
-2. 立即导出文件夹式 JSON，拿 UE 实际生成的结构作为模板。
-3. 在导出 JSON 中写入基础 module / renderer / event / script 结构。
-4. Apply 回 UE，让 UE 生成合法 Stack 节点、隐藏字段、GUID 和默认参数。
-5. 再导出一次，拿到已补全的完整 module 属性面。
-6. 在第二次导出的完整 JSON 上修改参数。
-7. 再次 apply。
-8. 读取 apply 返回中的 `warnings`、`stack_issue_report`、`stack_issues`、`stack_scopes`、`stack_error_count`；必要时再用 `niagara_get_compile_log` 和 runtime probe 验证。
+2. 用 `node_catalog_search(catalog_type=niagara_module/niagara_dynamic_input/niagara_graph_node)` 查询真实候选；按 `kind/name/full_name/json_authoring/write_support/support_reason` 选择模块、dynamic input 或 script graph function，不凭 UI 显示名或记忆拼路径。
+3. 立即导出文件夹式 JSON，拿 UE 实际生成的结构作为模板。
+4. 在导出 JSON 中写入基础 module / renderer / event / script 结构。
+5. Apply 回 UE，让 UE 生成合法 Stack 节点、隐藏字段、GUID 和默认参数。
+6. 再导出一次，拿到已补全的完整 module 属性面。
+7. 在第二次导出的完整 JSON 上修改参数。
+8. 再次 apply。
+9. 读取 apply 返回中的 `warnings`、`compile_log`、`compile_has_error`、`stack_issue_report`、`stack_issues`、`stack_scopes`、`stack_error_count`；必要时再用 runtime probe 验证。
 
 保留原子命令只用于 bootstrap、诊断、探针、迁移脚本和紧急修补；完整 Niagara 效果制作不应以原子命令作为主流程。
 
@@ -153,14 +155,17 @@ NMS_FillArray/
 - 曲线类 `raw_properties` 会导出 `curve_json` / `value_json`，使用统一的 `ue_agent_interface.curve.v1`。回写时 `curve_json` 优先，`value_json` 仅作为兼容别名；未知字段、拼写相近字段、缺 key 值、重复时间或非法插值/外推模式都会进入 `warnings[]`，`strict=true` 时失败。
 - Data Interface 曲线属性在 System folder apply 中会等 System overview / emitter graph 总刷新后再回写，避免写入旧 `UNiagaraNodeInput.DataInterface` 后被刷新覆盖。返回字段 `post_refresh_data_interfaces_applied` 表示这一步实际应用的 Data Interface 属性数量。
 - Module Input 若连接到 Dynamic Input，导出时会在该 input 下写入 `dynamic_input` 子对象，包含 `script_asset_path`、`node_name`、嵌套 `inputs[]` 和 `data_interfaces[]`。回写时 apply 会先重建 Dynamic Input，再按 `dynamic_input.data_interfaces[].raw_properties[].curve_json` 写入曲线 Data Interface。因此 `FloatFromCurve`、`VectorFromCurve`、`ColorFromCurve` 等动态输入曲线必须在 folder JSON 中编辑，不再通过旧原子扩展参数制作。
+- Module Input 若直接连接到 Data Interface override，导出时会在该 input 下写入 `link_kind: "data_interface"` 与 `data_interface` 子对象，包含 `data_interface_class`、`input_name` 和 `raw_properties[]`。回写时 apply 会调用 Niagara Stack 的 Data Interface override 路径创建/替换 `UNiagaraNodeInput`，再写入 `raw_properties[]`；例如 `Spawn Particles from Other Emitter` 的 `Module.Attribute Reader` 可用 `/Script/Niagara.NiagaraDataInterfaceParticleRead` 并在 `EmitterBinding` 写 `(BindingMode=Other,EmitterName="SourceEmitterName")`。
+- 新 authoring 中 Module / Dynamic Input 的身份必须来自 `node_catalog_search` 返回的 `kind/name/full_name` 或 `json_authoring.seed`。folder raw/readback 中的 `script_asset_path` 是 legacy apply 层字段，只能由 adapter 兼容、readback 或迁移使用；不要在新 authoring 主路径里手写它。不要只写 `Random Range Vector`、`Sprite Facing and Alignment` 这类 UI 显示名；显示名只能作为搜索词。
+- Module Input 若通过 UI 下拉选择 `Link Inputs` 连接到参数，导出时会写入 `link_kind: "linked_input"` 与 `linked_parameter_name`。导出会识别 UE 实际生成的 ParameterMapGet 链接节点；回写时可用 `linked_parameter_name` / `link_parameter_name` / `link_parameter` 指定目标参数名，apply 会调用 Niagara Stack 的 linked parameter 写入路径并做写后读回验证；不要用 `override_default_value: "link:..."` 伪造链接。
 - Stage / Module / Module Input JSON 现在接入统一字段诊断：未知字段会返回 `json_unknown_field`，类型不匹配会返回 `json_field_type_mismatch`，必填字段缺失会返回 `json_missing_required_field`，数组元素不是 object 会返回 `json_array_item_type_mismatch`。这些 warning 会带完整 JSON path，例如 `stages/00_ParticleSpawnScript_default.json.modules[0].inputs[3].override_default_value`；`strict=true` 时会使 apply 失败。
 - User 参数回写按 `parameter_type -> type_path -> type_internal -> type` 解析，并支持 `NiagaraFloat` / `/Script/Niagara.NiagaraFloat` 等 UE 内部类型别名。
 - System Stage 与 Emitter Stage apply 都会重建 stage 基础图、按导出顺序恢复 module stack、恢复 module enabled 状态和 input default 值；新建 System 时必须通过 `system_stages/SystemUpdate.json` 恢复 `SystemState`，否则 Stack 会报缺少必需模块。
 - Stage module 顺序以 `module_index` 为准；apply 会按目标索引插入，export 会按 ParameterMap 链路回读执行顺序，避免节点坐标排序导致 `Collision` / `GenerateCollisionEvent` 等更新模块顺序漂移。
-- Module input default 回写会区分 FunctionCall 可见输入 pin 与隐藏 stack override input：可见枚举/静态输入直接写入 FunctionCall pin，隐藏输入才创建 aliased override pin。
+- Module input default 回写会区分 FunctionCall 可见输入 pin 与隐藏 stack override input：可见枚举/静态输入直接写入 FunctionCall pin；不可见但可解析的输入会尝试创建 aliased override pin。不可见本身不再作为 warning，只有 override pin 创建失败、类型不匹配或写后验证失败才进入 `warnings[]`。
 - Module input default 回写会按 Niagara 类型规范化 `override_default_value`：`Vector/Position` 写为 `(X=...,Y=...,Z=...)`，`LinearColor` 写为 `(R=...,G=...,B=...,A=...)`，`Vector2/Vector4/Quat` 写为对应结构字段；`NaN/Inf` 会作为 warning 记录并跳过该输入，避免 folder apply 后 UI 落成黑色或零向量。
 - Module input default 回写后会校验 `OverridePin.DefaultValue`。若 UE 接受了写入但存储文本没有落成预期 import text，会产生 `module_input_default_apply_verification_failed` warning；`strict=true` 时该 warning 会让 apply 失败。
-- Module input 若 `has_override=true` 但缺少或写错 `override_default_value`，会返回 `module_input_missing_override_default_value`；若 input 当前不在 Niagara Stack 的可见有效分支，会返回 `module_input_hidden_or_inactive_branch`，提示先设置控制该分支的 mode/static switch 后重新导出再写分支值。
+- Module input 若 `has_override=true` 但缺少或写错 `override_default_value`，会返回 `module_input_missing_override_default_value`；若 input 当前无法解析或无法创建 override pin，会返回 `module_input_not_found` / `module_input_override_unavailable`。Data Interface 输入写错 class 或目标类型不匹配时会返回 `module_input_data_interface_*` warning。
 - 枚举型 Module Input 导出会附带 `enum_type`、`enum_value_name`、`enum_value_display_name`、`enum_value_int`、`enum_options[]`，避免只看到 `NewEnumerator3` 这类内部名而误判 UI 当前显示值。
 - Event Handler apply 会按 `script_usage_id` / `source_event_name` 匹配或创建 handler，并初始化可编译的基础 output stage。
 - Stage apply 会把 `SetVariables` / `UNiagaraNodeAssignment` 模块重建为目标 Emitter 本地 assignment 节点；不要把 System 内嵌 emitter 导出的私有 inline NiagaraScript 路径直接复用到 standalone Emitter，否则会形成跨 package 私有对象引用并导致保存失败。
@@ -210,6 +215,39 @@ Dynamic Input 是 Module Input 的子结构。导出后应在 stage 文件的 `m
 }
 ```
 
+从普通值切换到 Dynamic Input 时可以先写最小结构，让 UE 在 apply 后初始化内部 input，再重新导出补全：
+
+```json
+{
+  "input_name": "Module.Offset",
+  "type_info": "vector3",
+  "value": {
+    "source": "dynamic_input",
+    "dynamic_input": {
+      "kind": "niagara_dynamic_input",
+      "name": "Random Range Vector",
+      "full_name": "/Niagara/DynamicInputs/RandomRangeVector.RandomRangeVector",
+      "inputs": [],
+      "data_interfaces": []
+    }
+  }
+}
+```
+
+若直接编辑 legacy folder stage JSON 而不是 authoring profile，仍可能看到 `link_kind/dynamic_input.script_asset_path` 这类字段；新 LLM authoring 应优先写上面的 `value.source + kind/name/full_name`，让 adapter 转换。
+
+普通参数链接结构如下：
+
+```json
+{
+  "input_name": "Module.Offset",
+  "has_override": true,
+  "has_links": true,
+  "link_kind": "linked_input",
+  "linked_parameter_name": "Particles.Position"
+}
+```
+
 验收要求：
 
 - apply 返回不得有 `dynamic_input_*`、`curve_json_*`、`json_unknown_field`、`json_field_type_mismatch` 相关 warning；`strict=true` 时这些 warning 会导致失败。
@@ -230,11 +268,11 @@ Dynamic Input 是 Module Input 的子结构。导出后应在 stage 文件的 `m
 | standalone `UNiagaraEmitter` root profile | structured folder | structured folder | 已实现 |
 | Emitter graph parameters | structured | structured | 已实现 |
 | Rapid iteration parameters | structured/raw | structured/raw | 已实现 |
-| Renderers | structured + raw properties | structured + raw properties | 已实现，缺失 renderer 可按 class 尝试创建 |
+| Renderers | structured + raw properties | structured + raw properties | 已实现，缺失 renderer 可按 class 尝试创建；`renderers.json` 可用 `replace_renderers: true` 或 `apply_mode: "replace"` 先移除现有 renderer，再按 JSON 重建 |
 | Event handlers | structured + raw properties | structured + raw properties | 已实现，缺失 handler 可创建 |
 | Event generators | structured + raw properties | structured + raw properties | 已实现 |
 | Stages / Simulation Stages | structured graph snapshot | structured graph rebuild | 已实现 |
-| Modules / Module Inputs | structured | structured | 已实现 module stack、enabled、input default、dynamic input 与 dynamic input DataInterface 曲线回写 |
+| Modules / Module Inputs | structured | structured | 已实现 module stack、enabled、input default、linked input、dynamic input、module input DataInterface override 与 dynamic input DataInterface 曲线回写 |
 | Data interfaces | structured + raw properties + `curve_json` | post-refresh structured/raw apply | 已实现引用、reflected 字段和曲线 DataInterface 保真 |
 | standalone `UNiagaraScript` root profile | structured folder | structured folder | 已实现 |
 | Custom Niagara Script / Scratch Pad / Custom HLSL | reference + raw properties + node snapshot | structured/raw | 已实现 |
@@ -273,7 +311,8 @@ Dynamic Input 是 Module Input 的子结构。导出后应在 stage 文件的 `m
 | `folder_path` | string | 自动推导 | 文件夹路径；未提供时按 `asset_path` 推导 |
 | `create_if_missing` | bool | `true` | 目标 System 不存在时创建 |
 | `apply_referenced_emitters` | bool | `true` | 同步回写导出目录中引用的 Emitter 文件夹 |
-| `compile_after_apply` | bool | `false` | 回写后触发 Niagara 编译 |
+| `compile_after_apply` | bool | `true` | 回写后触发 Niagara 编译并读取 `compile_log`；编译 error 会使 apply 失败 |
+| `force_compile` | bool | `true` | 编译门禁默认强制重新生成，避免读到旧 compile result |
 | `wait_for_complete` | bool | `true` | 编译时等待完成 |
 | `save_after_apply` | bool | `false` | 回写后保存资产 |
 | `collect_stack_issues_after_apply` | bool | `true` | apply 后自动读取 Stack 红/黄/信息提示并随返回附带 |
@@ -283,11 +322,14 @@ Dynamic Input 是 Module Input 的子结构。导出后应在 stage 文件的 `m
 | `compile_before_stack_issue_read` | bool | `true` | 读取 Stack issue 前先编译，避免返回旧状态；需要只读当前缓存时可显式传 `false` |
 | `fail_on_stack_errors` | bool | 跟随 `strict` | Stack error 非空时让 apply 失败 |
 | `strict` | bool | `false` | 如果运行时 warnings 非空则失败；默认也会因 Stack error 失败 |
+| `restore_preview_after_apply` / `resume_preview_after_apply` / `restore_interactive_preview` | bool | `true` | apply、编译和 Stack 读取后恢复已打开 Niagara 编辑器的交互预览，避免结构化写入后预览组件停留在 UAI 自动化暂停/采样配置 |
 
 返回：
 
 - 常规 apply 字段：`system_properties_applied`、`user_parameters_applied`、`system_stages_applied`、`emitter_handles_applied`、`emitter_properties_applied`、`post_refresh_data_interfaces_applied`、`system_refresh`、`warnings`、`warning_count`。
+- 编译字段：`compile_after_apply`、`force_compile`、`wait_for_complete`、`compilation_requested`、`compilation_complete`、`has_outstanding_compilation_requests`、`outstanding_after_stack_issue_read`、`post_stack_compilation_requested`、`post_stack_compilation_complete`、`compile_log_read_ok`、`compile_log_read_error`、`compile_has_error`、`compile_log`。apply 会先编译，再读取 Stack issue；如果 ViewModel/Stack 读回让 System 再次进入 outstanding 状态，会立刻再强制编译一次并重读 compile log。最终等待后仍有 outstanding compile request 时才返回 `compile_incomplete_after_apply`；compile log 读取失败时返回 `compile_log_read_failed_after_apply`；`compile_log.has_error=true` 时返回 `compile_failed_after_apply`。这些失败都保留 `saved=false`，不会执行最终保存。
 - Stack 诊断字段：`stack_issue_report`、`stack_issues`、`stack_scopes`、`stack_total_issue_count`、`stack_error_count`、`stack_warning_count`、`stack_info_count`、`has_stack_errors`、`stack_issue_view_model_source`。
+- 预览恢复字段：`restore_preview_after_apply`、`preview_restore`。`preview_restore.restored=true` 且 `preview_restore.is_paused=false` 表示 apply 结束后已恢复 Niagara 编辑器预览；即使随后因编译、Stack 或 strict 门禁返回失败，该字段也会尽量随已填充的 `data` 返回，便于确认没有把 UI 预览留在暂停态。
 - 当 `strict=true` 且 Stack error 非空时，命令失败返回 `strict_apply_has_stack_errors`，同时返回具体 `stack_issues[] / stack_scopes[]`。
 
 示例：
@@ -336,6 +378,9 @@ Dynamic Input 是 Module Input 的子结构。导出后应在 stage 文件的 `m
 | `folder_path` | string | 自动推导 | 文件夹路径；未提供时按 `emitter_asset_path` 推导 |
 | `create_if_missing` | bool | `true` | 目标 Emitter 不存在时创建 |
 | `add_default_modules_and_renderers` | bool | `true` | 创建缺失 Emitter 时是否初始化默认模块/Renderer |
+| `compile_after_apply` | bool | `true` | 回写后编译/读取 Emitter compile log；编译 error 会使 apply 失败 |
+| `force_compile` | bool | `true` | 编译门禁默认强制重新生成，避免读到旧 compile result |
+| `wait_for_complete` | bool | `true` | Standalone Emitter 的脚本编译为同步 compile request；返回字段仍保留该参数，便于和 System apply 一致 |
 | `save_after_apply` | bool | `false` | 回写后保存资产 |
 | `collect_stack_issues_after_apply` | bool | `true` | apply 后自动读取 standalone Emitter Stack issue |
 | `stack_issue_severity_filter` | string | `warning_or_error` | Stack issue 返回过滤 |
@@ -355,6 +400,7 @@ Dynamic Input 是 Module Input 的子结构。导出后应在 stage 文件的 `m
 - 当来源文件夹包含 `event_generators.json` 时，apply 会先清空目标 Emitter 四类脚本上的 Event Generator 数组，再按 JSON 重建；空数组会清除旧 DeathEvent/CollisionEvent generator，避免同一数据集被旧 generator 和新 module 重复写入。
 - 对 UE 内置 `CollisionEvent` / `DeathEvent` generator，apply 只会在同一 owner stage 里存在对应 `GenerateCollisionEvent` / `GenerateDeathEvent` module 时重建；若导出文件夹残留 orphan generator，会返回 `event_generator_skipped_missing_stage_module` warning，提示先修正 stage/module 结构。
 - 返回值包含 `stack_issue_report`、`stack_issues`、`stack_scopes`、`stack_error_count` 等字段；这与单独调用 `niagara_get_stack_issues` 的数据结构一致。
+- 返回值包含 `compile_after_apply`、`force_compile`、`wait_for_complete`、`compilation_requested`、`compilation_complete`、`compile_log_read_ok`、`compile_log_read_error`、`compile_has_error`、`compile_log`。compile log 读取失败时返回 `compile_log_read_failed_after_apply`；`compile_log.has_error=true` 时返回 `compile_failed_after_apply`，且不会保存。
 
 示例：
 
@@ -401,9 +447,13 @@ Dynamic Input 是 Module Input 的子结构。导出后应在 stage 文件的 `m
 | `script_asset_path` | string | `asset.json` 中的路径 | 回写目标 Script；也兼容 `asset_path` |
 | `folder_path` | string | 自动推导 | 文件夹路径；未提供时按 `script_asset_path` 推导 |
 | `create_if_missing` | bool | `true` | 目标 Script 不存在时创建 |
-| `compile_after_apply` | bool | `false` | 回写后请求脚本编译 |
+| `compile_after_apply` | bool | `true` | 回写后请求脚本编译并读取 `compile_log`；编译 error 会使 apply 失败 |
+| `force_compile` | bool | `true` | 编译门禁默认强制重新生成，避免读到旧 compile result |
+| `wait_for_complete` | bool | `true` | Standalone Script 的 `RequestCompile` 同步返回 VM 结果；返回字段仍保留该参数，便于和 System apply 一致 |
 | `save_after_apply` | bool | `false` | 回写后保存资产 |
 | `strict` | bool | `false` | 如果运行时 warnings 非空则失败 |
+
+返回值包含 `compile_after_apply`、`force_compile`、`wait_for_complete`、`compilation_requested`、`compilation_complete`、`compile_log_read_ok`、`compile_log_read_error`、`compile_has_error`、`compile_log`。compile log 读取失败时返回 `compile_log_read_failed_after_apply`；`compile_log.has_error=true` 时返回 `compile_failed_after_apply`，且不会保存。
 
 示例：
 
@@ -446,8 +496,8 @@ Dynamic Input 是 Module Input 的子结构。导出后应在 stage 文件的 `m
 3. 写入基础 module / renderer / event 结构。
 4. 调用对应 `*_apply_folder`。
 5. 再导出一次，使用 UE 补全后的完整 JSON 修改参数。
-6. 再次 apply，并检查 apply 返回中的 `warnings` 和 `stack_issues`。
-7. 对 System 调用 `niagara_get_compile_log`，使用 `severity_filter="warning_or_error"`。
+6. 再次 apply，并检查 apply 返回中的 `warnings`、`compile_log` 和 `stack_issues`。
+7. 如需独立复核，对 System 调用 `niagara_get_compile_log`，使用 `severity_filter="warning_or_error"`。
 
 验收口径：
 

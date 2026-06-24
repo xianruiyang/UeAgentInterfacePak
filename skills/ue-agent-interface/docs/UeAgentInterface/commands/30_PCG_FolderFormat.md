@@ -54,6 +54,8 @@ export folder -> edit graph.json / nodes/*.json -> validate -> plan -> diff -> a
 
 `id` 必须在同一个 Graph 内唯一。输入和输出节点使用保留 id `__input__`、`__output__`，普通节点必须提供 `settings_class`。`settings_class` 应来自运行时节点目录导出结果，不应手写猜测。
 
+新增 PCG 节点前先运行 `pcg_node_catalog_export`，从 catalog 里选择真实 `settings_class`、pin 能力和 GPU/弃用状态；对已有图再用 `pcg_graph_export_folder` 和 `pcg_node_inspect` 读回当前节点结构。不要从 UI 菜单显示名或网络教程反推 `settings_class`。
+
 输入/输出节点也是可回放节点。`settings_properties[]` 中的 `Pins` 会应用到 `__input__` / `__output__` 对应的 `UPCGGraphInputOutputSettings`，用于恢复 Spline、Point、Param 等自定义 pin。普通节点导出的 `output_pins[]` 可作为动态 pin 提示；对 `UPCGUserParameterGetSettings`，apply 会用第一个导出输出 pin label 回放 `PropertyName`，确保 `Get Graph Parameter` 节点重新创建后仍输出 `Grammar`、`ModuleInfo`、`MeshInfo` 等参数 pin。
 
 普通节点常用字段：

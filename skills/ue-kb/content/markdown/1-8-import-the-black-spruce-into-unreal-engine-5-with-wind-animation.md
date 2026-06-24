@@ -1,347 +1,207 @@
-# 1-8 - Import the Black Spruce into Unreal Engine 5 with Wind Animation
+# 1 8 Import the Black Spruce into Unreal Engine 5 with Wind Animation
 
-# 1-8 - Import the Black Spruce into Unreal Engine 5 with Wind Animation
+# 1 8 Import the Black Spruce into Unreal Engine 5 with Wind Animation
 
 ## 知识目标
 
-- 本文整理“1-8 - Import the Black Spruce into Unreal Engine 5 with Wind Animation”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+- 围绕“1 8 Import the Black Spruce into Unreal Engine 5 with Wind Animation”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 将黑云杉导入 UE5，检查比例、pivot、法线、材质槽、透明/双面设置和贴图连接。
-- 建立树叶/树枝材质，处理 Two Sided Foliage、Opacity Mask、Normal、Roughness 与颜色变化。
-- 加入风动画或 World Position Offset，控制树枝摆动幅度、频率和顶点权重。
-- 在关卡中放置多个实例，检查风动画同步感、阴影、Nanite/LOD、碰撞和性能。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
+- 涉及运行时、World Partition、Hierarchical Generation 或 GPU 节点时，单独验证触发模式、缓存和性能。
 
 ## 关键术语
 
-- `Mesh`
-- `Point`
-- `Attribute`
-- `Actor`
-- `Component`
-- `Density`
-- `Mask`
-- `Material`
-- `Instance`
-- `Landscape`
-- `material`
-- `color`
+- `Mesh`、`Point`、`Attribute`、`Actor`、`Component`、`Density`、`Mask`、`Material`、`Instance`、`Landscape`、`color`、`Volume`、`Branch`、`GPU`
 
-## 操作步骤与要点
+## 分段知识
 
-### 将黑云杉导入 UE5，检查比例、pivot、法线、材质槽、透明/双面设置和贴图连接
+### 00:00:00-00:04:53 属性、过滤与数据分流
 
-**内容要点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 核对对象：`PCG`、`Actor`、`Material`、`生成`。
 
-- 将黑云杉导入 UE5，检查比例、pivot、法线、材质槽、透明/双面设置和贴图连接。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p08/s01-01-S01_1_00_00_10.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p08/s01-02-S01_2_00_02_26.jpg)
 
+### 00:04:54-00:09:54 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Bounds`、`Volume`、`Material`、`点`、`点数据`、`采样`。
 
-- `Actor`
-- `Mask`
-- `Material`
-- `Landscape`
-- `project`
-- `already`
-- `level`
-- `lighting`
-- `case`
-- `reflections`
-
-### 将黑云杉导入 UE5，检查比例、pivot、法线、材质槽、透明/双面设置和贴图连接（2）
-
-**内容要点：**
-
-- 将黑云杉导入 UE5，检查比例、pivot、法线、材质槽、透明/双面设置和贴图连接（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p08/s02-01-S02_1_00_05_04.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p08/s02-02-S02_2_00_07_24.jpg)
 
+### 00:09:54-00:12:59 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 核对对象：`PCG`、`生成`。
 
-- `Mesh`
-- `Material`
-- `Landscape`
-- `more`
-- `backdrop`
-- `sure`
-- `landscape`
-- `cube`
-
-### 将黑云杉导入 UE5，检查比例、pivot、法线、材质槽、透明/双面设置和贴图连接（3）
-
-**内容要点：**
-
-- 将黑云杉导入 UE5，检查比例、pivot、法线、材质槽、透明/双面设置和贴图连接（3）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p08/s03-01-S03_1_00_10_04.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p08/s03-02-S03_2_00_11_26.jpg)
 
+### 00:12:59-00:17:50 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Density`、`Volume`、`属性`、`过滤`。
 
-- `Landscape`
-- `HDRI`
-- `Control`
-- `bookmark`
-- `same`
-- `backdrop`
-
-### 将黑云杉导入 UE5，检查比例、pivot、法线、材质槽、透明/双面设置和贴图连接（4）
-
-**内容要点：**
-
-- 将黑云杉导入 UE5，检查比例、pivot、法线、材质槽、透明/双面设置和贴图连接（4）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p08/s04-01-S04_1_00_13_09.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p08/s04-02-S04_2_00_15_25.jpg)
 
+### 00:17:50-00:22:34 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Branch`、`Material`、`Instance`、`属性`、`过滤`。
 
-- `Mesh`
-- `Component`
-- `Density`
-- `Landscape`
-- `zero`
-- `height`
-- `fork`
-- `light`
-- `still`
-- `completely`
-
-### 建立树叶/树枝材质，处理 Two Sided Foliage、Opacity Mask、Normal、Roughness 与颜色变化
-
-**内容要点：**
-
-- 建立树叶/树枝材质，处理 Two Sided Foliage、Opacity Mask、Normal、Roughness 与颜色变化。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p08/s05-01-S05_1_00_18_00.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p08/s05-02-S05_2_00_20_12.jpg)
 
+### 00:22:36-00:27:36 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Branch`、`Material`、`属性`、`过滤`。
 
-- `Material`
-- `Instance`
-- `material`
-- `trunk`
-- `base`
-- `roughness`
-- `color`
-- `textures`
-- `normal`
-- `more`
-
-### 建立树叶/树枝材质，处理 Two Sided Foliage、Opacity Mask、Normal、Roughness 与颜色变化（2）
-
-**内容要点：**
-
-- 建立树叶/树枝材质，处理 Two Sided Foliage、Opacity Mask、Normal、Roughness 与颜色变化（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p08/s06-01-S06_1_00_22_46.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p08/s06-02-S06_2_00_25_06.jpg)
 
+### 00:27:36-00:31:07 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Branch`、`Material`、`属性`、`过滤`。
 
-- `Material`
-- `color`
-- `roughness`
-- `material`
-- `base`
-- `value`
-- `black`
-- `node`
-- `alpha`
-
-### 建立树叶/树枝材质，处理 Two Sided Foliage、Opacity Mask、Normal、Roughness 与颜色变化（3）
-
-**内容要点：**
-
-- 建立树叶/树枝材质，处理 Two Sided Foliage、Opacity Mask、Normal、Roughness 与颜色变化（3）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p08/s07-01-S07_1_00_27_46.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p08/s07-02-S07_2_00_29_21.jpg)
 
+### 00:31:07-00:34:25 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：属性是 PCG 数据流中的关键状态，应明确保存分类、索引、随机种子、缩放或材质选择等信息。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Attribute`、`Branch`、`Material`、`Instance`、`属性`、`过滤`。
 
-- `Material`
-- `wind`
-- `simple`
-- `promote`
-- `parameter`
-- `color`
-- `material`
-
-### 加入风动画或 World Position Offset，控制树枝摆动幅度、频率和顶点权重
-
-**内容要点：**
-
-- 加入风动画或 World Position Offset，控制树枝摆动幅度、频率和顶点权重。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p08/s08-01-S08_1_00_31_17.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p08/s08-02-S08_2_00_32_46.jpg)
 
+### 00:34:25-00:39:20 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Point`、`Branch`、`Material`、`Instance`、`属性`、`过滤`。
 
-- `Attribute`
-- `Material`
-- `Instance`
-- `already`
-- `hook`
-- `variable`
-- `normal`
-- `same`
-- `values`
-
-### 加入风动画或 World Position Offset，控制树枝摆动幅度、频率和顶点权重（2）
-
-**内容要点：**
-
-- 加入风动画或 World Position Offset，控制树枝摆动幅度、频率和顶点权重（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p08/s09-01-S09_1_00_34_35.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p08/s09-02-S09_2_00_36_52.jpg)
 
+### 00:39:20-00:43:28 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Branch`、`Material`、`Instance`、`属性`、`过滤`。
 
-- `Mesh`
-- `Point`
-- `Material`
-- `Instance`
-- `material`
-- `surface`
-- `color`
-- `instance`
-- `change`
-- `sided`
-
-### 加入风动画或 World Position Offset，控制树枝摆动幅度、频率和顶点权重（3）
-
-**内容要点：**
-
-- 加入风动画或 World Position Offset，控制树枝摆动幅度、频率和顶点权重（3）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p08/s10-01-S10_1_00_39_30.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p08/s10-02-S10_2_00_41_24.jpg)
 
+### 00:43:28-00:48:24 运行时生成、分区与性能
 
-**参数、节点和风险点：**
+- 本段定位：运行时生成、分区与性能。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 复现要点：运行时、分区或 GPU 生成需要单独验证缓存、触发时机、平台支持和性能预算。
+- 核对对象：`GPU`、`Material`、`分区`、`生成`、`运行时`。
 
-- `Mesh`
-- `Material`
-- `Instance`
-- `material`
-- `decimate`
-- `instance`
-- `blender`
-- `trunk`
-- `step`
-
-### 在关卡中放置多个实例，检查风动画同步感、阴影、Nanite/LOD、碰撞和性能
-
-**内容要点：**
-
-- 在关卡中放置多个实例，检查风动画同步感、阴影、Nanite/LOD、碰撞和性能。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p08/s11-01-S11_1_00_43_38.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p08/s11-02-S11_2_00_45_56.jpg)
 
+### 00:48:24-00:53:12 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：在 Blender 中制作可复用的枝条/针叶簇模块，先确定主枝比例、枝簇数量和变体目标，再用多个差异化模块组合树冠。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 知识点：属性是 PCG 数据流中的关键状态，应明确保存分类、索引、随机种子、缩放或材质选择等信息。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Attribute`、`Material`、`Instance`、`属性`、`过滤`。
 
-- `Mesh`
-- `Material`
-- `color`
-- `scatter`
-- `collision`
-- `intensity`
-- `already`
-- `subsurface`
-
-### 在关卡中放置多个实例，检查风动画同步感、阴影、Nanite/LOD、碰撞和性能（2）
-
-**内容要点：**
-
-- 在关卡中放置多个实例，检查风动画同步感、阴影、Nanite/LOD、碰撞和性能（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p08/s12-01-S12_1_00_48_34.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p08/s12-02-S12_2_00_50_48.jpg)
 
+### 00:53:12-00:55:20 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Point`、`Branch`、`Material`、`属性`、`过滤`。
 
-- `Mesh`
-- `Attribute`
-- `Material`
-- `Instance`
-- `Landscape`
-- `light`
-- `subsurface`
-- `material`
-- `scattering`
-- `tree`
-
-### 在关卡中放置多个实例，检查风动画同步感、阴影、Nanite/LOD、碰撞和性能（3）
-
-**内容要点：**
-
-- 在关卡中放置多个实例，检查风动画同步感、阴影、Nanite/LOD、碰撞和性能（3）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p08/s13-01-S13_1_00_53_22.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p08/s13-02-S13_2_00_54_16.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `Mesh`
-- `Point`
-- `Material`
-- `Landscape`
-- `trees`
-- `course`
-- `mean`
-- `rotate`
-
-## 复现检查清单
-
-- 风动画要避免整棵树刚性摆动，枝叶权重、WPO 幅度和性能需要一起验证。
-- 所有 UE5 资产都要检查比例、pivot、材质槽、贴图色彩空间和实例化性能。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

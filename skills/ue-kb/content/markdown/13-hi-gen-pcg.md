@@ -1,142 +1,90 @@
-# 13-Hi-Gen分区：大规模PCG工作流
+# 13 Hi Gen分区：大规模PCG工作流
 
-# 13-Hi-Gen分区：大规模PCG工作流
+# 13 Hi Gen分区：大规模PCG工作流
 
 ## 知识目标
 
-- 本文整理“13-Hi-Gen分区：大规模PCG工作流”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+- 围绕“13 Hi Gen分区：大规模PCG工作流”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 先明确本集在 PCG 基础课中的位置：输入数据是什么、点数据如何产生、属性如何流转、最终由哪个生成节点或蓝图消费。
-- 关注 PCG 与 World Partition/Hi-Gen 分区的协作：哪些数据按分区生成，哪些结果需要跨分区保持连续。
-- 复现时检查分区边界、加载状态、重复生成和跨分区样条/道路断裂问题。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
+- 涉及运行时、World Partition、Hierarchical Generation 或 GPU 节点时，单独验证触发模式、缓存和性能。
 
 ## 关键术语
 
-- `PCG`
-- `Static Mesh`
-- `Mesh`
-- `Spline`
-- `Transform`
-- `Point`
-- `Attribute`
-- `Actor`
-- `Component`
-- `Spawn`
-- `Grid`
-- `Bounds`
-- `Density`
-- `Random`
-- `Seed`
-- `Graph`
-- `Material`
-- `Instance`
+- `PCG`、`Static Mesh`、`Mesh`、`Spline`、`Transform`、`Point`、`Attribute`、`Actor`、`Component`、`Spawn`、`Grid`、`Bounds`、`Density`、`Random`、`Seed`、`Graph`、`Material`、`Instance`、`GPU`、`图表`、`点`、`采样`、`分区`、`生成`
 
-## 操作步骤与要点
+## 分段知识
 
-### 先明确本集在 PCG 基础课中的位置：输入数据是什么、点数据如何产生、属性如何流转、最终由哪个生成节点或蓝图消费
+### 00:00:07-00:04:53 点数据、Bounds 与采样来源
 
-**内容要点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：World Partition 与 Hierarchical Generation 按网格层级缓存和生成 PCG 数据，复现时要核对分区尺寸、触发范围和缓存状态。
+- 知识点：GPU PCG 节点能提升运行时生成吞吐，但 CPU/GPU 数据传输会形成边界，图表中要减少不必要的跨设备传递。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`PCG`、`Bounds`、`Actor`、`图表`、`点`、`点数据`、`采样`、`分区`、`生成`、`网格`。
 
-- 先明确本集在 PCG 基础课中的位置：输入数据是什么、点数据如何产生、属性如何流转、最终由哪个生成节点或蓝图消费。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue56-pcg-fundamentals-course-p13/s01-01-S01_1_00_00_17.jpg)
 ![关键截图 2](../assets/ue56-pcg-fundamentals-course-p13/s01-02-S01_2_00_02_30.jpg)
 
+### 00:04:53-00:09:40 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：Difference 节点根据连接对象的 Bounds 移除相交点；如果需要保留相交区域，应改用交集或反向过滤逻辑。
+- 知识点：World Partition 与 Hierarchical Generation 按网格层级缓存和生成 PCG 数据，复现时要核对分区尺寸、触发范围和缓存状态。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Bounds`、`Actor`、`图表`、`点`、`点数据`、`采样`、`分区`、`生成`、`网格`。
 
-- `PCG`
-- `Actor`
-- `Grid`
-- `网格`
-- `体积`
-- `节点`
-- `生成`
-- `PCGPartionGridActor_1600_9_`
-- `position`
-- `every`
-
-### 节点、参数和生成结果校验 02
-
-**内容要点：**
-
-- 节点、参数和生成结果校验 02。
-
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue56-pcg-fundamentals-course-p13/s02-01-S02_1_00_05_03.jpg)
 ![关键截图 2](../assets/ue56-pcg-fundamentals-course-p13/s02-02-S02_2_00_07_17.jpg)
 
+### 00:09:40-00:14:39 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：World Partition 与 Hierarchical Generation 按网格层级缓存和生成 PCG 数据，复现时要核对分区尺寸、触发范围和缓存状态。
+- 知识点：Transform Points 可调整点的位置、旋转和缩放；使用非统一缩放时要分别检查各轴最小值和最大值。
+- 知识点：Static Mesh Spawner 将点数据实例化为静态网格，复现时要检查 Mesh、Transform、Density 和材质覆盖。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Bounds`、`点`、`点数据`、`采样`、`分区`、`生成`、`网格`。
 
-- `PCG`
-- `Actor`
-- `Grid`
-- `网格`
-- `体积`
-- `节点`
-- `生成`
-- `PCGParitionGridActor_1600_9_`
-- `PCGSeries`
-
-### 关注 PCG 与 World Partition/Hi-Gen 分区的协作：哪些数据按分区生成，哪些结果需要跨分区保持连续
-
-**内容要点：**
-
-- 关注 PCG 与 World Partition/Hi-Gen 分区的协作：哪些数据按分区生成，哪些结果需要跨分区保持连续。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue56-pcg-fundamentals-course-p13/s03-01-S03_1_00_09_50.jpg)
 ![关键截图 2](../assets/ue56-pcg-fundamentals-course-p13/s03-02-S03_2_00_12_10.jpg)
 
+### 00:14:39-00:19:13 运行时生成、分区与性能
 
-**参数、节点和风险点：**
+- 本段定位：运行时生成、分区与性能。
+- 知识点：Landscape/Surface 输入负责提供地表采样点，复现时要核对采样范围、Layer/材质过滤、坡度或高度条件。
+- 知识点：GPU PCG 节点能提升运行时生成吞吐，但 CPU/GPU 数据传输会形成边界，图表中要减少不必要的跨设备传递。
+- 知识点：Static Mesh Spawner 将点数据实例化为静态网格，复现时要检查 Mesh、Transform、Density 和材质覆盖。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 复现要点：运行时、分区或 GPU 生成需要单独验证缓存、触发时机、平台支持和性能预算。
+- 核对对象：`PCG`、`GPU`、`图表`、`点`、`采样`、`分区`、`生成`、`网格`、`运行时`。
 
-- `PCG`
-- `Actor`
-- `Grid`
-- `Graph`
-- `网格`
-- `体积`
-- `节点`
-- `生成`
-- `Regen`
-- `same`
-
-### 复现时检查分区边界、加载状态、重复生成和跨分区样条/道路断裂问题
-
-**内容要点：**
-
-- 复现时检查分区边界、加载状态、重复生成和跨分区样条/道路断裂问题。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue56-pcg-fundamentals-course-p13/s04-01-S04_1_00_14_49.jpg)
 ![关键截图 2](../assets/ue56-pcg-fundamentals-course-p13/s04-02-S04_2_00_16_56.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `PCG`
-- `Grid`
-- `Graph`
-- `网格`
-- `采样`
-- `生成`
-- `Regen`
-- `PCGSeries`
-- `Selection`
-
-## 复现检查清单
-
-- 每个示例都要先确认输入点、Bounds、属性和 Debug 结果，再判断生成节点是否有问题。
-- 涉及运行时、分区、HLSL 或 Geometry Script 的内容，要记录 UE 版本、插件和执行环境限制。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

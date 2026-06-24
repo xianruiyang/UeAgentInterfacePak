@@ -33,6 +33,8 @@
 
 表达式节点属性应通过 `graphs/*.json` 回写。`MaterialFunction` 这类专用对象引用写入会在 folder apply 中返回对象引用赋值诊断，其余属性使用 `ImportText` 并读回实际值。
 
+新增或替换表达式节点前必须先用 `material_export_folder`、`material_function_export_folder` 或 `material_list_expressions` 读取真实 `expression_class`、GUID、输入输出和属性模板。当前没有完整 Material Expression palette 查询命令；如果某个表达式类没有在导出模板或已验证 class path 中出现，不得凭 UI 菜单显示名或记忆拼 `/Script/Engine.MaterialExpression...` 写入。
+
 ## 文件夹式编辑流程（新增）
 
 1. `material_export_folder`
@@ -43,7 +45,7 @@
    - `graphs/MaterialGraph.json`
    - `validation/checks.json`
 3. `material_apply_folder`
-4. `material_compile` / `material_get_compile_log`
+4. 如需额外诊断，再调用 `material_compile` / `material_get_compile_log`
 
 说明：
 
@@ -55,6 +57,7 @@
 - 单个资产目录按 `asset_path` 自动展开，例如：
   - `/Game/Materials/M_Door` -> `Saved/UeAssetFolders/MaterialGraph/Game/Materials/M_Door`
 - `material_apply_folder` 第一版对表达式图采用“删除现有表达式，再按文件夹描述重建”的方式。
+- `material_apply_folder` 默认 `compile_after_apply=true`。apply 会在最终保存前读取材质编译结果；若 `compile.has_error=true` 或 `compile.error_count>0`，命令失败返回 `compile_failed_after_apply`，响应中保留 `compile.messages[]`，并且不会执行最终 `save_after_apply`。
 - 材质根对象左侧 `Details` 面板参数归 `settings/material.json`。
 - `graphs/MaterialGraph.json` 的 `root_inputs[].material_property` 支持传统根属性，也支持 Substrate 根输入 `FrontMaterial`；`FrontMaterial` 会映射到 UE 的 `MP_FrontMaterial`，用于把 Substrate BSDF 节点接入材质根节点。
 - 非 DefaultLit 材质应在 `settings/material.json` 同时保留 `ShadingModel` 和 `ShadingModels`。例如 Single Layer Water 使用 `ShadingModel=MSM_SingleLayerWater` 与 `ShadingModels=(ShadingModelField=1024)`；apply 会在写入 `ShadingModels` 后同步调用 `UMaterial::SetShadingModel`，避免 `PostEditChange` 重建 shading model bitfield 时退回旧单枚举值。
@@ -72,7 +75,7 @@
    - `parameters/overrides.json`
    - `validation/checks.json`
 3. `material_instance_apply_folder`
-4. `material_compile` / `material_get_compile_log`
+4. 如需额外诊断，再调用 `material_compile` / `material_get_compile_log`
 
 说明：
 
@@ -88,7 +91,9 @@
   - `parameters/overrides.json`：参数 overrides 真源
 - `material_instance_apply_folder` 默认：
   - `clear_existing_overrides=true`
+  - `compile_after_apply=true`
   - 先清旧 overrides，再按文件夹真源重建
+  - 编译失败时返回 `compile_failed_after_apply`，响应中保留 `compile.messages[]`，并且不会执行最终保存
 
 `parameters/overrides.json` 当前统一使用 `parameters[]`，每项包含：
 
@@ -129,6 +134,7 @@
 - `material_export_folder / material_apply_folder` 当前只覆盖 `UMaterial`，不覆盖 `UMaterialInstanceConstant` 和 `UMaterialFunction`。
 - `material_instance_export_folder / material_instance_apply_folder` 当前只覆盖 `UMaterialInstanceConstant`，不覆盖 `UMaterialFunction` / `MaterialFunctionInstance`。
 - `material_function_export_folder / material_function_apply_folder` 当前只覆盖 `UMaterialFunction`，不覆盖 `MaterialFunctionInstance / Material Layer / Material Layer Blend`。
+- `material_function_apply_folder` 当前是 `update_after_apply` 语义：它会调用 `UpdateMaterialFunction` 刷新函数资源，但没有独立的 `compile_after_apply`/`compile.messages[]` 返回；使用该函数的材质仍应通过 `material_apply_folder` 或 `material_compile` 验证最终材质编译。
 - `parameters/interface.json` 当前主要服务于参数接口摘要与 `ParameterName / Group / SortPriority` 回写，不是独立于图拓扑的唯一真源。
 
 ## `Material Function` 文件夹式编辑流程（新增）

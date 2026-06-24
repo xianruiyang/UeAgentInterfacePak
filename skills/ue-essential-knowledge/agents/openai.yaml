@@ -1,0 +1,7 @@
+interface:
+  display_name: "UE Essential Knowledge"
+  short_description: "UE 关键知识分类阅读入口与导航"
+  default_prompt: "Use $ue-essential-knowledge to choose the relevant Unreal Engine knowledge references before answering."
+
+policy:
+  allow_implicit_invocation: true

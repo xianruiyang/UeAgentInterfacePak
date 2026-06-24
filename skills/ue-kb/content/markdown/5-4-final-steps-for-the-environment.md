@@ -1,504 +1,282 @@
-# 5-4 - Final Steps for the Environment
+# 5 4 Final Steps for the Environment
 
-# 5-4 - Final Steps for the Environment
+# 5 4 Final Steps for the Environment
 
 ## 知识目标
 
-- 本文整理“5-4 - Final Steps for the Environment”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+- 围绕“5 4 Final Steps for the Environment”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 整合黑云杉、Landscape 材质、样条路径、草和 PCG 结果，形成完整森林环境。
-- 补充局部 set dressing：岩石、落叶、枯枝、苔藓、边缘植被和路径细节。
-- 调灯光、雾、曝光、后处理和相机视角，让环境层次和主题明确。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
 
 ## 关键术语
 
-- `PCG`
-- `Mesh`
-- `Spline`
-- `Transform`
-- `Point`
-- `Component`
-- `Density`
-- `Random`
-- `Seed`
-- `Graph`
-- `Material`
-- `Instance`
-- `Landscape`
-- `more`
+- `PCG`、`Mesh`、`Spline`、`Transform`、`Point`、`Component`、`Density`、`Random`、`Seed`、`Graph`、`Material`、`Instance`、`Landscape`、`more`、`Surface Sampler`、`Volume`、`Spline Mesh`、`Transform Points`、`Filter`、`ISM`
 
-## 操作步骤与要点
+## 分段知识
 
-### 整合黑云杉、Landscape 材质、样条路径、草和 PCG 结果，形成完整森林环境
+### 00:00:00-00:03:28 Spline 采样与路径生成
 
-**内容要点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：缩放、旋转、倒角或弯曲前后使用 `Ctrl+A > Apply All Transforms` 归一化对象变换，避免非统一缩放影响倒角、弯曲和法线。
+- 知识点：通过曲线或弯曲变形控制枝条走势，先检查对象变换和拓扑，再调整弯曲强度，避免卡片被拉伸或扭曲。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 知识点：Spline 输入通常先采样为点，再用属性、距离或索引区分路段、端点、交叉点和曲线段。
+- 知识点：Transform Points 可调整点的位置、旋转和缩放；使用非统一缩放时要分别检查各轴最小值和最大值。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 复现要点：Spline 流程要单独核对采样间距、切线、端点、交叉点和生成网格的对齐方式。
+- 核对对象：`PCG`、`Point`、`Density`、`Spline`、`Transform Points`、`Filter`、`Seed`、`Random`、`采样`、`生成`。
 
-- 整合黑云杉、Landscape 材质、样条路径、草和 PCG 结果，形成完整森林环境。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s01-01-S01_1_00_00_10.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s01-02-S01_2_00_01_44.jpg)
 
+### 00:03:29-00:06:55 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：缩放、旋转、倒角或弯曲前后使用 `Ctrl+A > Apply All Transforms` 归一化对象变换，避免非统一缩放影响倒角、弯曲和法线。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 知识点：Transform Points 可调整点的位置、旋转和缩放；使用非统一缩放时要分别检查各轴最小值和最大值。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`PCG`、`Point`、`Density`、`Surface Sampler`、`Transform Points`、`Filter`、`Seed`、`Random`、`属性`、`过滤`。
 
-- `PCG`
-- `Spline`
-- `Transform`
-- `Point`
-- `Density`
-- `Random`
-- `Seed`
-- `Graph`
-- `Landscape`
-- `seed`
-
-### 整合黑云杉、Landscape 材质、样条路径、草和 PCG 结果，形成完整森林环境（2）
-
-**内容要点：**
-
-- 整合黑云杉、Landscape 材质、样条路径、草和 PCG 结果，形成完整森林环境（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s02-01-S02_1_00_03_39.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s02-02-S02_2_00_05_12.jpg)
 
+### 00:06:58-00:10:44 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：通过曲线或弯曲变形控制枝条走势，先检查对象变换和拓扑，再调整弯曲强度，避免卡片被拉伸或扭曲。
+- 知识点：Spline 输入通常先采样为点，再用属性、距离或索引区分路段、端点、交叉点和曲线段。
+- 复现要点：Spline 流程要单独核对采样间距、切线、端点、交叉点和生成网格的对齐方式。
+- 核对对象：`Spline`、`Material`、`Instance`、`采样`、`生成`。
 
-- `PCG`
-- `Mesh`
-- `Transform`
-- `Point`
-- `Density`
-- `Random`
-- `Seed`
-- `Graph`
-- `seed`
-
-### 整合黑云杉、Landscape 材质、样条路径、草和 PCG 结果，形成完整森林环境（3）
-
-**内容要点：**
-
-- 整合黑云杉、Landscape 材质、样条路径、草和 PCG 结果，形成完整森林环境（3）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s03-01-S03_1_00_07_08.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s03-02-S03_2_00_08_51.jpg)
 
+### 00:10:47-00:14:16 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`ISM`、`生成`。
 
-- `Spline`
-- `Material`
-- `Instance`
-- `Landscape`
-- `more`
-- `everything`
-- `albedo`
-- `texture`
-- `curve`
-- `brightness`
-
-### 整合黑云杉、Landscape 材质、样条路径、草和 PCG 结果，形成完整森林环境（4）
-
-**内容要点：**
-
-- 整合黑云杉、Landscape 材质、样条路径、草和 PCG 结果，形成完整森林环境（4）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s04-01-S04_1_00_10_57.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s04-02-S04_2_00_12_32.jpg)
 
+### 00:14:32-00:18:44 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：通过曲线或弯曲变形控制枝条走势，先检查对象变换和拓扑，再调整弯曲强度，避免卡片被拉伸或扭曲。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 核对对象：`PCG`、`Material`、`Instance`、`生成`。
 
-- `Material`
-- `Landscape`
-- `shadows`
-- `position`
-- `nice`
-- `change`
-- `completely`
-- `side`
-- `always`
-
-### 整合黑云杉、Landscape 材质、样条路径、草和 PCG 结果，形成完整森林环境（5）
-
-**内容要点：**
-
-- 整合黑云杉、Landscape 材质、样条路径、草和 PCG 结果，形成完整森林环境（5）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s05-01-S05_1_00_14_42.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s05-02-S05_2_00_16_38.jpg)
 
+### 00:18:48-00:21:59 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：进入 Substance Painter 前检查导出比例、材质槽和 UV，保证树皮、针叶和遮罩贴图能按对象区域正确烘焙与绘制。
+- 知识点：Spline 输入通常先采样为点，再用属性、距离或索引区分路段、端点、交叉点和曲线段。
+- 复现要点：Spline 流程要单独核对采样间距、切线、端点、交叉点和生成网格的对齐方式。
+- 核对对象：`Spline`、`Spline Mesh`、`Material`、`Instance`、`采样`、`生成`。
 
-- `PCG`
-- `Mesh`
-- `Material`
-- `Instance`
-- `Landscape`
-- `time`
-- `invest`
-- `shadows`
-- `material`
-- `shadow`
-
-### 补充局部 set dressing：岩石、落叶、枯枝、苔藓、边缘植被和路径细节
-
-**内容要点：**
-
-- 补充局部 set dressing：岩石、落叶、枯枝、苔藓、边缘植被和路径细节。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s06-01-S06_1_00_18_58.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s06-02-S06_2_00_20_24.jpg)
 
+### 00:22:01-00:25:11 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 核对对象：`PCG`、`Material`、`ISM`、`生成`。
 
-- `Mesh`
-- `Spline`
-- `Material`
-- `Instance`
-- `power`
-- `default`
-- `node`
-- `mesh`
-- `roughness`
-- `would`
-
-### 补充局部 set dressing：岩石、落叶、枯枝、苔藓、边缘植被和路径细节（2）
-
-**内容要点：**
-
-- 补充局部 set dressing：岩石、落叶、枯枝、苔藓、边缘植被和路径细节（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s07-01-S07_1_00_22_11.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s07-02-S07_2_00_23_36.jpg)
 
+### 00:25:14-00:28:30 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`Instance`、`生成`。
 
-- `Material`
-- `they`
-- `important`
-
-### 补充局部 set dressing：岩石、落叶、枯枝、苔藓、边缘植被和路径细节（3）
-
-**内容要点：**
-
-- 补充局部 set dressing：岩石、落叶、枯枝、苔藓、边缘植被和路径细节（3）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s08-01-S08_1_00_25_24.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s08-02-S08_2_00_26_52.jpg)
 
+### 00:28:34-00:31:48 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Point`、`Bounds`、`Material`、`点`、`点数据`、`采样`。
 
-- `Mesh`
-- `Material`
-- `Instance`
-- `normal`
-- `intensity`
-- `green`
-- `channel`
-- `roughness`
-- `default`
-- `only`
-
-### 补充局部 set dressing：岩石、落叶、枯枝、苔藓、边缘植被和路径细节（4）
-
-**内容要点：**
-
-- 补充局部 set dressing：岩石、落叶、枯枝、苔藓、边缘植被和路径细节（4）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s09-01-S09_1_00_28_44.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s09-02-S09_2_00_30_11.jpg)
 
+### 00:31:50-00:35:04 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 知识点：PCG 部分围绕点数据、属性和生成器展开，复现时要核对输入点、属性写入、过滤条件以及最终 Spawner 的实例化结果。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`PCG`、`Point`、`Density`、`属性`、`过滤`。
 
-- `Point`
-- `Material`
-- `five`
-- `lerb`
-- `instead`
-- `point`
-- `normal`
-- `increase`
-- `green`
-- `channel`
-
-### 补充局部 set dressing：岩石、落叶、枯枝、苔藓、边缘植被和路径细节（5）
-
-**内容要点：**
-
-- 补充局部 set dressing：岩石、落叶、枯枝、苔藓、边缘植被和路径细节（5）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s10-01-S10_1_00_32_00.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s10-02-S10_2_00_33_27.jpg)
 
+### 00:35:08-00:38:06 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Point`、`Bounds`、`点`、`点数据`、`采样`。
 
-- `PCG`
-- `Point`
-- `Density`
-- `point`
-- `more`
-- `think`
-- `fine`
-- `some`
-- `paint`
-
-### 调灯光、雾、曝光、后处理和相机视角，让环境层次和主题明确
-
-**内容要点：**
-
-- 调灯光、雾、曝光、后处理和相机视角，让环境层次和主题明确。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s11-01-S11_1_00_35_18.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s11-02-S11_2_00_36_37.jpg)
 
+### 00:38:11-00:41:00 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 知识点：Spline 输入通常先采样为点，再用属性、距离或索引区分路段、端点、交叉点和曲线段。
+- 复现要点：Spline 流程要单独核对采样间距、切线、端点、交叉点和生成网格的对齐方式。
+- 核对对象：`Spline`、`采样`、`生成`。
 
-- `Mesh`
-- `Point`
-- `more`
-- `grass`
-- `twenty`
-- `paint`
-- `foliage`
-- `wild`
-
-### 调灯光、雾、曝光、后处理和相机视角，让环境层次和主题明确（2）
-
-**内容要点：**
-
-- 调灯光、雾、曝光、后处理和相机视角，让环境层次和主题明确（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s12-01-S12_1_00_38_21.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s12-02-S12_2_00_39_36.jpg)
 
+### 00:41:12-00:44:10 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 核对对象：`PCG`、`生成`。
 
-- `Spline`
-- `find`
-- `think`
-- `angle`
-- `Rotate`
-- `bigger`
-- `distractive`
-- `satisfied`
-
-### 调灯光、雾、曝光、后处理和相机视角，让环境层次和主题明确（3）
-
-**内容要点：**
-
-- 调灯光、雾、曝光、后处理和相机视角，让环境层次和主题明确（3）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s13-01-S13_1_00_41_22.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s13-02-S13_2_00_42_41.jpg)
 
+### 00:44:12-00:47:02 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Bounds`、`Volume`、`点`、`点数据`、`采样`。
 
-- `PCG`
-- `Mesh`
-- `Component`
-- `trees`
-- `more`
-- `minus`
-- `fake`
-- `could`
-
-### 调灯光、雾、曝光、后处理和相机视角，让环境层次和主题明确（4）
-
-**内容要点：**
-
-- 调灯光、雾、曝光、后处理和相机视角，让环境层次和主题明确（4）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s14-01-S14_1_00_44_22.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s14-02-S14_2_00_45_37.jpg)
 
+### 00:47:08-00:50:02 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Bounds`、`Volume`、`点`、`点数据`、`采样`。
 
-- `already`
-- `Boom`
-- `bloom`
-- `intensity`
-- `HDRI`
-- `Polyhaven`
-- `cube`
-- `skylight`
-
-### 调灯光、雾、曝光、后处理和相机视角，让环境层次和主题明确（5）
-
-**内容要点：**
-
-- 调灯光、雾、曝光、后处理和相机视角，让环境层次和主题明确（5）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s15-01-S15_1_00_47_18.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s15-02-S15_2_00_48_35.jpg)
 
+### 00:50:08-00:53:03 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 核对对象：`PCG`、`生成`。
 
-- `skylight`
-- `vibrant`
-- `tiny`
-- `HDRI`
-
-### 节点、参数和生成结果校验 16
-
-**内容要点：**
-
-- 节点、参数和生成结果校验 16。
-
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s16-01-S16_1_00_50_18.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s16-02-S16_2_00_51_35.jpg)
 
+### 00:53:17-00:56:09 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Bounds`、`Volume`、`Material`、`Instance`、`点`、`点数据`、`采样`。
 
-- `tint`
-- `more`
-- `foliage`
-- `less`
-- `global`
-- `saturation`
-- `contrast`
-- `color`
-
-### **内容要点：**
-
-- **内容要点：**（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s17-01-S17_1_00_53_27.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s17-02-S17_2_00_54_43.jpg)
 
+### 00:56:19-00:59:12 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Bounds`、`Volume`、`点`、`点数据`、`采样`。
 
-- `Material`
-- `Instance`
-- `important`
-- `Gain`
-- `good`
-- `think`
-- `down`
-- `more`
-- `midtones`
-- `Slope`
-
-### **内容要点：**
-
-- **内容要点：**（3）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s18-01-S18_1_00_56_29.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s18-02-S18_2_00_57_45.jpg)
 
+### 00:59:14-01:02:04 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 核对对象：`PCG`、`生成`。
 
-- `light`
-- `fork`
-- `directional`
-- `exponential`
-- `height`
-- `skylight`
-- `weird`
-- `spot`
-- `crank`
-- `intensity`
-
-### **内容要点：**
-
-- **内容要点：**（4）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s19-01-S19_1_00_59_24.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s19-02-S19_2_01_00_39.jpg)
 
+### 01:02:14-01:03:44 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 核对对象：`PCG`、`生成`。
 
-- `fork`
-- `crank`
-- `distance`
-- `height`
-- `important`
-- `scattering`
-- `Minus`
-- `only`
-
-### **内容要点：**
-
-- **内容要点：**（5）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p35/s20-01-S20_1_01_02_24.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p35/s20-02-S20_2_01_02_59.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `lighting`
-- `Height`
-- `fall`
-- `save`
-- `completely`
-- `changed`
-- `wanted`
-- `backdrop`
-- `Skylight`
-- `down`
-
-## 复现检查清单
-
-- 最终整理阶段要以镜头和玩家视角检查，不只看俯视图。
-- 所有 UE5 资产都要检查比例、pivot、材质槽、贴图色彩空间和实例化性能。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

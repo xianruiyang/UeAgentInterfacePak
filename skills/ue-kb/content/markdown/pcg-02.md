@@ -4,114 +4,64 @@
 
 ## 知识目标
 
-- 围绕“PCG 隧道系统 02：动态网格处理与隧道段生成”整理 UE PCG 隧道系统的制作流程：用蓝图 Spline 定义隧道路线，用 PCG/Geometry Script 读取路径并生成隧道模块，最终形成可复用、可调参、可在关卡中重生成的隧道工具。
+- 围绕“PCG 隧道系统 02：动态网格处理与隧道段生成”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 从 spline 或 Actor 数据中提取路径点，建立沿路径生成隧道的基础点流。
-- 根据路径长度、模块长度或采样间距生成等距点，避免隧道段重叠或断裂。
-- 用 Transform/rotation/tangent 相关节点对齐每个隧道模块，使 mesh 朝向跟随 spline。
-- 接入 Static Mesh Spawner 或动态网格生成逻辑，先生成可检查的基础隧道段。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
 
 ## 关键术语
 
-- `PCG`
-- `Blueprint`
-- `Mesh`
-- `Loop`
-- `Graph`
-- `样条`
-- `网格`
-- `体积`
-- `材质`
-- `采样`
-- `参数`
-- `节点`
-- `生成`
-- `Process`
-- `JaysongShao`
-- `Dynamic`
-- `LOCAL`
-- `BLUEPRINT`
+- `PCG`、`Blueprint`、`Mesh`、`Loop`、`Graph`、`样条`、`网格`、`体积`、`材质`、`采样`、`参数`、`节点`、`生成`、`Process`、`JaysongShao`、`Dynamic`、`LOCAL`、`图表`、`组件`、`点`、`循环`、`运行时`
 
-## 操作步骤与要点
+## 分段知识
 
-### 从 spline 或 Actor 数据中提取路径点，建立沿路径生成隧道的基础点流
+### 00:00:00-00:04:54 点数据、Bounds 与采样来源
 
-**内容要点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：GPU PCG 节点能提升运行时生成吞吐，但 CPU/GPU 数据传输会形成边界，图表中要减少不必要的跨设备传递。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Bounds`、`点`、`点数据`、`采样`、`生成`、`网格`、`运行时`。
 
-- 从 spline 或 Actor 数据中提取路径点，建立沿路径生成隧道的基础点流。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-pcg-tunnel-system-p02/s01-01-S01_1_00_00_10.jpg)
 ![关键截图 2](../assets/ue5-pcg-tunnel-system-p02/s01-02-S01_2_00_02_27.jpg)
 
+### 00:04:54-00:09:47 Spline 采样与路径生成
 
-**参数、节点和风险点：**
+- 本段定位：Spline 采样与路径生成。
+- 知识点：Difference 节点根据连接对象的 Bounds 移除相交点；如果需要保留相交区域，应改用交集或反向过滤逻辑。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：Spline 流程要单独核对采样间距、切线、端点、交叉点和生成网格的对齐方式。
+- 核对对象：`Spline`、`组件`、`点`、`样条`、`采样`、`生成`、`网格`、`材质`。
 
-- `PCG`
-- `Blueprint`
-- `Mesh`
-- `网格`
-- `采样`
-- `节点`
-- `生成`
-- `Process`
-- `AutoEvian`
-- `panp`
-
-### 根据路径长度、模块长度或采样间距生成等距点，避免隧道段重叠或断裂
-
-**内容要点：**
-
-- 根据路径长度、模块长度或采样间距生成等距点，避免隧道段重叠或断裂。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-pcg-tunnel-system-p02/s02-01-S02_1_00_05_04.jpg)
 ![关键截图 2](../assets/ue5-pcg-tunnel-system-p02/s02-02-S02_2_00_07_21.jpg)
 
+### 00:09:48-00:10:49 点数据、Bounds 与采样来源
 
-**参数、节点和风险点：**
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：点数据流程需要在 Inspect 中核对点数量、Bounds、Density、Transform、Seed 和自定义属性。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`Bounds`、`图表`、`点`、`点数据`、`采样`、`循环`、`生成`、`网格`。
 
-- `Mesh`
-- `样条`
-- `网格`
-- `体积`
-- `材质`
-- `参数`
-- `节点`
-- `生成`
-- `JaysongShao`
-- `Lilibii`
-
-### 用 Transform/rotation/tangent 相关节点对齐每个隧道模块，使 mesh 朝向跟随 spline
-
-**内容要点：**
-
-- 用 Transform/rotation/tangent 相关节点对齐每个隧道模块，使 mesh 朝向跟随 spline。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-pcg-tunnel-system-p02/s03-01-S03_1_00_09_58.jpg)
 ![关键截图 2](../assets/ue5-pcg-tunnel-system-p02/s03-02-S03_2_00_10_19.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `Loop`
-- `网格`
-- `生成`
-- `JaysongShao`
-- `Iwantasystemthatkindofloopsaround`
-- `Thisissofarbeenjustpreviews`
-
-## 复现检查清单
-
-- Spline 点位、隧道模块长度和采样间距必须一起检查，否则容易出现重叠、缝隙或端点错位。
-- 模块朝向要跟随 spline tangent 或路径方向，不能只依赖默认世界朝向。
-- 每次修改 PCG 图表后先看 Debug 点，再看最终 mesh，避免把点位问题误判为模型问题。
-- 蓝图 Actor、PCG Component、PCG Graph 和几何脚本节点的引用关系要稳定，重启或重生成后仍应可复现。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
 

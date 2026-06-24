@@ -86,6 +86,7 @@
 - `resources[].properties` 或 `components[].properties` 写入组件属性时，若目标是 `UPrimitiveComponent` 且 property path 命中 `BodyInstance.*`、`Collision*` 或 `CanCharacterStepUpOn`，会刷新 `RecreatePhysicsState / UpdateOverlaps / UpdateBounds / MarkRenderStateDirty / MarkRenderTransformDirty`。
 - 写入 `BodyInstance.CollisionProfileName` 或 `CollisionProfileName` 时，会优先调用 `SetCollisionProfileName` 而不是先裸写 `BodyInstance`，避免 UE setter 因当前 FName 已被改成目标值而不重新加载 collision profile；`NoCollision` 会额外调用 `SetCollisionEnabled(NoCollision)`。
 - `property_results[]` 中出现 `property_assignment_method=collision_profile_setter`、`collision_profile_setter_applied=true`、`collision_enabled_no_collision_applied=true`、`primitive_collision_state_refreshed=true`、`render_state_refreshed=true` 表示已触发对应副作用；仍建议用 `level_trace_world_ray` / `level_sweep_capsule` / `level_check_overlaps` 验证实际碰撞行为。
+- 写入 `USkeletalMeshComponent` 的 `SkeletalMesh`、`SkeletalMeshAsset` 或 `SkinnedAsset` 时，会优先调用 `SetSkeletalMesh`，再刷新 bounds 和 render state。`property_results[]` 中出现 `property_assignment_method=skeletal_mesh_component_setter`、`skeletal_mesh_setter_applied=true`、`skeletal_mesh_path_read_back` 表示已走 setter；调用方应同时验证组件 `SkinnedAsset` 读回和 Actor bounds 非零。
 
 Spline 组件适配器：
 

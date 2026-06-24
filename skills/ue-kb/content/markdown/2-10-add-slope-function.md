@@ -1,261 +1,139 @@
-# 2-10 - Add Slope Function
+# 2 10 Add Slope Function
 
-# 2-10 - Add Slope Function
+# 2 10 Add Slope Function
 
 ## 知识目标
 
-- 本文整理“2-10 - Add Slope Function”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+- 围绕“2 10 Add Slope Function”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 创建基于法线或坡度的材质函数，用来在陡坡与平地之间自动切换材质。
-- 设置坡度阈值、过渡宽度和噪声扰动，使岩石等材质自然出现在陡坡区域。
-- 把坡度结果与手绘层或高度混合结合，避免自动规则完全覆盖人工绘制。
-- 在不同地形起伏下检查函数输出，保证山坡、沟谷和道路边缘都稳定。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
+- 涉及 Dynamic Mesh 或 Geometry Script 时，先小规模验证布尔、倒角、修补和 UV，再扩展到批量生成。
 
 ## 关键术语
 
-- `Blueprint`
-- `Attribute`
-- `Component`
-- `Graph`
-- `Mask`
-- `Material`
-- `Instance`
-- `Landscape`
-- `alpha`
-- `material`
-- `normal`
-- `function`
-- `slope`
-- `call`
-- `albedo`
-- `wanna`
+- `Blueprint`、`Attribute`、`Component`、`Graph`、`Mask`、`Material`、`Instance`、`Landscape`、`alpha`、`normal`、`function`、`slope`、`call`、`albedo`、`wanna`、`Boolean`
 
-## 操作步骤与要点
+## 分段知识
 
-### 创建基于法线或坡度的材质函数，用来在陡坡与平地之间自动切换材质
+### 00:00:00-00:02:56 属性、过滤与数据分流
 
-**内容要点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：属性是 PCG 数据流中的关键状态，应明确保存分类、索引、随机种子、缩放或材质选择等信息。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Attribute`、`Material`、`属性`、`过滤`。
 
-- 创建基于法线或坡度的材质函数，用来在陡坡与平地之间自动切换材质。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p18/s01-01-S01_1_00_00_10.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p18/s01-02-S01_2_00_01_28.jpg)
 
+### 00:02:56-00:06:35 PCG 数据流与生成规则
 
-**参数、节点和风险点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 核对对象：`PCG`、`生成`。
 
-- `Attribute`
-- `Material`
-- `material`
-- `underscore`
-- `reroute`
-- `call`
-- `node`
-- `color`
-- `function`
-- `named`
-
-### 创建基于法线或坡度的材质函数，用来在陡坡与平地之间自动切换材质（2）
-
-**内容要点：**
-
-- 创建基于法线或坡度的材质函数，用来在陡坡与平地之间自动切换材质（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p18/s02-01-S02_1_00_03_06.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p18/s02-02-S02_2_00_04_45.jpg)
 
+### 00:06:37-00:11:23 Geometry Script 与 Dynamic Mesh 处理
 
-**参数、节点和风险点：**
+- 本段定位：Geometry Script 与 Dynamic Mesh 处理。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 复现要点：Dynamic Mesh/Geometry Script 节点通常计算成本较高，布尔、倒角和 Auto UV 应在质量与重算成本之间取舍。
+- 核对对象：`Geometry Script`、`Dynamic Mesh`、`Boolean`。
 
-- `Graph`
-- `Material`
-- `alpha`
-- `albedo`
-- `lerp`
-- `remove`
-- `normal`
-- `first`
-- `call`
-- `reroute`
-
-### 创建基于法线或坡度的材质函数，用来在陡坡与平地之间自动切换材质（3）
-
-**内容要点：**
-
-- 创建基于法线或坡度的材质函数，用来在陡坡与平地之间自动切换材质（3）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p18/s03-01-S03_1_00_06_47.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p18/s03-02-S03_2_00_09_00.jpg)
 
+### 00:11:23-00:14:59 生成器输出与蓝图交互
 
-**参数、节点和风险点：**
+- 本段定位：生成器输出与蓝图交互。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：Spawn Actor 适合生成带蓝图逻辑的对象。
+- 知识点：Static Mesh Spawner 将点数据实例化为静态网格，复现时要检查 Mesh、Transform、Density 和材质覆盖。
+- 复现要点：Static Mesh Spawner 用于高效实例化；Spawn Actor/Blueprint 用于需要逻辑的对象，成本和生命周期不同。
+- 核对对象：`Blueprint`、`Material`、`生成`、`蓝图`。
 
-- `Material`
-- `normal`
-- `alpha`
-- `specular`
-- `roughness`
-
-### 设置坡度阈值、过渡宽度和噪声扰动，使岩石等材质自然出现在陡坡区域
-
-**内容要点：**
-
-- 设置坡度阈值、过渡宽度和噪声扰动，使岩石等材质自然出现在陡坡区域。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p18/s04-01-S04_1_00_11_33.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p18/s04-02-S04_2_00_13_11.jpg)
 
+### 00:15:02-00:18:47 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：属性是 PCG 数据流中的关键状态，应明确保存分类、索引、随机种子、缩放或材质选择等信息。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Attribute`、`Material`、`属性`、`过滤`。
 
-- `Blueprint`
-- `Material`
-- `alpha`
-- `material`
-- `normal`
-- `wanna`
-- `logic`
-- `call`
-- `would`
-- `vertex`
-
-### 设置坡度阈值、过渡宽度和噪声扰动，使岩石等材质自然出现在陡坡区域（2）
-
-**内容要点：**
-
-- 设置坡度阈值、过渡宽度和噪声扰动，使岩石等材质自然出现在陡坡区域（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p18/s05-01-S05_1_00_15_12.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p18/s05-02-S05_2_00_16_55.jpg)
 
+### 00:18:48-00:22:08 PCG 数据流与生成规则
 
-**参数、节点和风险点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：复现时先对照本段截图确认关键对象、参数面板和结果视图，再继续下游步骤。
+- 核对对象：`PCG`、`生成`。
 
-- `Attribute`
-- `Component`
-- `Mask`
-- `Material`
-- `Landscape`
-- `material`
-- `output`
-- `specular`
-- `roughness`
-- `normal`
-
-### 把坡度结果与手绘层或高度混合结合，避免自动规则完全覆盖人工绘制
-
-**内容要点：**
-
-- 把坡度结果与手绘层或高度混合结合，避免自动规则完全覆盖人工绘制。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p18/s06-01-S06_1_00_18_58.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p18/s06-02-S06_2_00_20_28.jpg)
 
+### 00:22:10-00:27:10 PCG 数据流与生成规则
 
-**参数、节点和风险点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`Instance`、`生成`。
 
-- `Mask`
-- `Material`
-- `Normal`
-- `wanna`
-- `multiply`
-- `output`
-- `slope`
-- `same`
-- `Vertex`
-- `Pixel`
-
-### 把坡度结果与手绘层或高度混合结合，避免自动规则完全覆盖人工绘制（2）
-
-**内容要点：**
-
-- 把坡度结果与手绘层或高度混合结合，避免自动规则完全覆盖人工绘制（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p18/s07-01-S07_1_00_22_20.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p18/s07-02-S07_2_00_24_40.jpg)
 
+### 00:27:10-00:30:14 PCG 数据流与生成规则
 
-**参数、节点和风险点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`生成`。
 
-- `Graph`
-- `Material`
-- `Instance`
-- `Landscape`
-- `material`
-- `function`
-- `slope`
-- `layer`
-- `landscape`
-- `logic`
-
-### 在不同地形起伏下检查函数输出，保证山坡、沟谷和道路边缘都稳定
-
-**内容要点：**
-
-- 在不同地形起伏下检查函数输出，保证山坡、沟谷和道路边缘都稳定。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p18/s08-01-S08_1_00_27_20.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p18/s08-02-S08_2_00_28_42.jpg)
 
+### 00:30:15-00:33:55 PCG 数据流与生成规则
 
-**参数、节点和风险点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`Instance`、`生成`。
 
-- `Mask`
-- `Material`
-- `Landscape`
-- `rock`
-- `slope`
-- `working`
-- `albedo`
-- `mossy`
-- `falloff`
-- `five`
-
-### 在不同地形起伏下检查函数输出，保证山坡、沟谷和道路边缘都稳定（2）
-
-**内容要点：**
-
-- 在不同地形起伏下检查函数输出，保证山坡、沟谷和道路边缘都稳定（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p18/s09-01-S09_1_00_30_25.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p18/s09-02-S09_2_00_32_05.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `Material`
-- `Instance`
-- `Landscape`
-- `rock`
-- `working`
-- `tiling`
-- `save`
-- `landscape`
-- `eight`
-
-## 复现检查清单
-
-- 坡度函数要和地形法线、世界空间方向一致，阈值过窄会造成斑块闪烁。
-- 所有 UE5 资产都要检查比例、pivot、材质槽、贴图色彩空间和实例化性能。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
+- Dynamic Mesh/Geometry Script 流程要单独测试布尔、倒角、网格修补、UV 和保存 Static Mesh 的成本。
 

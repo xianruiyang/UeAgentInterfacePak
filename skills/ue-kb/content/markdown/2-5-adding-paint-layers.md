@@ -1,237 +1,123 @@
-# 2-5 - Adding Paint Layers
+# 2 5 Adding Paint Layers
 
-# 2-5 - Adding Paint Layers
+# 2 5 Adding Paint Layers
 
 ## 知识目标
 
-- 本文整理“2-5 - Adding Paint Layers”的 PCG 实操流程、关键节点、参数组织方式和复现风险点。
+- 围绕“2 5 Adding Paint Layers”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
 
 ## 可复现主流程
 
-- 在 Landscape 材质中添加 Paint Layer，并为每层创建对应 Layer Info。
-- 把地表纹理函数接入 Landscape Layer Blend，建立可手绘的泥土、草地、岩石等层。
-- 在 Landscape Paint 模式下刷涂并检查层权重、过渡边缘和材质响应。
-- 整理材质实例参数，让不同层的 tiling、颜色和强度可以单独调整。
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
+- 涉及 Dynamic Mesh 或 Geometry Script 时，先小规模验证布尔、倒角、修补和 UV，再扩展到批量生成。
 
 ## 关键术语
 
-- `Graph`
-- `Material`
-- `Instance`
-- `Landscape`
-- `layer`
-- `material`
-- `rock`
-- `distance`
-- `landscape`
-- `layers`
-- `inside`
-- `logic`
-- `blend`
-- `save`
+- `Graph`、`Material`、`Instance`、`Landscape`、`layer`、`rock`、`distance`、`layers`、`inside`、`logic`、`blend`、`save`、`Branch`、`Boolean`
 
-## 操作步骤与要点
+## 分段知识
 
-### 在 Landscape 材质中添加 Paint Layer，并为每层创建对应 Layer Info
+### 00:00:00-00:03:22 PCG 数据流与生成规则
 
-**内容要点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`生成`。
 
-- 在 Landscape 材质中添加 Paint Layer，并为每层创建对应 Layer Info。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p13/s01-01-S01_1_00_00_10.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p13/s01-02-S01_2_00_01_41.jpg)
 
+### 00:03:22-00:07:50 Geometry Script 与 Dynamic Mesh 处理
 
-**参数、节点和风险点：**
+- 本段定位：Geometry Script 与 Dynamic Mesh 处理。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 复现要点：Dynamic Mesh/Geometry Script 节点通常计算成本较高，布尔、倒角和 Auto UV 应在质量与重算成本之间取舍。
+- 核对对象：`Geometry Script`、`Dynamic Mesh`、`Boolean`、`Material`、`Instance`。
 
-- `Graph`
-- `Material`
-- `Landscape`
-- `layers`
-- `layer`
-- `distance`
-- `call`
-- `material`
-- `copy`
-- `folder`
-
-### 在 Landscape 材质中添加 Paint Layer，并为每层创建对应 Layer Info（2）
-
-**内容要点：**
-
-- 在 Landscape 材质中添加 Paint Layer，并为每层创建对应 Layer Info（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p13/s02-01-S02_1_00_03_32.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p13/s02-02-S02_2_00_05_36.jpg)
 
+### 00:07:55-00:11:11 属性、过滤与数据分流
 
-**参数、节点和风险点：**
+- 本段定位：属性、过滤与数据分流。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`Branch`、`Material`、`属性`、`过滤`。
 
-- `Material`
-- `Instance`
-- `Landscape`
-- `everything`
-- `inside`
-- `layer`
-- `material`
-- `distance`
-- `texture`
-
-### 把地表纹理函数接入 Landscape Layer Blend，建立可手绘的泥土、草地、岩石等层
-
-**内容要点：**
-
-- 把地表纹理函数接入 Landscape Layer Blend，建立可手绘的泥土、草地、岩石等层。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p13/s03-01-S03_1_00_08_05.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p13/s03-02-S03_2_00_09_33.jpg)
 
+### 00:11:14-00:14:10 PCG 数据流与生成规则
 
-**参数、节点和风险点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`Instance`、`生成`。
 
-- `Graph`
-- `Material`
-- `Landscape`
-- `material`
-- `layer`
-- `would`
-- `distance`
-- `case`
-- `first`
-- `texture`
-
-### 把地表纹理函数接入 Landscape Layer Blend，建立可手绘的泥土、草地、岩石等层（2）
-
-**内容要点：**
-
-- 把地表纹理函数接入 Landscape Layer Blend，建立可手绘的泥土、草地、岩石等层（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p13/s04-01-S04_1_00_11_24.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p13/s04-02-S04_2_00_12_42.jpg)
 
+### 00:14:13-00:18:49 PCG 数据流与生成规则
 
-**参数、节点和风险点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`生成`。
 
-- `Material`
-- `Instance`
-- `layer`
-- `would`
-- `underscore`
-- `align`
-- `albedo`
-- `controls`
-- `distance`
-
-### 在 Landscape Paint 模式下刷涂并检查层权重、过渡边缘和材质响应
-
-**内容要点：**
-
-- 在 Landscape Paint 模式下刷涂并检查层权重、过渡边缘和材质响应。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p13/s05-01-S05_1_00_14_23.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p13/s05-02-S05_2_00_16_31.jpg)
 
+### 00:18:49-00:23:17 PCG 数据流与生成规则
 
-**参数、节点和风险点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`生成`。
 
-- `Material`
-- `Landscape`
-- `rock`
-- `layer`
-- `material`
-- `save`
-- `slope`
-- `layers`
-- `align`
-- `automatically`
-
-### 在 Landscape Paint 模式下刷涂并检查层权重、过渡边缘和材质响应（2）
-
-**内容要点：**
-
-- 在 Landscape Paint 模式下刷涂并检查层权重、过渡边缘和材质响应（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p13/s06-01-S06_1_00_18_59.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p13/s06-02-S06_2_00_21_03.jpg)
 
+### 00:23:17-00:26:54 PCG 数据流与生成规则
 
-**参数、节点和风险点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 核对对象：`PCG`、`Material`、`Instance`、`生成`。
 
-- `Material`
-- `Landscape`
-- `distance`
-- `blend`
-- `logic`
-- `material`
-- `reroute`
-- `sense`
-- `copy`
-- `cache`
-
-### 整理材质实例参数，让不同层的 tiling、颜色和强度可以单独调整
-
-**内容要点：**
-
-- 整理材质实例参数，让不同层的 tiling、颜色和强度可以单独调整。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p13/s07-01-S07_1_00_23_27.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p13/s07-02-S07_2_00_25_06.jpg)
 
+### 00:26:54-00:29:47 PCG 数据流与生成规则
 
-**参数、节点和风险点：**
+- 本段定位：PCG 数据流与生成规则。
+- 知识点：基础阶段就分配并命名材质槽，保证枝条、针叶或树皮在复制、导入 UE 和材质替换时保持稳定归类。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 核对对象：`PCG`、`Material`、`Instance`、`生成`。
 
-- `Material`
-- `Instance`
-- `Landscape`
-- `material`
-- `layer`
-- `landscape`
-- `reason`
-- `blend`
-- `function`
-
-### 整理材质实例参数，让不同层的 tiling、颜色和强度可以单独调整（2）
-
-**内容要点：**
-
-- 整理材质实例参数，让不同层的 tiling、颜色和强度可以单独调整（2）。
-
-**关键截图：**
+**关键画面：**
 
 ![关键截图 1](../assets/ue5-black-spruce-pcg-environment-course-p13/s08-01-S08_1_00_27_04.jpg)
 ![关键截图 2](../assets/ue5-black-spruce-pcg-environment-course-p13/s08-02-S08_2_00_28_20.jpg)
 
+## 复现检查
 
-**参数、节点和风险点：**
-
-- `Material`
-- `Instance`
-- `Landscape`
-- `layer`
-- `landscape`
-- `inside`
-- `save`
-- `info`
-- `material`
-- `function`
-
-## 复现检查清单
-
-- Layer Info 缺失或类型错误会导致 Paint Layer 不能正常保存或显示。
-- 所有 UE5 资产都要检查比例、pivot、材质槽、贴图色彩空间和实例化性能。
-- 复现时先固定随机种子，再调整密度、过滤和生成资源，避免随机结果掩盖逻辑错误。
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
+- Dynamic Mesh/Geometry Script 流程要单独测试布尔、倒角、网格修补、UV 和保存 Static Mesh 的成本。
 

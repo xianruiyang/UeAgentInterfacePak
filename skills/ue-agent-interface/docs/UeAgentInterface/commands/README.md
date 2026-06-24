@@ -1,12 +1,21 @@
 # UeAgentInterface 指令文档索引
 
-本目录是 UeAgentInterface 的正式命令分册入口。skill 内只同步正式分册，不同步 `deprecatedCommand/**` 和 generated 覆盖矩阵。
+本目录是 UeAgentInterface 的正式命令分册入口。当前覆盖矩阵来自 `uai-cli release coverage`：
+
+- 命令总数：`937`
+- 缺正式文档：`0`
+- 缺实现：`0`
+- 缺 smoke：`0`
+- actionable smoke debt：`0`
+- 最近覆盖矩阵：`../generated/command_coverage_matrix.md`
+- smoke 债务报告：`../generated/smoke_coverage_debt.md`
 
 ## 查阅顺序
 
 1. 先看本文，确定应该使用哪个分册和哪类工作流。
 2. 再打开具体分册，查看命令参数、返回字段、错误码和边界。
-3. 需要确认覆盖矩阵或废弃命令归档时，回到插件仓库源文档，不在 skill 内查阅。
+3. 需要确认是否仍有覆盖债时，看 `../generated/command_coverage_matrix.md`。
+4. 正式分册不再列出已废弃写入命令；需要旧脚本兼容、迁移或局部补修时再查 `deprecatedCommand/README.md`。
 
 ## 工作流优先级
 
@@ -16,6 +25,7 @@
 | 2 | 文件夹式 JSON | 图、树、复合资产、复杂编辑面 | `blueprint_*_folder`, `umg_*_folder`, `material_*_folder`, `niagara_*_folder`, `control_rig_*_folder` |
 | 3 | 场景/拓扑 JSON | Level Actor 实例、Component、Streaming、DataLayer、HLOD | `level_content_*_json`, `level_topology_*_json` |
 | 4 | 动作 / probe / build | 编译、截图、运行时探针、导入、构建、长任务 | `*_compile`, `*_screenshot`, `*_runtime_probe`, `packaging_*`, `*_build` |
+| 5 | 废弃/兼容写入命令 | 旧脚本兼容、bootstrap、迁移、局部补修、故障恢复 | 仅见 `deprecatedCommand/README.md` |
 
 通用节奏：
 
@@ -56,9 +66,11 @@ bootstrap -> export -> refine -> validate -> apply -> export/readback -> smoke/p
 | `25_LevelTopology_Streaming_WorldPartition_DataLayer_HLOD.md` | 39 | Level Streaming、World Partition、DataLayer、HLOD | 关卡拓扑和构建任务 |
 | `26_Physics_Baseline.md` | 14 | 基础 Physics、PhysicalMaterial、Constraint、PhysicsAsset、runtime probe | 不依赖额外插件的物理基础 |
 | `27_Localization_Packaging_PlatformProfiles.md` | 40 | Localization、StringTable、Packaging、TargetPlatform、DeviceProfile、Scalability | 本地化、打包和平台 profile |
-| `28_NodeGraph.md` | 2 | 跨资产节点连线图 list/layout | 对 Blueprint、UMG、AnimBlueprint、Material 等节点连线图使用统一排布入口 |
+| `28_NodeGraph.md` | 5 | 跨资产节点连线图 list/layout、palette candidate search/categories 和 origin resolve | 对 Blueprint、UMG、AnimBlueprint、Material 等节点连线图使用统一排布入口；新增节点/模块前查真实候选，必要时解析源码/资产来源，并通过结构化 JSON apply/readback 验证 |
 | `29_PCG.md` | 40 | PCG Graph、GraphInstance、Component、WorldActor、Partition、生成、Inspection、数据和 GPU/HLSL 诊断 | Procedural Content Generation authoring 和验证 |
 | `30_PCG_FolderFormat.md` | 0 | PCG Graph folder schema、验证、preflight 和 apply 语义 | 需要审查或手写 PCG 文件夹式 JSON 时 |
+| `31_Probe.md` | 2 | 候选 transform / IK goal 探测、序列帧图和 frame sheet | 粗搜/细搜物品移动、旋转、缩放、IK 控制点和动画关键姿势候选 |
+| `deprecatedCommand/README.md` | - | 已被 JSON / folder workflow 覆盖的旧写入命令 | 兼容旧脚本、迁移和局部补修 |
 
 ## 按任务路由
 
@@ -87,17 +99,31 @@ bootstrap -> export -> refine -> validate -> apply -> export/readback -> smoke/p
 - `value_text_changed_after_import=true` 需要人工复核，可能只是 UE 规范化，也可能表示写入分支不生效。
 - 长任务返回 `task_id/status/command_line/log_file/report_file/exit_code/phase/last_log_lines[]`，真实执行必须有显式许可参数。
 
-## 维护规则
+## 废弃命令规则
 
-本文档在 skill 内是同步副本。命令实现、正式参数、返回字段和边界的源头仍在插件仓库文档；skill 副本只负责日常阅读路由。
+`deprecatedCommand/` 内命令仍保留兼容，但不作为默认 authoring 入口。允许用途：
+
+- 创建最小骨架
+- 迁移旧脚本
+- 探针验证
+- schema 边界字段补修
+- JSON / folder workflow 失败后的定点故障恢复
+
+不允许用途：
+
+- 用一长串原子命令替代已有完整 JSON / folder workflow
+- 绕过 validate/diff/readback
+- 静默忽略解析失败、属性不存在或 import 失败
+
+## 维护规则
 
 新增或修改命令时必须同步：
 
 1. 命令实现和路由。
 2. 对应正式分册中的命令表、参数、返回字段、错误码和边界。
 3. UE automation smoke 或 source audit 覆盖。
-4. 插件源仓库中由 `uai-cli release coverage` 生成的 `docs/generated/command_coverage_matrix.*`。
-5. 如改动影响 Codex skill 的阅读路由，只同步正式分册到 `UeAgentInterfacePak/skills/ue-agent-interface/docs/UeAgentInterface/commands/`，不得同步 `deprecatedCommand/**` 或 generated 覆盖矩阵。
-6. 同步 Pak skill 后，再用 `scripts/skills/sync_codex_skills.py` 同步本机 installed skill 并做一致性检查。
+4. `uai-cli release coverage` 生成的 `../generated/command_coverage_matrix.*`。
+5. 如果改动进入发布包，同步 `UeAgentInterfacePak/UeAgentInterface/docs/commands/`。
+6. 如改动影响 Codex skill 的阅读路由，同步 Pak skill 和本机 installed skill。
 
-当前本文档不再维护历史“增量补齐命令长列表”。命令存在性以插件源仓库的 coverage matrix 和各正式分册为准。
+当前本文档不再维护历史“增量补齐命令长列表”。命令存在性以 coverage matrix 和各正式分册为准。

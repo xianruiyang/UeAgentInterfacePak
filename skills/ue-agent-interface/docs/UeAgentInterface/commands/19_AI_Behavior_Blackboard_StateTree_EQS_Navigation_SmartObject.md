@@ -1,6 +1,6 @@
 # AI Behavior / Blackboard / StateTree / EQS / Navigation / Smart Object
 
-本分册记录 UeAgentInterface 的 AI 行为栈指令。调用入口仍是 `POST /api/exec`，日常使用优先走 `UeAgentInterfaceCMD/dist/uai-cli.exe exec|batch`。
+本分册记录 UeAgentInterface 的 AI 行为栈指令。日常使用优先走已定位 `UeAgentInterfaceCMD` 的 Python `uai_core` wrapper 或 `ue.batch(..., stop_on_error=True)`；默认候选找不到 UAICMD 时先向用户确认安装路径，确认没有可用 UAICMD 后才回退 skill 内置 CLI。底层传输仍由封装层调用 UAI 服务，不直接手写 HTTP。
 
 实现覆盖 UE 5.6 下的 `UBlackboardData`、`UBehaviorTree`、`UStateTree`、`UEnvQuery`、AI Perception 组件读回/验证、Navigation 聚合探针、`USmartObjectDefinition` 与 Smart Object runtime 查询/claim/release。Smart Object Component、AI Perception Component、AIController/Pawn Blueprint、BT/StateTree 节点 Blueprint 内部图编辑继续复用现有 Blueprint / Actor / Component 指令，不新增重复 authoring 入口。
 

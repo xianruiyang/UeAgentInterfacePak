@@ -8,9 +8,11 @@
 |---|---|---|
 | `anim_sequence_get_info` | 读取 AnimSequence 资产摘要 | `asset_path`；可选 `include_curve_keys` |
 | `anim_sequence_analyze_root_motion` | 采样 AnimSequence 的 root motion / root bone / 朝向骨骼轨道，输出转身角度、水平距离和建议曲线/marker | `asset_path`；可选 `sample_count`、`orientation_bone_name`、`include_samples`、`include_suggested_keys`、`meaningful_yaw_threshold_degrees`、`meaningful_translation_threshold_cm` |
+| `anim_sequence_sample_pose` | 采样 AnimSequence 在指定时间或帧的骨骼姿态，返回本地或世界空间 transform | `asset_path`；可选 `bone_names[]`/`bones[]`、`frame_index` 或 `time_seconds`、`frame_indices[]`、`time_seconds_list[]`、`space=local/world`、`evaluation_type=raw/source/compressed`、`skeletal_mesh_path`、`include_ref_pose`、`max_bones` |
 | `anim_sequence_screenshot` | 按帧/时间截取 AnimSequence 预览图，也可批量输出序列帧总览图 | `asset_path`；可选 `skeletal_mesh_path`、`frame_index` 或 `time_seconds`；批量可传 `start_time_seconds`、`count`、`interval_seconds` 或 `start_frame_index`、`count`、`frame_interval`；`format`、`quality`、`max_size`、`target`、`create_frame_sheet`、`write_individual_frames`、`frame_sheet_padding`、`frame_sheet_max_size`、`frame_sheet_label_scale` |
 | `anim_sequence_set_curve` | 统一管理 AnimSequence 曲线与 key | `asset_path`、`curve_name`；可选 `curve_type=float`、`curve_json`、`keys[]`、`time_seconds/value`、`clear_existing_keys`、`remove`、`meta_data_curve`、`remove_name_from_skeleton`、`save_after_set` |
 | `anim_sequence_set_bones` | 统一管理骨骼动画轨删除 | `asset_path`；可选 `remove_bone_names[]`、`include_children`、`children_excluded[]`、`exclude_children_recursively`、`remove_all_bone_animation`、`remove_virtual_bone_names[]`、`finalize_after_set`、`save_after_set` |
+| `anim_sequence_apply_bone_tracks` | 写入 AnimSequence 骨骼 transform 轨道 key，可创建新 AnimSequence 或更新已有轨道 | `asset_path`；可选 `create_if_missing`、`target_skeleton`/`skeleton`、`preview_skeletal_mesh`/`skeletal_mesh_path`、`frame_rate`/`fps`、`num_frames`、`tracks[]`、`replace_existing_tracks`、`save_after_apply` |
 | `anim_sequence_set_metadata` | 统一管理 AnimSequence metadata 生命周期 | `asset_path`；可选 `metadata_class_path`、`metadata_values`、`remove`、`clear_all`、`save_after_set` |
 | `anim_sequence_set_notify_track` | 新增 / 更新 / 删除 notify track | `asset_path`、`track_name`；可选 `track_color`、`remove`、`save_after_set` |
 | `anim_sequence_set_notify` | 新增 / 更新 / 删除单条 notify | `asset_path`；新增时传 `time_seconds`，更新/删除时传 `notify_index`；可选 `track_name`、`notify_name`、`notify_class`、`notify_state_class`、`duration_seconds`、`tick_type`、`trigger_weight_threshold`、`notify_trigger_chance`、`notify_filter_type`、`notify_filter_lod`、`can_be_filtered_via_request`、`trigger_on_dedicated_server`、`trigger_on_follower`、`notify_color`、`remove`、`save_after_set` |
@@ -132,6 +134,47 @@ JSON 关键字段：
 }
 ```
 
+### `anim_sequence_sample_pose`
+
+说明：
+- 只读采样命令，用于把 AnimSequence 在某个时间或帧上的骨骼姿态读回为 JSON。
+- 默认 `space=local`、`evaluation_type=raw`、`should_retarget=false`、`evaluate_curves=false`，适合把现有动画作为原型，采样本地骨骼 transform 后再用 `anim_sequence_apply_bone_tracks` 局部覆盖目标骨骼轨道。
+- 不传 `bone_names[]` / `bones[]` 时返回最多 `max_bones` 根骨骼，默认 `512`；制作动画时建议只传需要修改或验证的骨骼，避免 report 过大。
+- 返回 transform 同时包含欧拉角 `rotation` 和四元数 `quaternion`；写回动画轨时建议使用四元数，减少欧拉角顺序误差。
+
+参数：
+- `asset_path`：目标 AnimSequence。
+- `bone_names[]` / `bones[]` / `sample_bones[]`：要返回的骨骼名；也可用单个 `bone_name` / `bone`。
+- `frame_index` / `frame`：单帧采样。
+- `time_seconds` / `time`：单时间采样。
+- `frame_indices[]` / `frames[]`：多帧采样。
+- `time_seconds_list[]` / `times_seconds[]` / `times[]`：多时间采样。
+- `space`：`local` 或 `world`，默认 `local`。
+- `evaluation_type`：`raw`、`source` 或 `compressed`，默认 `raw`。
+- `skeletal_mesh_path` / `preview_skeletal_mesh`：可选预览网格，用于带网格比例的姿态评估，会检查 skeleton 兼容性。
+- `should_retarget`、`extract_root_motion`、`incorporate_root_motion_into_pose`、`retrieve_additive_as_full_pose`、`evaluate_curves`：对应 UE pose evaluation options。
+- `include_ref_pose`：是否同时返回参考姿势 transform。
+- `max_bones`：未指定骨骼时最多返回的骨骼数，默认 `512`。
+
+返回：
+- `asset_path`、`object_path`、`skeleton`、`preview_skeletal_mesh`
+- `space`、`evaluation_type`、`should_retarget`、`extract_root_motion`、`evaluate_curves`
+- `sequence_length`、`num_frames`、`max_frame_index`、`sampling_frame_rate`
+- `sample_count`、`requested_all_bones`、`requested_bone_count`、`truncated_bones`、`missing_bones[]`
+- `samples[]`：每个采样点包含 `frame_index`、`time_seconds`、`normalized_time`、`bones[]`；每个 bone 返回 `bone_name`、`bone_index`、`transform`
+
+示例：
+
+```json
+{
+  "asset_path": "/Game/Characters/Hero/Animations/A_Idle",
+  "bone_names": ["spine_03", "upperarm_r", "lowerarm_r", "hand_r"],
+  "time_seconds_list": [0.0, 0.2, 0.4],
+  "space": "local",
+  "evaluation_type": "raw"
+}
+```
+
 ### `anim_sequence_screenshot`
 
 说明：
@@ -230,6 +273,51 @@ JSON 关键字段：
 }
 ```
 
+### `anim_sequence_apply_bone_tracks`
+
+说明：
+- 这是 AnimSequence 骨骼 transform 轨写入的主流程入口，用于把本地空间 location / rotation / scale key 写进 UE 原生 DataModel。
+- `num_frames` 表示可播放帧数；UE DataModel 会对应 `num_frames + 1` 个采样 key。例如 `num_frames=24` 会写入 25 个 key，允许索引 `0..24`。
+- `tracks[]` 中每条轨道必须指定 `bone`/`bone_name` 和 `keys[]`。若 key 不带 `frame`/`time_seconds`，`keys[]` 数量必须正好等于 `num_frames + 1`，按数组顺序写入；若带 `frame` 或 `time_seconds`，则按对应采样 key 写入，未指定的 key 使用该骨骼参考姿势。
+- `rotation` 是绝对本地旋转，可用 `{ "pitch": 0, "yaw": 0, "roll": 0 }`（角度）或 `{ "x": 0, "y": 0, "z": 0, "w": 1 }`（四元数）。不要用 `rotation: {0,0,0}` 表示休息姿势；省略 `rotation` 才会保留该骨骼参考姿势。
+- `rotation_delta` / `rotator_delta` / `quat_delta` / `quaternion_delta` / `additive_rotation` 表示在 ref pose 后叠加的旋转增量；`pre_rotation_delta` 系列表示在 ref pose 前叠加。LLM authoring 推荐优先使用 `rotation_delta`，未动画帧传空 key `{}`。
+- `location`/`translation`/`position` 与 `scale` 可用 `{x,y,z}` 或 `[x,y,z]`；省略时使用对应骨骼参考姿势。
+- `replace_existing_tracks=true` 会先清空现有骨骼动画轨；默认只新增或覆盖传入的目标骨骼轨。
+- 创建新资产时必须提供 `target_skeleton`/`skeleton`，建议同时提供 `preview_skeletal_mesh` 便于后续截图预览。
+
+推荐参数形式：
+
+```json
+{
+  "asset_path": "/Game/Anim/A_ForwardPunch",
+  "create_if_missing": true,
+  "target_skeleton": "/Game/Characters/Hero/SK_Hero_Skeleton",
+  "preview_skeletal_mesh": "/Game/Characters/Hero/SK_Hero",
+  "frame_rate": { "numerator": 24, "denominator": 1 },
+  "num_frames": 24,
+  "replace_existing_tracks": true,
+  "tracks": [
+    {
+      "bone": "upperarm_r",
+      "keys": [
+        { "frame": 0 },
+        { "frame": 12, "rotation_delta": { "pitch": -55, "yaw": 20, "roll": 15 } },
+        { "frame": 24 }
+      ]
+    }
+  ],
+  "save_after_apply": true
+}
+```
+
+返回：
+- `asset_path`、`object_path`
+- `skeleton`、`preview_skeletal_mesh`
+- `frame_rate`、`num_frames`、`sample_key_count`
+- `created`、`replace_existing_tracks`、`applied_track_count`、`applied_tracks[]`
+- `track_count`、`track_names[]`
+- `saved`
+
 ### `anim_sequence_set_metadata`
 
 说明：
@@ -327,7 +415,7 @@ JSON 关键字段：
 - `reference_skeleton.json`：Reference Skeleton 摘要，包含 bone index、parent、reference transform 和 retargeting 摘要。
 - `retargeting.json`：`bone_translation_retargeting[]` 与 `use_retarget_modes_from_compatible_skeleton`。只导出 raw bones；virtual bone 没有独立 translation retarget mode，旧 JSON 中如果出现会被 warning 跳过，避免 UE 越界断言。
 - `sockets.json`：Skeleton socket 新增、更新、删除。
-- `virtual_bones.json`：virtual bone 新增、删除。
+- `virtual_bones.json`：virtual bone 新增、删除；条目设置 `remove=true` 时，即使同名 virtual bone 已存在也会进入删除路径，apply 后应通过 `skeleton_get_info.virtual_bones[]` 或重新导出确认已移除。
 - `slots.json`、`blend_profiles.json`、`smart_names.json`、`animation_metadata.json`：结构占位与摘要。
 - `compatible_skeletons.json`：compatible skeleton 列表与开关。
 - `preview.json`：preview skeletal mesh。

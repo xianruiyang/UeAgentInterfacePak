@@ -1,0 +1,4 @@
+interface:
+  display_name: "空间理解"
+  short_description: "任何空间内容都先做坐标系与语义推理"
+  default_prompt: "使用 $understand-space 处理任何涉及空间的内容：先确认维度和坐标系事实，解析用户语义坐标系，再比较、操作或读回验收。"

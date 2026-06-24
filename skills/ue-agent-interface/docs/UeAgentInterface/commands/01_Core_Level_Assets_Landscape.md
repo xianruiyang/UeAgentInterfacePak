@@ -10,12 +10,16 @@
 | `undo` | 撤销上一步事务 | 无 | 快速回滚错误修改 |
 | `redo` | 重做已撤销事务 | 无 | 验证回滚链路 |
 | `exec_batch` | 顺序执行多条命令，支持遇错中断 | `commands[]`、`stop_on_error` | 复杂自动化的默认入口 |
+| `editor_console_exec` | 执行 UE 底部状态栏 `Cmd` 控制台命令的等价路径 | `command` 或 `commands[]`、`world_context`、`allow_high_risk`、`stop_on_error`、`fail_on_unhandled`、`add_to_history`、`max_output_chars`、`max_output_lines` | 运行 `viewmode`、`stat`、`r.*` CVar 查询/设置、`DumpConsoleCommands` 等 UE 控制台命令 |
 | `save_current_level` | 保存当前关卡 | `only_if_dirty` | 批处理结束后落盘 |
+| `level_create_blank` | 创建并打开新的空 persistent Level 资产 | `asset_path`/`level_path`、`overwrite_policy`、`save_existing_map` | 为自动化演示或测试创建干净场景，避免污染当前关卡 |
+| `level_open` | 打开已有 persistent Level 资产 | `asset_path`/`level_path`、`save_existing_map` | 在专用 demo map 或测试 map 之间切换 |
 | `editor_get_open_assets` | 列出当前已打开的资产编辑器 | 无 | 获取编辑器上下文 |
 | `open_asset_editor` | 打开指定资产编辑器 | `asset_path` | 打开 Blueprint / Material / Niagara |
 | `save_asset` | 保存指定资产 | `asset_path`、`only_if_dirty` | 保存关键资产修改 |
 | `asset_duplicate` | 复制资产到指定路径 | `source_asset_path`、`destination_asset_path`、`save_after_duplicate` | 先复制测试资产，再在副本上做安全修改 |
 | `asset_move` | 通过 UE AssetTools 移动或重命名资产 | `source_asset_path` 或 `asset_path`、`destination_asset_path` 或 `destination_folder`、可选 `destination_name/dry_run/save_after_move` | 把旧资产归档到 Deprecated 目录，同时让 UE 处理重命名、引用更新和保存 |
+| `asset_delete` | 删除未被任何外部对象引用的资产 | `asset_path` / `asset_paths` 或 `folder_path` / `folder_paths`、`recursive`、`dry_run`、`allow_dirty`、`include_path_string_hits`、`allow_non_game`、`delete_empty_folders` | 清理确认无外部引用的普通资产、临时 Niagara 资产或测试资产；同批次内部引用只诊断不阻断，有外部 referencer / 可疑路径字符串 / 打开编辑器 / 脏包时默认阻断；按文件夹删除时默认连空文件夹本体一起删除 |
 | `asset_fixup_redirectors` | 删除资产移动后已无引用的 `ObjectRedirector` | `asset_path`、`asset_paths`、`folder_path`、`folder_paths`、`recursive`、`dry_run`、`fail_on_blocked` | 批量移动后清理旧路径 redirector；仍有 referencer 时返回 `redirector_still_referenced`，先改引用再删除 |
 | `asset_reference_graph` | 查询任意资产的 AssetRegistry 引用关系 | `asset_path`，可选 `direction/recursive/max_depth/include_*` | 在改 AnimBP、Montage、Level、清理旧资源前建立依赖/反向引用图 |
 | `asset_import_texture` | 导入外部贴图为 Texture2D | `source_filename`、`destination_path`，可选 `destination_name/srgb/compression_settings/mip_gen_settings/lod_group` | 把外部 PNG/TGA/JPG/EXR/HDR 等贴图纳入 UE 资产链路 |
@@ -32,6 +36,21 @@
 | `editor_prepare_exit` | 退出前按策略保存/丢弃并请求关闭编辑器 | `save_asset_paths`、`discard_asset_paths`、`discard_all_dirty`、`request_exit` | 自动化结束时避免恢复弹窗 |
 
 `begin_transaction` / `end_transaction` 是多步写入的显式事务边界。显式事务中调用 `spawn_actor` 时，服务端会登记新建 Actor；`end_transaction` 传 `commit=false` 时，除调用 UE 事务取消外，还会清理这些新建 Actor，并返回 `registered_spawned_actor_count` / `rolled_back_spawned_actor_count`，避免验证探针或失败批处理在关卡里残留对象。
+
+### `level_create_blank` / `level_open`
+
+用途：创建或打开一个独立的 persistent Level 资产。需要在干净场景中做自动化演示、截图或 smoke 时，优先创建专用 map，再通过 Level Content JSON 写入场景实例，避免把临时内容混入当前业务关卡。
+
+关键参数：
+
+- `asset_path` / `level_path` / `map_path` / `package_path`：Level long package path，例如 `/Game/UAI_Demos/PunchForwardReturn_20260613/L_PunchForwardReturn_20260613`。
+- `overwrite_policy`：仅 `level_create_blank` 使用。`fail` 默认，目标存在时报错；`replace` 覆盖保存新的空 map；`reuse` 打开已有 map，不创建新 map。
+- `save_existing_map`：创建或打开前是否先保存当前 dirty map，默认 `true`。批处理脚本应先用 `editor_list_dirty_resources` 明确当前 dirty 范围。
+
+返回字段：
+
+- `created`、`opened`、`saved`：本次是否创建、打开、保存。
+- `asset_path`、`filename`、`world_path`：Level package path、磁盘文件路径和当前 world 路径。
 
 ### `asset_reference_graph`
 
@@ -79,6 +98,76 @@
 
 注意：`asset_reference_graph` 的主结果来自 UE AssetRegistry。若 `path_string_hits` 命中但 AssetRegistry 没有边，通常表示旧软路径字符串、未重新保存的包、redirector 残留或不可解析的自定义序列化字段，需要进一步用对应资产的结构化导出或属性 JSON 验证。
 
+### `asset_delete`
+
+用途：删除确认没有外部引用的资产。该命令只处理 Content Browser 资产，不删除关卡 Actor；关卡实例清理仍使用 `level_content_delete_scope` 或对应 Level Content JSON 工作流。命令不会裸删 `.uasset` 文件，而是先通过 AssetRegistry 反向引用、打开编辑器、dirty package 和可选路径字符串扫描做 preflight，只有 `deletable=true` 的目标才交给 UE Editor 的对象删除路径。
+
+关键参数：
+
+- `asset_path` / `asset_paths`：与 `folder_path` / `folder_paths` 必填其一；支持 package path、object path 或 UE 文本对象引用。
+- `folder_path` / `folder_paths`：与 `asset_path` / `asset_paths` 必填其一；展开 Content Browser 文件夹下的资产后进入同一批删除 preflight。
+- `recursive`：可选，默认 `false`。为 `true` 时 `folder_path` / `folder_paths` 递归展开子文件夹。
+- `dry_run`：可选，默认 `true`。为 `true` 时只做 preflight，不删除。
+- `delete_empty_folders` / `delete_folders`：可选，默认 `true`。仅在传入 `folder_path` / `folder_paths` 时生效；资产删除后会删除请求的空文件夹本体。为 `false` 时只删除资产并保留空文件夹。
+- `fail_on_blocked`：可选，默认 `true`。任一目标被阻断时整条命令失败并返回 `asset_delete_blocked`。
+- `allow_non_game`：可选，默认 `false`。默认只允许删除 `/Game/**`，避免误删 Engine/Plugin 资产。
+- `allow_dirty`：可选，默认 `false`。目标包 dirty 时默认阻断；删除临时未保存资产时必须显式传 `true`。
+- `close_asset_editors` / `allow_open_editors`：可选，默认都为 `false`。目标资产已打开时默认阻断；可选择先关闭编辑器，或显式允许打开状态删除。
+- `include_hard` / `include_soft` / `include_manage` / `include_searchable_names`：可选，默认都为 `true`，控制 AssetRegistry referencer 分类。
+- `include_path_string_hits`：可选，默认 `true`。额外扫描项目 `Content/**/*.uasset|*.umap` 中的原始 package path 字符串；外部命中默认阻断。
+- `block_on_path_string_hits`：可选，默认 `true`。若只想把字符串扫描作为诊断，可传 `false`。
+- `force_scan`：可选，默认 `true`。删除前同步刷新 AssetRegistry。
+
+返回字段：
+
+- `folder_expansions[]`：每个请求文件夹的展开结果，包含 `folder_path`、`recursive`、`asset_count`、`asset_paths[]`。
+- `assets[]`：每个解析后目标的 preflight 结果，包含 `deletable`、`blocked_reasons[]`、`referencers[]`、`external_referencer_count`、`internal_referencer_count`、`path_string_hits[]`、`external_path_string_hit_count`、`internal_path_string_hit_count`、`package_dirty`、`open_in_asset_editor`、`package_exists_on_disk`。
+- `blocked[]` / `blocked_count`：被阻断的目标及原因。
+- `deletable_count`：通过 preflight 的目标数。
+- `deleted_assets[]` / `deleted_count`：真实删除后的目标列表；`dry_run=true` 时为 `0`。
+- `remaining_packages[]` / `remaining_package_count`、`remaining_asset_registry_count`、`residual_object_count`：删除后仍存在的包、AssetRegistry 记录或同路径有效 UObject；非 dry-run 下任一大于 0 时返回 `asset_delete_incomplete`。
+- `folder_deletions[]`：按请求文件夹逐项报告空目录处理结果，包含 `folder_path`、`filesystem_path`、`status`、`would_delete`、`deleted`、`directory_exists_after`、`remaining_file_count`、`remaining_directory_count`、`blocked_reasons[]`。
+- `folder_delete_count` / `folder_would_delete_count` / `folder_delete_blocked_count`：真实删除的文件夹数、dry-run 将删除的文件夹数、因非空/根目录/非 `/Game` 等原因被阻断的文件夹数。
+
+示例：
+
+```json
+{
+  "command": "asset_delete",
+  "params": {
+    "asset_path": "/Game/Temp/NE_TestEmitter",
+    "dry_run": false,
+    "allow_dirty": true,
+    "include_path_string_hits": true
+  }
+}
+```
+
+删除前的推荐流程：先 `asset_reference_graph` 查询 `direction=referencers`；再用 `asset_delete dry_run=true` 看完整阻断原因；只有确认 `deletable_count` 与目标数一致后，才传 `dry_run=false`。
+
+批量删除语义：
+
+- 同一条 `asset_delete` 请求里的资产集合会先完整归一化，显式 `asset_paths` 和 `folder_path/folder_paths` 展开的资产属于同一批次。
+- AssetRegistry referencer 如果来自同批次资产，会计入 `internal_referencer_count` 并在对应 `referencers[]` 上标记 `internal_reference=true`，不会阻断删除。
+- 路径字符串命中如果来自同批次资产，会计入 `internal_path_string_hit_count` 并在对应 `path_string_hits[]` 上标记 `internal_hit=true`，不会阻断删除。
+- 只有同批次外部资产产生的 referencer 或路径字符串命中才计入 `external_*` 并按默认策略阻断。
+
+递归删除文件夹示例：
+
+```json
+{
+  "command": "asset_delete",
+  "params": {
+    "folder_path": "/Game/Temp/Generated",
+    "recursive": true,
+    "dry_run": true,
+    "delete_empty_folders": true
+  }
+}
+```
+
+按文件夹删除时，即使展开后没有任何资产，只要 `delete_empty_folders=true` 且请求文件夹为空，也会删除该文件夹本体并返回 `folder_delete_count=1`；不会再把空文件夹场景当作 `no_assets_resolved`。目录删除只删除空目录，不递归强删含有未知文件或未删除子目录的目录。
+
 ### `asset_import_fbx_skeletal_mesh` 角色变形相关参数
 
 - `import_morph_targets`：写入 `UFbxSkeletalMeshImportData::bImportMorphTargets`。
@@ -106,6 +195,7 @@
 | `level_get_actor_property` | 读取 Actor 属性 | `id`、`property_name` | 调试实例状态 |
 | `level_get_component_property` | 读取组件属性 | `id`、`component`（或 `component_id`）、`property_name` | 查询 Mesh / Collision / Material 槽 |
 | `level_set_skeletal_mesh_morph_target` | 设置场景 Actor 上 SkeletalMeshComponent 的 Morph Target 权重，可选启动平滑 pulse | `id`、`morph_target`、`weight`，可选 `component/component_id`、`skeletal_mesh`、`clear_existing`、`pulse`、`stop_pulse` | 把导入的 Morph Target 实际接入关卡实例并截图/预览 |
+| `level_set_skeletal_animation_pose` | 设置场景 Actor 上 SkeletalMeshComponent 到指定 AnimSequence 帧/时间并刷新骨骼 | `id`、`animation_asset`，可选 `component/component_id`、`time_seconds` 或 `frame_index`+`frame_rate`、`save_after_set` | 把生成或导入的骨骼动画实际接入关卡实例做逐帧截图/预览 |
 | `level_get_actor_transform` | 读取 Actor 实例变换 | `id` | 精确读取 `location / rotation / scale` |
 | `level_get_selection` | 读取当前选择集 | 无 | 获取当前选中对象 |
 | `level_set_selection` | 设置选择集 | `actor_ids`、`mode` | 后续聚焦、批量操作 |
@@ -121,7 +211,7 @@
 | `level_align_actor_vertex_to_vertex` | 按网格顶点把 Actor 对齐到目标顶点 | `source_actor_id`、`target_actor_id`、顶点选择参数 | 白盒模块拼接时做精确顶点对齐 |
 | `mesh_get_closest_vertex` | 查询 Actor 网格中最接近世界点的顶点 | `id`、`world_position` | 对齐前定位候选顶点 |
 | `mesh_get_vertex_world_position` | 读取 Actor 网格指定顶点的世界坐标 | `id`、`vertex_index` | 顶点对齐、几何诊断和留证 |
-| `screenshot_viewport` | 抓取当前 Level Viewport 普通 lit 截图 | 可选 `format`、`quality`、`max_size`、`output_file`、`warmup_frames`、`render_warmup_frames` | 视觉验收和问题留证 |
+| `screenshot_viewport` | 抓取当前 Level Viewport 截图，可临时切换编辑器 View Mode / Visualization Mode | 可选 `format`、`quality`、`max_size`、`output_file`、`warmup_frames`、`render_warmup_frames`、`tick_editor_world`、`editor_world_tick_frames`、`editor_world_tick_delta_seconds`、`view_mode`、`editor_view_mode`、`mode`、`mode_key`、`debug_view_mode`、`visualization_family`、`visualization_mode`、`visualizer`、`visualizer_mode`、`view_mode_family`、`debug_mode`、`restore_view_mode`、`restore_view_mode_after_capture` | 最终画面、优化视图、Lumen/Nanite/Substrate/Groom/VSM 等视口调试模式留证 |
 | `screenshot_viewport_buffer` | 抓取深度/法线/底色等调试 buffer | `buffer`、可选 `format`、`quality`、`max_size`、`output_file`、`depth_mode`、`depth_near_cm`、`depth_far_cm`、`depth_auto_pct_low`、`depth_auto_pct_high`、`invert` | 更稳定地检查遮挡、悬空、穿插和深度问题 |
 | `viewport_get_camera` | 读取当前 Level Viewport 相机 | 无 | 保存当前取景状态 |
 | `viewport_get_warnings` | 读取当前 Level Viewport renderer warning/probe | 可选 `include_suppressed` | 诊断全局裁剪平面、forward shading 主光等渲染告警 |
@@ -132,7 +222,10 @@
 | `viewport_frame_actors` | 按多个 Actor 聚合 bounds 取景 | `actor_ids[]`、可选 `padding` | 批量对象截图 |
 | `viewport_frame_folder` | 按 Outliner folder 聚合 bounds 取景 | `folder_path`、可选 `include_child_folders/padding/collision_aware` | 白盒区域或托管资源整组留证 |
 | `viewport_frame_selection` | 按当前选择集聚合 bounds 取景 | 可选 `padding` | 人工选择后自动留证 |
-| `viewport_set_game_view` | 切换 Game View | `game_view` | 截图前隐藏或恢复编辑器辅助显示 |
+| `viewport_set_game_view` | 切换 Game View | `game_view`、可选 `restore_editor_widgets` | 截图前隐藏或恢复编辑器辅助显示；退出 Game View 时默认恢复变换控件相关 show flags |
+| `viewport_get_editor_interaction_state` | 读取 Level Viewport 编辑器交互状态 | 无 | 诊断坐标轴/变换控件消失、Game View、Selection/ModeWidgets/Pivot show flag |
+| `viewport_restore_editor_interaction_state` | 恢复 Level Viewport 编辑器交互状态 | `all_viewports`、`game_view`、`mode_widgets`、`selection`、`pivot`、`widget_mode` | 自动化操作后恢复 Actor 选中时的变换控件/坐标轴 |
+| `viewport_list_view_modes` | 列出 `screenshot_viewport` 可用的视口模式和可视化子模式 | 无 | 生成/调试截图请求前发现当前引擎实际可用的 mode key |
 | `viewport_set_realtime` | 切换视口实时刷新 | `realtime`；兼容 `enabled` | 需要 Niagara/动画预览或稳定截图时控制实时性 |
 | `viewport_deproject_screen_to_world` | 屏幕坐标反投影到世界射线 | `screen_x`、`screen_y` | 视口拾取和屏幕点诊断 |
 | `viewport_trace_screen_point` | 从屏幕点发起世界 Trace | `screen_x`、`screen_y`、可选 `trace_channel/trace_distance` | 根据截图坐标定位命中 Actor |
@@ -141,7 +234,7 @@
 
 ### `screenshot_viewport`
 
-抓取当前 Level Viewport 的普通 lit/backbuffer 截图，用于验证用户实际看到的最终画面，包括后期处理、反射合成、Single Layer Water 和 PlanarReflection 等主视口效果。
+抓取当前 Level Viewport 的 backbuffer 截图。默认不传视图模式时保持当前视口状态，可用于验证用户实际看到的最终画面；传入 `view_mode` 或 `visualization_family` 时，会临时切换到指定编辑器 View Mode / Visualization Mode 后截图，默认截图后恢复原状态。
 
 - `format`：可选，`jpg` 默认；支持 `png`、`jpg`、`webp`。
 - `quality`：可选，`jpg/webp` 压缩质量，默认 `85`。
@@ -149,20 +242,66 @@
 - `output_file`：可选；相对路径按项目根目录解析。若未显式传 `format`，会优先使用 `output_file` 的 `png/jpg/webp` 扩展名；若同时传了 `format`，扩展名必须一致。
 - `warmup_frames`：可选，默认 `2`，范围 `0..8`。截图前额外绘制并 flush 若干帧，让 PlanarReflection、TAA、反射历史和场景捕获类效果先更新，再读取最终 backbuffer。
 - `render_warmup_frames`：`warmup_frames` 的兼容别名。
+- `tick_editor_world`：可选，默认 `false`。为 `true` 时，截图前会推进 Editor World，让依赖 `ShouldTickIfViewportsOnly`、Niagara 或运行时 RenderTarget writer 的系统在同一批次收敛。
+- `editor_world_tick_frames`：可选；`tick_editor_world=true` 时生效，默认取请求的 `warmup_frames/render_warmup_frames`，范围 `0..240`。
+- `editor_world_tick_delta_seconds`：可选；默认 `1/60`，范围 `1/240..1/5`。
+- `view_mode`：可选。支持普通视图 key，例如 `lit`、`unlit`、`wireframe`、`lit_wireframe`、`detail_lighting`、`lighting_only`、`reflections`、`shader_complexity`、`shader_complexity_and_quads`、`quad_overdraw`、`light_complexity`、`lightmap_density`、`lwc_complexity`、`player_collision`、`visibility_collision`、`lod_coloration`、`path_tracing`。也支持 `<family>:<mode>` 或 `<family>_<mode>`，例如 `lumen:overview`、`nanite_triangles`、`virtual_shadow_map:mask`、`buffer_world_normal`。
+- `editor_view_mode` / `mode` / `mode_key` / `debug_view_mode`：`view_mode` 的兼容别名。
+- `visualization_family`：可选。显式指定可视化族，支持 `buffer`、`nanite`、`lumen`、`substrate`、`groom`、`virtual_shadow_map`、`virtual_texture`、`actor_coloration`、`gpu_skin_cache`、`ray_tracing_debug`。
+- `visualization_mode`：可选。配合 `visualization_family` 使用，例如 `Overview`、`Triangles`、`LumenScene`、`SurfaceCache`、`mask`、`pending`。省略时使用该族默认模式。
+- `visualizer` / `view_mode_family`：`visualization_family` 的兼容别名。
+- `visualizer_mode` / `debug_mode`：`visualization_mode` 的兼容别名。
+- `restore_view_mode`：可选，默认 `true`。为 `true` 时截图后恢复进入命令前的 view mode 和各类 visualization 子模式；为 `false` 时保留切换后的视口模式，返回 `view_mode_left_applied=true`。
+- `restore_view_mode_after_capture`：`restore_view_mode` 的兼容别名。
 
 返回字段：
 
-- `capture_mode="level_viewport_lit"`。
-- `final_lit_composition=true`。
+- `capture_mode`：未请求 view mode 时为 `level_viewport_lit`；请求 view mode 时为 `level_viewport_view_mode`。
+- `final_lit_composition`：当前截图是否是普通 Lit 最终合成；优化/可视化/调试视图会返回 `false`。
 - `warmup_frames_requested`。
-- `viewport`：本次实际使用的 LevelViewportClient 摘要，包含 `selection_reason`、`viewport_client_index`、`viewport_type`、`view_mode_value`、`location`、`rotation`、`fov`、`realtime`、`game_view` 和 `size`。
-- `capture`：截图执行细节，包含 `render_path="level_viewport_backbuffer"`、`draws_performed`、`temporary_realtime_override` 和同一份 `viewport` 信息。
+- `requested_view_mode`：当请求了 `view_mode` 或 `visualization_family` 时返回，包含解析后的 `key`、`category`、`view_mode_name`、`visualization_family`、`visualization_mode`。
+- `view_mode_before_capture` / `view_mode_applied` / `view_mode_after_restore`：当请求了临时 view mode 时返回，用于确认切换和恢复是否生效。
+- `viewport`：本次实际使用的 LevelViewportClient 摘要，包含 `selection_reason`、`viewport_client_index`、`viewport_type`、`view_mode_value`、`view_mode_name`、`view_mode_state`、`location`、`rotation`、`fov`、`realtime`、`game_view` 和 `size`。
+- `capture`：截图执行细节，包含 `render_path="level_viewport_backbuffer"`、`draws_performed`、`editor_world_ticks_performed`、`temporary_realtime_override` 和同一份 `viewport` 信息。
 
 行为说明：
 
 - 目标 viewport 选择优先级：当前 active viewport -> `GCurrentLevelEditingViewportClient` -> 面积最大的透视 viewport -> 面积最大的任意 viewport -> 第一个有效 viewport。返回的 `viewport.selection_reason` 用于核对是否抓到了人工正在看的视口。
-- 该命令读取最终 Level Viewport backbuffer，适合判断 PlanarReflection、SSR、后期处理和 Single Layer Water 最终观感。
-- 如果只需要深度、法线或底色诊断，不要用此命令；使用 `screenshot_viewport_buffer`。
+- 未请求 view mode 时，该命令读取当前 Level Viewport backbuffer，适合判断 PlanarReflection、SSR、后期处理和 Single Layer Water 最终观感。
+- 请求 view mode 时，该命令走编辑器自身 `FLevelEditorViewportClient` 的模式切换路径，覆盖 View Mode 主菜单和子菜单式可视化：Buffer、Nanite、Lumen、Substrate、Groom、Virtual Shadow Map、Virtual Texture、Actor Coloration、GPU Skin Cache、Ray Tracing Debug 等。实际可用 key 以 `viewport_list_view_modes` 返回为准。
+- 对需要 editor-world tick 的视觉系统，使用 `tick_editor_world=true` 并检查 `capture.editor_world_ticks_performed`，不要只提高 `warmup_frames`。
+- 如果只需要深度、法线或底色的稳定数值诊断，优先使用 `screenshot_viewport_buffer`；如果需要和编辑器 View Mode 菜单一致的视觉留证，使用本命令的 `view_mode`。
+
+### `viewport_list_view_modes`
+
+列出当前引擎和项目环境中 `screenshot_viewport` 可接受的稳定 key。该命令不修改视口状态。
+
+返回字段：
+
+- `schema="uai.viewport_view_modes.v1"`。
+- `mode_count`。
+- `modes[]`：每项包含 `key`、`category`、`label`、`view_mode_name`、`view_mode_value`、`final_lit_composition`；可视化模式还包含 `visualization_family` 和 `visualization_mode`。
+- `viewport`：当前 LevelViewportClient 摘要和 `view_mode_state`，便于确认当前菜单状态。
+
+常见用法：
+
+```json
+{
+  "command": "viewport_list_view_modes"
+}
+```
+
+```json
+{
+  "command": "screenshot_viewport",
+  "params": {
+    "view_mode": "lumen:overview",
+    "restore_view_mode": true,
+    "format": "jpg",
+    "max_size": 1024
+  }
+}
+```
 
 ### 组件碰撞属性写入
 
@@ -192,6 +331,20 @@
 - `stop_pulse` / `stop_animation`：停止该 Actor/Component/Morph Target 上已有 ticker；未传 `weight` 时会回到 `min_weight`。
 
 同一 Actor/Component/Morph Target 再次启动 `pulse` 会先移除旧 ticker，再注册新的 ticker，避免重复驱动。返回 `applied_weight`、`component_path`、`skeletal_mesh`、`morph_target`、`pulse_started / pulse_stopped`、`pulse_key` 和 `display_status`。普通单次写入返回 `display_status=scene_component_morph_set`；启动循环返回 `display_status=scene_component_morph_pulse_started`。验收时不要只看命令 `ok=true`；应确认 `applied_weight` 与目标权重一致，并通过视口截图或 buffer 截图确认关卡实例可见。循环展示还应做间隔截图或肉眼视口复核，确认轮廓在连续变化。
+
+### `level_set_skeletal_animation_pose`
+
+对当前关卡中的 Actor 查找 `USkeletalMeshComponent`，调用组件单节点动画接口设置 `AnimSequence` 和时间，然后刷新动画、骨骼 transform、bounds 和渲染动态数据。适合在不进 PIE、不依赖 Sequencer 截图评估的情况下，把某个动画帧实际摆到关卡实例上做截图或读回验证。
+
+- `id`：Actor 名称或 Label。
+- `component` / `component_id`：可选，指定 SkeletalMeshComponent；不填时使用 Actor 上第一个 `USkeletalMeshComponent`。
+- `animation_asset` / `animation_asset_path` / `anim_sequence`：AnimSequence 或 AnimSequenceBase object path。
+- `time_seconds`：目标动画时间，超出范围会 clamp 到 `0..play_length`。
+- `frame_index` / `frame`：目标帧；未传 `time_seconds` 时使用。
+- `frame_rate` / `fps`：`frame_index` 换算秒数的帧率，默认 `30`。
+- `save_after_set` / `save_after_apply`：可选，保存当前关卡；默认 `false`。
+
+返回 `actor_label`、`component_path`、`animation_asset`、`requested_time_seconds`、`time_seconds`、`play_length_seconds`、`animation_mode=AnimationSingleNode`、`saved` 和 `display_status=scene_component_animation_pose_set`。验收时不要只看命令 `ok=true`；应配合 `screenshot_viewport` 或帧序列截图确认关卡里的目标实例确实变成了对应动画姿态。
 
 ### `level_spawn_wall_with_opening`
 
@@ -939,6 +1092,56 @@ UeAgentInterfaceCMD/dist/uai-cli.exe exec --cmd skeletal_mesh_preview_morph_targ
   }
 }
 ```
+
+### `editor_console_exec`
+
+用途：执行 UE 编辑器底部状态栏 `Cmd` 输入框的等价控制台命令路径。该命令不模拟 Slate 输入框，而是在 UAI 服务端复刻 `FConsoleCommandExecutor` 的实际执行链：优先使用 PIE / Debug LocalPlayer，上下文存在时走 `GameMode/GameState.ProcessConsoleExec`，最后走 `GEditor->Exec` 或 `GEngine->Exec`。
+
+关键参数：
+
+- `command`：单条控制台命令。可以包含多行，服务端会按 UE `Cmd` executor 的行解析方式逐行执行。
+- `commands[]`：多条控制台命令数组。`command` 和 `commands[]` 可以同时存在，执行顺序为 `command` 解析出的行，再接数组解析出的行。
+- `world_context`：可选，`auto` / `editor` / `pie`，默认 `auto`。`auto` 尽量贴近状态栏 `Cmd` 行为：PIE 存在时优先 PIE，否则使用 Editor world。
+- `allow_high_risk`：可选，默认 `false`。为 `false` 时会阻断退出、崩溃、任意 Python、地图切换、对象保存/导入、删除/销毁等高风险命令。
+- `stop_on_error`：可选，默认 `true`。遇到阻断或未处理命令时是否停止后续命令。
+- `fail_on_unhandled`：可选，默认 `true`。控制台命令返回未处理时是否让 UAI 命令失败。
+- `add_to_history`：可选，默认 `true`。是否加入 UE 控制台历史。
+- `max_output_chars`：可选，默认 `65536`，单条命令返回的合并输出字符上限，最大 `1048576`。
+- `max_output_lines`：可选，默认 `128`，单条命令返回的结构化输出行数上限。
+
+返回字段：
+
+- `executor="Cmd"`：表示使用 UE 状态栏 `Cmd` executor 等价语义。
+- `command_count`、`executed_count`、`handled_count`、`blocked_count`、`unhandled_count`：执行统计。
+- `results[]`：每条命令的结果，包含 `command`、`handled`、`blocked`、`high_risk`、`high_risk_reason`、`route`、`world_context_used`、`output`、`output_lines[]`、`output_truncated`。
+- 阻断高风险命令时返回失败 `editor_console_command_blocked_high_risk`；未处理且 `fail_on_unhandled=true` 时返回失败 `editor_console_command_unhandled` 或更具体的失败原因。
+
+示例：
+
+```json
+{
+  "command": "editor_console_exec",
+  "params": {
+    "command": "r.ViewDistanceScale",
+    "max_output_chars": 4096
+  }
+}
+```
+
+```json
+{
+  "command": "editor_console_exec",
+  "params": {
+    "commands": [
+      "stat fps",
+      "viewmode shadercomplexity"
+    ],
+    "world_context": "editor"
+  }
+}
+```
+
+注意：`editor_console_exec` 是兜底/调试入口，不应替代已有结构化 UAI 指令。凡是 UAI 已有明确读写命令的资产、关卡、视口、编译、截图、配置和生命周期操作，仍优先使用结构化指令，以获得更稳定的读回和错误语义。
 
 ### `editor_resolve_dirty_resources`
 

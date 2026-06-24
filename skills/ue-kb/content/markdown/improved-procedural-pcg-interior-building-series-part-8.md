@@ -1,0 +1,130 @@
+# Improved Procedural PCG Interior ｜ Building Series Part 8
+
+# Improved Procedural PCG Interior ｜ Building Series Part 8
+
+## 知识目标
+
+- 围绕“Improved Procedural PCG Interior ｜ Building Series Part 8”整理 PCG 视频中的输入数据、图表规则、关键节点、参数风险和最终生成结果。
+- 阅读时重点区分三层：输入来源（点、样条、表面、体积、Actor 或属性）、规则处理（采样、过滤、变换、分区、循环、HLSL 或子图）、输出方式（Static Mesh Spawner、Spawn Actor、Spline Mesh、Blueprint 或 Dynamic Mesh）。
+
+## 可复现主流程
+
+- 确认 PCG Graph/PCG Component 已绑定到正确 Actor，并先用 Debug/Inspect 查看中间点数据。
+- 明确输入来源：Spline、Surface、Mesh、Volume、Actor、Data Asset/Data Table 或手工参数。
+- 在图表中按顺序处理采样、属性写入、过滤、Transform、分区/循环和输出节点。
+- 生成可见结果前，先核对 Point 的 Transform、Bounds、Density、Seed 和自定义 Attribute。
+- 用 Static Mesh Spawner 输出大量网格实例；需要蓝图逻辑时改用 Spawn Actor 或 Blueprint 交互。
+- 涉及 Dynamic Mesh 或 Geometry Script 时，先小规模验证布尔、倒角、修补和 UV，再扩展到批量生成。
+
+## 关键术语
+
+- `PCG`、`Static Mesh`、`Mesh`、`Transform`、`Point`、`Attribute`、`Spawn`、`Density`、`Random`、`Loop`、`Graph`、`wall`、`points`、`door`、`plug`、`PCG Graph`、`Point Data`、`Filter`、`Branch`、`Boolean`
+
+## 分段知识
+
+### 00:00:00-00:03:18 点数据、Bounds 与采样来源
+
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 知识点：创建 PCG Graph 后，将规则绑定到 PCG Component 或放置到场景 Actor 上进行调试。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`PCG Graph`、`PCG`、`Point`、`Bounds`、`Random`、`点`、`点数据`、`采样`。
+
+**关键画面：**
+
+![关键截图 1](../assets/ue5-pcg-practical-masterclass-collection-p13/s01-01-S01_1_00_00_10.jpg)
+![关键截图 2](../assets/ue5-pcg-practical-masterclass-collection-p13/s01-02-S01_2_00_01_39.jpg)
+
+### 00:03:18-00:06:06 点数据、Bounds 与采样来源
+
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`PCG`、`Point Data`、`Point`、`Bounds`、`Loop`、`Random`、`点`、`点数据`、`采样`。
+
+**关键画面：**
+
+![关键截图 1](../assets/ue5-pcg-practical-masterclass-collection-p13/s02-01-S02_1_00_03_28.jpg)
+![关键截图 2](../assets/ue5-pcg-practical-masterclass-collection-p13/s02-02-S02_2_00_04_42.jpg)
+
+### 00:06:06-00:11:04 点数据、Bounds 与采样来源
+
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：缩放、旋转、倒角或弯曲前后使用 `Ctrl+A > Apply All Transforms` 归一化对象变换，避免非统一缩放影响倒角、弯曲和法线。
+- 知识点：导入 UE 前检查 pivot、命名、法线、材质和 Nanite/实例化策略，保证高密度树木在场景中可管理且可重复使用。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 知识点：缩放、旋转、倒角或弯曲前后使用 `Ctrl+A > Apply All Transforms` 归一化对象变换，避免非统一缩放导致倒角、弯曲和法线表现异常。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`PCG`、`Point Data`、`Point`、`Bounds`、`Loop`、`Random`、`点`、`点数据`、`采样`。
+
+**关键画面：**
+
+![关键截图 1](../assets/ue5-pcg-practical-masterclass-collection-p13/s03-01-S03_1_00_06_16.jpg)
+![关键截图 2](../assets/ue5-pcg-practical-masterclass-collection-p13/s03-02-S03_2_00_08_35.jpg)
+
+### 00:11:04-00:15:54 属性、过滤与数据分流
+
+- 本段定位：属性、过滤与数据分流。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 核对对象：`PCG`、`Point`、`Density`、`Branch`、`Loop`、`Random`、`属性`、`过滤`。
+
+**关键画面：**
+
+![关键截图 1](../assets/ue5-pcg-practical-masterclass-collection-p13/s04-01-S04_1_00_11_14.jpg)
+![关键截图 2](../assets/ue5-pcg-practical-masterclass-collection-p13/s04-02-S04_2_00_13_29.jpg)
+
+### 00:15:54-00:18:46 Geometry Script 与 Dynamic Mesh 处理
+
+- 本段定位：Geometry Script 与 Dynamic Mesh 处理。
+- 知识点：缩放、旋转、倒角或弯曲前后使用 `Ctrl+A > Apply All Transforms` 归一化对象变换，避免非统一缩放影响倒角、弯曲和法线。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 复现要点：Dynamic Mesh/Geometry Script 节点通常计算成本较高，布尔、倒角和 Auto UV 应在质量与重算成本之间取舍。
+- 核对对象：`PCG`、`Point Data`、`Point`、`Density`、`Branch`、`Loop`、`Random`、`Geometry Script`、`Dynamic Mesh`、`Boolean`。
+
+**关键画面：**
+
+![关键截图 1](../assets/ue5-pcg-practical-masterclass-collection-p13/s05-01-S05_1_00_16_04.jpg)
+![关键截图 2](../assets/ue5-pcg-practical-masterclass-collection-p13/s05-02-S05_2_00_17_20.jpg)
+
+### 00:18:46-00:23:36 Geometry Script 与 Dynamic Mesh 处理
+
+- 本段定位：Geometry Script 与 Dynamic Mesh 处理。
+- 知识点：缩放、旋转、倒角或弯曲前后使用 `Ctrl+A > Apply All Transforms` 归一化对象变换，避免非统一缩放影响倒角、弯曲和法线。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 知识点：创建 PCG Graph 后，将规则绑定到 PCG Component 或放置到场景 Actor 上进行调试。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 复现要点：属性命名要稳定，过滤、分区和分支节点应保留可检查的中间数据，避免后续规则难以追踪。
+- 复现要点：Dynamic Mesh/Geometry Script 节点通常计算成本较高，布尔、倒角和 Auto UV 应在质量与重算成本之间取舍。
+- 核对对象：`PCG Graph`、`PCG`、`Point Data`、`Point`、`Filter`、`Loop`、`Random`、`Geometry Script`、`Dynamic Mesh`、`Boolean`。
+
+**关键画面：**
+
+![关键截图 1](../assets/ue5-pcg-practical-masterclass-collection-p13/s06-01-S06_1_00_18_56.jpg)
+![关键截图 2](../assets/ue5-pcg-practical-masterclass-collection-p13/s06-02-S06_2_00_21_11.jpg)
+
+### 00:23:36-00:26:36 点数据、Bounds 与采样来源
+
+- 本段定位：点数据、Bounds 与采样来源。
+- 知识点：缩放、旋转、倒角或弯曲前后使用 `Ctrl+A > Apply All Transforms` 归一化对象变换，避免非统一缩放影响倒角、弯曲和法线。
+- 知识点：PCG 流程要按点数据、属性写入、过滤条件和 Spawner 输出四步核对，避免只看最终实例而漏掉中间点状态。
+- 知识点：缩放、旋转、倒角或弯曲前后使用 `Ctrl+A > Apply All Transforms` 归一化对象变换，避免非统一缩放导致倒角、弯曲和法线表现异常。
+- 复现要点：先用 Debug/Inspect 核对点数量、Bounds、Density 和关键属性，再判断最终生成结果。
+- 核对对象：`PCG`、`Point`、`Bounds`、`Random`、`点`、`点数据`、`采样`。
+
+**关键画面：**
+
+![关键截图 1](../assets/ue5-pcg-practical-masterclass-collection-p13/s07-01-S07_1_00_23_46.jpg)
+![关键截图 2](../assets/ue5-pcg-practical-masterclass-collection-p13/s07-02-S07_2_00_25_06.jpg)
+
+## 复现检查
+
+- 每个图表先检查输入数据是否正确进入 PCG Graph，再看下游生成结果。
+- Debug/Inspect 时重点看点数量、Bounds、Density、Transform、Seed 和自定义 Attribute。
+- Static Mesh Spawner、Spawn Actor、Spline Mesh 和 Blueprint 输出节点不能混用语义；选择前先确定是否需要实例化性能或蓝图逻辑。
+- 涉及样条、分区、运行时或 GPU 生成时，必须额外验证更新触发、缓存、世界分区和性能预算。
+- Dynamic Mesh/Geometry Script 流程要单独测试布尔、倒角、网格修补、UV 和保存 Static Mesh 的成本。
+
