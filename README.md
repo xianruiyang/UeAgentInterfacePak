@@ -1,122 +1,122 @@
 # UeAgentInterfacePak
 
+> 本仓库把 UAI 的发布引用、Codex skills、UE 知识内容和分发文档放在一个 Pak 入口中。当前
+> `codex/uai-development` 是开发与整理现场，不是已经通过正式门禁的发行包；文件存在、Git clean 或
+> 示例曾经成功，都不等于对应能力在当前版本已验证。
+
+## 快速导航
+
+| 要做的事 | 入口 | 边界 |
+| --- | --- | --- |
+| 了解 Pak parent 与安装方式 | 本 README | 不从 parent README 推断具体 command 已可用 |
+| 修改 UE 插件或正式命令文档 | `UeAgentInterface/` submodule | 进入插件 owner 仓库单独开发、测试和提交 |
+| 修改公开 Python SDK、薄 CLI 或发布工具 | `UeAgentInterfaceCMD/` submodule | 进入 CMD owner 仓库单独开发、测试和提交 |
+| 维护 Pak 直接分发 skill | [`skills/README.md`](skills/README.md) | 区分 Pak-owned、submodule、external owner 与 installed |
+| 查询 UE 本地知识 | `skills/ue-kb/SKILL.md`、`skills/ue-kb/kb-manifest.json` | 大体积 payload 通过知识入口消费，不参加父仓库普通搜索 |
+| 审计重构前证据 | [`retired/strict_v2/README.md`](retired/strict_v2/README.md) | history-only；no-import、no-runtime、no-authority |
+
+## 项目目标与当前证据边界
+
+UAI 的根本目标是让 LLM 能操作 Unreal Engine，并完成符合用户意图的高质量 UE 内容。长期覆盖目标包括
+UE 基础创作面以及 PCG、Paper2D 等适用官方插件能力；这是目标，不是当前完成声明。当前能力是否成立，
+必须回到对应 Plugin/CMD commit、正式文档、真实 mechanics、持久化、独立读回和实际内容验收，不能由
+README、command 数量、binding、示例图或旧测试外推。
+
+当前还需遵守这些现实边界：
+
+- 质量优先；质量同等充分时再降低 Token 与操作压力，两者不退化时再提高速度。
+- 实机实时调试不属于当前可承诺能力。模型交互延迟、缺少连续视频理解和长序列帧识别衰减，使它无法
+  承担要求实时反应的操作；截图、相机控制和短序列帧只能支持有界观察，不能冒充实时调试。
+- 截图与结构读回仍可能遗漏或误判，视觉结果需要多证据校验。
+- 默认不弹出或抢占 UE 窗口，不进行全屏调试；需要前台交互时应先取得用户授权。
+- 支持的 UE 版本、平台和模型组合应由具体发行提交及其构建/运行证据声明；本开发 checkout 不固定一条
+  未验证的版本或“仅某模型可用”结论。
+
 ## 效果一览
 
-如果你正在做 UE 原型、关卡验证或视觉效果预研，并且喜欢折腾新事物，那么`UeAgentInterfacePak`会是个不错的选择 。`UeAgentInterfacePak` 的目标是让 AI 更深入地参与编辑器内制作，把想法逐步推到能看的画面。它适合在明确目标、持续检查和多轮交互配合下，辅助搭建空间、生成体块、调整材质和补充特效。
+下面是项目在不同阶段、不同人工监督强度下得到的探索性展示。它们说明 UAI 工作流曾经介入过哪些
+方向，但不构成当前版本的稳定能力承诺，也不保证能自动复现同等结果。
 
-下面这些示例是当前项目在不同交互强度下做出的探索性展示，用来说明它可以介入哪些方向。它们不是稳定能力承诺，也不代表每次都能自动复现同等结果；更准确地说，它们展示了这套工作流在人工监督、反复校验和持续修正下能推进到的效果范围。
+| 水面材质 | Niagara 火焰 |
+| --- | --- |
+| ![水面材质效果](docs/images/showcase/waterMaterial.png) | ![Niagara 火焰效果](docs/images/showcase/fireNiagara.png) |
+| 多轮观察与调整后的水面材质探索。 | 多轮调整形态、烟、余烬和热扰动后的 Niagara 探索。 |
+| PCG 建筑 | 白盒关卡 |
+| ![PCG 建筑体块效果](docs/images/showcase/pcgBuilding.png) | ![白盒关卡效果](docs/images/showcase/levelDesign.png) |
+| PCG 建筑体块探索。 | 空间、路线和尺度验证的白盒尝试。 |
+| UMG UI 复刻 |  |
+| ![反复交互后的 UMG UI 复刻展示](docs/images/showcase/uiCopy.png) |  |
+| 对照参考图与结构读回，多轮修正布局、字号、分组和局部细节。 |  |
 
-它已经可以让 AI 在 UE 里实际操作蓝图、关卡、Actor、资产、材质、UMG、Sequencer、动画、Control Rig、Niagara、PCG、静态网格、骨骼网格、纹理、音频、物理、数据资产、项目设置和打包相关内容。这些能力已经覆盖了 UE 创作的大部分基础面；在这个项目里，它们仍然只是基础中的基础。真正有价值的部分，是把这些基础能力串起来，变成能持续产出画面、验证玩法空间、搭建特效和推进资产迭代的制作助手。
+## 仓库内容与生命周期
 
+| 路径 | 当前职责 | 安装或维护边界 |
+| --- | --- | --- |
+| `UeAgentInterface/` | UE Editor 插件的发布 gitlink | 普通使用需要插件；修改进入 nested owner，Pak 只更新已验证提交的 gitlink |
+| `UeAgentInterfaceCMD/` | 公开 `uai` SDK、薄 CLI 与发布工具的发布 gitlink | Agent 使用 SDK 时需要可定位；修改进入 nested owner |
+| `skills/ue-agent-interface/` | Pak-owned UAI workflow 分发候选，含正式文档同步副本和内置 CLI | 使用 UAI workflow 时安装；Pak 与 installed 需单独同步验证 |
+| `skills/ue-essential-knowledge/` | Pak-owned UE 核心知识导航分发候选 | 推荐；不承载任务级复盘 |
+| `skills/ue-kb/` | Pak-owned UE 本地知识内容与索引分发候选 | 离线知识工作流使用；从 manifest/skill 进入 |
+| `skills/kbcli-knowledge-base/` | kbCli runtime submodule 发布引用 | 由其外部仓库和 gitlink 管理，不做 installed-to-Pak 复制 |
+| `skills/understand-space/` | 仍有消费者的旧 Pak 同名投影 | 通用 owner 已在 AgentBase；迁移前保留，但不得覆盖 installed |
+| `docs/images/` | 本 README 的展示与菜单图片 | 随包 |
+| `retired/strict_v2/` | 重构前历史证据 | 不安装、不运行、不作为当前规范；逐消费者审计后才退出 |
 
-| 水面材质                                                                   | Niagara 火焰                                                                                      |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| ![水面材质效果](docs/images/showcase/waterMaterial.png)                    | ![Niagara 火焰效果](docs/images/showcase/fireNiagara.png)                                         |
-| 较高交互配合下完成的水面材质探索，展示波面、反光和水体质感可以被持续调试。 | 经过数次尝试调出的 Niagara 火焰展示，交互量不算高，但仍需要观察效果并迭代形态、烟、余烬和热扰动。 |
-| PCG 建筑                                                                   | 白盒关卡                                                                                          |
-| ![PCG 建筑体块效果](docs/images/showcase/pcgBuilding.png)                  | ![白盒关卡效果](docs/images/showcase/levelDesign.png)                                             |
-| PCG 建筑体块展示，说明 AI 可以参与生成和调整程序化场景结构。               | 白盒关卡展示，说明 AI 可以参与空间、路线和尺度验证。                                              |
-| UMG UI 复刻                                                                |                                                                                                   |
-| ![反复交互后的 UMG UI 复刻展示](docs/images/showcase/uiCopy.png)           |                                                                                                   |
-| 反复交互后的 UMG UI 复刻展示：先搭建界面结构，再持续对照参考图、检查截图和读回结构，并按反馈多轮修正布局、字号、分组、层级和局部细节。 |                                                                                                   |
-
-`UeAgentInterfacePak` 是 `UeAgentInterface` 的本地分发包仓库。它把 UE Editor 插件、配套 CLI 开发仓库、Codex skills、UE 本地知识库和发布材料放在同一个可追踪入口中，用于在新 UE 项目或新 Codex 环境中恢复同一套自动化工作流。
-
-普通使用者需要安装 UE 插件和相关 skill。若希望 Agent 使用 Python SDK，还应让 Agent 能定位 `UeAgentInterfaceCMD/` 仓库；该仓库通常在目标项目根目录下，但也可以安装在其他位置。`UeAgentInterfaceCMD/` 负责公开 `uai` Python SDK、薄 CLI、binding 生成、测试和刷新 skill 内置 `uai-cli.exe`。
-
-## 当前边界
-
-- UE 插件当前在 `Unreal Engine`5.6.1`/`Win64` 环境中编译和使用；其他 UE 版本需要重新编译和验证。
-- 目前仅验证过gpt5.5可以流畅使用本插件，其余llm模型仍需进一步尝试
-
-## 包内容
-
-
-| 路径                             | 用途                                                                                                                                                                                           | 普通使用者是否安装                                |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `UeAgentInterface/`              | UE Editor 插件 submodule。放入目标项目`Plugins/UeAgentInterface/` 后，在编辑器内提供本地 UAI 服务。                                                                                            | 需要                                              |
-| `skills/ue-agent-interface/`     | Codex 侧 UAI workflow skill，包含同步后的插件/CLI 正式文档副本和内置`tools/uai-cli.exe`。                                                                                                      | 需要                                              |
-| `skills/ue-kb/`                  | UE 本地知识库 skill，携带`kb-manifest.json`、source、chunks、FTS 索引和知识库使用规则。                                                                                                        | 需要                                              |
-| `skills/ue-essential-knowledge/` | UE 重要知识分类阅读 skill，用中文索引核心概念、资产、Blueprint、Material、Niagara、动画、渲染、调试、C++/插件和 UAI authoring 等知识目录。                                                     | 推荐                                              |
-| `skills/kbcli-knowledge-base/`   | kbCli runtime skill submodule，提供`kb.exe` 和 vector service；是 `ue-kb` 正常查询的重要配套。                                                                                                 | 需要                                              |
-| `UeAgentInterfaceCMD/`           | 公开 `uai` Python SDK、薄 CLI、静态 binding 与开发测试仓库。日常 Agent 自动化优先定位该仓库并使用 `cli/uai`；无可用开发入口时才回退 skill 内置 CLI。 | 推荐可定位；无可用 UAICMD 时才回退 skill 内置 CLI |
-| `docs/images/`                   | README 使用的安装和菜单截图。                                                                                                                                                                  | 随包                                              |
-| `releases/`                      | 本地发布 manifest 和发布材料归档。                                                                                                                                                             | 维护者使用                                        |
-
-`skills/kbcli-knowledge-base/` 是只读分发引用。不要通过 `installed-to-pak` 复制覆盖它；更新时应更新对应 submodule gitlink。
+当前 tree 没有 `releases/` 目录，因此本 README 不把它列为已有发布入口。正式 release manifest、notes 或
+tag 只有在相应产物实际建立并通过发布门禁后才能被声明。
 
 ## 获取包内容
 
-克隆或复制本包后，先拉取 submodule：
+克隆或复制一个明确的 Pak 版本后，初始化 submodule：
 
 ```powershell
 git submodule update --init --recursive
 ```
 
-如果只需要插件，也可以直接使用公开插件仓库：
-
-```powershell
-git clone https://github.com/xianruiyang/UeAgentInterface.git .\Plugins\UeAgentInterface
-```
-
-使用整个包仓库时，从 `UeAgentInterfacePak/UeAgentInterface` 复制或引用插件目录即可。
+如果只需要插件，可以直接使用插件 owner 仓库，并放到目标项目的 `Plugins/UeAgentInterface/`。使用
+整个 Pak 时，仍应确认 Pak gitlink、direct skills 与 intended release 属于同一验证集合；当前 nested
+working tree 与 gitlink 不同，不会自动成为发布内容。
 
 ## 插件安装
 
 1. 关闭目标 UE 项目和 Visual Studio。
-2. 在目标 UE 项目根目录创建 `Plugins` 目录。
-3. 将本包中的 `UeAgentInterface/` 放到目标项目的 `Plugins/UeAgentInterface/`。
-4. 如果目标项目是 C++ 项目，重新生成工程文件并编译 Editor target。
-5. 打开 `.uproject`，确认插件启用。可以在 `.uproject` 的 `Plugins` 数组中加入：
+2. 在目标项目根目录创建 `Plugins` 目录。
+3. 将正式 Pak 中的 `UeAgentInterface/` 放到 `Plugins/UeAgentInterface/`。
+4. 对 C++ 项目重新生成工程文件并执行非 Live Coding 的 Editor target 构建。
+5. 打开 `.uproject` 并确认插件启用。
 
-```json
-{
-  "Name": "UeAgentInterface",
-  "Enabled": true,
-  "SupportedTargetPlatforms": [
-    "Win64"
-  ]
-}
-```
-
-也可以在 Unreal Editor 的 `Edit -> Plugins` 窗口中搜索并启用 `UeAgentInterface`。启用或禁用插件后，如果 UE 要求重启编辑器，应按提示重启。
-
-当前插件 `.uplugin` 会启用一批 UE 内置插件依赖，包括 `EnhancedInput`、`Niagara`、`PCG`、`ModelingToolsEditorMode`、`MeshModelingToolset`、`IKRig`、`GeometryCache`、`ComputeFramework`、`DeformerGraph`、`StateTree`、`SmartObjects`、`Paper2D`、`TextureGraph`、`WmfMedia`、`Metasound` 等。目标工程缺少某个内置插件或引擎版本不匹配时，应先解决插件加载/编译问题，再使用 UAI 自动化。
+插件依赖以对应提交的 `UeAgentInterface.uplugin` 为准，不在 Pak README 复制一份容易失效的插件列表。
+引擎版本或内置插件不匹配时，应先解决加载/编译问题，再使用 UAI 自动化。
 
 ## Skill 安装
 
-把需要的 skill 复制到 Codex skills 目录。`ue-agent-interface`、`ue-kb` 和 `kbcli-knowledge-base` 都是必装项：前者负责 UE 自动化工作流，后两者负责本地 UE 知识检索和查询运行时。`ue-essential-knowledge` 是推荐安装项，用于把 UE 重要知识按主题组织成轻量阅读入口。
+完整工作流通常使用 `ue-agent-interface`；离线 UE 知识检索还会使用 `ue-kb` 和
+`kbcli-knowledge-base`，`ue-essential-knowledge` 提供轻量主题导航。具体 owner 与同步边界见
+[`skills/README.md`](skills/README.md)。
 
-`ue-agent-interface` skill 内置 `<SkillDir>/tools/uai-cli.exe`，但它只是回退入口。日常 UAI 自动化优先使用已定位 `UeAgentInterfaceCMD` 仓库中的公开 Python SDK：
+`C:/Users/<User>/.codex/skills/` 是机器 installed deployment，不是本仓库的另一份可随意反向覆盖真源。
+Pak-owned skill 应从 Pak 向 installed 做有界同步和完整文件集检查；`understand-space` 由 AgentBase
+提供，不参加 Pak 同名副本同步。
+
+`ue-agent-interface` 内置 `<SkillDir>/tools/uai-cli.exe` 作为回退入口。日常自动化优先定位正式
+`UeAgentInterfaceCMD` 仓库并使用其公开 Python SDK：
 
 ```text
 <UaiCmdRoot>/cli/uai
 ```
 
-`UaiCmdRoot` 通常是目标项目根目录下的 `UeAgentInterfaceCMD/`，但不保证如此。Agent 自动候选找不到 UAICMD 时，应先询问用户是否已安装 UAICMD 以及安装路径；只有确认没有可用 UAICMD，或用户明确要求回退时，才使用 skill 内置 CLI：
+找不到 UAICMD 时先询问安装路径；只有确认没有可用开发入口或用户明确要求回退，才使用 skill 内置
+CLI。不要把任意 `dist/uai-cli.exe` 或 PATH 中的裸命令当作隐式 fallback。
 
-```text
-<SkillDir>/tools/uai-cli.exe
-```
+## 启动服务与连接
 
-不要把 `<ProjectRoot>/UeAgentInterfaceCMD/dist/uai-cli.exe` 或 PATH 中的裸 `uai-cli.exe` 当作日常回退入口。
+安装并启用插件后，从 Unreal Editor 菜单打开：
 
-`ue-kb` 必须安装，因为它是离线 UE 知识来源；`kbcli-knowledge-base` 也很重要，因为它不是普通说明文档，而是 `ue-kb` 的查询运行时入口，负责提供 `kb.exe`、vector service 和相关诊断能力。没有运行时或环境暂时不完整时，`ue-kb` 仍然有本地 Markdown、chunk、索引和来源文件可读；此时也不要完全跳过知识检索，至少应打开 `ue-kb` 的 `references/guides/standalone.md`，按主题地图、source layout、`content/markdown/`、`chunks/chunks.jsonl` 和原始 `references/` 做只读查证。
+`Window` → `UeAgentInterface` → `Start UeAgentInterface Server`
 
-## 启动服务
+![UE 菜单中的 UeAgentInterface 服务入口](docs/images/ue-agent-interface-menu.png)
 
-安装并启用插件后，在 Unreal Editor 中打开目标项目，然后从菜单启动服务：
-
-`Window` -> `UeAgentInterface` -> `Start UeAgentInterface Server`
-
-<img src="docs/images/ue-agent-interface-menu.png" alt="UE 菜单中的 UeAgentInterface 服务入口" width="720">
-
-同一菜单还提供：
-
-- `Stop UeAgentInterface Server`：停止编辑器内服务。
-- `Copy Connection Info`：复制当前连接信息，便于公开 SDK 或 skill CLI 检查连接。
-
-启动后通过一份 Connection TOML 连接。Python 调用只需要导入 `uai` 并加载该文件：
+当前正式客户端方向是一份 Connection TOML 加公开 `uai` SDK：
 
 ```python
 import uai
@@ -128,90 +128,70 @@ with uai.connect("connection.toml") as ue:
     )
 ```
 
-确认没有可用 UAICMD 或用户明确要求回退时，才使用 skill 内置 CLI。report 应写到当前用户工作区，不写回 skill 或 Pak 目录：
-
-```powershell
-$SkillDir = "$env:USERPROFILE\.codex\skills\ue-agent-interface"
-$UserWorkDir = Get-Location
-$RuntimeLogs = Join-Path $UserWorkDir "runtimeLogs"
-New-Item -ItemType Directory -Force -Path $RuntimeLogs | Out-Null
-
-& (Join-Path $SkillDir "tools\uai-cli.exe") `
-  --connection .\connection.toml `
-  connection probe
-```
-
-实际自动化工作应通过 `ue-agent-interface` skill：优先用已定位 UAICMD 的公开 `uai` SDK，确认没有可用 UAICMD 后再回退到 skill 内置 `uai-cli.exe`；两者都只调用正式 manifest 中的真实 command，不直接调用 HTTP。
+Python 只调用公开 SDK，不直接 HTTP，也不在客户端复制 UE 业务实现。每条 named method 或
+`Client.execute()` 只应转发正式 manifest 中的一条真实 command；最终成功仍由该 command 的业务错误、
+必要持久化和独立读回判断。
 
 ## 推荐工作流
 
-1. 启动 UE 项目，并通过菜单开启 `UeAgentInterface Server`。
-2. 在 Codex 中使用 `$ue-agent-interface`。
-3. 先定位 `UaiCmdRoot`：优先使用用户给出的 UAICMD 路径；其次检查 `<ProjectRoot>/UeAgentInterfaceCMD` 和当前工作区常见候选。
-4. 如果找不到 UAICMD，先询问用户是否已安装以及安装路径；确认没有可用 UAICMD 或用户明确要求回退后，才使用 `<SkillDir>/tools/uai-cli.exe`。
-5. Python 调用只导入 `uai`，通过 `uai.connect(<connection.toml>)` 获得 Client；每个命名方法只转发一条同名真实 command。
-6. 临时 params JSON、Connection TOML 和 Python 任务脚本放在用户工作目录的 `tmp/uai_params/` 或用户指定的项目目录。
-7. response、report、crash capture、runtime index 和运行日志放在用户工作目录的 `runtimeLogs/`。
-8. 创建或修改资产时优先走 JSON 或 folder 结构化 JSON 工作流。
-9. 应用后检查 response/report、错误、warning、编译结果、Niagara Stack issue、dirty resource、截图或 runtime probe。
-10. 需要窗口验证时，默认最小化或不抢焦点启动 UE，避免影响当前桌面操作。
+1. 使用明确版本的插件、CMD 和 Pak skills，并确认它们的版本关系。
+2. 启动 UE 项目，通过菜单开启 UAI Server；默认最小化或不抢焦点。
+3. 先定位 UAICMD，优先使用公开 `uai` SDK；满足回退条件时才用 skill 内置 CLI。
+4. 查询 command、node、component 或 actor candidate，直接消费正式返回的 identity，不在调用侧建立别名表。
+5. 临时 Connection TOML、params、batch 和任务脚本写到用户工作区 `tmp/`；report、截图与运行日志写到
+   `runtimeLogs/`，不写入 Pak 或 skill 目录。
+6. 对复杂资产优先使用结构化 authoring；应用后检查错误、warning、compile/settle、dirty resource、
+   持久化、独立读回与必要截图。
+7. 真实任务暴露基础能力缺口时，在正确 Plugin/CMD/knowledge owner 修复，再回到原内容复验。
 
 ## 知识库使用
 
-`ue-kb` 是 portable 知识库内容；`kbcli-knowledge-base` 提供运行时。查询时应使用 `kbcli-knowledge-base` skill 解析出的 `kb.exe`，再显式指向 `skills/ue-kb/kb-manifest.json`。
+`ue-kb` 是 portable knowledge content，`kbcli-knowledge-base` 提供查询 runtime。Hybrid 查询需要对应
+vector service 与 embedding 环境；环境不完整时可降级到 keyword 或直接阅读 Markdown，但必须说明
+降级状态，不能把 keyword-only 结果描述成 Hybrid。
 
-`ue-kb` 包内包含 FTS 索引；Hybrid 查询还依赖本机 Qdrant/vector service 状态。若 vector 不可用，可以降级 keyword，但不要把 keyword-only 结果描述成 Hybrid 结果。
+最低限度的只读入口是：
 
-如果 `kbcli-knowledge-base`、Qdrant、vector service 或 embedding 环境暂时无法配置，仍然应使用 `ue-kb` 做最低限度的本地知识检索。优先读取：
-
+- `skills/ue-kb/SKILL.md`
+- `skills/ue-kb/kb-manifest.json`
 - `skills/ue-kb/references/guides/standalone.md`
 - `skills/ue-kb/references/maps/topic-map.md`
 - `skills/ue-kb/references/maps/source-layout.md`
-- `skills/ue-kb/content/markdown/`
-- `skills/ue-kb/chunks/chunks.jsonl`
-- `skills/ue-kb/references/UE5_7Doc/docs/`
-- `skills/ue-kb/references/Supplemental/`
 
-降级检索时要在回答或记录中说明当前不是 Hybrid 查询，并引用可复查的 `source_path`；能定位 chunk 时再引用 `chunk_id`。
+`ue-kb` 以及 `ue-agent-interface/knowledge/niagara-bplus` 内的大体积 `content/`、`chunks/`、
+`references/`、`data/`、`indexes/` 和 `state/` 是有意分发 payload；Pak parent 的 `.ignore` 只让它们
+退出普通发现，不改变 tracking 或知识职责。
 
-## 目录概览
+## 普通发现合同
 
-```text
-UeAgentInterfacePak/
-  README.md
-  docs/images/
-    ue-agent-interface-menu.png
-  releases/
-  skills/
-    kbcli-knowledge-base/
-    ue-essential-knowledge/
-    ue-agent-interface/
-    ue-kb/
-  UeAgentInterface/
-  UeAgentInterfaceCMD/
-```
+从 Pak parent 做普通 `rg`、`fd` 或 `srcq` 发现时，根 `.ignore` 默认跳过：
+
+- 三个 nested repository；
+- `retired/strict_v2/` 历史面；
+- `ue-kb` 与 UAI skill 内嵌 Niagara knowledge 的大体积 packaged payload。
+
+需要维护某个 owner 时，进入对应 nested repository 或使用明确路径；需要审计被排除对象时显式使用
+`--no-ignore`。不要删除 `.ignore` 来做日常浏览，也不要把它当作内容不可达或可以删除的证据。
+
+根 `.gitignore` 只排除 runtime、cache、临时、虚拟环境、package metadata 和 skill-local report 等
+可重建本地输出。Knowledge indexes、内置 CLI、templates 和正式 docs 是分发内容，不因“generated”或
+二进制形态自动进入 ignore。
 
 ## 开发与发布维护
 
-- `UeAgentInterface/`、`UeAgentInterfaceCMD/` 和 `skills/kbcli-knowledge-base/` 是 Git submodule。正式发布时先在子仓库提交，再回到 Pak 仓库更新 gitlink。
-- `skills/ue-agent-interface/`、`skills/ue-kb/` 与 `skills/ue-essential-knowledge/` 是 Pak 直接分发内容。更新后需要同步到真实 Codex skills 目录再验证。
-- `ue-agent-interface` skill 内的 `docs/` 是插件/CLI 正式文档的同步副本；同步时不得复制 `commands/deprecatedCommand/**` 或 generated 覆盖矩阵。
-- 更新 `UeAgentInterfaceCMD` 后，如该 CLI 变更应进入 skill，需要重新构建并刷新 `skills/ue-agent-interface/tools/uai-cli.exe` 与默认配置，再同步 installed skill。
-- one-file CLI 只包含公开 `uai` SDK 与薄 CLI，不嵌入旧业务合同、命令索引或第二套领域实现；发布前执行 packaged source/executable smoke，并验证其与 C++ 正式 manifest 生成的 binding 一致。
-- Pak 目录不得残留 `runtimeLogs/`、`logs/`、report payload、`tmp/`、`.pytest_cache/`、`__pycache__/`、`Binaries/`、`Intermediate/`、`Saved/`、`DerivedDataCache/` 等运行产物。
-- `release dev-mirror` 只用于本地临时镜像和问题定位，不代表正式发布；写入 Pak submodule 内容必须显式传 `--allow-submodule-content-write`。
-- 正式发布前使用外层项目的单入口门禁：
-
-```powershell
-python UeAgentInterfaceCMD/run_uai_cli.py release ci --json-output --ci-output runtimeLogs/uai_release_ci.json
-```
-
-`release ci` 会检查 coverage、sync-check、Pak layout、authoring contract closure、发布包 hygiene、Dev CLI 测试、Pak CLI 静态质量和 Pak→installed skill 完整文件集 parity。Git 状态或 clean-filter/hash authority 不可用、dirty、commit/tree mismatch、contract 缺失或 parity missing/different/extra 均会阻断正式准入；Git 权威不可用时不得回退到裸文件字节 hash。测试与清理完成后会重跑最终门禁，允许的 CI artifact 写出后还会再次复核同步状态。`--ci-output` 只能写到所有发布仓库之外，或所在最深 Git worktree 已明确 ignore 的位置；否则拒绝且不写文件。CLI 仅在 `success=true` 且 `formal_release_allowed=true` 时返回成功退出码。`--allow-dirty` 和 `--skip-tests` 只用于诊断并返回非零，不能被 CI 当作正式通过。Pak→installed 与正式 sync 共用完整 file-set comparator：UTF-8 文本规范化换行，二进制逐字节比较；正式发布必须回到干净、已实际运行测试且全部最终门禁通过的状态。
-
-GitHub 远端发布、`git push`、创建 GitHub Release 和更新远端 tag 是人工边界；Agent 只准备本地提交、manifest、release notes、gate report 和待执行命令清单。
+- Plugin、CMD 与 kbcli 是独立仓库；先在正确 owner 形成提交和证据，再由 Pak 更新 gitlink。
+- `ue-agent-interface`、`ue-essential-knowledge` 与 `ue-kb` 是 Pak 直接分发候选；修改后需按正式同步流程
+  更新 installed 并做完整一致性检查。
+- Plugin/CMD 正式文档进入 `ue-agent-interface/docs/` 时，只同步适合日常 skill 阅读的内容；deprecated、
+  generated coverage、临时调试与任务复盘不得进入分发副本。
+- Skill 内 CLI 来自 CMD 的正式构建；刷新时同时记录来源版本与默认配置，再验证 packaged executable。
+- `release dev-mirror` 只用于本地镜像或排查，不是正式发布。
+- 正式发布必须使用当前项目政策与对应 CMD 版本登记的门禁，验证 clean commit/tree、submodule gitlink、
+  skill/installed parity、包 hygiene 和适用测试；本 README 不把命令存在或一次旧结果当成准入。
+- GitHub push、tag、Release 和远端发布仍是用户边界；Codex 自管开发提交不会自动进入用户主线或远端。
 
 ## 参考
 
-- Epic 官方插件文档：[https://dev.epicgames.com/documentation/unreal-engine/plugins-in-unreal-engine](https://dev.epicgames.com/documentation/unreal-engine/plugins-in-unreal-engine)
-- Epic 插件启用/禁用文档：[https://dev.epicgames.com/documentation/unreal-engine/working-with-plugins-in-unreal-engine](https://dev.epicgames.com/documentation/unreal-engine/working-with-plugins-in-unreal-engine)
-- Git submodule 文档：[https://git-scm.com/docs/git-submodule](https://git-scm.com/docs/git-submodule)
+- [Epic：Plugins in Unreal Engine](https://dev.epicgames.com/documentation/unreal-engine/plugins-in-unreal-engine)
+- [Epic：Working with Plugins](https://dev.epicgames.com/documentation/unreal-engine/working-with-plugins-in-unreal-engine)
+- [Git：git-submodule](https://git-scm.com/docs/git-submodule)

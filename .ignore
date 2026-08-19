@@ -1,0 +1,25 @@
+# Parent-repository discovery boundaries. Enter each nested owner explicitly.
+/.git/
+/UeAgentInterface/
+/UeAgentInterfaceCMD/
+/skills/kbcli-knowledge-base/
+
+# Historical evidence is opt-in, not part of ordinary current-source discovery.
+/retired/strict_v2/
+
+# Packaged UE knowledge payloads are consumed through SKILL.md and kb-manifest.json.
+# Use an explicit path or --no-ignore when maintaining the payload itself.
+/skills/ue-kb/chunks/
+/skills/ue-kb/content/
+/skills/ue-kb/data/
+/skills/ue-kb/indexes/
+/skills/ue-kb/references/
+/skills/ue-kb/state/
+
+# Embedded Niagara knowledge uses its own SKILL.md and manifest entry.
+/skills/ue-agent-interface/knowledge/niagara-bplus/chunks/
+/skills/ue-agent-interface/knowledge/niagara-bplus/content/
+/skills/ue-agent-interface/knowledge/niagara-bplus/data/
+/skills/ue-agent-interface/knowledge/niagara-bplus/indexes/
+/skills/ue-agent-interface/knowledge/niagara-bplus/references/
+/skills/ue-agent-interface/knowledge/niagara-bplus/state/

@@ -27,6 +27,17 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
+*.egg-info/
+.venv/
+venv/
+
+# Skill-local reports are runtime evidence, not distributable skill content
+skills/**/reports/
+
+# Host-generated desktop metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
 
 # Skill/package runtime records must not be distributed
 skills/runtimeLogs/
