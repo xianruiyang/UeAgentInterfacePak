@@ -1,0 +1,1578 @@
+# 13-2-Unreal导弹爆炸特效制作
+
+# 13-2-Unreal导弹爆炸特效制作
+
+## 关键术语
+
+- `Alpha`、`UV`、`Opacity`、`Normal`、`Substance`、`Substance Designer`、`材质`、`粒子`、`生命周期`、`透明度`、`贴图`、`Niagara`、`Normalized Age`、`Material`、`Masked`、`纹理`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:00-00:02:42 材质、颜色、烟雾
+
+- 本段定位：材质、颜色、烟雾。
+- 知识点：但因为太松的时机消失的话 首先把时间本身 嗯 适当减少一下大小也适当减少 这样做的话 相机片以本身保留的话也可以 这里现在把大小之作为比例。
+- 知识点：再拍张照片会更好 在实际上保持这个尺寸 用鼠标中间添加了点 然后 再次缩小尺寸 图形形状 这种张力就感觉一下子就缩小了 这样用图形调整的大小。
+- 知识点：颜色调成偏红的色调 调整一下 颜色也快速退去的那种感觉 我就会修改的那种 然后 三光爆发的效果要在初期和爆炸一起出现 这样 这样来构成 纪念物本身是。
+- 知识点：这样直接用应该也可以 这种话 就能成为最主要的 我们之前做的烟雾资源 把爆炸资源拿来 用效果来试试吧 那现在我们就做一个 主材质 然后走吧。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`颜色`、`烟雾`。
+
+**关键画面：**
+
+本图展示 `Ex_03_Explosion` 中某个火焰/烟雾发射器的 `Initialize Particle` 细调状态，重点是把持续时间、尺寸和颜色都压小，让烟雾更紧凑、偏红。当前打开的是：
+
+`Ex_03_Explosion`
+
+中间 `System Overview` 中当前选中发射器：
+- `Fire01002`
+
+左侧预览窗口显示的是一个中心偏亮、外围柔和扩散的红橙色烟团。左上粒子计数信息可见：
+- `0 Current, 3 Max (est.) - [Fire01] [Disabled]`
+- `0 Current, 3 Max (est.) - [Fire01001] [Disabled]`
+- `1 Current, 1 Max (est.) - [Fire01002] [Active]`
+- `0 Current, 52 Max (est.) - [Fire01006] [Disabled]`
+
+当前 `Fire01002` 的模块结构仍可确认包括：
+- `Emitter State`
+  - `Self / Once`
+- `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Color`
+  - `Sub UV Animation`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前正显示 `Initialize Particle`，可确认参数为：
+- `Point Attributes`
+  - `Lifetime Mode = Direct Set`
+  - `Lifetime = 0.5`
+  - `Color Mode = Direct Set`
+  - `Color` 为偏暖的浅红/橙色
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)` 当前关闭
+  - `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Uniform`
+  - `Uniform Sprite Size = 800.0`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Random X`
+- `Mesh Attributes`
+  - `Mesh Scale Mode = Unset`
+  - `Mesh Renderer Array Visible = Unset`
+- `Ribbon Attributes`
+  - `Ribbon Width Mode = Unset`
+  - `Ribbon Facing Mode = Unset`
+  - `Ribbon Twist Mode = Unset`
+
+字幕说明“稍微减少一下，大小也稍微减少”，与这里的 `Lifetime = 0.5` 和 `Uniform Sprite Size = 800` 一致。对复现而言，这张图说明主材质和烟雾颜色定下来后，第一步不是继续加复杂模块，而是先在 `Initialize Particle` 里把粒子生命和初始尺寸缩紧，让红色烟雾更集中、更利于后续做爆炸初期的主视觉。
+本图继续处理同一发射器 `Fire01002`，但重点从 `Initialize Particle` 转到 `Scale Color`，通过曲线让颜色和透明度按生命周期变化。当前模块选中位置为：
+
+`Fire01002 > Particle Update > Scale Color`
+
+当前 `Fire01002` 的可见结构为：
+- `Emitter State`
+  - `Self / Once`
+- `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sub UV Animation`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Scale Color` 详情可确认：
+- `Scale Mode = RGB and Alpha Separately`
+- `Scale RGB`
+  - 模式为 `Multiply Vector by Float`
+  - `Vector = (10.0, 2.0, 1.0)`，明显偏向红色通道
+  - `Float = Float from Curve`
+  - 曲线来源为 `Curve for Floats`
+  - `CurveIndex = PARTICLES.NormalizedAge`
+  - `Scale Curve = 1.0`
+- `Scale Alpha`
+  - 模式为 `Float from Curve`
+  - 曲线来源为 `Curve for Floats`
+  - `CurveIndex = PARTICLES.NormalizedAge`
+  - `Scale Curve = 1.0`
+
+两条曲线当前都呈现“前期抬升、中期达到峰值、后期回落”的拱形走势，说明粒子的颜色强度和透明度都不是常量，而是随 `NormalizedAge` 增强后再衰减。字幕“这样用图形调整了大小”虽然口语上说的是图形，但结合当前界面可以确认，实际操作是在 Niagara 的曲线编辑视图里通过曲线形状控制粒子随时间的显示权重。
+
+对复现而言，这张图说明红色烟雾/火焰的主观观感并不是只靠初始颜色设定，而是要配合 `Scale Color` 的 RGB 与 Alpha 曲线：前期更亮、更显眼，中后期快速衰减，这样爆炸初期才会有冲击感，而后期不会一直维持同样的高亮度。
+本图继续处理 `Ex_03_Explosion` 的同一发射器，但重点从生命周期/曲线转到渲染器材质绑定。左侧预览里当前是一团中心很亮、外围偏红的烟雾发光体，说明颜色和尺寸调整已经开始在可视结果里生效。
+
+中间 `System Overview` 里当前仍选中：
+- `Fire01002`
+
+该发射器当前结构可直接确认：
+- `Emitter State`
+  - `Self / Once`
+- `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sub UV Animation`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前显示的是 `Sprite Renderer`，可确认的关键设置包括：
+- `Material = M_Additive_01_Ins_01`
+- `Material User Param Binding = None`
+- `Source Mode = Particles`
+- `Alignment = Automatic`
+- `Facing Mode = Automatic`
+- `Macro UV Radius = 0.0`
+- `Default Pivot in UV Space = (0.5, 0.5)`
+- `Remove HMD Roll` 可见
+- `Pixel Coverage Mode = Automatic`
+- `Pixel Coverage Blend = 1.0`
+- `Min Facing Camera Ble... = 0.0`
+- `Max Facing Camera Ble... = 0.0`
+- `Sorting`
+  - `Sort Mode = None`
+- `Visibility`
+  - `Enable Camera Distanc...` 关闭
+  - `Renderer Visibility = 0`
+- `Sub UV`
+  - `Sub UV Blending Enabled` 关闭
+  - `Sub Image Size = (1.0, 1.0)`
+- `Rendering`
+  - `Cast Shadows` 启用
+  - `Sort Order Hint = 15`
+  - `Motion Vector Settings = Auto Detect`
+
+字幕提到“我们之前做的烟雾资源”，与这里绑定的 `M_Additive_01_Ins_01` 一起可以确认：当前这个发射器并不是在用全新的主材质，而是把前面已经做好的烟雾/爆炸材质实例直接挂到 `Sprite Renderer` 上，用来快速验证红色烟雾是否能成为当前主视觉。对复现而言，这一步的关键是先把已有材质资源接入 Niagara 渲染器，再去细调颜色与曲线，而不是在材质未绑定前盲调粒子参数。
+
+### 00:03:03-00:05:50 粒子、颜色、纹理
+
+- 本段定位：粒子、颜色、纹理。
+- 知识点：这样做的话 CV OV 一次 CV EV 用默认资源试一次吧 把要用的纹理资源拖进来 在这里的路径上把每个通道的 不同路径合并起来 组成可用文化代案。
+- 知识点：先用PubLitePlay处理二通道理的 烟雾部分会进行调节 然后 烟雾颜色会再次分散 烟雾颜色再分散。
+- 知识点：这部分会用作底色 接下来在G频道里的这部分 接下来在G频道里的这部分 这部分 这部分 这部分 把力量和倍率复制过来 把名字改成火 然后 名字改成火。
+- 知识点：拿出一个动态参数 粒子中也能调节这亮度 再调整一下时机 再变化一次。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`纹理`、`粒子`、`颜色`、`动态参数`、`烟雾`。
+
+**关键画面：**
+
+本图回到 Unreal 主编辑器，在关卡视图和材质资源列表之间挑选本段要用的烟雾材质。主视口仍是海岸测试场景，中央留着前文的红色目标/命中调试标记；右侧 `Outliner` 继续保留 `light` 过滤，说明场景照明环境没有切换。
+
+下方 `Content Browser` 当前定位到：
+
+`Content / Signature / Course_05 / Material`
+
+当前可见的关键材质/实例资源包括：
+- `Houdini_FlipbookUVs`
+- `M_Additive_01`
+- `M_Additive_01_Ins_01`
+- `M_Additive_01_Ins_02`
+- `M_Fire_01`
+- `M_Fire_01_Ins_01`
+- `M_Fire_01_Ins_02`
+- `M_Refraction_01`
+- `M_Smoke_01`
+- `M_SmokeMV_01`
+
+其中当前选中的是：
+- `M_Smoke_01`
+
+这与正文“这部分会用作底色”“先调烟雾部分”相呼应，说明作者此时在明确区分：火焰材质和烟雾材质不是同一个资源直接混着用，而是要先把烟雾底色所用的材质选出来，再去做后续通道拆分、颜色分散和动态参数控制。对复现而言，这一帧的重要性在于建立材质职责分工：`M_Smoke_01` 更偏烟雾基础层，而爆炸火焰或高亮部分会由其他材质/实例继续叠加。
+本图展示 `M_Smoke_01` 材质图中烟雾强度参数的搭法，说明这一段已经从“挑资源”进入“把烟雾底色做成可调材质”。当前页签为：
+
+`M_Smoke_01 > Material Graph`
+
+左侧预览球当前是比较均匀的灰白材质，说明此时主要在搭建烟雾基础层，而不是高亮火焰层。左下 `Details` 面板当前选中的是一个 `Material Expression Scalar Parameter`，可确认：
+- `Parameter Name = Param`
+- `Default Value = 0.0`
+- `Slider Min = 0.0`
+- `Slider Max = 0.0`
+- `Group = None`
+- `Sort Priority = 32`
+
+当前图中可直接识别出的材质节点关系为：
+- 左侧一个通道/颜色读取节点
+  - 可见输出标记 `RGB / R / G / B / A`
+  - 其中 `R` 通道被拉出继续参与计算
+- `Power`
+  - `Base` 输入来自左侧通道结果
+  - `Exp` 输入来自一个标量参数节点
+- 一个标量参数节点
+  - 名称当前显示为 `Smoke_Po...`
+  - 类型标记为 `Param(0)`
+  - `Default Value = 0.0`
+  - 该节点连接到 `Power` 的 `Exp`
+- 第二个标量参数节点
+  - 名称显示为 `Smoke_Str`
+  - 类型标记为 `Param(0)`
+  - `Default Value = 0.0`
+- `Multiply`
+  - 上游接收 `Power` 的输出
+  - 下游将与强度参数继续相乘
+
+从当前结构可以判断，这里是在把某个烟雾通道先做一次幂运算，再乘以一个独立的烟雾强度参数，使烟雾基础层既能调轮廓分布，也能调最终亮度/权重。结合正文“烟雾部分会进行调节”“这部分会用作底色”，可以把这张图理解为烟雾底色材质参数化的第一步。对复现而言，至少需要把烟雾的“形状控制”和“强度控制”拆成两个独立参数，否则后续想在 Niagara 或材质实例里细调烟雾密度时会非常受限。
+本图继续展示 `M_Smoke_01` 的材质图，但重点从单独的烟雾通道控制扩展到“烟雾层 + 火焰层”并列参数化。当前页签仍是：
+
+`M_Smoke_01 > Material Graph`
+
+左侧预览球当前几乎全黑，说明作者此时更关注材质图中的参数结构，而不是当前预览结果是否已经有最终观感。左下 `Details` 面板此时显示的是材质级属性，可直接确认：
+- `Material Domain = Surface`
+- `Blend Mode = Translucent`
+- `Shading Model = Default Lit`
+- `Two Sided` 关闭
+- `Cast Ray Traced Shadows` 启用
+- `Subsurface Profile = None`
+
+当前图中可直接识别出的节点与关系为：
+- 左侧一个纹理/通道读取节点
+  - 可见输出 `RGB / R / G / B / A`
+- 两个 `Power`
+- 两个主要 `Multiply`
+- 右侧还有一个 `Multiply(1)`
+  - 其 `B = 1.0`
+- 四个标量参数节点并列出现：
+  - `Smoke_Pow`
+  - `Smoke_Str`
+  - `Fire_Pow`
+  - `Fire_Str`
+
+结合节点排布可以确认，这一版材质已经不再只处理烟雾单一路径，而是把烟雾和火焰分别拆成两组参数：
+- `Smoke_Pow` / `Smoke_Str`
+  - 用于控制烟雾通道的形状分布和最终强度
+- `Fire_Pow` / `Fire_Str`
+  - 用于控制火焰通道的形状分布和最终强度
+
+字幕明确提到“拿出一个动态参数”，说明作者此时正在为后续的动态驱动做准备；但就当前这张图本身能可靠确认的内容来说，清楚可见的是四个参数节点和 `Power -> Multiply` 的成对结构，动态参数节点本体及其完整连线在这一帧里并没有完整展示出来。因此对复现而言，可以先按这张图确定材质必须把烟雾层和火焰层分开参数化，再在后续画面里继续确认动态参数具体接入到哪条链路、驱动哪一组输出。
+
+### 00:06:01-00:08:54 粒子、颜色、透明度
+
+- 本段定位：粒子、颜色、透明度。
+- 知识点：用蓝色通道处理火焰更好 这部分我们用散射通道来处理 拿到了G频道 把这部分再复制一下 把这部分再复制一下 把这部分再复制一下 适当往下挪一点。
+- 知识点：这部分连接到G频道 用Scatter 改了名字 然后把两部分挨得起来 粒子颜色和最后 还有 打个招呼 用线在这里 为了进入图像颜色。
+- 知识点：需要输入曝光 较真值 选择 再创建一个功率 并用做不透明度通道 深度淡出 然后 力量 会用到不透明度通道 就会连接到不透明度 然后 这样一来 数值里都填了0。
+- 知识点：数值里都填了0 用30V填了这个数值 然后 然后就这样配置马斯特酒店。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`颜色`、`透明度`、`火焰`。
+
+**关键画面：**
+
+本图继续在 `M_Smoke_01 > Material Graph` 中搭建烟雾与火焰两条通道的参数网络，并首次清楚出现用于外部驱动的动态参数节点。左侧预览球仍然接近全黑，说明当前重点是结构接线，不是最终显示结果。
+
+当前左下材质属性仍可确认：
+- `Material Domain = Surface`
+- `Blend Mode = Translucent`
+- `Shading Model = Default Lit`
+- `Two Sided` 关闭
+- `Cast Ray Traced Shadows` 启用
+- `Subsurface Profile = None`
+
+图中可直接确认的节点定义集：
+- 一个纹理/通道读取节点
+  - 可见输出 `RGB / R / G / B / A`
+  - 当前至少有 `G`、`B` 两路被继续使用
+- 烟雾链路参数
+  - `Smoke_Pow`
+  - `Smoke_Str`
+- 火焰链路参数
+  - `Fire_Pow`
+  - `Fire_Str`
+- 运算节点
+  - 两个 `Power`
+  - 两个中间 `Multiply`
+  - 右侧两个继续汇出的 `Multiply`
+- 一个 `Dynamic Parameter` 节点
+  - 标题可见为 `Dynamic Parameter`
+  - 节点名为 `Data`
+  - 输出通道可见 `Param1`、`Param2`
+
+可从当前画面直接确认的连线集：
+- 纹理节点的上方通道输出接入上方 `Power.Base`
+- `Smoke_Pow` 接入上方 `Power.Exp`
+- 上方 `Power` 输出接入上方中间 `Multiply.A`
+- `Smoke_Str` 接入上方中间 `Multiply.B`
+- 纹理节点的下方通道输出接入下方 `Power.Base`
+- `Fire_Pow` 接入下方 `Power.Exp`
+- 下方 `Power` 输出接入下方中间 `Multiply.A`
+- `Fire_Str` 接入下方中间 `Multiply.B`
+- `Dynamic Parameter` 的可见输出线接到右侧链路，说明后续结果会受外部动态参数控制
+
+设置/参数上当前能可靠读到：
+- 四个标量参数节点默认值都显示为 `0.0`
+- `Dynamic Parameter` 节点内可见 `Default Value` 色块为白色
+- `Param1` 旁是红色通道标记
+- `Param2` 旁是绿色通道标记
+
+输出/预览：
+- 左侧预览球当前几乎纯黑
+- 右下 `Stats` 面板显示该材质已启用统计视图，说明作者在一边接图一边观察材质复杂度
+
+这张图对应正文里“用蓝色通道处理火焰更好”“复制一份”“为了进入图像颜色”的描述。可据此确认，此时材质已把烟雾和火焰至少拆成两条相似结构的处理链，再通过 `Dynamic Parameter` 为后续 Niagara 侧驱动留出入口。就当前图本身而言，能确定的是“动态参数已经接入右侧结果链路”，但最终它具体控制颜色、透明度还是别的输出端口，还需要依赖后续画面继续确认。
+本图把视角移到 `M_Smoke_01` 材质图的右侧输出区域，重点是把前面搭好的两路结果与 `Particle Color` 结合，并接到材质主输出。当前页签仍是：
+
+`M_Smoke_01 > Material Graph`
+
+左下材质属性仍可确认：
+- `Material Domain = Surface`
+- `Blend Mode = Translucent`
+- `Shading Model = Default Lit`
+- `Two Sided` 关闭
+- `Cast Ray Traced Shadows` 启用
+
+当前图中可直接确认的节点定义集：
+- `Add`
+- `Multiply`
+- `Particle Color`
+  - 节点标题可见为 `Particle Color`
+  - 类型为 `Input Data`
+- 材质输出节点 `M_Smoke_01`
+  - 可见 `Base Color`
+  - 可见 `Opacity`、`Opacity Mask`
+  - 可见 `World Position Offset`
+
+可直接确认的连线集：
+- 一条较长的白线从左侧结果链路接入材质输出节点的 `Base Color`
+- `Add` 的输出接入右侧 `Multiply.A`
+- `Particle Color` 的输出接入右侧 `Multiply.B`
+- 说明当前正在把左侧整理出的结果，与粒子自身颜色输入做乘法结合
+
+设置/参数：
+- 画面中正在打开右键新增节点搜索菜单，说明作者准备继续补节点
+- 搜索列表可见分类如 `Constants`、`Coordinates`、`Depth`、`Distance Fields`、`Functions`、`Gradient` 等
+- `Particle Color` 节点位于下方，表明颜色输入不是常量，而是准备接受 Niagara 粒子侧传入的颜色
+
+输出/预览：
+- 左侧预览球仍接近全黑
+- 材质主输出节点当前只清楚看见 `Base Color` 连线已接入；其它输出口在本图里未形成可可靠辨认的完整接线
+
+这张图对应正文里的“粒子颜色”和“为了进入图像颜色”。就当前可见信息，可以确认作者已经把材质结果与 `Particle Color` 相乘，用 Niagara 粒子颜色来调制最终基色。至于这里是否还会继续接 `Opacity` 或其他输出口，需要以后续画面为准，当前这一帧不能提前补写不存在的连线。
+本图是 `M_Smoke_01` 材质图在本段里最完整的一次展开，已经能同时看到烟雾链、散射/火焰链、动态参数和粒子颜色节点之间的相对关系。当前页签仍是：
+
+`M_Smoke_01 > Material Graph`
+
+输出/预览：
+- 左侧预览球已不再纯黑，而是能看到一整组浅灰色小块状/团状纹理预览
+- 说明当前参数网络已经开始产出可见结果，但仍处于调参与验证阶段
+
+节点定义集：
+- 一个纹理采样/通道读取节点
+  - 可见输出 `RGB / R / G / B / A`
+- 烟雾链参数
+  - `Smoke_Pow`
+  - `Smoke_Str`
+- 中间散射链参数
+  - `Scatter_Pow`
+  - `Scatter_Str`
+- 火焰链参数
+  - `Fire_Pow`
+  - `Fire_Str`
+- 运算节点
+  - 至少三个 `Power`
+  - 多个 `Multiply`
+  - 一个 `Add`
+  - 右下还有 `Power(X, 2)`，其 `Exp = 2.0`
+- 输入节点
+  - `Dynamic Parameter`
+  - `Particle Color`
+
+连线集：
+- 纹理采样的不同通道分别被拉出，进入三组并列链路
+- 上方链路：
+  - 通道输出 -> `Power`
+  - `Smoke_Pow` -> 上方 `Power.Exp`
+  - 上方 `Power` 输出 -> `Multiply`
+  - `Smoke_Str` -> 同一 `Multiply`
+- 中间链路：
+  - 通道输出 -> `Power`
+  - `Scatter_Pow` -> 中间 `Power.Exp`
+  - 中间 `Power` 输出 -> `Multiply`
+  - `Scatter_Str` -> 同一 `Multiply`
+- 下方链路：
+  - 通道输出 -> `Power`
+  - `Fire_Pow` -> 下方 `Power.Exp`
+  - 下方 `Power` 输出 -> `Multiply`
+  - `Fire_Str` -> 同一 `Multiply`
+- 上方与中/下方结果继续向右汇合
+  - 至少有一处 `Add` 用于合并两路结果
+- `Dynamic Parameter` 的输出接入下方右侧链路
+- `Particle Color` 位于最右侧，准备参与最终颜色调制
+
+设置/参数：
+- `Smoke_Pow` 与 `Smoke_Str` 的 `Default Value` 当前都显示为 `1.0`
+- `Scatter_Pow`、`Scatter_Str`、`Fire_Pow`、`Fire_Str` 当前显示为 `0.0`
+- `Dynamic Parameter`
+  - `Default Value` 色块为白色
+  - `Parameter Index = 0`
+  - 可见 `Param1`、`Param2`、`Param3`
+- 右下 `Power(X, 2)` 的指数固定为 `2.0`
+
+这张图与正文“用蓝色通道处理火焰更好”“用散射通道来处理”“数值里都填了0”高度一致。可据此确定，本段材质不是简单做一个单通道烟雾，而是至少拆成 `Smoke`、`Scatter`、`Fire` 三类可独立调节的贡献项，再把这些结果汇总后交给 `Particle Color` 和动态参数继续驱动。当前图能确认的是参数分层和连线方向；最右端最终分别接到哪个材质输出口，仍需结合下一段画面确认，不能在这一条里提前补写。
+
+### 00:09:10-00:12:05 材质、粒子、生命周期
+
+- 本段定位：材质、粒子、生命周期。
+- 知识点：保存一次 我们要把Master Hotel用作实例 创建了第一个实例材质 没有参数化纹理 没有参数化纹理。
+- 知识点：纹理没有参数化 请重新保存 然后这样 因为会先以这个纹理为基础使用 这样放着应该 接下来要适当调整数值 找到想要的形状 然后 指令值设为50左右。
+- 知识点：对 我的这个通道本身 其实散射也是 把功率值调大 然后让烟雾这个部分更突出 需要调整烟雾 烟雾颜色会调成灰色调。
+- 知识点：这样定数值 布置粒子来用 放入制作的实例粒子 从粒子的部分开始 一个个调整就行 只输出一个 然后 消防值要设成8成8 生命周期大概1.5。
+- 知识点：大小我们设成850左右 方向会适当反一下 尺寸部分先放一边 需要面对对齐按钮。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`粒子`、`生命周期`、`颜色`、`烟雾`。
+
+**关键画面：**
+
+本图回到 Unreal 主编辑器，重点不是继续改材质节点，而是基于 `M_Smoke_01` 创建一个材质实例，准备把刚才做好的母材质用于后续粒子调参。主视口仍是海岸测试场景，中心保留红色调试标记，说明测试环境没有切换。
+
+当前 `Content Browser` 路径为：
+
+`Content / Signature / Course_05 / Material`
+
+当前可见资源包括：
+- `Houdini_FlipbookUVs`
+- `M_Additive_01`
+- `M_Additive_01_Ins_01`
+- `M_Additive_01_Ins_02`
+- `M_Fire_01`
+- `M_Fire_01_Ins_01`
+- `M_Fire_01_Ins_02`
+- `M_Refraction_01`
+- `M_Smoke_01`
+- `M_SmokeMV_01`
+
+当前选中资源：
+- `M_Smoke_01`
+
+右键菜单当前打开，已高亮的操作为：
+- `Create Material Instance`
+
+同一菜单里还能看到：
+- `Create glTF Proxy Material`
+- `Edit...`
+- `Rename`
+- `Duplicate`
+- `Save`
+- `Delete`
+- `Scripted Asset Actions`
+- `Asset Actions`
+- `Asset Localization`
+- `Show in Folder View`
+- `Show in Explorer`
+- `Open Material.h`
+
+右侧 `Outliner` 仍保持 `light` 搜索过滤，表明当前这一帧的变化只发生在内容浏览器层面。结合正文“要把 Master Material 用作实例”“创建第一个实例材质”，可以确认这一步是在把 `M_Smoke_01` 从母材质转成可单独调参数的实例资源，方便后面按粒子效果需求调整烟雾形状、强度和颜色，而不用反复改母图。
+本图打开了新建后的材质实例 `M_Smoke_01_Ins_01`，开始直接调实例参数而不是回母材质改图。左侧预览窗口显示多张白灰色烟雾贴片，说明当前实例已经能产出可见的烟雾序列结果。
+
+当前页签为：
+
+`M_Smoke_01_Ins_01`
+
+左上统计信息可读到：
+- `Base pass shader: 274 instructions`
+- 对比母材质的更高指令数，说明当前处在实例预览环境
+- `Samplers Used: 2`
+- `Sampler Limit: 32`
+
+右侧 `Details` 面板当前展开的参数组为：
+
+`Global Scalar Parameter Values`
+
+可直接确认的标量参数值：
+- `Fade_Dist = 50.0`
+- `Fire_Pow = 5.0`
+- `Fire_Str = 10.0`
+- `Scatter_Pow = 5.0`
+- `Scatter_Str = 1.0`
+- `Smoke_Pow = 1.0`
+- `Smoke_Str = 5.0`
+
+同一实例中还能确认：
+- `Global Texture Parameter Values`
+  - `Smoke_Tex = Exp_01`
+- `Global Vector Parameter Values`
+  - `Smoke_Color` 已启用，颜色框当前为接近白色
+- `General`
+  - `Parent = M_Smoke_01`
+
+输出/预览：
+- 左侧预览中烟雾从小团到较大团均已可见
+- 颜色整体偏白灰，符合正文“烟雾颜色会调成灰色调”“会调整烟雾”
+
+结合本段正文“纹理会先以这个为基础使用”“接下来适当调整数值”“烟雾这个部分更突出”，这张图可以明确为实例调参的基线配置：用 `Exp_01` 作为烟雾纹理，把 `Fade_Dist` 设为 `50` 左右，同时把 `Fire`、`Scatter`、`Smoke` 三组参数拉到可见范围，先得到一版偏白的烟雾基础表现，再把它投到粒子系统里继续调生命周期和尺寸。
+本图回到 Niagara 系统 `Ex_03_Explosion`，开始把刚才做好的材质实例用于新的粒子发射器，并直接调整生命周期、颜色和尺寸。当前选中的发射器是：
+
+`Fire01003`
+
+左侧预览窗口显示一个偏白、带少量暖色的烟雾团。粒子计数信息可见：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Active]`
+- `[Fire01006] [Disabled]`
+- `[Fire01003] [Active]`
+
+中间 `System Overview` 中当前 `Fire01003` 的结构可直接确认：
+- `Emitter State`
+  - `Self / Once`
+- `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sub UV Animation`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前显示 `Initialize Particle`，可确认参数为：
+- `Point Attributes`
+  - `Lifetime Mode = Direct Set`
+  - `Lifetime = 1.5`
+  - `Color Mode = Direct Set`
+  - `Color` 当前为接近白色
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)` 当前关闭
+  - `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Uniform`
+  - `Uniform Sprite Size = 850.0`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Custom`
+  - `Sprite UV Scale = (-1.0, 1.0)`
+- `Mesh Attributes`
+  - `Mesh Scale Mode = Unset`
+  - `Mesh Renderer Array Visible = Unset`
+- `Ribbon Attributes`
+  - `Ribbon Width Mode = Unset`
+  - `Ribbon Facing Mode = Unset`
+  - `Ribbon Twist Mode = Unset`
+
+这张图与正文“生命周期大概 1.5”“大小设成 850 左右”“方向会适当反一下”“需要面对对齐按钮”一致。就复现而言，这一步等于把 `M_Smoke_01_Ins_01` 的烟雾表现落到 `Fire01003` 上，并在 `Initialize Particle` 中先定下三件事：生命周期拉到 `1.5`，尺寸设到 `850`，再通过 `Sprite UV Scale = (-1.0, 1.0)` 做一次水平翻转，为后面继续调对齐方式和颜色变化打基础。
+
+### 00:12:09-00:14:56 UV、颜色、纹理
+
+- 本段定位：UV、颜色、纹理。
+- 知识点：这个也是用于平衡方向的纹理 就是 所以让它向上进行 然后 手是对齐的 对吧 UV是的 根据摄像机角度 不能变成广告牌形状 这样展示 接下来用subb动画。
+- 知识点：时候 彩色会以什么方式出现 是 彩色会以什么方式出现 3.5mm的 做成4号 时间会适当线性一点 只有开头动画会适当陡峭一点 像爆炸这种资源。
+- 知识点：一开始会爆开然后升起 那时候适当抓住快一点的时机 看起来就会更好 哦 然后最后这里适当带点圆 让烟雾慢慢消失 看起来也会更自然 嗯 现在用动态参数。
+- 知识点：一起控制亮度这个部分会比较好 嗯 并取线 10.3左右的 凝值会控制好 图表在适当 现在颜色值本来就设得很大。
+- 知识点：挺自然的 颜色值放着不动也行 设计就这样 这样组成吧 适当弱一点然后 现在 zero 再加一个点 到0.8 大概1的值 调整一下图表 到这里为止α还完全活着 会慢慢开始聚集。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`纹理`、`颜色`、`动态参数`、`烟雾`。
+
+**关键画面：**
+
+本图继续在 Niagara 系统 `Ex_03_Explosion` 中调整 `Fire01003`，但当前重点已经从粒子初始属性转到朝向和对齐，使烟雾贴片不要像普通广告牌那样始终正对相机，而是形成更符合“向上冲起”感觉的方向关系。
+
+当前选中的发射器：
+- `Fire01003`
+
+中间 `System Overview` 可确认的模块结构为：
+- `Emitter State`
+  - `Self / Once`
+- `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Sprite Facing and Alignment`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sub UV Animation`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前显示模块：
+
+`Sprite Facing and Alignment`
+
+能可靠读到的设置为：
+- `Sprite Facing = (1.0, 0.0, 0.0)`
+- `Sprite Alignment = (0.0, 0.0, 1.0)`
+- `Alignment Coordinate Space = Simulation`
+
+左侧粒子计数当前显示：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Complete]`
+- `[Fire01006] [Disabled]`
+- `[Fire01003] [Inactive]`
+
+输出/预览：
+- 当前预览窗几乎没有可见粒子，只剩非常淡的残影，说明这一帧主要在调模块参数，而不是观察高亮显示状态
+
+结合正文“用于平衡方向”“让它向上进行”“根据摄像机角度不能变成广告牌形状”，这张图说明 `Fire01003` 的精灵面朝方向被固定到一个明确向量，而 `Sprite Alignment` 则以模拟空间的 Z 轴 `(0,0,1)` 为基准，保证烟雾贴片整体朝上、不会完全跟着相机翻转。对复现而言，这一步的关键不是随意换一个 Facing 模式，而是显式给出 `Facing` / `Alignment` 向量和坐标空间，让烟雾保持稳定的上升姿态。
+本图继续处理 `Fire01003`，当前聚焦的是 `Sub UV Animation`，用曲线驱动翻页动画随粒子生命周期变化。左侧预览已经能看到一团很亮的白色烟雾/爆炸贴片，边缘带少量暖色，说明材质实例与粒子设置已结合并开始形成主视觉。
+
+当前选中模块：
+
+`Fire01003 > Particle Update > Sub UV Animation`
+
+右侧 `Details` 面板可确认的设置为：
+- `Setup`
+  - `SubUV Animation Mode = Curve`
+  - `Renderer Type = Sprite`
+- `Sprite Renderer`
+  - `Sprite Renderer Info`
+  - `Sprite Renderer = Sprite Renderer`
+- `Animation`
+  - `Random Start Frame` 关闭
+  - `Start Frame Offset = 0`
+- `SubUV Curve`
+  - 曲线资源类型为 `Curve for Floats`
+  - `SubUV Curve Index = PARTICLES.NormalizedAge`
+
+当前可见曲线形状：
+- 起点在 `NormalizedAge = 0` 附近取值接近 `0`
+- 中间有一个关键点，大约在 `0.3` 位置，取值约 `0.6`
+- 曲线继续上升，到后段接近 `1.0`
+- 整体是一条前段爬升较快、后段趋缓的上升曲线
+
+中间 `System Overview` 可见该发射器结构仍为：
+- `Initialize Particle`
+- `Camera Offset`
+- `Sprite Facing and Alignment`
+- `Particle State`
+- `Scale Sprite Size`
+- `Scale Color`
+- `Sub UV Animation`
+- `Sprite Renderer`
+
+粒子计数当前显示：
+- `[Fire01002] [Active]`
+- `[Fire01003] [Active]`
+
+结合正文“接下来用 sub 动画”“只有开头动画会适当陡峭一点，像爆炸这种资源”，这张图说明 SubUV 不是线性平均播放，而是通过 `NormalizedAge` 曲线控制翻页推进速度：开头翻页更快，用来抓住爆开瞬间；后段推进变缓，让烟雾上升与消散过渡更自然。对复现而言，关键不是只勾选 `Sub UV`，而是把曲线索引明确绑到 `PARTICLES.NormalizedAge`，并把曲线形状做成“前快后缓”。
+本图继续在 `Fire01003` 的 `Scale Color` 模块中调生命周期曲线，用不同曲线分别控制 RGB 强度和 Alpha 透明度。左侧预览里烟雾已经明显变成“白灰烟体 + 橙红内部发光”的状态，说明当前颜色与透明度曲线正在直接塑造爆炸烟雾的视觉节奏。
+
+当前选中模块：
+
+`Fire01003 > Particle Update > Scale Color`
+
+右侧 `Details` 面板可确认：
+- `Scale Mode = RGB and Alpha Separately`
+
+`Scale RGB` 设置：
+- 模式为 `Multiply Vector by Float`
+- `Vector = (10.0, 1.0, 0.5)`
+- `Float = Float from Curve`
+- `FloatCurve = Curve for Floats`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 5.0`
+
+当前 RGB 曲线形状：
+- 起始值接近 `0.9`
+- 前段略高，随后整体持续下降
+- 到生命周期末端降到接近 `0`
+- 作用是让亮色在早期更强，后期逐步衰减
+
+`Scale Alpha` 设置：
+- 模式为 `Float from Curve`
+- `FloatCurve = Curve for Floats`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 1.0`
+
+当前 Alpha 曲线形状：
+- 开头从接近 `0` 很快抬升到高值
+- 中段长时间维持在接近 `1`
+- 到后段约 `0.8` 之后开始回落
+- 末端回到接近 `0`
+
+中间 `System Overview` 中此时还能确认：
+- `Sub UV Animation` 下方新增可见模块 `Dynamic Material Parameters`
+- 说明本段已经开始把动态参数并入粒子更新链路
+
+粒子计数当前显示：
+- `[Fire01002] [Active]`
+- `[Fire01003] [Active]`
+
+结合正文“颜色值本来就设得很大”“适当弱一点”“α 还完全活着，会慢慢开始聚集”，这张图说明作者把颜色强度和透明度拆成两条不同节奏的寿命曲线：RGB 用来控制爆炸早期的亮度冲击，Alpha 则保证烟雾主体在中段保持完整，再在后段自然消失。对复现而言，关键是分别调两条曲线，而不是只用单一透明度曲线去兼顾亮度和消散。
+
+### 00:15:16-00:18:10 材质、烟雾
+
+- 本段定位：材质、烟雾。
+- 知识点：而且需要向上移动一些 所以把皮肤这个位置再提高一点 嗯 这里这样适当改了一下 然后从地面开始这样爆开 往上冲的感觉在这里确认吗 嗯 嗯 嗯 嗯。
+- 知识点：完成的时候 玩一次确认一下 再调整会更好 爆炸效果这样出来 然后还冒烟呢 现在看起来尺寸有点大 但这个从玩法来看 有点可以更准确地判断的资源。
+- 知识点：这张图片上扩散的效果 它扩散的效果就是那种模糊 因为给了值 所以给了模糊不常值 所以这样就适当像烟雾内部扩散一样 表达出来 看的话应该。
+- 知识点：用烟雾像这样含着光的阴影表达 非常高质量地 真实地看起来有帮助的因素 这种感觉我觉得不错 你用材质的参数值来缩小。
+- 知识点：或扩大这个图像区域 这样控制一下就能感受到 可能的变体效果了。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`烟雾`。
+
+**关键画面：**
+
+本图继续在 `Fire01003` 上调整渲染层，重点转到 `Sprite Renderer` 里对材质实例、枢轴和 SubUV 切片数的确认。左侧预览现在是一团中心极亮、外圈带红晕的爆炸烟雾，说明材质、SubUV 和颜色曲线已经叠加生效。
+
+当前选中模块：
+
+`Fire01003 > Render > Sprite Renderer`
+
+右侧 `Details` 面板可可靠确认的设置为：
+- `Sprite Rendering`
+  - `Material = M_Smoke_01_Ins_01`
+  - `Material User Param Binding = None`
+  - `Source Mode = Particles`
+  - `Alignment = Automatic`
+  - `Facing Mode = Automatic`
+  - `Macro UVRadius = 0.0`
+  - `Default Pivot in UV Space = (0.5, 0.85)`
+  - `Remove HMD Roll` 关闭
+  - `Pixel Coverage Mode = Automatic`
+  - `Pixel Coverage Blend = 1.0`
+  - `Min Facing Camera Blend = 0.0`
+  - `Max Facing Camera Blend = 0.0`
+- `Sorting`
+  - `Sort Mode = None`
+- `Visibility`
+  - `Enable Camera Distance...` 关闭
+  - `Renderer Visibility = 0`
+- `Sub UV`
+  - `Sub UV Blending Enabled` 关闭
+  - `Sub Image Size = (8.0, 8.0)`
+- `Rendering`
+  - `Cast Shadows` 启用
+  - `Sort Order Hint = 15`
+  - `Motion Vector Setting = Auto Detect`
+
+中间 `System Overview` 当前还能看到：
+- `Dynamic Material Parameters` 已加入 `Particle Update`
+- `Sprite Renderer` 当前被高亮选中
+
+粒子计数：
+- `[Fire01002] [Active]`
+- `[Fire01003] [Active]`
+
+结合正文“从地面开始这样爆开”“用材质参数值来缩小或扩大图像区域”，这张图说明作者正在通过渲染器侧的贴图切片和 Pivot 去强化“从地面向上冲”的视觉。对复现而言，`Sub Image Size = 8x8` 明确了当前翻页贴图是 64 帧序列，而 `Default Pivot in UV Space = (0.5, 0.85)` 则把贴片重心下移，使爆炸烟雾看起来更像从地面根部起爆，而不是围绕中心平均膨胀。
+本图回到关卡视口检查 `Ex_03_Explosion` 的实际落地效果，重点是观察爆炸是否真的表现出“从地面爆开并向上冲”的烟雾形态，而不是只在 Niagara 预览窗里看单张贴片。
+
+当前主视口环境：
+- 海岸岩石测试场景未变
+- 爆炸效果放置在地面中心位置
+- 右侧 `Outliner` 仍保留 `light` 过滤
+
+下方 `Content Browser` 当前路径：
+
+`Content / Signature / Course_05 / Particles`
+
+当前可见粒子资源：
+- `Ex_01_Campfire`
+- `Ex_02_SmokePlume`
+- `Ex_03_Explosion`
+
+当前选中资源：
+- `Ex_03_Explosion`
+
+画面中的可见结果：
+- 爆炸核心区域极亮，接近白色
+- 外侧带明显红橙色辉光
+- 整体体积贴地展开，同时上方抬起形成圆鼓状烟团
+- 左侧能看到黑色旋转/编辑 gizmo，说明作者正在场景里直接观察或微调该效果实例
+
+结合本段正文“需要向上移动一些”“从地面开始这样爆开，往上冲的感觉在这里确认”“完成的时候玩一次确认一下”，这张图说明此时作者已经离开参数面板，转而在真实场景中验证整体轮廓和高度走势。对复现而言，这一步的验收标准不是看单个粒子有没有烟雾，而是看整个 `Ex_03_Explosion` 在地面起爆时是否既贴地扩散、又有明显上冲趋势，并且亮部不会完全脱离烟雾主体。
+本图仍在关卡视口中检查 `Ex_03_Explosion`，但这一帧特效主体已经基本结束，画面回到场景基态。它的作用更像是确认上一轮爆炸播放完成后，留在场景中的位置、范围和后续可调方向，而不是展示新的节点设置。
+
+当前主视口环境可确认：
+- 海岸岩石测试场景未切换
+- 爆炸发生位置仍在画面中央偏下，留有编辑 gizmo
+- 当前看不到上一帧那种强烈的白热爆炸体，说明播放已结束或正处于极弱阶段
+- 右侧 `Outliner` 仍保持 `light` 搜索过滤
+
+下方 `Content Browser` 当前路径：
+
+`Content / Signature / Course_05 / Particles`
+
+当前可见资源：
+- `Ex_01_Campfire`
+- `Ex_02_SmokePlume`
+- `Ex_03_Explosion`
+
+当前选中资源：
+- `Ex_03_Explosion`
+
+结合正文“用材质的参数值来缩小或扩大这个图像区域，这样控制一下就能感受到可能的变体效果”，这张图说明作者已经把注意力放到最终效果的整体占地范围和变体控制上。就当前这一帧本身能确认的信息来说，可靠结论只有两点：
+- 爆炸效果的播放检查是在真实场景里完成的，而不是停留在 Niagara 预览窗
+- 调整目标是通过材质参数改变图像/烟雾区域的大小感和扩散范围
+
+由于这一帧没有显示新的参数面板、节点图或清晰的特效主体，无法仅凭本图继续精确补出具体数值或新增连线。因此复现时应把它视为上一轮参数调整后的场景级验收画面，用来判断爆炸资源在关卡里的最终占地与残留观感是否合适。
+
+### 00:18:18-00:21:04 材质、粒子、颜色
+
+- 本段定位：材质、粒子、颜色。
+- 知识点：只有一个烟雾资源会显得单调 为了营造更丰富的爆炸感 可以再从这边或那边 再填充一次空间 一起出现会更好 然后 位置 适当用不同的值加点随机性会更好。
+- 知识点：600左右 还有 notation设为0.2左右 作为次要概念加入 需要觉得不错 还有 还有 还有撒盐的话 还有撒盐的话 这算五次的话 就是这里大概三次。
+- 知识点：让主内容清晰可见 所以先想好粒子布局设计 然后再制作这种模拟员 也是个不错的方法 所以先想好粒子局设计。
+- 知识点：再制作这种模拟员 这个不错方法 这些可以先放 然后像紫布件动画这种情况 适当弯曲点快点 走到消失的那个部分也没关系 然后 所以请做成这种程度的曲线。
+- 知识点：请做成这种程度的曲线 把图像值适当降低点 把图像适当降低一点 然后应该可以利用 颜色饱和度也适当调整一下。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`粒子`、`颜色`、`曲线`、`烟雾`。
+
+**关键画面：**
+
+本图继续在 Niagara 系统 `Ex_03_Explosion` 中扩展发射器布局，重点是新增第二个同类烟雾/爆炸发射器 `Fire01004`，用来打破“只有一团烟雾”的单调感。当前画面已经不再聚焦单个模块参数，而是直接在 `System Overview` 里对比两个相邻发射器的结构。
+
+当前可见发射器：
+- `Fire01003`
+- `Fire01004`
+
+左侧粒子计数可确认：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Complete]`
+- `[Fire01006] [Disabled]`
+- `[Fire01003] [Inactive]`
+- `[Fire01004] [Inactive]`
+
+中间 `System Overview` 中，当前选中的新增发射器为：
+
+`Fire01004`
+
+`Fire01004` 当前可见结构：
+- `Emitter State`
+  - `Self / Once`
+- `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Sprite Facing and Alignment`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sub UV Animation`
+  - `Dynamic Material Parameters`
+- `Render`
+  - `Sprite Renderer`
+
+与其左侧的 `Fire01003` 对照可见：
+- 两者整体模块结构高度一致
+- 说明当前不是新做一套完全不同的爆炸逻辑，而是基于已有烟雾发射器复制/派生一个次级版本
+
+输出/预览：
+- 左侧预览窗口当前只剩顶部一小团灰烟残影
+- 这与两个发射器都处于 `Inactive` 状态一致，说明这一帧主要在布置发射器结构，而不是播放瞬时爆炸
+
+结合正文“只有一个烟雾资源会显得单调”“可以再从这边或那边再填充一次空间，一起出现会更好”，这张图说明作者的解决思路不是把单个发射器越调越复杂，而是增加第二个结构相近的烟雾发射器，再通过位置、尺寸、时序和随机偏移去丰富空间层次。对复现而言，这一步的关键是先把第二个发射器骨架补齐，并保持与主发射器同类模块链路一致，后续再做差异化。
+本图继续设置新增的 `Fire01004`，当前查看的是 `Sprite Facing and Alignment`。这说明第二个烟雾发射器并不是随便复制后直接使用，而是仍要确认它的朝向基线和模拟空间是否与主发射器一致，保证多个烟雾团一起出现时不会有一个朝上、另一个乱转。
+
+当前选中发射器：
+- `Fire01004`
+
+右侧 `Details` 面板当前模块：
+
+`Sprite Facing and Alignment`
+
+可直接确认的设置为：
+- `Sprite Facing = (1.0, 0.0, 0.0)`
+- `Sprite Alignment = (0.0, 0.0, 1.0)`
+- `Alignment Coordinate Space = Simulation`
+
+中间 `System Overview` 中 `Fire01004` 的当前结构可见：
+- `Initialize Particle`
+- `Camera Offset`
+- `Sprite Facing and Alignment`
+- `Particle State`
+- `Scale Sprite Size`
+- `Scale Color`
+- `Sub UV Animation`
+- `Dynamic Material Parameters`
+- `Sprite Renderer`
+
+左侧粒子计数当前显示：
+- `[Fire01002] [Active]`
+- `[Fire01003] [Active]`
+- `[Fire01004] [Active]`
+
+输出/预览：
+- 当前预览是一团中心极亮、外圈泛红的爆炸烟团
+- 说明新发射器已经与原有两个发射器共同参与显示
+
+结合正文“先想好粒子布局设计”“再制作这种模拟源也是个不错的方法”，这张图说明作者在做布局扩展时先保证副发射器与主发射器遵循同样的朝上规则，再去谈位置错开和数量补充。对复现而言，这一步的核心是让 `Fire01004` 继承一致的 `Facing/Alignment` 空间语义，避免多个烟雾片在组合时朝向不统一，破坏整体爆炸感。
+本图回到 Unreal 主编辑器，重点不是继续改 Niagara 模块，而是为新增的次级烟雾发射器挑选另一份材质实例变体。这样做的目标，是让多个烟雾团在一起时既保持同类质感，又不过分完全一致。
+
+当前主视口环境：
+- 海岸测试场景未切换
+- 地面中心仍保留红色编辑 gizmo，说明爆炸效果实例位置还在同一处继续调
+- 右侧 `Outliner` 仍保留 `light` 过滤
+
+下方 `Content Browser` 当前路径：
+
+`Content / Signature / Course_05 / Material`
+
+当前可见的关键资源包括：
+- `M_SmokeMV_01`
+- `M_SmokeMV_01_Ins_01`
+- `M_SmokeMV_01_Ins_02`
+- `M_Translucent_01`
+- `M_Translucent_01_Ins_01`
+- `MPC_ZoomBlur_Ctrl_01`
+- `PP_ZoomBlur_02`
+- `M_Smoke_01_Ins_02`
+
+当前选中资源：
+- `M_Smoke_01_Ins_02`
+
+从缩略图可以直接确认：
+- `M_Smoke_01_Ins_02` 仍基于同一组烟雾翻页纹理
+- 但作者特意没有继续只用 `M_Smoke_01_Ins_01`
+- 说明这里正在为不同烟雾团准备第二个实例版本，而不是所有发射器共用完全相同的材质参数
+
+结合正文“为了营造更丰富的爆炸感”“位置适当用不同的值加点随机性会更好”，这张图说明丰富度并不只靠粒子位置随机，还会通过材质实例层面制造第二套细节变体。对复现而言，这一步的关键是为次级烟雾准备独立实例，例如 `M_Smoke_01_Ins_02`，后面再把它挂到副发射器上，通过不同参数值得到略有差异的烟雾体积和亮暗分布。
+
+### 00:21:17-00:24:04 粒子、烟雾
+
+- 本段定位：粒子、烟雾。
+- 知识点：第二个就是 现在用作副作用的爆炸效果 是 新做了材料 所以想让散射力 散射力 影响范围更广一点 调到了3 点少 这部分 3左右 缩短了 这部分 长点nature。
+- 知识点：够糟的 保存 下载 我们看到频道的部分 这样整个烟雾被光线散射的效果 就感觉就是这样了 然后反过来看看火焰 这是我们用了蒙版通道的散射 因为有蒙版通道。
+- 知识点：这部分烟雾现在有了 体积的图案 能让人感觉到爆炸的一些特征 这些表达用了很多式的 可以这样一起利用 这个能带来的部分 这样看。
+- 知识点：这两者中只计或一种路径来使用也没问题 用强度值来调整就行 这样就能看到可以变动的样子 重新填了原来的数值 现在把第三个粒子转到另一边来用。
+- 知识点：就这样做 大小适当不同 时间也适当不同 作为部分 比起适当固定的左右 感觉适当有点错开。
+- 核对对象：`粒子`、`烟雾`、`火焰`。
+
+**关键画面：**
+
+本图打开次级烟雾材质实例 `M_Smoke_01_Ins_02`，开始直接设置它的标量和颜色参数。它的作用是给新增的副发射器提供第二套烟雾表现，让“辅助爆炸”在散射感、颜色饱和度或体积节奏上与主烟雾有区别。
+
+当前页签为：
+
+`M_Smoke_01_Ins_02`
+
+左上统计信息可读到：
+- `Base pass shader: 274 instructions`
+- `Samplers Used: 2`
+- `Sampler Limit: 32`
+
+右侧 `Details` 面板可确认：
+
+`Global Scalar Parameter Values`
+- `Fade_Dist = 50.0`
+- `Fire_Pow = 5.0`
+- `Fire_Str = 10.0`
+- `Scatter_Pow = 5.0`
+- `Scatter_Str = 1.0`
+- `Smoke_Pow = 1.0`
+- `Smoke_Str = 5.0`
+
+`Global Texture Parameter Values`
+- `Smoke_Tex = Exp_01`
+
+`Global Vector Parameter Values`
+- `Smoke_Color` 已启用
+- `R = 0.5`
+- `G = 0.5`
+- `B = 0.45`
+- `A = 1.0`
+
+`General`
+- `Parent = M_Smoke_01`
+
+输出/预览：
+- 左侧预览是 8x8 翻页烟雾序列的整体平铺预览
+- 颜色整体是较中性的浅灰白，而不是明显偏红偏橙
+
+结合正文“新做了材料，所以想让散射力影响范围更广一点”“颜色饱和度也适当调整一下”，这张图说明 `M_Smoke_01_Ins_02` 作为副烟雾实例时，重点不是重新改母材质结构，而是在实例层用更中性的 `Smoke_Color` 和现成的 `Exp_01` 贴图，准备出一版更偏辅助、不过度抢主火焰视觉的烟雾层。对复现而言，这一步的关键是把副材质的颜色基线先压到灰白附近，再根据后续散射/强度调节决定它在整体爆炸里占多少比重。
+本图继续调整 `M_Smoke_01_Ins_02`，重点是把副烟雾材质里的火焰项进一步压低，让整体更像“被光散射照亮的烟雾”，而不是第二个主爆心。左侧 8x8 预览序列表现为更均匀的浅灰烟团，亮部还在，但不再像主材质那样偏强烈发热。
+
+当前页签仍是：
+
+`M_Smoke_01_Ins_02`
+
+右侧 `Details` 面板当前可确认的标量参数：
+- `Fade_Dist = 50.0`
+- `Fire_Pow = 5.0`
+- `Fire_Str = 0.0`
+- `Scatter_Pow = 5.0`
+- `Scatter_Str = 1.0`
+- `Smoke_Pow = 1.0`
+- `Smoke_Str = 5.0`
+
+其余可确认参数：
+- `Smoke_Tex = Exp_01`
+- `Smoke_Color`
+  - `R = 0.5`
+  - `G = 0.5`
+  - `B = 0.45`
+  - `A = 1.0`
+- `Parent = M_Smoke_01`
+
+输出/预览：
+- 左侧翻页序列整体仍保持完整体积
+- 但亮部主要体现为浅灰白散射感，而不是强烈红热火焰
+- 说明当前副材质更偏“烟体受光”而不是“自发光火焰”
+
+结合正文“散射力影响范围更广一点”“整个烟雾被光线散射的效果就是这样了”“火焰这边可以反过来看看”，这张图说明作者有意把副材质的火焰贡献清掉，仅保留烟雾和散射通道，让第二团烟雾承担体积填充和受光层次，而不是和主爆炸去抢核心亮部。对复现而言，这一步的关键是把 `Fire_Str` 压到 `0`，再用 `Scatter_*` 与 `Smoke_*` 保留烟雾结构与受光感。
+本图回到 Niagara 系统 `Ex_03_Explosion`，可以确认作者又新增了一个副烟雾发射器 `Fire01005`，并把刚调好的 `M_Smoke_01_Ins_02` 挂到它的 `Sprite Renderer` 上。这样做的目标，是让辅助烟雾不只来自一个方向，而是通过多个略有差异的发射器共同填充空间。
+
+当前可见发射器：
+- `Fire01004`
+- `Fire01005`
+
+左侧粒子计数当前显示：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Active]`
+- `[Fire01006] [Disabled]`
+- `[Fire01003] [Active]`
+- `[Fire01004] [Active]`
+- `[Fire01005] [Active]`
+
+中间 `System Overview` 中当前选中的发射器为：
+
+`Fire01005`
+
+`Fire01005` 的可见结构与前面的副烟雾发射器一致：
+- `Emitter State`
+  - `Self / Once`
+- `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Sprite Facing and Alignment`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sub UV Animation`
+  - `Dynamic Material Parameters`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前显示 `Sprite Renderer`，可确认的关键设置为：
+- `Material = M_Smoke_01_Ins_02`
+- `Material User Param Binding = None`
+- `Source Mode = Particles`
+- `Alignment = Automatic`
+- `Facing Mode = Automatic`
+- `Macro UVRadius = 0.0`
+- `Default Pivot in UV Space = (0.5, 0.85)`
+- `Pixel Coverage Mode = Automatic`
+- `Pixel Coverage Blend = 1.0`
+- `Sort Mode = None`
+- `Renderer Visibility = 0`
+- `Sub UV Blending Enabled` 关闭
+- `Sub Image Size = (8.0, 8.0)`
+- `Cast Shadows` 启用
+- `Sort Order Hint = 3`
+- `Motion Vector Setting = Auto Detect`
+
+输出/预览：
+- 左侧预览已经出现一团偏灰白、内部带淡红的副烟雾
+- 相比主爆炸核心，它更偏体积填充和边缘辅助
+
+结合正文“把第三个粒子转到另一边来用”“大小稍微不同，时间也稍微不同，作为负分”“感觉适当有点错开”，这张图说明作者正在通过第三个同类发射器把副烟雾放到另一侧，并准备让它在尺寸、时序上与前两个错开。对复现而言，这一步的核心不是再做一套新材质，而是复用 `M_Smoke_01_Ins_02` 作为副烟雾统一材质，再通过新增发射器的位置和后续参数差异来制造空间层次。
+
+### 00:24:17-00:27:11 UV、Normal、材质
+
+- 本段定位：UV、Normal、材质。
+- 知识点：这样安排粒子安排可以更好安排 很好对应考虑到了 MVB 我猜FOSUVB会这样用PAD点击 大概好吧 关系 容易 好 先写 做机位 二个是Otra。
+- 知识点：VED在Blank户里置置最路 下面感觉爆炸也像两边扩散了 能混合一下吗 这样爆炸粒子先完成了。
+- 知识点：我们再加点碎片试试 这水负责你 这个我们用过了 这个纹理真的是4x4的 所以改成4x4 改成4x4后就变成这样 水材质也简单配置一下。
+- 知识点：重新做个水材质 做了一个叫WAC的材质 先保存资源再走吧 这样先保存了一次 会以Masked模式使用 下面放着就行 我们刚才拿来的要用的纹理。
+- 知识点：是这两张 Normal Map Tile Map这部分拖过来 拿着过来就行 因为简单的材质所以很快。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Masked`、`材质`、`纹理`、`粒子`。
+
+**关键画面：**
+
+本图继续在 Niagara 系统 `Ex_03_Explosion` 中微调新增的副烟雾发射器 `Fire01005`。当前重点是通过 `Initialize Particle` 直接把寿命、尺寸和初始旋转做成与前面主烟雾不同的数值，从而让第三团烟雾在时序和姿态上产生错开。
+
+当前选中发射器：
+- `Fire01005`
+
+左侧粒子计数当前显示：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Complete]`
+- `[Fire01006] [Disabled]`
+- `[Fire01003] [Inactive]`
+- `[Fire01004] [Inactive]`
+- `[Fire01005] [Inactive]`
+
+中间 `System Overview` 可见 `Fire01005` 结构仍为：
+- `Initialize Particle`
+- `Camera Offset`
+- `Sprite Facing and Alignment`
+- `Particle State`
+- `Scale Sprite Size`
+- `Scale Color`
+- `Sub UV Animation`
+- `Dynamic Material Parameters`
+- `Sprite Renderer`
+
+右侧 `Details` 面板当前显示：
+
+`Fire01005 > Initialize Particle`
+
+可直接确认的参数为：
+- `Point Attributes`
+  - `Lifetime Mode = Direct Set`
+  - `Lifetime = 1.35`
+  - `Color Mode = Direct Set`
+  - `Color` 为接近白色
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)` 当前关闭
+  - `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Uniform`
+  - `Uniform Sprite Size = 650.0`
+  - `Sprite Rotation Mode = Direct Normalized Angle (0-1)`
+  - `Sprite Rotation Angle = -0.15`
+  - `Sprite UV Mode = Custom`
+  - `Sprite UV Scale = (1.0, 1.0)`
+- `Mesh Attributes`
+  - `Mesh Scale Mode = Unset`
+  - `Mesh Renderer Array Visible = Unset`
+- `Ribbon Attributes`
+  - `Ribbon Width Mode = Unset`
+  - `Ribbon Facing Mode = Unset`
+  - `Ribbon Twist Mode = Unset`
+
+输出/预览：
+- 左侧预览只剩顶部淡灰烟残影，说明当前主要在设定初始化数值，而不是观察爆炸高亮阶段
+
+结合上一段正文“大小稍微不同，时间也稍微不同，感觉适当有点错开”，这张图说明作者已经明确把 `Fire01005` 设成一团更小、寿命略短、带初始角度偏移的副烟雾。对复现而言，这一步的核心不是复制同样参数，而是用 `Lifetime = 1.35`、`Uniform Sprite Size = 650` 和 `Sprite Rotation Angle = -0.15` 这类差异值，制造辅助烟雾的随机感与层次感。
+本图仍停留在 Niagara 系统 `Ex_03_Explosion` 的 `System Overview`，当前重点是继续增加一个同类发射器 `Fire01007`。这说明作者在完成多团副烟雾后，还准备再加一层同类资源，而不是把所有变化都压在前面几个发射器里。
+
+当前左侧粒子计数可确认：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Complete]`
+- `[Fire01006] [Disabled]`
+- `[Fire01003] [Complete]`
+- `[Fire01004] [Complete]`
+- `[Fire01005] [Complete]`
+- `[Fire01007] [Complete]`
+
+中间 `System Overview` 当前可见两个相邻发射器：
+- `Fire01005`
+- `Fire01007`
+
+`Fire01007` 的可见结构与前面几组烟雾发射器保持一致：
+- `Emitter State`
+  - `Self / Once`
+- `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Sprite Facing and Alignment`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sub UV Animation`
+  - `Dynamic Material Parameters`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前是空白状态，没有显示具体参数，因此这一帧无法可靠确认 `Fire01007` 的数值差异，只能确认它的结构骨架已经建立完成。
+
+输出/预览：
+- 左侧预览几乎没有可见粒子
+- 与多组发射器都处于 `Complete` 状态一致，说明这一帧关注的是系统结构扩展，而不是播放中的视觉表现
+
+结合正文“我们再加点碎片试试”“这个我们用过了”，这张图至少能确认一个工作方式：作者在进入新材质或新贴图前，先在 Niagara 里把要承载该资源的发射器位置准备好，并尽量复用现有的发射器骨架。对复现而言，这一步的关键是先增加新的承载发射器并保持模块链一致，后续再逐步把不同材质或贴图挂上去测试。
+本图回到 Unreal 主编辑器，开始为下一阶段的水花/碎片材质准备贴图资源。当前重点不在 Niagara 系统本身，而是在内容浏览器里找到后续 `Masked` 材质要用的纹理。
+
+当前主视口环境：
+- 海岸测试场景未切换
+- 地面中心仍保留红色编辑 gizmo
+- 右侧 `Outliner` 仍保留 `light` 过滤
+
+下方 `Content Browser` 当前路径：
+
+`Content / Signature / Course_05 / Texture`
+
+当前可见纹理资源包括：
+- `Smoke_02_MVN`
+- `SmokeyTrail_01`
+- `T_StretchSpark_01`
+- `Tile_01`
+
+当前明确选中的资源：
+- `Tile_01`
+
+从画面可直接确认：
+- `Tile_01` 是一张灰度噪声/块状分布纹理
+- 它与旁边偏烟雾、偏拉伸火花的贴图被放在同一资源段内，说明作者正在从现成课程贴图里挑选合适的遮罩或法线相关素材
+
+结合正文“这个纹理真的是 4x4 的，所以改成 4x4”“这两张 Normal Map / Tile Map 这部分拖过来就行”，这张图说明后续要做的并不是从零绘制新图，而是直接在现有课程纹理里选出一张 `Tile` 类纹理作为新材质输入。对复现而言，这一步的关键是先到 `Texture` 目录锁定要复用的贴图资源，尤其是后面会参与 `Masked`/`Opacity Mask` 或 Normal 处理的 `Tile` 类贴图。
+
+### 00:27:18-00:30:12 Alpha、Opacity、Normal
+
+- 本段定位：Alpha、Opacity、Normal。
+- 知识点：首先做这个连接到Normal 然后我只是用一次的水材质 像Masked水材质那样 就是像大师这种材质一样。
+- 知识点：就是不会参数化到那种程度 金属高光和粗糙度也得给数值 适当有点就是想控制参数的话 这些人可以试试控制 加上颜色。
+- 知识点：用看也不错 还有当发光闪烁时 颜色适当有点变得不同 为了自然地运用 例子颜色也是一个感觉进行了计算。
+- 知识点：人形颜色 接下来的话就是利用Alpha通道的那种感觉 就是 LV贴图然后连接到Opacity Mask上 然后进行连接 这些资源是我们现在。
+- 知识点：学习Substance Designer时 已经做好的资源 继续利用这些 继续利用这些 不很好 然后 什么程度 只用课堂上的资源也 完全可以就是。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`Opacity`、`Masked`、`Substance Designer`、`材质`、`贴图`、`颜色`。
+
+**关键画面：**
+
+本图进入一个新的材质图页签，当前显示为：
+
+`M_Rock_01 > Material Graph`
+
+这一帧的重点是建立一个 `Masked` 材质的基础连接：一张灰度/Tile 纹理负责形状信息，另一张法线纹理负责法线起伏，并把法线链路接到材质输出的 `Normal`。
+
+左下材质属性可直接确认：
+- `Material Domain = Surface`
+- `Blend Mode = Masked`
+- `Shading Model = Default Lit`
+- `Two Sided` 关闭
+- `Use Material Attributes` 关闭
+- `Cast Ray Traced Shadows` 启用
+- `Subsurface Profile = None`
+
+当前图中可直接识别出的节点定义集：
+- 上方一个 `Texture Sample`
+  - 缩略图为灰度噪声 / `Tile` 风格纹理
+  - 可见输出 `RGB / R / G / B / A / RGBA`
+- 下方一个 `Texture Sample`
+  - 缩略图为蓝紫色法线贴图
+  - 可见输出 `RGB / R / G / B / A / RGBA`
+- 一个 `FlattenNormal`
+- 右侧材质输出节点 `M_Rock_01`
+
+连线集：
+- 下方法线贴图的输出接入 `FlattenNormal`
+- `FlattenNormal` 的输出再接到右侧材质输出节点的 `Normal`
+- 上方灰度纹理当前可见一条向右延伸的连线，但本帧中间节点和最终落点没有完整展示出来，因此不能在本条中提前断定它已经接到 `Opacity Mask` 或其他具体插槽
+
+输出/预览：
+- 左侧预览球表面已经表现出明显的凹凸起伏
+- 说明法线链路已经生效
+- 球体表面同时可见一些较暗斑块，说明灰度纹理也开始参与形状/遮罩类影响
+
+结合正文“首先做这个连接到 Normal”“像 Masked 水材质那样”“Normal Map / Tile Map 这部分拖过来就行”，这张图说明作者先完成的是最基础的 Normal 链路，而不是一开始就把全部 Alpha/Opacity 逻辑接满。对复现而言，这一步必须先把法线贴图通过 `FlattenNormal` 或同类节点整理后接到 `Normal`，同时把 Tile/灰度纹理引入图中，为后续 `Opacity Mask` 连接做准备。
+本图继续编辑 `M_Rock_01 > Material Graph`，当前重点是把颜色、粗糙度/高光类常量和 `Particle Color` 一起并入材质输出。左侧预览球已经变成带深色斑块和法线起伏的片状材质，说明这一步开始从“只有法线”过渡到“带颜色和受光表现”的完整材质。
+
+节点定义集：
+- `Power(X, 0.8)`
+- 上方一个 `Multiply`
+- 下方一个 `Multiply`
+- 三个常量节点：
+  - `0.2`
+  - `0.5`
+  - `0.7`
+- `Particle Color`
+- `FlattenNormal`
+- 右侧材质输出节点 `M_Rock_01`
+
+连线集：
+- 左侧输入先经过 `Power(X, 0.8)`，再进入上方 `Multiply`
+- 上方 `Multiply` 的输出接入材质输出节点左侧的一条上方通道
+- 常量 `0.2` 直接接入材质输出节点左侧的一条中上通道
+- 常量 `0.5` 直接接入材质输出节点左侧的一条中部通道
+- 常量 `0.7` 接入下方 `Multiply.A`
+- `Particle Color` 的 `RGB` 输出接入下方 `Multiply.B`
+- 下方 `Multiply` 的输出接入材质输出节点左侧的另一条中下通道
+- `FlattenNormal` 仍位于下方链路中，保持法线处理参与最终输出
+
+设置/参数：
+- 当前选中的表达式在左下 `Details` 中显示为一个除法表达式
+  - `Const A = 1.0`
+  - `Const B = 2.0`
+- 右侧临时打开了节点搜索框，关键词为 `eye`
+  - 可见候选 `EyeAdaptation`
+  - 可见候选 `EyeAdaptationInverse`
+
+输出/预览：
+- 左侧预览球呈现偏深蓝灰的片状材质
+- 斑块分布已明显可见
+- 说明颜色和法线共同参与了最终观感
+
+需要谨慎说明的点：
+- 右侧材质输出节点的部分插槽名称被搜索框遮住
+- 因此当前这张图里不能可靠断定每一条连线最终分别落到 `Emissive`、`Opacity Mask` 还是其它具体插槽
+
+结合正文“金属高光和粗糙度也得给数值”“加上颜色”“例子颜色也是一个感觉进行了计算”，这张图说明作者正在用几个简单常量先把材质的受光参数定下来，再用 `Particle Color` 参与颜色调制。对复现而言，关键是先把常量参数和 `Particle Color` 组合进输出链，而不是一开始追求复杂参数化。
+本图回到 Niagara 系统 `Ex_03_Explosion`，当前把刚做好的新材质 `M_Rock_01` 正式挂到了发射器 `Fire01007` 的 `Sprite Renderer` 上，并同步把 SubUV 切片数改成 `4x4`。这说明 `Fire01007` 现在承载的已经不是前面烟雾那套 8x8 翻页材质，而是新的片状/碎片型材质资源。
+
+当前选中发射器：
+- `Fire01007`
+
+左侧粒子计数当前显示：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Complete]`
+- `[Fire01006] [Disabled]`
+- `[Fire01003] [Inactive]`
+- `[Fire01004] [Complete]`
+- `[Fire01005] [Complete]`
+- `[Fire01007] [Inactive]`
+
+中间 `System Overview` 中 `Fire01007` 的可见结构为：
+- `Initialize Particle`
+- `Camera Offset`
+- `Sprite Facing and Alignment`
+- `Particle State`
+- `Scale Sprite Size`
+- `Scale Color`
+- `Sub UV Animation`
+- `Dynamic Material Parameters`
+- `Sprite Renderer`
+
+右侧 `Details` 面板当前显示：
+
+`Fire01007 > Sprite Renderer`
+
+可直接确认的设置为：
+- `Material = M_Rock_01`
+- `Material User Param Binding = None`
+- `Source Mode = Particles`
+- `Alignment = Automatic`
+- `Facing Mode = Automatic`
+- `Macro UVRadius = 0.0`
+- `Default Pivot in UV Space = (0.5, 0.85)`
+- `Pixel Coverage Mode = Automatic`
+- `Pixel Coverage Blend = 1.0`
+- `Sort Mode = None`
+- `Renderer Visibility = 0`
+- `Sub UV Blending Enabled` 关闭
+- `Sub Image Size = (4.0, 4.0)`
+- `Cast Shadows` 启用
+- `Sort Order Hint = 5`
+- `Motion Vector Setting = Auto Detect`
+
+输出/预览：
+- 左侧预览当前没有明显可见粒子主体
+- 与 `Fire01007` 处于 `Inactive` 状态一致，说明这一帧主要在确认渲染器资源接线而不是播放效果
+
+结合正文“这个纹理真的是 4x4 的，所以改成 4x4”“会以 Masked 模式使用”，这张图说明作者已经完成两件关键事：
+- 新 `Masked` 材质 `M_Rock_01` 已经接入到新的发射器 `Fire01007`
+- 该发射器的 SubUV 切片尺寸已改为 `4x4`，与新纹理序列的真实帧布局一致
+
+对复现而言，这一步的核心不是只更换材质名称，而是材质和 `Sub Image Size` 必须同时匹配；如果还保留之前烟雾用的 `8x8` 设置，新的 4x4 片状/碎片贴图会被错误采样。
+
+### 00:30:19-00:30:48 关键流程 11
+
+- 本段定位：关键流程 11。
+- 知识点：一升 随机地 2到大约3秒 尺寸也是随机的 把时间到20左右的大小 You will break 随机X的随机性 VDF反而是随机性 谢谢。
+
+**关键画面：**
+
+本图继续在 Niagara 系统 `Ex_03_Explosion` 中调整新发射器 `Fire01007`。当前重点回到 `Initialize Particle`，把这个新 `Masked`/碎片材质发射器的寿命、尺寸和 UV 翻转基线先定下来。
+
+当前选中发射器：
+- `Fire01007`
+
+左侧粒子计数当前显示：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Complete]`
+- `[Fire01006] [Disabled]`
+- `[Fire01003] [Inactive]`
+- `[Fire01004] [Complete]`
+- `[Fire01005] [Complete]`
+- `[Fire01007] [Inactive]`
+
+中间 `System Overview` 可见 `Fire01007` 结构为：
+- `Initialize Particle`
+- `Camera Offset`
+- `Sprite Facing and Alignment`
+- `Particle State`
+- `Scale Sprite Size`
+- `Scale Color`
+- `Sub UV Animation`
+- `Dynamic Material Parameters`
+- `Sprite Renderer`
+
+右侧 `Details` 面板当前显示：
+
+`Fire01007 > Initialize Particle`
+
+可直接确认的参数为：
+- `Point Attributes`
+  - `Lifetime Mode = Direct Set`
+  - `Lifetime = 1.5`
+  - `Color Mode = Direct Set`
+  - `Color` 为接近白色
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)` 当前关闭
+  - `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Uniform`
+  - `Uniform Sprite Size = 850.0`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Custom`
+  - `Sprite UV Scale = (-1.0, 1.0)`
+- `Mesh Attributes`
+  - `Mesh Scale Mode = Unset`
+  - `Mesh Renderer Array Visible = Unset`
+- `Ribbon Attributes`
+  - `Ribbon Width Mode = Unset`
+  - `Ribbon Facing Mode = Unset`
+  - `Ribbon Twist Mode = Unset`
+
+输出/预览：
+- 左侧预览几乎没有明显可见粒子，说明当前仍处于参数设定阶段
+
+结合字幕“2 到大约 3 秒”以及本图实际看到的 `Lifetime = 1.5`，可以确认作者此时至少先给这个新发射器设了一个可工作的寿命和大尺寸基线，再在后续帧里继续往随机化靠。对复现而言，这一步的关键是先让 `Fire01007` 具备和新材质匹配的显示尺寸与 UV 朝向，其中 `Uniform Sprite Size = 850` 与 `Sprite UV Scale = (-1, 1)` 是当前图里最明确的设置依据。
+本图继续调整 `Fire01007 > Initialize Particle`，当前关键变化是把生命周期从固定值切换成随机区间，让这组片状/碎片粒子每次存活时间不完全一致。左侧预览已经能看到一片偏红的片状材质，说明 `M_Rock_01` 正在作为该发射器的显示内容参与预览。
+
+当前选中发射器：
+- `Fire01007`
+
+左侧粒子计数可确认：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Complete]`
+- `[Fire01006] [Disabled]`
+- `[Fire01003] [Complete]`
+- `[Fire01004] [Complete]`
+- `[Fire01005] [Complete]`
+- `[Fire01007] [Inactive]`
+
+右侧 `Details` 面板当前显示：
+
+`Fire01007 > Initialize Particle`
+
+可直接确认的参数变化为：
+- `Point Attributes`
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 2.0`
+  - `Lifetime Max = 3.0`
+  - `Color Mode = Direct Set`
+  - `Color` 为接近白色
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)` 当前关闭
+  - `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Uniform`
+  - `Uniform Sprite Size = 850.0`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Custom`
+  - `Sprite UV Scale = (-1.0, 1.0)`
+
+输出/预览：
+- 左侧预览显示一块偏红、带不规则边缘的片状粒子
+- 与前面烟雾翻页预览明显不同，说明当前发射器已经在使用新的 `Masked`/片状材质
+
+结合正文“随机地 2 到大约 3 秒”，这张图给出了最直接的实现方法：不要用固定寿命，而是把 `Lifetime Mode` 切到 `Random`，再把区间设成 `2.0 ~ 3.0`。对复现而言，这一步的核心是用随机寿命打破片状粒子同时消失的机械感，让碎片/喷溅层的结束时间更自然。
+本图继续在 `Fire01007 > Initialize Particle` 中做随机化，当前明确切到随机尺寸，让这一批片状粒子的大小也不完全一致。左侧预览能看到一团由多块浅红/白色片状元素组成的聚合体，说明随机尺寸已经在可视结果中生效。
+
+当前选中发射器：
+- `Fire01007`
+
+左侧粒子计数当前显示：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Active]`
+- `[Fire01006] [Disabled]`
+- `[Fire01003] [Active]`
+- `[Fire01004] [Active]`
+- `[Fire01005] [Active]`
+- `[Fire01007] [Active]`
+
+右侧 `Details` 面板当前显示：
+
+`Fire01007 > Initialize Particle`
+
+可直接确认的参数为：
+- `Point Attributes`
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 2.0`
+  - `Lifetime Max = 3.0`
+  - `Color Mode = Direct Set`
+  - `Color` 为接近白色
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)` 当前关闭
+- `Sprite Attributes`
+  - `Sprite Size Mode = Random Uniform`
+  - `Uniform Sprite Size Min = 10.0`
+  - `Uniform Sprite Size Max = 20.0`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Custom`
+  - `Sprite UV Scale = (-1.0, 1.0)`
+
+输出/预览：
+- 左侧预览已不是单张片，而是由多块大小不一的片状元素叠成一团
+- 这与随机尺寸区间 `10~20` 一致，说明碎片层正在被打散成更自然的大小分布
+
+结合正文“尺寸也是随机的”“把时间到 20 左右的大小”“随机 X 的随机性”，这张图说明作者在寿命随机之后，又把尺寸也改成了区间随机。对复现而言，这一步的核心是把 `Sprite Size Mode` 切到 `Random Uniform`，并给出 `10~20` 的区间，这样碎片/片状粒子不会大小完全一致，视觉上更像爆炸后随机散开的杂片。
+
+## 补充视觉证据
+
+### S01 00:01:39
+
+本图是对早前 `S01` 段的补充视觉证据，当前明确展示的是：
+
+`Fire01002 > Particle Update > Scale Color`
+
+它的作用是补足前面主爆炸烟雾在 `Scale Color` 中的 RGB / Alpha 曲线细节，让“颜色快速退去”的节奏更容易核对。
+
+当前左侧粒子计数可确认：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Active]`
+- `[Fire01006] [Disabled]`
+
+中间 `System Overview` 中 `Fire01002` 的当前结构仍可见：
+- `Initialize Particle`
+- `Camera Offset`
+- `Particle State`
+- `Scale Sprite Size`
+- `Scale Color`
+- `Sub UV Animation`
+- `Sprite Renderer`
+
+右侧 `Details` 面板可确认：
+- `Scale Mode = RGB and Alpha Separately`
+
+`Scale RGB`
+- 模式为 `Multiply Vector by Float`
+- `Vector = (10.0, 1.0, 0.5)`
+- `Float = Float from Curve`
+- `FloatCurve = Curve for Floats`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 1.0`
+
+当前 RGB 曲线形状：
+- 起点接近 `0.9`
+- 之后一路平滑下降
+- 到末端接近 `0`
+- 表示颜色亮度在生命周期内持续衰减
+
+`Scale Alpha`
+- 模式为 `Float from Curve`
+- `FloatCurve = Curve for Floats`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 1.0`
+
+当前 Alpha 曲线形状：
+- 开头接近 `0`
+- 中段抬升到高值，峰值大约在 `0.8` 左右
+- 后段再回落到接近 `0`
+
+输出/预览：
+- 左侧预览里只剩一个很小的红点
+- 这与字幕“颜色也快速退去的感觉”一致，说明当前截到的是主爆炸亮部已经衰减后的阶段
+
+作为补充证据，这张图强化了一个关键结论：主爆炸烟雾的亮色不是靠固定色值持续显示，而是通过 `Scale Color` 中两条随 `NormalizedAge` 变化的曲线来实现“前期更亮、中后期快速退去”的节奏。对复现而言，至少需要让 RGB 曲线单调衰减，并让 Alpha 曲线形成“先起后落”的包络，才能得到类似的颜色消退感。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

@@ -1,0 +1,1134 @@
+# 35 - 23-1虚幻背景支撑梁patranges
+
+# 35 - 23-1虚幻背景支撑梁patranges
+
+## 关键术语
+
+- `蓝图`、`材质`、`粒子`、`发射器`、`系统`、`精灵`、`网格`、`光束`、`生命周期`、`速度`、`透明度`、`Niagara`、`Emitter`、`Spawn Rate`、`Spawn`、`Lifetime`、`Niagara System`、`Particle`
+
+## 分段知识
+
+### 00:00:03-00:04:58 材质、粒子、发射器
+
+- 本段定位：材质、粒子、发射器。
+- 知识点：您好,我在第23课再次向您问好,这次后续会利用在Nreal中制作的资源来制作第二个粒子效果。
+- 知识点：第二个粒子将构建为光束效果,首先制作所需的材质,然后再制作效果。
+- 知识点：那在这个状态下,我们应该先简单地添加一个作为中心的粒子到这里,然后复制这个。
+- 知识点：在中间创建一个发光的形状,然后我直接拖入材质或模块输入一个光束发射器。
+- 知识点：反正就是材质会用这个,然后这一部分可能会作为核心使用。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`粒子`、`发射器`、`生命周期`、`颜色`、`曲线`、`光束`。
+
+**关键画面：**
+
+这一张是第 23 课开场时对现有纹理资源的总览，目的是从之前在 Unreal 里做好的资源中挑出可以直接复用到“第二个粒子效果”的材质贴图。当前还没有进入 Niagara 发射器或材质图编辑，而是在 `Course_02/Texture` 目录里检查各种法阵、遮罩、拖尾和拉伸纹理。结合正文“这次后续会利用在 Unreal 中制作的资源来制作第二个粒子效果”，这张图的作用是给后面将要制作的光束效果建立素材池。
+
+当前图中可确认的路径与资源范围：
+
+```text
+Content Browser 路径：
+Signature / Course_02 / Texture
+
+当前可见纹理资源示例：
+- Circle_02
+- Flare_01
+- Normal_06
+- T_Color_01
+- T_Gra_01
+- T_Gra_02
+- T_Gra_03
+- T_Magic Circle_01
+- T_Mask Circle_01
+- T_Mask Cir…_01
+- T_Ribbon_01
+- T_Ribbon_03
+- T_Ribbon_02
+- T_Ribbon_05
+- T_Stretch
+- T_Tile_01
+- T_Trail_03
+- T_Trail_04
+- T_Trail_05
+```
+
+左侧目录结构当前可见状态：
+
+```text
+Signature / Course_02 下可见：
+- Level
+- Material
+- Mesh
+- Particle
+- Texture
+```
+
+视口与场景状态：
+
+```text
+右侧是一个空旷测试场景
+地面中央可见一个半露出的圆形/法阵类资源
+当前 Outliner 显示 Untitled (Editor) 世界中的默认环境对象
+```
+
+输出/预览：
+- 这一步不是调参数，而是确认后续光束效果会复用哪些纹理资源
+- 复现时可以先在 `Texture` 目录里整理出法阵、遮罩、Ribbon、Trail 这几类贴图，再进入材质或 Niagara 组装效果
+这一张已经切到 Niagara System `Ex_04_BG_Prop_Center` 的系统总览，用两个 emitter 开始搭“中心核心 + 外层光束/精灵”的基础结构。当前可确认：左侧 `Empty` 发射器使用 `Mesh Renderer`，负责一个中心网格效果；右侧 `Empty001` 使用 `Sprite Renderer`，负责额外的中心粒子层。字幕提到“这一部分有些不太对劲，我会找找看”，与右侧正在检查 `Empty001` 的 `Initialize Particle` 完全对应，说明这里在对齐第二个粒子层的生命周期和尺寸，让它能和中心核心配合。
+
+当前图中可确认的系统结构：
+
+```text
+System: Ex_04_BG_Prop_Center
+
+Emitter 1: Empty
+- Emitter State
+- Spawn Burst Instantaneous
+- Initialize Particle
+- Init Mesh Orientation
+- System Location
+- Particle State
+- System Location 001
+- Mesh Renderer
+
+Emitter 2: Empty001
+- Emitter State
+- Spawn Burst Instantaneous
+- Initialize Particle
+- System Location
+- Particle State
+- System Location 001
+- Sprite Renderer
+```
+
+左侧预览窗口可确认的结果：
+
+```text
+当前系统里能看到一个居中的发光核心/装置中心
+Particle Counts 显示：
+- 1 Current, 2 Max (est.) - [Empty] [Active]
+- 3 Current, 3 Max (est.) - [Empty001] [Active]
+```
+
+右侧当前选中 `Empty001 -> Initialize Particle`，可见参数：
+
+```text
+Point Attributes
+- Lifetime Mode = Direct Set
+- Lifetime = 5.0
+- Color Mode = Unset
+- Position Mode = Simulation Position
+
+Sprite Attributes
+- Sprite Size Mode = Uniform
+- Uniform Sprite Size = 20.0
+- Sprite Rotation Mode = Unset
+- Sprite UV Mode = Unset
+
+Mesh Attributes
+- Mesh Scale Mode = Unset
+- Mesh Renderer Array = Unset
+
+Ribbon Attributes
+- Ribbon Width Mode = Unset
+- Ribbon Facing Mode = Unset
+- Ribbon Twist Mode = Unset
+```
+
+输出/预览：
+- 这一步是在用两个 emitter 建立第二个特效的最小骨架：中心网格核 + 一层精灵粒子
+- 复现时可先把中心核心与辅助精灵拆成两个 emitter，再在 `Initialize Particle` 中分别校对 `Lifetime` 与 `Sprite Size`，避免一开始就把所有职责塞到一个发射器里
+这一张在原来的 `Empty` 和 `Empty001` 基础上又加入了第三个发射器 `Empty002`，并且预览里已经出现明显的中心强光和横向光束拉线。这说明系统从“中心核 + 一层精灵”推进成了“中心核 + 至少两层精灵/光束叠加”的结构。右侧当前选中 `Empty002` 的 `Scale Color` 模块，字幕提到“改为从曲线”，可以确认这一层正在通过颜色或亮度缩放来增强中心发光强度，而不是只靠固定色值。
+
+当前图中可确认的系统结构变化：
+
+```text
+当前可见发射器：
+- Empty
+- Empty001
+- Empty002
+
+其中 Empty001 与 Empty002 都使用 Sprite Renderer
+```
+
+左侧预览窗口可确认的当前效果：
+
+```text
+中心出现高亮发光核心
+左右方向有一条明显的横向光束/拉线
+原有装置外框仍然可见，说明光束效果是叠加在中心核心之上的
+
+Particle Counts
+- 1 Current, 2 Max (est.) - [Empty] [Active]
+- 1 Current, 2 Max (est.) - [Empty001] [Active]
+- 1 Current, 2 Max (est.) - [Empty002] [Active]
+```
+
+右侧当前选中 `Empty002 -> Scale Color`，可见参数：
+
+```text
+Scale Mode = RGB and Alpha Separately
+
+Scale RGB
+- 模式：Multiply Vector by Float
+- Vector = (0.5, 2.0, 10.0)
+- Float = 100.0
+
+Scale Alpha
+- 1.0
+```
+
+输出/预览：
+- 这一步是在用新增的精灵层把中心亮度和横向光束显著拉出来
+- 复现时如果中心光束不够亮，可以像这里一样额外加一层 sprite emitter，并通过 `Scale Color` 提高 RGB 强度，而不是只把原有发射器的单层参数硬拉高
+
+### 00:04:58-00:09:52 材质、精灵、光束
+
+- 本段定位：材质、精灵、光束。
+- 知识点：再来一个,从曲线。
+- 知识点：你们能看到中间的那个值现在在抖动吗? 关于中间的值在每一帧中不断变化。
+- 知识点：可以理解为大小在不断变化的那种感觉。
+- 知识点：再加一个的话就是上面要有那个角的形状。
+- 知识点：这种情况下就是需要固定一下节奏啊。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`颜色`、`曲线`、`光束`。
+
+**关键画面：**
+
+这一张把 `Empty002` 的 `Scale Color` 从固定值推进成“按生命周期曲线驱动”的方式。右侧可以直接确认：`Scale RGB` 和 `Scale Alpha` 都改成了 `Float from Curve`，曲线在粒子中段抬高、两端回落。结合正文“你们能看到中间的那个值现在在抖动吗”“可以理解为大小在不断变化的那种感觉”，这里的意图是让中心光束或精灵在生命周期中间更亮、更强，再在前后阶段减弱，从而形成脉冲式发光，而不是全程恒定。
+
+当前图中可确认的系统状态：
+
+```text
+System: Ex_04_BG_Prop_Center
+
+可见发射器：
+- Empty
+- Empty001
+- Empty002
+
+当前选中：
+Empty002 -> Scale Color
+```
+
+右侧当前可见 `Scale Color` 配置：
+
+```text
+Scale Mode = RGB and Alpha Separately
+
+Scale RGB
+- 模式：Multiply Vector by Float
+- Vector = (0.5, 2.0, 10.0)
+- Float = Float from Curve
+
+Float Curve（RGB）
+- Curve for Floats
+- CurveIndex = PARTICLES.NormalizedAge
+- Scale Curve = 1.0
+- 曲线形状：起点较低 -> 中段上升到峰值 -> 末端回落
+
+Scale Alpha
+- 模式：Float from Curve
+
+Float Curve（Alpha）
+- Curve for Floats
+- CurveIndex = PARTICLES.NormalizedAge
+- 曲线形状同样是中间高、两端低
+```
+
+左侧预览可确认的结果：
+
+```text
+中心发光核心明显更亮
+外框中间有发光球体感
+当前系统仍保持三层发射器同时激活
+```
+
+输出/预览：
+- 这一步是在用生命周期曲线塑造中心光束/精灵的明暗节奏
+- 复现时如果想让中心效果有“呼吸”或“脉冲”感，可把 `Scale Color` 的浮点乘数切到 `Float from Curve`，让亮度在 `NormalizedAge` 中段抬高
+这一张在原来的 `Empty001`、`Empty002` 基础上又加了一个新的 `Empty003` sprite 发射器，用来补“上面要有角的形状”这一层。左侧预览里已经能看到中心核心上方延伸出一条尖锐的竖向光束/尖角，而系统总览中三个 sprite emitter 并列排开，说明当前正在通过继续复制 emitter 的方式，把不同形状职责拆开处理，而不是让单一发射器同时兼顾所有轮廓。
+
+当前图中可确认的系统结构：
+
+```text
+System: Ex_04_BG_Prop_Center
+
+当前可见 sprite 发射器：
+- Empty001
+- Empty002
+- Empty003
+
+三者都包含：
+- Emitter State
+- Spawn Burst Instantaneous
+- Initialize Particle
+- System Location
+- Particle State
+- Scale Sprite Size
+- System Location 001
+- Scale Color
+- Sprite Renderer
+```
+
+左侧预览窗口可确认的效果变化：
+
+```text
+中心核心仍保留发光球体
+在核心上方新增了一条细长、尖锐的光束/尖角
+说明新加的发射器正在负责“顶部角形”这一视觉层
+
+Particle Counts
+- 1 Current, 2 Max (est.) - [Empty] [Active]
+- 1 Current, 2 Max (est.) - [Empty001] [Active]
+- 1 Current, 2 Max (est.) - [Empty002] [Active]
+- 1 Current, 2 Max (est.) - [Empty003] [Active]
+```
+
+输出/预览：
+- 这一步是在继续通过复制 emitter 的方式为光束效果补独立形状层
+- 复现时如果需要额外的尖角、上冲光束或单独轮廓，优先新增一个 sprite emitter 负责该形状，而不是把已有 emitter 的图形硬改到兼顾所有用途
+这一张继续围绕 `Empty003` 做精灵层的最终布局检查，重点已经从曲线调节转到 `Sprite Renderer` 的材质绑定和朝向设置。右侧可以直接确认 `Empty003` 的精灵材质使用的是 `M_Additive_01_Ins_05`，而左侧预览里中心光束与装置核心的排布已经比较完整。字幕“在有魔法阵的状态下查看布局是正确的”与画面一致，说明这一帧的目的就是把新加的尖角/光束层放回整体场景中，确认它和中心核心、外框以及魔法阵参考关系没有错位。
+
+当前图中可确认的系统结构：
+
+```text
+System: Ex_04_BG_Prop_Center
+
+当前可见发射器：
+- Empty
+- Empty001
+- Empty002
+- Empty003
+
+当前选中：
+Empty003 -> Sprite Renderer
+```
+
+左侧预览窗口可确认的效果状态：
+
+```text
+中心有强发光核心
+左右方向有横向光束拉线
+上方尖角/竖向光束层仍然可见
+整体已经接近“中心装置 + 魔法阵辅助 + 光束核心”的组合效果
+```
+
+右侧当前可见 `Empty003 -> Sprite Renderer` 参数：
+
+```text
+Material = M_Additive_01_Ins_05
+Material User Parameter = None
+Source Mode = Particles
+Alignment = Automatic
+Facing Mode = Automatic
+Macro UVRadius = 0.0
+Default Pivot in… = (0.5, 0.9)
+Remove HMD Roll = 未启用
+
+Pixel Coverage Mode = Automatic
+Pixel Coverage B… = 1.0
+
+Sorting
+- Sort Mode = None
+
+Visibility
+- Renderer Visibility = 0
+```
+
+输出/预览：
+- 这一步是在确认 `Empty003` 所用的 additive 精灵材质和精灵对齐方式是否能正确形成顶部角形/光束层
+- 复现时在新增 sprite emitter 后，不要只看曲线或大小，还要回到 `Sprite Renderer` 核对具体材质实例、`Facing Mode`、`Pivot` 和整体布局是否匹配中心魔法阵/核心效果
+
+### 00:09:52-00:14:39 材质、网格、颜色
+
+- 本段定位：材质、网格、颜色。
+- 知识点：魔法阵复制了之前使用的材质之后。
+- 知识点：我没有带资源回来。
+- 知识点：我带来了这样三张。
+- 知识点：需要在这里放入贴图看看。
+- 知识点：我们先调用网格吧。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`贴图`、`颜色`。
+
+**关键画面：**
+
+这一张开始处理“材质、网格、颜色”这一段里最直接的工作：在现有 additive 材质实例基础上复制/替换贴图，并把它绑定到新的粒子层上。左侧 `Content Browser` 当前定位在 `Course_02/Material`，可见大量 `M_Additive_*`、`M_Ribbon_*`、`M_Orb_*` 等材质；中间系统总览里已经新增了一个 `Empty004`；右侧则明确显示 `Empty004 -> Sprite Renderer` 当前材质是 `M_Additive_01_Ins_02`。字幕“我将替换纹理”与这一操作完全对应，说明这一步的核心是先建立一个新材质实例引用点，再准备把贴图换进去观察效果。
+
+当前图中可确认的路径与材质资源范围：
+
+```text
+Content Browser 路径：
+Signature / Course_02 / Material
+
+当前可见材质资源示例：
+- M_Additive_01_Ins_04
+- M_Additive_01_Ins_05
+- M_Additive_01_Ins_01
+- M_Additive_01_Ins_02
+- M_Additive_01_Ins_03
+- M_Additive_01_Ins_06
+- M_Mesh_01
+- M_Orb_01
+- M_Orb_Core_01
+- M_Ribbon_01
+- M_Swing_*
+```
+
+当前图中可确认的 Niagara 结构变化：
+
+```text
+System: Ex_04_BG_Prop_Center
+
+新增发射器：
+Empty004
+
+当前选中：
+Empty004 -> Sprite Renderer
+```
+
+右侧当前可见 `Empty004 -> Sprite Renderer` 参数：
+
+```text
+Material = M_Additive_01_Ins_02
+Material User Parameter = None
+Source Mode = Particles
+Alignment = Automatic
+Facing Mode = Automatic
+Macro UVRadius = 0.0
+Default Pivot in U... = (0.5, 0.5)
+Pixel Coverage Mode = Automatic
+Pixel Coverage B... = 1.0
+Sort Mode = None
+Renderer Visibility = 0
+```
+
+输出/预览：
+- 这一步是在为新的 sprite 发射器挂上一个将被继续改贴图的 additive 材质实例
+- 复现时如果需要基于旧效果快速派生新层，优先复制已有 `M_Additive_*` 实例并替换内部贴图，而不是从零重新搭材质
+这一张说明新材质层已经真正加入到系统里，并开始作为“魔法阵”或底部装饰层参与最终效果。左侧预览里，中心装置下方已经出现了一圈紫色法阵/纹理图样；右侧当前仍选中 `Empty004 -> Scale Color`，并且 `RGB and Alpha Separately` 的曲线控制还在使用中。这表明 `Empty004` 不是单纯换一个贴图就结束，而是把新纹理放进系统后，再通过颜色和曲线去控制它的亮度节奏，使法阵层既能看见又不至于压过中心核心。
+
+当前图中可确认的系统结构状态：
+
+```text
+System: Ex_04_BG_Prop_Center
+
+当前可见发射器：
+- Empty
+- Empty001
+- Empty002
+- Empty003
+- Empty004
+
+当前选中：
+Empty004 -> Scale Color
+```
+
+左侧预览窗口可确认的效果变化：
+
+```text
+中心装置仍保留蓝白发光核心
+装置下方已经出现一圈偏紫色的魔法阵/图形层
+说明 Empty004 这一层正在承担“底部法阵/辅助纹理”职责
+```
+
+右侧当前可见 `Empty004 -> Scale Color` 配置：
+
+```text
+Scale Mode = RGB and Alpha Separately
+
+Scale RGB
+- 模式：Multiply Vector by Float
+- Vector = (5.0, 2.0, 10.0)
+- Float = Float from Curve
+
+Float Curve（RGB）
+- CurveIndex = PARTICLES.NormalizedAge
+- 曲线形状：两端较低，中段升高到峰值
+
+Scale Alpha
+- 模式：Float from Curve
+- 曲线形状同样为中间高、两端低
+```
+
+输出/预览：
+- 这一步是在把新换上的材质纹理真正变成系统中的一层可见魔法阵，并用曲线控制其显示强弱
+- 复现时把新材质放进 sprite emitter 后，还要继续检查 `Scale Color` 是否需要像这里一样用曲线压节奏，否则法阵层可能会过亮或全程死板不变
+这一张继续围绕 `Empty004` 这一层做定位和调色，字幕直接把它描述成类似“光环”的部分。左侧 `Content Browser` 仍停在 `Course_02/Material`，说明作者还在对照已有材质资源；右侧当前依旧是 `Empty004 -> Scale Color`，但 `Scale RGB` 的颜色向量已经改成更偏暖白、偏黄的 `(5.0, 3.0, 1.0)`。这表明 `Empty004` 不只是简单的紫色法阵层，还被进一步当作一个围绕核心的“光环”层处理，通过更暖的颜色比例和生命周期曲线来决定它的亮度节奏。
+
+当前图中可确认的资源与系统状态：
+
+```text
+Content Browser 路径：
+Signature / Course_02 / Material
+
+当前选中：
+Empty004 -> Scale Color
+
+Empty004 当前结构可见：
+- Emitter State
+- Spawn Burst Instantaneous
+- Initialize Particle
+- System Location
+- Sprite Facing and Alignment
+- Particle State
+- Scale Sprite Size
+- System Location 001
+- Scale Color
+- Sprite Renderer
+```
+
+右侧当前可见 `Empty004 -> Scale Color` 配置：
+
+```text
+Scale Mode = RGB and Alpha Separately
+
+Scale RGB
+- 模式：Multiply Vector by Float
+- Vector = (5.0, 3.0, 1.0)
+- Float = Float from Curve
+
+Float Curve（RGB）
+- CurveIndex = PARTICLES.NormalizedAge
+- 曲线仍然是中段高、前后低
+
+Scale Alpha
+- 模式：Float from Curve
+- 曲线同样是中段高、两端低
+```
+
+左侧材质目录当前可见资源示例：
+
+```text
+- M_Additive_*
+- M_Orb_01
+- M_Ribbon_*
+- M_Swing
+- PP_*
+- UVTest
+```
+
+输出/预览：
+- 这一步是在把 `Empty004` 这一层更明确地塑造成围绕核心的光环或辅助发光层
+- 复现时如果某层更接近“光环”而不是“法阵线稿”，可以像这里一样优先调 `Scale RGB` 的颜色比例和曲线强弱，而不是只改贴图本身
+
+### 00:14:39-00:19:08 材质、发射器、光束
+
+- 本段定位：材质、发射器、光束。
+- 知识点：那我们就开始进行吧。
+- 知识点：先拿出一个动态参数。
+- 知识点：这个需要做一个发射器。
+- 知识点：会制作成两个通道。
+- 知识点：关于外国纹理的随机值。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`材质`、`纹理`、`发射器`、`速度`、`颜色`、`动态参数`、`光束`。
+
+**关键画面：**
+
+这一张把视角切到材质层，目的是核对当前光束材质本身的基础渲染属性。前景窗口是材质 `M_Auro_Beam_01` 的 `Material Graph`，右侧材质输出面板可见 `Base Color`、`Emissive Color`、`Opacity`、`World Position Offset` 等标准输入；左下 `Details` 明确显示当前材质属性里 `Material Domain = Surface`、`Blend Mode = Additive`、`Shading Model = Default Lit`。结合上一段已经把多个 sprite 层叠进 `Ex_04_BG_Prop_Center`，这张图的可确认作用是检查“光束/辉光材质必须使用 Additive 叠加”这一基础前提。
+
+当前图中可确认的材质对象与窗口关系：
+
+```text
+Niagara/System 标签：
+- Ex_04_BG_Prop_Center
+- M_Additive_01_Ins_08
+
+当前前景材质标签：
+- M_Auro_Beam_01
+
+当前编辑器页面：
+- Material Graph
+```
+
+当前图中可确认的材质属性：
+
+```text
+Material Domain = Surface
+Blend Mode = Additive
+Shading Model = Default Lit
+Two Sided = 关闭
+Use Material Attributes = 关闭
+```
+
+当前图中可确认的输出端输入槽：
+
+```text
+Material Output 可见输入：
+- Base Color
+- Emissive Color
+- Opacity
+- World Position Offset
+- Ambient Occlusion
+```
+
+输出/预览：
+- 这一步不是展示完整节点网络，而是在进入材质后先核对渲染模式是否适合做光束与辉光层
+- 复现时若最终光束不发亮、叠加感弱，优先先检查 `Blend Mode` 是否仍为 `Additive`
+这一张终于给出 `M_Auro_Beam_01` 的一段可复建节点链，核心是在两张纹理之间做“遮罩形状 + UV 平移”的组合。上方彩色纹理先取通道遮罩，再乘以强度；下方坐标经过 `Panner` 后与上方结果做 `Add`，最后驱动右侧灰度纹理的 `UVs`。从可见结构判断，这一段的目标不是直接输出颜色，而是先把一张噪声/条带遮罩叠加到滚动 UV 上，用来生成会移动变化的光束纹理采样坐标。
+
+节点定义集：
+
+```text
+1. Texture Sample（上方）
+- 可见输出：RGB / R / G / B / A / RGBA
+- 预览：彩色噪声/斑驳纹理
+
+2. Mask (R G)
+- 输入：来自上方 Texture Sample
+- 作用：只取 R、G 两个通道
+
+3. Multiply(1)
+- A：来自 Mask(R G)
+- B：常量 1.0
+
+4. Panner
+- Coordinate：来自左侧未完整显示的坐标节点
+- Time：未接线
+- Speed X = 0.0
+- Speed Y = 0.0
+
+5. Add
+- A：来自 Panner
+- B：来自 Multiply(1)
+
+6. Texture Sample（右侧）
+- UVs：来自 Add 输出
+- 预览：灰度条带/光束纹理
+```
+
+连线集：
+
+```text
+上方 Texture Sample -> Mask (R G)
+Mask (R G) -> Multiply(1).A
+Multiply(1).输出 -> Add.B
+左侧坐标节点 -> Panner.Coordinate
+Panner.输出 -> Add.A
+Add.输出 -> 右侧 Texture Sample.UVs
+```
+
+设置/参数：
+
+```text
+Multiply(1).B = 1.0
+Panner.Speed = (0.0, 0.0)
+左侧坐标节点可见参数：Index = 0
+```
+
+输出/预览：
+- 这一段把“遮罩扰动”叠加到滚动 UV，再去采样右侧条带纹理
+- 如果要复现同类光束材质，可先按这条链搭出 `Coordinate -> Panner -> Add -> Texture Sample.UVs` 主干，再把另一张纹理的通道遮罩并到 `Add.B`
+这一张继续展示 `M_Auro_Beam_01` 的亮度整形部分，重点是“每张纹理用不同的 `Power` 指数和同一档位的乘强度，再把两路结果相加”。画面中上下两条分支各自从一张灰度纹理开始，先进入 `Power`，再进入 `Multiply(5)`，最后汇入同一个 `Add`。字幕“功率值在每个纹理上稍微不同”与图面完全一致：上支路的 `Exp` 为 `0.9`，下支路为 `2.0`，说明作者在用不同的对比度曲线把两张条带纹理压成不同的亮暗分布，再叠加出更丰富的光束层次。
+
+节点定义集：
+
+```text
+1. Texture Sample（上支路）
+- 预览：灰度条带/波纹纹理
+
+2. Power(X, 0.9)
+- Base：来自上支路 Texture Sample
+- Exp = 0.9
+
+3. Multiply(5)（上支路）
+- A：来自 Power(X, 0.9)
+- B = 5.0
+
+4. Texture Sample（下支路）
+- 预览：另一张灰度条带纹理
+
+5. Power(X, 2)
+- Base：来自下支路 Texture Sample
+- Exp = 2.0
+
+6. Multiply(5)（下支路）
+- A：来自 Power(X, 2)
+- B = 5.0
+
+7. Add
+- A：来自上支路 Multiply(5)
+- B：来自下支路 Multiply(5)
+
+8. Multiply(1)
+- A：来自 Add
+- B = 1.0
+- 输出去向在截图右侧之外，未完整显示
+```
+
+连线集：
+
+```text
+上支路 Texture Sample -> Power(X, 0.9) -> Multiply(5) -> Add.A
+下支路 Texture Sample -> Power(X, 2) -> Multiply(5) -> Add.B
+Add -> Multiply(1)
+```
+
+设置/参数：
+
+```text
+上支路 Power.Exp = 0.9
+下支路 Power.Exp = 2.0
+两路 Multiply.B = 5.0
+末端 Multiply.B = 1.0
+```
+
+输出/预览：
+- 这一步在做两张纹理的亮度曲线分工：一张保持更平滑的过渡，另一张被压得更尖锐
+- 复现时可先固定两路乘数都为 `5.0`，再通过分别调整 `Power.Exp` 来拉开主光束和细节噪声的层次
+
+### 00:19:08-00:23:50 蓝图、材质、系统
+
+- 本段定位：蓝图、材质、系统。
+- 知识点：以距离值来进行渐变。
+- 知识点：这样持续旋转的材质。
+- 知识点：我们需要把这个放在光束中。
+- 知识点：需要再创建一个例子。
+- 知识点：我们要用动态光束来制作。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`材质`、`系统`、`蓝图`、`颜色`、`光束`。
+
+**关键画面：**
+
+这一张展示 `M_Auro_Beam_01` 在输出端附近加入基于距离的透明度衰减，和字幕“以距离值来进行渐变会比较好”一致。画面里可见 `Particle Color` 参与后段计算，经过 `Add`、`Multiply` 后接到 `Depth Fade`，再把 `Depth Fade` 的结果送向材质输出区域。能可靠确认的要点是：这里不是单纯固定 `Opacity`，而是用 `Depth Fade` 根据与场景表面的距离来柔化光束边缘，避免交界处过硬。
+
+节点定义集：
+
+```text
+1. Particle Color
+- 类型：Input Data
+- 可见输出：RGB / R / G / B / A / RGBA
+
+2. Add
+- A：来自左侧上方分支
+- B：来自左侧下方分支
+
+3. Multiply
+- A：来自 Add
+- B：来自 Particle Color 的 Alpha 分支
+
+4. Depth Fade
+- Opacity：来自 Multiply
+- FadeDistance = 100.0
+
+5. Material Output（M_Auro_Beam_01）
+- 可见输入：Emissive Color、Opacity、World Position Offset
+```
+
+连线集：
+
+```text
+左侧上方分支 -> Add.A
+左侧下方分支 -> Add.B
+Add -> Multiply.A
+Particle Color.A -> Multiply.B
+Multiply -> Depth Fade.Opacity
+Depth Fade 输出继续送往右侧材质输出区域
+```
+
+设置/参数：
+
+```text
+Depth Fade:
+- Opacity Default = 1.0
+- Fade Distance Default = 100.0
+```
+
+输出/预览：
+- 这一步用 `Depth Fade` 把已有光束透明度再做一层距离衰减
+- 复现时如果光束穿插地面或模型边缘时显得太硬，优先在 `Opacity` 末端补上这一类 `Depth Fade` 处理
+这一张回到 Niagara System `Ex_04_BG_Beam`，正在处理一个新建的 `Empty` 发射器，并把它的生命周期改成无限循环。字幕“改为无限”与右侧 `Emitter State` 面板一致：当前选中 `Life Cycle` 页签，`Loop Behavior` 被设置为 `Infinite`，`Loop Duration = 1.0`。左侧预览中已经能看到一条横向蓝色光束，说明这个空发射器将与右边现有的 `DynamicBeam` 一起构成新的背景光束系统。
+
+当前图中可确认的系统结构：
+
+```text
+System: Ex_04_BG_Beam
+
+System Overview:
+- Ex_04_BG_Beam（System）
+- Empty（Sprite Renderer）
+- DynamicBeam（Ribbon Renderer）
+```
+
+当前图中可确认的 `Empty` 发射器模块：
+
+```text
+Properties
+Emitter Summary
+Emitter Spawn
+Emitter Update
+- Emitter State
+Particle Spawn
+- Initialize Particle
+Particle Update
+- Particle State
+Render
+- Sprite Renderer
+```
+
+右侧 `Emitter State` 可确认设置：
+
+```text
+Life Cycle Mode = Self
+Inactive Response = Complete (Let Particles Finish then Kill)
+Loop Behavior = Infinite
+Loop Duration = 1.0
+Recalculate Duration = 关闭
+Loop Delay = 0.0
+Scalability Mode = System
+```
+
+输出/预览：
+- 这一步的目标是让新的基础发射器持续运行，而不是只播一次
+- 复现时如果后续光束层需要常驻，先把 `Emitter State` 的 `Loop Behavior` 改成 `Infinite`
+这一张继续编辑 `Ex_04_BG_Beam` 里的 `Empty` 发射器，并把 `Scale Color` 调成“颜色与透明度分别由曲线控制”的模式。左侧预览里已经看到中心发亮的小球和横向蓝色光束同时存在；右侧 `Scale Color` 模块则明确显示 `Scale Mode = RGB and Alpha Separately`，`Scale RGB` 使用 `Multiply Vector by Float`，颜色向量为 `(5.0, 2.5, 1.0)`，并通过 `Float from Curve` 以 `Particles.NormalizedAge` 驱动。下方 `Scale Alpha` 同样是 `Float from Curve`，曲线在中段抬高、首尾较低，说明这一步是在把中心 sprite 做成“出生淡入、中段最亮、结束淡出”的节奏。
+
+当前图中可确认的 `Empty` 发射器模块状态：
+
+```text
+Emitter Update
+- Emitter State（Self / Infinite）
+- Spawn Burst Instantaneous
+
+Particle Spawn
+- Initialize Particle
+- Sprite Facing and Alignment
+
+Particle Update
+- Particle State
+- Scale Sprite Size
+- Scale Color
+
+Render
+- Sprite Renderer
+```
+
+`Scale Color` 可确认设置：
+
+```text
+Scale Mode = RGB and Alpha Separately
+
+Scale RGB
+- 模式：Multiply Vector by Float
+- Vector = (5.0, 2.5, 1.0)
+- Float = Float from Curve
+- Curve Index = Particles.NormalizedAge
+- Scale Curve = 100.0
+
+Scale Alpha
+- 模式：Float from Curve
+- Curve for Floats
+- Curve Index = Particles.NormalizedAge
+```
+
+输出/预览：
+- 当前 `Empty` 不是主光束本体，而是叠在起点位置的中心高亮 sprite
+- 复现时可先用暖色向量 `(5.0, 2.5, 1.0)` 配合钟形曲线，做出中心闪点与光束同步呼吸的效果
+
+### 00:23:50-00:28:44 粒子、光束、透明度
+
+- 本段定位：粒子、光束、透明度。
+- 知识点：现在需要输入设置值。
+- 知识点：后续会使用之前制作的马达。
+- 知识点：透明值变得过高了。
+- 知识点：首先将粒子数量适当。
+- 知识点：在光束2米的设置中。
+- 知识点：只对B轴部分进行曲线处理。
+- 知识点：在粒子中设置的时机和。
+- 核对对象：`粒子`、`透明度`、`曲线`、`光束`。
+
+**关键画面：**
+
+当前图中可确认的系统结构：
+
+```text
+System: Ex_04_BG_Beam
+
+Emitter 1:
+- Empty
+- Emitter State = Self / Infinite
+- Spawn Burst Instantaneous
+- Initialize Particle
+- Sprite Facing and Alignment
+- Scale Sprite Size
+- Scale Color
+- Sprite Renderer
+
+Emitter 2:
+- DynamicBeam
+- Emitter State = Self / Infinite
+- Beam Emitter Setup
+- Spawn Burst Instantaneous
+- Initialize Particle
+- Spawn Beam（当前选中）
+- Beam Width
+- Update Beam
+- Color
+- Ribbon Renderer
+```
+
+已确认信息：
+
+```text
+当前选中模块：DynamicBeam -> Particle Spawn -> Spawn Beam
+右侧仅可见升级提示：
+- Version upgrade note
+- 2.0: Support position type
+左侧粒子计数：
+- DynamicBeam: 100 Current, 100 Max (est.) [Active]
+- Empty: 1 Current, 1 Max (est.) [Active]
+```
+
+```text
+- Spawn Beam 的 Position Method / Start / End / Tangent / Source 等具体字段未显示
+```
+这一张明确展示了 `DynamicBeam -> Beam Emitter Setup` 的端点设定方式。字幕“然后从这里的模拟位置开始”与右侧参数一致：`Beam Start` 的模式是 `Add Vector to Position`，其 `Position` 来源为 `Simulation Position`，再额外叠加向量 `(125.0, 0.0, 0.0)`；`Beam End` 也被设置为 `(125.0, 0.0, 0.0)` 的位置偏移。结合左侧预览中以中心亮点为基准的短蓝色光束，可以确认这一阶段是在用模拟坐标作为基准，再手动给 beam 的起止点加固定偏移，让光束沿本地 X 方向拉开。
+
+当前图中可确认的 `DynamicBeam` 结构：
+
+```text
+Emitter Update
+- Emitter State（Self / Infinite）
+- Beam Emitter Setup（当前选中）
+- Spawn Burst Instantaneous
+
+Particle Spawn
+- Initialize Particle
+- Spawn Beam
+- Beam Width
+
+Particle Update
+- Particle State
+- Update Beam
+- Color
+- Solve Forces and Velocity
+
+Render
+- Ribbon Renderer
+```
+
+`Beam Emitter Setup` 可确认参数：
+
+```text
+Beam Start
+- 模式：Add Vector to Position
+- Position = Simulation Position
+- Vector = (125.0, 0.0, 0.0)
+- Absolute Beam Start = 开启
+
+Beam End
+- Vector = (125.0, 0.0, 0.0)
+- Absolute Beam End = 关闭
+
+Use Beam Tangen... = 关闭
+```
+
+输出/预览：
+- 左侧预览中 beam 以中心亮点附近为基准，向一侧短距离延伸
+- 复现时可先把 `Beam Start` 绑到 `Simulation Position`，再通过固定向量偏移控制 beam 在局部坐标中的展开方向
+这一张继续停留在 `DynamicBeam -> Beam Emitter Setup`，但这次把 `Beam End` 的展开内容完全打开，用来让终点在 Z 轴方向随循环年龄变化。画面可确认 `Beam Start` 仍是 `Add Vector to Position + Simulation Position + (125.0, 0.0, 0.0)`；`Beam End` 的模式则切为 `Convert Vector to Position`，其 `Input Position` 使用 `Make Vector`，其中 `X = 0.0`、`Y = 0.0`，`Z` 由 `Float from Curve` 驱动。该曲线索引为 `Emitter.NormalizedLoopAge`，关键帧大致表现为首尾约 `150`、中段抬到约 `200`。字幕“这里的点直线连接了”对应的就是：让 beam 的末端点在一个明确的向量位置上变化，从而形成可控的直线束端点运动。
+
+`Beam Emitter Setup` 当前可确认参数：
+
+```text
+Beam Start
+- 模式：Add Vector to Position
+- Position = Simulation Position
+- Vector = (125.0, 0.0, 0.0)
+- Absolute Beam Start = 开启
+
+Beam End
+- 模式：Convert Vector to Position
+- Input Position = Make Vector
+  - X = 0.0
+  - Y = 0.0
+  - Z = Float from Curve
+```
+
+`Beam End -> Z` 曲线可确认设置：
+
+```text
+来源：Float from Curve
+Curve for Floats：单峰曲线
+Curve Index = Emitter.NormalizedLoopAge
+Scale Curve = 1.0
+关键趋势：
+- 起点约 150
+- 中段峰值约 200
+- 终点回落到约 150
+Absolute Beam End = 开启
+Use Beam Tangent = 关闭
+```
+
+输出/预览：
+- 这一步让 beam 终点不是固定死值，而是在循环过程中沿 Z 轴做一次上拱再回落
+- 复现时如果需要“束端抬起再落下”的运动，不必改粒子速度，直接在 `Beam End` 的 `Make Vector.Z` 上挂 `Emitter.NormalizedLoopAge` 曲线即可
+
+### 00:28:44-00:29:49 关键流程 07
+
+- 本段定位：关键流程 07。
+- 知识点：切键也要进行设置,这个会用本地址来更改。
+- 知识点：Miles 0.1,这也要放入Miles 0.1。
+- 知识点：这种话,这样给的话,这样给的话其实,这样给的话,这样延伸的形态,其实这样给的话,这种长长的形态,然后这种长长的形态,然后正在展示给大家看。
+
+**关键画面：**
+
+这一张继续编辑 `DynamicBeam -> Beam Emitter Setup`，重点从端点位置切到切线（Tangent）控制。右侧上半部分打开了 Niagara 的输入选择器，说明作者正在给 Beam 的 tangent 字段挂动态输入；下半部分已经能看到 `Beam Start Tangent` 与 `Beam End Tangent`。其中 `Beam Start Tangent` 的模式明确是 `Multiply Vector by Float`，`Vector` 取自 `ENGINE OWNER SystemXAxis`，`Float = 1.0`，字幕同时提示“迈尔斯 0.1”，结合段落说明可知这里是在用系统 X 轴方向作为起始切线基向量，再准备把缩放值调到较小量级。
+
+当前图中可确认的系统结构：
+
+```text
+System: Ex_04_BG_Beam
+
+Emitter:
+- Empty
+- DynamicBeam
+
+当前选中模块：
+- DynamicBeam -> Beam Emitter Setup
+```
+
+`Beam Emitter Setup` 当前可确认切线设置：
+
+```text
+Beam Start Tangent
+- 模式：Multiply Vector by Float
+- Vector = ENGINE OWNER SystemXAxis
+- Float = 1.0（当前画面可见值）
+
+Beam End Tangent
+- 模式：Multiply Vector by Float
+- Vector = (1.0, 1.0, 1.0)
+- Float = 1.0
+- Absolute End Tangent = 关闭
+```
+
+输入候选列表可确认项：
+
+```text
+Suggested:
+- Convert Position to Vector
+- Lerp Vector
+- Multiply Vector
+- Multiply Vector by Float
+- Random Range Vector
+- Random Vector
+- Rotate Vector
+- Select Vector from Array
+- Vector from Curve
+- Vector from Float
+```
+
+输出/预览：
+- 这一步开始显式控制 beam 两端的切线方向，而不只控制起止点
+- 复现时如果需要 beam 保持沿系统主轴延伸，可先把 `Beam Start Tangent` 绑定到 `SystemXAxis`，再用较小浮点数缩放它
+这一张仍然停留在 `DynamicBeam -> Beam Emitter Setup`，但作者已经把前一张里基于轴向乘浮点的切线输入，直接落成了具体向量值。右侧可以清楚看到 `Beam Start Tangent = (-0.1, 0.0, 0.0)`，`Beam End Tangent = (-0.1, 0.0, 0.0)`；同时 `Beam End` 仍然是 `Convert Vector to Position`，其 `Z` 继续由 `Float from Curve` 驱动。字幕“用外部结束切线来处理”说明此时在通过外部 end tangent 让 beam 的长条形态更稳定、更顺着一条方向延伸，而不是任由端点默认插值。
+
+当前图中可确认的 `Beam Emitter Setup` 设置：
+
+```text
+Beam End
+- 模式：Convert Vector to Position
+- Input Position = Make Vector
+  - X = 0.0
+  - Y = 0.0
+  - Z = Float from Curve
+- Absolute Beam End = 开启
+
+Beam Start Tangent = (-0.1, 0.0, 0.0)
+Absolute Start Tangent = 关闭
+
+Beam End Tangent = (-0.1, 0.0, 0.0)
+Absolute End Tangent = 关闭
+```
+
+可确认的曲线背景状态：
+
+```text
+Beam End.Z:
+- 来源：Float from Curve
+- Curve Index = Emitter.NormalizedLoopAge
+- 曲线趋势：首尾约 150，中段峰值约 200
+```
+
+输出/预览：
+- 这一步把两端切线都压到一个很小的负 X 方向向量，使 beam 更像被轻微拉直的长条，而不是大幅弯曲
+- 复现时如果 beam 形态过于鼓包或拐弯过猛，可先把 start/end tangent 都收敛到 `(-0.1, 0, 0)` 这一类小向量
+这一张是同一组 Beam 形态调节的收尾确认图。右侧参数继续保持 `Beam End = Convert Vector to Position`，`Z` 用 `Emitter.NormalizedLoopAge` 曲线驱动，`Beam Start Tangent` 与 `Beam End Tangent` 都是 `(-0.1, 0.0, 0.0)`；与上一张不同的是，这里 `Absolute End Tangent` 已被明确勾选，而 `Absolute Start Tangent` 仍未开启。字幕“这样延伸的形态”对应的就是：让终点切线以绝对方向生效，从而把 beam 的拉伸尾端稳定在一个更一致的外伸方向上。
+
+当前图中可确认的最终状态：
+
+```text
+Beam End
+- 模式：Convert Vector to Position
+- Input Position = Make Vector
+  - X = 0.0
+  - Y = 0.0
+  - Z = Float from Curve
+- Curve Index = Emitter.NormalizedLoopAge
+- Absolute Beam End = 开启
+
+Beam Start Tangent = (-0.1, 0.0, 0.0)
+Absolute Start Tangent = 关闭
+
+Beam End Tangent = (-0.1, 0.0, 0.0)
+Absolute End Tangent = 开启
+```
+
+输出/预览：
+- 左侧预览里能看到更明显的竖向/斜向细长 beam 轨迹，说明终点切线绝对化后，束尾延展方向更稳定
+- 复现时若想要“长长拉出去”的束尾形态，可在保留小切线向量的同时，只打开 `Absolute End Tangent`
+
+## 补充视觉证据
+
+### S01 00:04:42
+
+这张补充截图回到 `Ex_04_BG_Prop_Center` 的早期阶段，用来明确 `Empty002` 在 `Scale Color` 上的实际修正值。字幕直接说明“颜色值出现异常，所以先调整颜色值”，右侧 `Details` 面板中当前选中模块是 `Empty002 -> Scale Color`，并且 `Scale Mode = RGB and Alpha Separately`。`Scale RGB` 采用 `Multiply Vector by Float`，向量明确为 `(2.0, 8.0, 10.0)`，乘数 `Float = 100.0`；`Scale Alpha = 1.0`。左侧预览里中心白色高亮已经非常强，说明这张图的用途就是补证前文没有拍清的颜色倍率参数，解释为何该层会出现明显的高亮和偏青白色发光。
+
+当前图中可确认的系统结构：
+
+```text
+System: Ex_04_BG_Prop_Center
+
+当前活跃发射器：
+- Empty
+- Empty001
+- Empty002
+
+当前选中：
+- Empty002 -> Particle Update -> Scale Color
+```
+
+`Scale Color` 可确认参数：
+
+```text
+Scale Mode = RGB and Alpha Separately
+
+Scale RGB
+- 模式：Multiply Vector by Float
+- Vector = (2.0, 8.0, 10.0)
+- Float = 100.0
+
+Scale Alpha
+- 值 = 1.0
+```
+
+输出/预览：
+- 这是对 `Empty002` 发光颜色的直接修正，用高倍 RGB 把中心层推到强烈的青白色加亮效果
+- 复现时如果该层亮度异常偏低或颜色不对，应优先核对这里的 `Vector` 和 `Float` 是否与截图一致
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+

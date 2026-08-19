@@ -1,6 +1,6 @@
 # Niagara 视觉特效制作原则
 
-本文件用于制作或修复 Niagara 视觉效果时加载。它补充 `SKILL.md` 的 Niagara 专项规则，不替代插件命令文档和 folder JSON schema。
+本文件用于制作或修复 Niagara 视觉效果时加载。它补充 `SKILL.md` 的 Niagara 专项规则，不替代插件命令文档和 folder HJSON schema。
 
 ## 1. 视觉语义优先
 

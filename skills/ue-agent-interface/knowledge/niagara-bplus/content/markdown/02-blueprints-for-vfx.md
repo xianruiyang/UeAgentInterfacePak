@@ -1,0 +1,961 @@
+# 02 Blueprints For Vfx
+
+# 02 Blueprints For Vfx
+
+## 关键术语
+
+- `Niagara System`、`System`、`Spawn`、`Update`、`Material`、`Lerp`、`Add`、`WPO`、`Blueprint`、`Niagara`、`Emitter`、`Particle`、`Spawn Rate`、`Lifetime`、`Sequencer`、`粒子`、`Initialize Particle`、`Color`
+
+## 分段知识
+
+### 00:00:05-00:05:00 Niagara、Niagara System、System
+
+- 本段定位：Niagara、Niagara System、System。
+- 知识点：蓝图 Actor 用于封装 Niagara 生成、位置、参数传入和生命周期控制。
+- 知识点：User Parameter 要保持命名和类型稳定，便于蓝图、材质或系统级控制复用。
+- 知识点：本段围绕 `Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：参考素材应按效果类型、颜色、运动方式和用途打标签，便于后续复现 VFX 风格。
+- 知识点：本段围绕 `Niagara System`、`Niagara` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：火焰或爆炸需要拆分亮核、烟雾、余烬和冲击层，再用颜色与透明度曲线统一节奏。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`Niagara System`、`Niagara`、`Particle`、`Spawn`、`Lifetime`、`Alpha`、`Opacity`、`Material`。
+
+**关键画面：**
+
+这一帧是蓝图章节的开场画面，主视口保持空场景，底部 `Content Browser` 切到 `VFX_Library > Blueprints`。字幕说明 `To begin with, I would like to say what Blueprint is.`，表示作者先从蓝图概念和目录组织讲起
+
+- 当前路径与资源
+  `Content Browser` 路径为 `Content > VFX_Library > Blueprints`
+  当前可见资源包括
+  `Projectiles` 文件夹
+  `BP_Camera Shake_Ice`
+  `BP_Camera Shake_Ice`
+  `BP_Camera Shake_Magic`
+  `BP_Camera Shake_Tornado`
+  多个资源名以 `BP_` 开头，说明该目录主要存放蓝图类资产
+- 当前场景状态
+  主视口里没有激活特效，只看到空地面
+  Outliner 里可见 `Blueprint_Expl...`、`BP_MissileL...`、`CameraActor`、`LevelSequence`
+  `Details` 面板当前未选中对象，显示 `Select an object to view details.`
+- 这张图的意义
+  这一帧不是在改 Niagara 模块，而是在给后续蓝图封装做上下文铺垫
+  重点是让读者知道项目里蓝图资源集中放在 `VFX_Library > Blueprints`，并且常见命名习惯是 `BP_` 前缀
+
+复建这一段时，可先建立统一的蓝图目录和 `BP_` 命名规则，再在后续把 Niagara 系统、相机震动和触发逻辑逐步封装进去
+这一帧进一步进入 `VFX_Library > Blueprints > Projectiles` 子目录，作者明确说 `I will show how Blueprint is created.`，说明后续会用这个目录里的投射物蓝图来演示创建流程
+
+- 当前路径与资源
+  `Content Browser` 路径为 `Content > VFX_Library > Blueprints > Projectiles`
+  当前可见蓝图资源有
+  `BP_BaseMissile`
+  `BP_MissileLauncher`
+  `Target`
+  这说明该目录围绕投射物系统组织了基础导弹、发射器和目标三类蓝图
+- 当前场景状态
+  主视口仍是空地面，没有激活特效
+  Outliner 中仍可见 `Blueprint_Expl...`、`BP_MissileL...`、`CameraActor`、`LevelSequence`
+  右侧 `Details` 面板依旧未选中对象
+- 这张图的意义
+  相比上一张的蓝图总目录，这一帧已经聚焦到实际将要讲解的投射物蓝图集合
+  读者可据此先建立 `Projectiles` 子目录，并准备一组 `BaseMissile / MissileLauncher / Target` 角色分工明确的蓝图资产
+
+复建时，可先在 `Blueprints/Projectiles` 下创建基础导弹、发射器和目标蓝图，再把 Niagara 系统触发、移动逻辑和命中反馈逐步挂进这些蓝图中
+这一帧已经进入一个新的 Actor 蓝图编辑器，作者在导弹蓝图里添加额外的 Niagara 组件。字幕 `For example, another Niagara.` 直接说明这里是在同一蓝图中再挂一个 Niagara，用于补充推进尾焰或其他附加特效
+
+- 蓝图结构
+  顶部窗口标题为 `NewBlueprint*`
+  右上角标注 `Parent class: Actor`
+  左侧 `Components` 树包含
+  `DefaultSceneRoot`
+  `Niagara1`
+  `StaticMesh`
+  以及挂在 `StaticMesh` 下的 `Niagara`
+  这说明当前蓝图至少已经有一个静态网格导弹本体，并附带两个 Niagara 组件
+- 当前选中组件
+  当前高亮组件为 `Niagara1`
+  右侧 `Details` 中
+  `Variable Name = Niagara1`
+  `Category = Default`
+  `Niagara System Asset = None`
+  `Niagara Tick Behavior = Use Prereqs`
+  `Allow Scalability` 已启用
+  `Auto Activate` 已启用
+  `Cast Shadow` 未启用
+- 蓝图图形与变量区
+  中央 `Viewport` 里能看到一枚导弹模型
+  左下 `My Blueprint` 面板中当前 `Graphs` 至少包含
+  `Event BeginPlay`
+  `Event ActorBeginOverlap`
+  `Event Tick`
+  并有 `ConstructionScript`
+  `Variables` 区可见
+  `Niagara1`
+  `Niagara`
+  `StaticMesh`
+  `DefaultSceneRoot`
+- 这张图的意义
+  重点不是设置某个 Niagara 参数，而是展示在 Actor 蓝图中，一个静态网格可以同时挂多个 Niagara 组件，以分别承担不同的视觉层
+
+复建这一步时，可先创建一个 `Actor` 蓝图，把导弹网格放在 `StaticMesh` 上，再按需要附加一个或多个 Niagara 组件，并分别为它们指定不同的系统资产
+
+### 00:05:01-00:08:32 Niagara、Niagara System、System
+
+- 本段定位：Niagara、Niagara System、System。
+- 知识点：本段围绕 `Drag` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：蓝图 Actor 用于封装 Niagara 生成、位置、参数传入和生命周期控制。
+- 知识点：本段围绕 `Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Niagara` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Niagara System`、`Niagara` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Spawn`、`Drag` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：User Parameter 要保持命名和类型稳定，便于蓝图、材质或系统级控制复用。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`Niagara System`、`Niagara`、`Spawn`、`User Parameter`、`Drag`、`Blueprint`、`材质`、`系统`。
+
+**关键画面：**
+
+这一帧仍在同一个 `Actor` 蓝图编辑器中，但讲解焦点已经转到左下 `Variables` 区。字幕 `Here you can create such a value.` 说明作者正在介绍如何在蓝图里新增变量，用来保存后续会驱动 Niagara 或导弹逻辑的值
+
+- 当前蓝图结构
+  组件树仍包含
+  `DefaultSceneRoot`
+  `Niagara1`
+  `StaticMesh`
+  挂在 `StaticMesh` 下的 `Niagara`
+  中央 `Viewport` 里仍是导弹模型
+- 图表与变量区
+  `Graphs` 中仍可见
+  `Event BeginPlay`
+  `Event ActorBeginOverlap`
+  `Event Tick`
+  `ConstructionScript`
+  `Variables` 区当前已有
+  `Niagara1`
+  `Niagara`
+  `StaticMesh`
+  `DefaultSceneRoot`
+  变量区标题行右侧有 `+` 按钮，鼠标正停在这里，提示文本为 `Variable`
+- 当前讲解意图
+  这一帧没有展示具体变量类型或名称，而是在强调新增变量的入口位置
+  结合上下文，可推断作者是在为后续蓝图控制 Niagara、Spawn 或参数传值预先准备可编辑变量
+
+复建时，可先在蓝图左下 `Variables` 区通过 `+` 新建变量，再根据后续用途把它们命名为导弹速度、目标引用、Niagara 参数或其他需要在事件图里复用的值
+这一帧转到蓝图的 `Event Graph`，作者用搜索 `print` 的方式示范最基础的事件图逻辑，同时左下变量区已经多出一个名为 `Test` 的浮点变量。字幕 `Here is hello.` 说明这里是在演示最简单的输出测试流程
+
+- 当前图表
+  中央标签为 `Event Graph`
+  图中可见三个默认事件节点
+  `Event BeginPlay`
+  `Event ActorBeginOverlap`
+  `Event Tick`
+  每个节点上方都显示 `This node is disabled and will not be called. Drag off pins to build functionality.`
+  说明这些事件还没有真正接出执行逻辑
+- 动作搜索面板
+  右侧弹出的 `Executable actions` 搜索结果中输入的是 `print`
+  当前可选节点包括
+  `Print String`
+  `Print Text`
+  其中 `Print String` 的说明是打印字符串到日志，并且可选地显示到屏幕
+  这通常是蓝图初学讲解里用来演示事件触发的最基础节点
+- 变量区
+  左下 `Variables` 新增了 `Test`
+  类型显示为 `Float`
+  说明上一张图里提到的新建变量流程，这里已经落实为一个实际变量示例
+- 蓝图上下文
+  组件树仍保留 `Niagara1`、`StaticMesh`、`Niagara`
+  说明当前事件图属于同一个导弹 Actor 蓝图，而不是单独的新测试图表
+
+复建时，可先在 `BeginPlay` 上接一条 `Print String` 作为最小可运行验证，再逐步把自定义浮点变量接入更实际的 Niagara 或导弹逻辑
+这一帧继续在 `Event Graph` 中搭建组件控制逻辑。作者把一个名为 `Explosion` 的组件引用接到 `Set Active` 节点上，用来控制该组件是否启用。字幕 `It's the same thing.` 表示这套做法与前面控制其他组件的方式相同
+
+- 当前组件与变量
+  左侧 `Components` 树现在包含
+  `DefaultSceneRoot`
+  `Explosion`
+  `StaticMesh`
+  挂在 `StaticMesh` 下的 `Niagara`
+  说明当前蓝图中已经有一个直接命名为 `Explosion` 的组件
+  左下 `Variables` 里也能看到
+  `Explosion`
+  `Niagara`
+  `StaticMesh`
+  `DefaultSceneRoot`
+  `Test (Float)`
+- 事件图节点
+  图中有一个计时或延时类节点，其执行输出标记为 `Completed`
+  `Completed` 接到一个 `Explosion` 组件引用节点
+  `Explosion` 的蓝色对象输出连接到 `Set Active` 的 `Target`
+  右侧节点为 `Set Active`
+  `Target is Actor Component`
+  可见参数包括
+  `New Active`
+  `Reset`
+  当前截图中这两个布尔值未显示为已勾选
+- 当前逻辑含义
+  这段逻辑表示在某个计时完成后，对 `Explosion` 组件调用 `Set Active`
+  从结构上看，这是一种典型的“延时后启用特效组件”写法
+  适合用于导弹发射、命中或阶段切换时再激活附加 Niagara 或爆炸层
+
+复建时，可把需要延时触发的 Niagara 或爆炸组件单独保留为组件变量，然后在事件图里通过 `Set Active` 或同类激活节点按时机开启它们
+
+### 00:08:39-00:12:16 Niagara、Niagara System、System
+
+- 本段定位：Niagara、Niagara System、System。
+- 知识点：火焰或爆炸需要拆分亮核、烟雾、余烬和冲击层，再用颜色与透明度曲线统一节奏。
+- 知识点：User Parameter 要保持命名和类型稳定，便于蓝图、材质或系统级控制复用。
+- 知识点：本段围绕 `Drag` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：蓝图 Actor 用于封装 Niagara 生成、位置、参数传入和生命周期控制。
+- 知识点：本段围绕 `Niagara` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`Niagara System`、`Niagara`、`Particle`、`Spawn`、`User Parameter`、`Drag`、`Blueprint`、`Add`。
+
+**关键画面：**
+
+这一帧继续在导弹 Actor 蓝图的 `Event Graph` 中完善 `Explosion` 组件逻辑。与上一批相比，这里已经把 `Explosion` 组件的系统资产指定为 `NS_StylizedExplosion`，并在 `Set Active` 节点上明确勾选了 `New Active`
+
+- 当前事件图逻辑
+  图中仍是一个计时或延时类节点，其执行输出 `Completed` 连接到 `Set Active`
+  `Explosion` 组件引用的蓝色对象输出接入 `Set Active.Target`
+  `Set Active` 节点当前
+  `New Active` 已勾选
+  `Reset` 未勾选
+  说明这一步是在延时后真正启用爆炸组件
+- 当前组件配置
+  左侧 `Components` 树中当前选中组件为 `Explosion`
+  右侧 `Details` 显示
+  `Variable Name = Explosion`
+  `Niagara System Asset = NS_StylizedExplosion`
+  `Niagara Tick Behavior = Use Prereqs`
+  `Allow Scalability` 已启用
+  `Auto Activate` 当前未勾选
+  这说明作者希望由事件图显式控制激活时机，而不是开局自动播放
+- 蓝图上下文
+  `Components` 和 `Variables` 区都能看到
+  `Explosion`
+  `Niagara`
+  `StaticMesh`
+  `DefaultSceneRoot`
+  `Test (Float)`
+  说明这个 `Explosion` 既是组件，也是后续事件图里反复引用的核心爆炸层
+
+复建时，应把爆炸 Niagara 组件的 `Auto Activate` 关闭，再在事件图里通过延时后调用 `Set Active(True)` 的方式精确控制爆炸触发时机
+这一帧回到蓝图编辑器的组件视图。字幕 `So that we turn off our 3D object.` 明确说明作者接下来要把导弹的 3D 物体关闭，通常对应的就是对 `StaticMesh` 组件做可见性或激活状态控制
+
+- 当前蓝图结构
+  左侧 `Components` 树当前包含
+  `DefaultSceneRoot`
+  `Explosion`
+  `StaticMesh`
+  `Niagara`
+  中央 `Viewport` 中仍能看到导弹网格模型
+- 当前变量区
+  左下 `Variables` 显示
+  `Explosion`
+  `Niagara`
+  `StaticMesh`
+  `DefaultSceneRoot`
+  `Delay (Float)`
+  说明上一阶段的测试变量已被替换或整理为更实际的延时控制变量
+- 当前讲解意图
+  这张图没有展开具体节点，但字幕已经能确认目标行为
+  在爆炸或切换阶段，把导弹本体这个 3D 网格隐藏或关闭，避免与后续爆炸层同时可见
+- 可复建结论
+  在同一个 Actor 蓝图里，导弹网格和爆炸 Niagara 需要分开控制
+  当爆炸触发时，通常要先关掉 `StaticMesh`，再开启 `Explosion` 组件
+
+复建时，可把 `StaticMesh` 组件单独保留为可引用组件，并在事件图中配合爆炸触发逻辑调用可见性或激活切换，让导弹本体在爆炸发生后消失
+这一帧展示了另一种更直接的爆炸触发写法：不依赖已有爆炸组件，而是在 `BeginPlay` 后延时，再调用 `Spawn System at Location`，并把当前 Actor 的位置作为生成点传进去
+
+- 节点定义集
+  `Event BeginPlay`
+  `Delay`
+  一个名为 `Delay` 的浮点变量节点
+  `Spawn System at Location`
+  `Get Actor Location`
+  `Event Tick`
+- 连线集
+  `Event BeginPlay` 的执行输出连接到 `Delay`
+  变量节点 `Delay` 的浮点输出连接到 `Delay.Duration`
+  `Delay.Completed` 连接到 `Spawn System at Location` 的执行输入
+  `Get Actor Location.Return Value` 连接到 `Spawn System at Location.Location`
+  `Get Actor Location.Target = self`
+  `Event Tick` 当前未接入逻辑
+- `Spawn System at Location` 当前可见设置
+  `System Template = NS_StylizedExp...`
+  `Rotation = (0.0, 0.0, 0.0)`
+  `Scale = (1.0, 1.0, 1.0)`
+  `Auto Destroy` 已勾选
+  `Auto Activate` 已勾选
+  `Pooling Method = None`
+  `Pre Cull Check` 已勾选
+- 蓝图上下文
+  左侧 `Variables` 区显示
+  `Niagara`
+  `StaticMesh`
+  `DefaultSceneRoot`
+  `Delay (Float)`
+  说明这里的延时值已经正式作为变量参与控制
+  组件树中当前只剩 `StaticMesh` 和其下的 `Niagara`，没有再单独保留 `Explosion` 组件，和前一张的方案形成对比
+
+这张图的关键是说明：如果不想在蓝图里常驻一个爆炸组件，可以直接在事件图里用 `Spawn System at Location` 临时生成 `NS_StylizedExplosion`，并通过 `Delay` 控制它何时在 Actor 当前位置爆发
+
+### 00:12:19-00:16:57 Spawn、Blueprint、Sequencer
+
+- 本段定位：Spawn、Blueprint、Sequencer。
+- 知识点：蓝图 Actor 用于封装 Niagara 生成、位置、参数传入和生命周期控制。
+- 知识点：角色或镜头演示需要导入 FBX/骨骼/动画，并用 Sequencer 校准触发时机。
+- 知识点：本段围绕 `Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：at the level. 后续会在后面谈论一些价值的问题 5.5 以这么一个丰富的价值 我现在已经增加了印刀 或者可以做成更小的印刀 增加了数字。
+- 知识点：7 比 7 它发射了火箭 而这些火箭在这个位置下降 看到了吗? 已经被连接了 我把这个按停了 可以被拔掉了 后期的扩发已经被连接了 而这时候火箭正在下降。
+- 知识点：他们在我们发现正在发生的事 在这时,火箭在发射中 但我们现在将把这些扩发 用火箭转移到火箭上 这是实际的工作 计划师做了一个计划 需要把这些扩发转移到火箭上。
+- 知识点：你的工作很简单 你去把所有的扩发转移到火箭上 并把他们转移到需要的地方 开始时,我们创造一个位置 用位置扩发 他们转移到那里 这里是扩发。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Niagara`、`Spawn`、`Blueprint`、`Sequencer`、`系统`、`蓝图`、`生命周期`。
+
+**关键画面：**
+
+这一帧回到关卡与内容浏览器，作者准备把临时创建的 `NewBlueprint` 删除，并弹出了 `Delete Assets` 警告对话框。字幕 `I will delete it all for now.` 说明这一步是在清理前面用于演示的临时蓝图
+
+- 当前路径与资源
+  `Content Browser` 路径为 `Content > VFX_Library > Blueprints > Projectiles`
+  当前可见资源有
+  `BP_BaseMissile`
+  `BP_MissileLauncher`
+  `NewBlueprint`
+  `Target`
+  其中 `NewBlueprint` 当前被选中
+- 删除对话框内容
+  对话框标题为 `Delete Assets`
+  列表中 `Pending Deleted Assets` 仅有一条
+  `Asset = NewBlueprint`
+  `Class = Blueprint`
+  `Asset Referencers = 9 References`
+  底部红色提示说明被删除资产仍在内存中被引用
+  黄色提示说明 undo 历史里也存在引用，清理后会清空 undo 历史
+  底部按钮为
+  `Force Delete`
+  `Cancel`
+- 当前场景与选中对象
+  Outliner 中当前选中对象也是 `NewBlueprint`
+  右侧 `Details` 显示 `NewBlueprint (Self)`，并能看到该 Actor 的若干属性
+  `Delay = 3.0`
+  `Actor Hidden In Game` 当前未勾选
+  说明这个临时蓝图实例还放在场景里，因此删除时产生引用警告是合理的
+
+这张图对复建的意义，是提醒读者：教程里可能会先用临时蓝图做验证，验证通过后再删除或重建成正式资产；如果蓝图仍被关卡或撤销历史引用，删除时会弹出引用警告
+这一帧切到播放中的关卡序列 `LS_StylizedExplosion`。主视口里能看到一圈分布在场地上的目标 Actor，每个目标位置都显示了局部坐标 gizmo，说明作者正在用 Sequencer 检查蓝图实例在关卡中的摆放和触发节奏
+
+- 当前场景与对象
+  Outliner 顶部显示 `Blueprint_Explosion_Stylized (Play in Editor)`
+  其下可见 `PlayerController`、`PlayerStart`、以及大量 `Target35` 到 `Target48` 一类的目标对象
+  主视口中这些目标以环形或弧形散布在空场地里
+  画面中央的十字准星和各目标上的局部坐标轴，说明当前更多是在检查布局，而不是看最终爆炸材质细节
+- Sequencer 结构
+  底部时间线标签为 `LS_StylizedExplosion`
+  当前展开的是 `CameraActor`
+  其下有 `CameraComponent`
+  可见轨道包括
+  `Field of View`
+  `Transform`
+  时间线中有多个关键点，说明镜头或目标演示不是静止的
+  当前时间游标约在 `4.6167`
+- 当前画面意义
+  这张图强调的是蓝图与 Sequencer 的配合
+  不是单独调 Niagara 参数，而是把多个蓝图实例布置到关卡里，再由序列统一驱动镜头和演示流程
+
+复建这一步时，可先在关卡里摆放一组 `Target` 蓝图实例，再用 Sequencer 管理镜头轨道和时间点，确保导弹飞行、命中和爆炸触发能在演示节奏上对齐
+这一帧打开了正式蓝图 `BP_BaseMissile` 的 `Event Graph`，并聚焦在一个注释框 `Spawn Explosion` 上。这里把爆炸 Niagara 生成和相机震动串到了一起，说明导弹命中后的反馈不只是粒子，还包括镜头震动
+
+- 当前蓝图与组件
+  顶部打开的标签包括
+  `BP_BaseMissile`
+  `BP_MissileLauncher`
+  `Target`
+  左侧 `Components` 树为
+  `Box`
+  `Missile`
+  `NS_RocketSmoke`
+  `ProjectileMovement`
+  左下 `Graphs` 中可见
+  `Event BeginPlay`
+  `On Component Hit (Box)`
+  `ConstructionScript`
+  `Event Dispatchers` 中可见 `OnMissileHit`
+- `Spawn Explosion` 逻辑块
+  注释框标题为 `Spawn Explosion`
+  其中核心节点是 `Spawn System at Location`
+  `System Template = NS_Placehold...`
+  `Rotation = (0.0, 0.0, 0.0)`
+  `Scale = (1.0, 1.0, 1.0)`
+  `Auto Destroy` 已勾选
+  `Auto Activate` 已勾选
+  `Pooling Method = None`
+  `Pre Cull Check` 已勾选
+  节点输出继续连接到 `Play World Camera Shake`
+- 相机震动节点
+  `Play World Camera Shake`
+  `Shake = BP Camera Sha...`
+  `Inner Radius = 0.0`
+  `Outer Radius = 7000.0`
+  `Falloff = 1.0`
+  `Orient Shake Towards Epicenter` 未勾选
+  说明导弹命中后会在爆炸点附近触发一个较大范围的相机震动
+- 当前讲解意图
+  字幕 `Let's see. Spawn also has this placeholder effect.`
+  可确认此时作者先用一个占位爆炸系统验证 Spawn 流程，再结合相机震动检查整体反馈
+
+复建这一段时，可在导弹命中事件里先调用 `Spawn System at Location` 生成占位爆炸，再立刻调用 `Play World Camera Shake`，等逻辑跑通后再把占位系统替换成正式爆炸特效
+
+### 00:16:57-00:21:56 Blueprint
+
+- 本段定位：Blueprint。
+- 知识点：我们把它们代替 我们按下 我们现在有一个爆炸 我们看结果 火箭在飞 爆炸了 需要再次回复 看看是否很简单 设计师做了理论 他们甚至能给你们写下。
+- 知识点：需要改变的东西 你们必须记住这些基本的东西 这是什么意思? 它是负责扩发的 我不会评论这个理论 因为这些东西会很难 不必要 可以忘记 如果你想要更多的详细。
+- 知识点：很多课程都在Blueprint 这里有这个目标 它是用来指导 火箭 在开始扩发的位置扩发时 可以去这个目标 我们需要代替 这里有这个效果。
+- 知识点：这个是这个效果 然后代替 这个效果生长不绝 例如 设计师可以告诉你 这个效果会存在不绝 因为他会在Blueprint上删除。
+- 知识点：我们代替 可以增加 我们看看结果 很多 这些东西可以自动制作 您可以用这个Blueprint扩发。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Blueprint`、`速度`。
+
+**关键画面：**
+
+这一帧回到运行中的关卡场景。字幕 `Rockets fly.` 说明当前重点是导弹发射和飞行阶段，而不是爆炸瞬间。画面中央可见一圈分散的小亮点或小导弹轨迹，表示多枚导弹正在场地中飞行
+
+- 当前场景与对象
+  Outliner 中可见大量 `BP_BaseMi...` 条目，说明场景里存在多枚 `BP_BaseMissile` 实例
+  还能看到 `CameraActor`、`PlayerStart`、`Floor` 等场景对象
+  右侧 `Details` 当前未选中对象
+- 当前资源上下文
+  `Content Browser` 路径位于 `Content > VFX_Library > Niagara > Explosion_Stylized`
+  当前可见资源有
+  `NS_MissileMarker`
+  `NS_Placeholder`
+  `NS_SmokeTrail`
+  `NS_StylizedExplosion`
+  其中 `NS_StylizedExplosion` 当前被选中
+  这说明教程仍在同一个特效库中切换查看导弹飞行和爆炸相关系统
+- 当前可见效果
+  主视口中央分布着一圈零散的亮点与细小拖尾
+  结合字幕和 Outliner，可将其理解为飞行中的火箭或导弹实例
+  顶部工具栏处于播放状态，说明当前效果是运行时行为，不是静态编辑视图
+
+这张图的意义在于确认蓝图和 Niagara 逻辑已经能把多枚导弹实际发射到场景中。复建时，不能只停留在蓝图节点图，还要在运行时看到导弹真正开始飞行
+这一帧展示的是导弹蓝图自动化后的运行结果。字幕 `It automates this process.` 说明前面蓝图里设置的发射、飞行、命中和爆炸逻辑已经可以自动串起来执行，不再需要手工逐个触发
+
+- 当前场景效果
+  主视口中沿一条斜向路径分布着多处爆炸
+  可见多个高亮白色火核、橙色火团和零散火花
+  前景左下和中段都出现了正在燃烧的爆点，说明不是单次触发，而是多枚导弹依次命中
+  场地里还能看到一些零散红点或余烬，说明爆炸后续层也在持续运行
+- 当前运行环境
+  顶部工具栏处于播放状态
+  Outliner 中有大量 `BP_BaseMi...` 条目，说明多枚导弹实例仍在参与运行
+  `Content Browser` 仍停在 `Content > VFX_Library > Niagara > Explosion_Stylized`
+  资源列表里可见
+  `NS_MissileMarker`
+  `NS_Placeholder`
+  `NS_SmokeTrail`
+  `NS_StylizedExplosion`
+- 这张图的意义
+  它证明前面蓝图中的 `Delay`、`Spawn System at Location`、导弹本体隐藏、爆炸触发等逻辑已经形成完整自动流程
+  如果复建后只能手动点一次爆炸，而不能让多枚导弹自己飞行并连续命中，就说明自动化链路还没搭完整
+
+这张图可以作为 `Blueprint` 小节的中期结果验收图：理想状态下，蓝图应能自动驱动导弹飞行和连续爆炸，而不是只生成单个静态特效
+这一帧打开的是 `BP_MissileLauncher` 的 `On Missile Hit Function`。字幕 `It sets scalar values.` 说明这里的重点不是直接生成粒子，而是在命中事件里去写入材质参数集合中的多个标量值，让后处理或全局材质效果随爆炸同步变化
+
+- 当前蓝图上下文
+  顶部当前活动标签为 `BP_MissileLauncher`
+  中央标题显示 `BP_MissileLauncher > On Missile Hit Function`
+  左下 `Functions` 中可见
+  `GenerateGridTarget`
+  `On Missile Hit Function`
+  `Variables` 区可见
+  `GridSizeX`
+  `GridSizeY`
+  `Start Position`
+  `Grid Spacing`
+  `TargetComponents`
+  `Delay`
+  说明这个蓝图负责批量生成目标并在命中时触发统一反馈
+- 节点定义集
+  `On Missile Hit Function`
+  `Branch`
+  布尔变量 `Is First Missile`
+  `Set Is First Missile`
+  三个 `Set Scalar Parameter Value`
+  `Current Missiles Count`
+  一个数值加法节点 `+`
+  `Set Current Missiles Count`
+- 连线集
+  `On Missile Hit Function` 的执行输出连接到 `Branch`
+  `Is First Missile` 连接到 `Branch.Condition`
+  `Branch.True` 连接到 `Set Is First Missile`
+  `Set Is First Missile` 之后串接三个 `Set Scalar Parameter Value`
+  下方 `Current Missiles Count` 经过 `+ 1` 后连接到 `Set Current Missiles Count`
+  由于截图裁切，计数链和上方执行链的完整执行连线未全部显示
+- 参数设置
+  三个 `Set Scalar Parameter Value` 都写入同一个材质参数集合
+  `Collection = MPC_PostProcess`
+  可确认的参数包括
+  `Parameter Name = Chromatic`
+  `Parameter Value = 0.5`
+  `Parameter Name = Blur Intensity`
+  `Parameter Value = 1.1`
+  `Parameter Name = Color Remap Max ...`
+  `Parameter Value = 1.19`
+- 逻辑含义
+  这段蓝图显然在导弹命中时统一修改后处理相关的标量参数
+  作用是让屏幕产生色差、模糊或颜色 remap 一类的全局冲击反馈，而不只是局部爆炸粒子
+
+复建时，可在命中函数里通过 `MPC_PostProcess` 一次性写入多个标量参数，把爆炸后的色差、模糊和色调变化统一交给材质参数集合驱动
+
+### 00:21:56-00:26:38 Blueprint
+
+- 本段定位：Blueprint。
+- 知识点：调调和颜色 它做了一部分的调调 它做了一部分的调调 它是在这里 调调第一枪的价值 这是调调的 后遗产 我还做了一部分的调调 我还做了一部分的调调。
+- 知识点：一秒钟之后 它删除了这三个价值 一秒钟之后 它删除了这三个价值 这是什么? 这是它们的时限 它像是索尔格的旋律 它们删除了这三个价值 红色的约0.5到0。
+- 知识点：红色的约0.8到0 还有色彩 它们删除了这三个价值 过渐的删除了这三个价值 改变了 它们删除了这三个价值 过渐的删除了这三个价值 它们删除了这三个价值。
+- 知识点：每一种物件都要有特定的特定分类,但它们通常都在地區。
+- 知识点：如果我们把特定分类改变,它们就只会在这个特定分类上显示。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Blueprint`、`颜色`。
+
+**关键画面：**
+
+这一帧仍在 `BP_MissileLauncher > On Missile Hit Function`，但镜头已经放大到条件分支和参数写入的核心片段，便于看清“首枚导弹命中时”和“每次命中时”的分工
+
+- 节点定义集
+  `Branch`
+  布尔变量节点 `Is First Missile`
+  `Set Is First Missile`
+  `Set Scalar Parameter Value` 两个可见
+  `Current Missiles Count`
+  数值加法节点 `+ 1`
+  `Set Current Missiles Count`
+- 连线集
+  `Is First Missile` 连接到 `Branch.Condition`
+  `Branch.True` 连接到 `Set Is First Missile`
+  `Set Is First Missile` 后续连接到两个 `Set Scalar Parameter Value`
+  `Current Missiles Count` 经 `+ 1` 后连接到 `Set Current Missiles Count`
+  上游触发节点在当前截图左侧被裁掉，但从走线可确认这些逻辑属于同一命中函数链
+- 右侧变量详情
+  当前选中变量为 `IsFirstMissile`
+  `Variable Type = Boolean`
+  `Category = Default`
+  `Replication = None`
+  `Default Value` 当前未勾选
+  说明该变量默认是 `false`
+- 可见参数设置
+  第一个 `Set Scalar Parameter Value`
+  `Collection = MPC_StylizedPo...`
+  `Parameter Name = Chroma`
+  `Parameter Value = 0.5`
+  第二个 `Set Scalar Parameter Value`
+  `Collection = MPC_StylizedPo...`
+  `Parameter Name = Blur Intensity`
+  `Parameter Value = 0.8`
+- 逻辑含义
+  这张图可确认：蓝图先用布尔变量判断“是否是第一枚导弹”，然后再决定是否写入一组后处理标量参数
+  下方的 `Current Missiles Count` 计数链则负责持续统计命中数量
+
+复建时，可用一个 `IsFirstMissile` 布尔值把“首次命中才执行的全局后处理变化”和“每次命中都要更新的计数逻辑”拆开处理，避免所有导弹重复触发同样的首发效果
+这一帧从蓝图函数跳回关卡与内容浏览器，直接说明为什么要把值写进 `MPC`。字幕 `Imagine that we need to change the values in all instances.` 明确指出：如果想同时影响所有实例，就要通过材质参数集合和后处理材质统一控制
+
+- 当前场景与对象
+  Outliner 中当前选中 `PostProcessVolume`
+  右侧 `Details` 显示 `PostProcessVolume (Instance)`
+  说明当前讲解重心从导弹蓝图切到全局后处理体系
+- `PostProcessVolume` 当前设置
+  搜索框里输入的是 `mater`
+  在 `Rendering Features > Post Process Materials > Array` 下可见 3 个数组槽位
+  当前可确认的两个材质为
+  `PP_MLToon_01`
+  `PP_MLStylized_StylizedExplosion_01`
+  另一个槽位显示 `Choose`
+  这说明关卡已经把风格化后处理材质挂进了后处理体积中
+- `MPC` 资源上下文
+  `Content Browser` 路径位于 `Content > VFX_Library > Materials > MPC`
+  当前可见资源是
+  `MPC_Stylized PostProcess`
+  这与前面蓝图里 `Set Scalar Parameter Value` 写入的集合形成直接对应
+- 这张图的意义
+  如果不用 `MPC`，就需要逐个材质实例改值
+  使用 `MPC` 后，一个蓝图事件就能同时驱动所有引用该参数集合的后处理材质实例
+
+复建时，应先把全局后处理材质挂进 `PostProcessVolume`，再让它们统一读取 `MPC_Stylized PostProcess` 中的标量参数，这样蓝图修改一次就能同步影响所有实例
+这一帧打开的是后处理材质 `M_PP_Stylized` 的 `Material Graph`。字幕 `Add a name to it.` 表明作者正在给参数集合中的参数命名，确保蓝图后续能通过名字准确写入标量值
+
+- 当前材质基础设置
+  顶部标题显示 `M_PP_Stylized > Material Graph`
+  左侧 `Details` 中可确认
+  `Material Domain = Post Process`
+  `Blend Mode = Opaque`
+  `Shading Model = Default Lit`
+  `Use Material Attributes` 未启用
+  这说明当前确实是一个后处理材质，而不是普通表面材质
+- 材质图结构
+  右侧整体是一个由多个分组框组成的大型节点图
+  上中下多块区域分别包含大量绿色、紫色、红色和黑色节点
+  说明这个后处理材质由多段子链拼接而成，不是简单的一两条参数线
+  当前缩放较远，具体每个节点名称无法全部可靠辨认
+- 参数集合线索
+  右上角悬浮提示直接显示 `MPC_StylizedPostProcess`
+  说明鼠标当前停留在一个材质参数集合相关节点或其引用上
+  这与前一张里 `MPC_Stylized PostProcess` 被蓝图写值的逻辑形成闭环
+- 预览与统计
+  左侧材质预览是默认球体
+  底部 `Stats` 可见
+  `Texture samplers: 4/16`
+  `Shader Count: 2`
+  以及多项着色器统计
+  这说明作者正在直接在材质图层验证后处理材质，而不是只在关卡里看结果
+
+这张图的关键意义，是把“蓝图写入的标量参数”与“后处理材质里的参数集合读取”对应起来。复建时，除了在蓝图中调用 `Set Scalar Parameter Value`，还必须在 `M_PP_Stylized` 这类后处理材质中用带明确参数名的 `MPC_StylizedPostProcess` 节点把这些值真正接进图里
+
+### 00:26:38-00:29:56 Lerp、Blueprint
+
+- 本段定位：Lerp、Blueprint。
+- 知识点：这是Local的特定分类, 这里是全球特定分类。
+- 知识点：如果需要使用全球特定分类,需要把它设置为1。
+- 知识点：这就是需要它们之间转换成Lerp。
+- 知识点：以这方面来做, 可以将任何的后期变成Lerp。
+- 知识点：不僅是后期, 我们还可以用这个特定分类来控制其他物件。
+- 知识点：例如, 可以使用Mask, 这是全球特定分类。
+- 知识点：我们需要記錄了 可以記錄了 例如, 这个角色的位置, 这个角色的動作, 而Mask是全球特定分类。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Blueprint`、`Lerp`。
+
+**关键画面：**
+
+这一帧是后处理材质 `M_PP_Stylized` 的局部节点图，字幕 `I used blur here.` 说明作者正在讲解“模糊”这一段遮罩与强度控制链
+
+- 节点定义集
+  `Mask` 参数节点，预览是一张黑底白色四角汇聚形状的遮罩纹理
+  `1-x`
+  `Mask one minus ?` 静态开关节点
+  `Mask Power` 参数节点，`Default Value = 1.0`
+  `Power`
+  `Mask Multiply` 参数节点，`Default Value = 1.0`
+  `Multiply`
+  `Saturate`
+  右侧还有一个输出前的 `Mask` 节点
+- 连线集
+  左侧输入先进入 `Mask` 参数节点
+  `Mask` 的通道输出同时接到 `1-x` 与 `Mask one minus ?`
+  `Mask one minus ?` 的结果接到 `Power.Base`
+  `Mask Power` 接到 `Power.Exp`
+  `Power` 输出接到 `Multiply.A`
+  `Mask Multiply` 接到 `Multiply.B`
+  `Multiply` 之后依次进入 `Saturate` 和右侧 `Mask`
+- 设置/参数
+  左侧 `Details` 可确认该材质仍是
+  `Material Domain = Post Process`
+  `Blend Mode = Opaque`
+  `Shading Model = Default Lit`
+  两个标量参数当前默认值都为 `1.0`
+  `Mask one minus ?` 当前显示 `Switch Param (False)`，说明可在原遮罩与反相遮罩之间切换
+- 输出/预览
+  左侧预览球显示的是后处理材质整体预览
+  当前局部链的用途是先取得一张遮罩，再通过反相、幂运算和乘法调节模糊作用区域与强度，最后把结果送往后续掩码输出链
+
+复建时，可以把这段理解为“Blur 区域遮罩控制器”：先用 `Mask` 指定区域，再用 `Mask one minus ?` 决定是否反相，最后用 `Mask Power` 与 `Mask Multiply` 调整边缘过渡和整体影响强度
+这一帧切回运行中的关卡视口，字幕 `Pay attention at the beginning.` 说明这里要观察效果启动瞬间的屏幕表现，而不是只看材质图本身
+
+- 当前场景与对象
+  顶部播放控件处于运行态，按钮提示为 `Pause simulation`
+  右侧 `Outliner` 中可见大量 `BP_B...` 条目，说明场景里同时存在多枚蓝图实例
+  下方 `Content Browser` 路径位于 `Content > VFX_Library > Materials > MPC`
+  当前可见资源为 `MPC_Stylized PostProcess`
+- 当前可见效果
+  主视口整体被明显压暗，并伴随一层大范围模糊
+  画面中分布着许多红色发光小点，每个点外围还有一圈较淡的红色圆环或模糊晕圈
+  这些标记按网格或阵列方式铺开，说明场景中存在多个同步受影响的位置
+- 逻辑含义
+  结合前一张图的 blur 遮罩链，这里展示的是后处理材质在运行时的实际结果
+  作者强调“开始时”要注意，意味着这组参数会在效果初始阶段就给全屏带来一层模糊和红色标记反馈
+- 输出/验收
+  如果复建正确，运行开始时应先看到暗化后的全局画面，以及一组按阵列分布的红色标记和模糊范围
+  如果只能看到普通场景，没有明显的屏幕级模糊和红色圈层，就说明 `MPC` 到后处理材质的驱动链还没接通
+这一帧打开的是 `BP_PlantVat` 的 `Event Graph`。字幕 `Blueprint` 表明教程在从材质表现过渡到用于驱动这些表现的蓝图逻辑
+
+- 当前蓝图上下文
+  顶部标题显示 `BP_PlantVat > Event Graph`
+  左侧 `Components` 中可见
+  `DefaultSceneRoot`
+  `TriggerZone`
+  `plantVat_mesh`
+  `My Blueprint` 的变量区可见两个布尔变量
+  `IsGrow`
+  `IsFinished`
+- 当前节点图状态
+  中央弹出了 `All Actions for this Blueprint` 搜索面板
+  搜索框中输入的是 `con`
+  列表中可见多项 `Convert to ...` 候选
+  右侧能看到一个 `Branch` 节点
+  其上方和下方还能看到两个 `Is Finished` 相关节点的一部分，说明当前逻辑正在围绕完成状态做条件判断
+- 右侧组件详情
+  当前选中组件为 `Trigger Zone`
+  `Variable Name = Trigger Zone`
+  `Location = 0,0,0`
+  `Scale = 5.0, 5.0, 5.0`
+  `Box Extent = 200, 200, 200`
+  `Mobility` 显示为静态组件
+  并启用了 `Visible` 与 `Hidden in Game`
+- 逻辑含义
+  从组件命名和当前 `Branch` 可推断，这个蓝图使用一个盒体触发区来控制植物容器或相关对象的生长流程
+  `IsGrow` 与 `IsFinished` 两个布尔量用于区分“是否开始生长”和“是否已完成”
+  当前画面重点是在事件图中添加或查找条件相关节点，准备把触发区事件与状态判断接起来
+
+复建时，可先给 `BP_PlantVat` 配一个 `Box Trigger` 组件，再用 `IsGrow`、`IsFinished` 等布尔量配合 `Branch` 管理生长流程的开始与结束
+
+### 00:30:33-00:35:14 Niagara、Blueprint
+
+- 本段定位：Niagara、Blueprint。
+- 知识点：我们可观察到这里有一个Logic。
+- 知识点：需要再次移动到另一个0至1的1.90。
+- 知识点：在物件中, 它们会定義这个圖像的名稱。
+- 知识点：它会开始從开始, 它会开始從最後开始, 然后又会再次进行。
+- 知识点：因为这里發生了一些事, 它会有一个人。
+- 知识点：当Blueprint开始播放, Logic开始運作。
+- 知识点：现在我離開了这个区域, 它们在藏起来。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Niagara`、`Particle`、`Blueprint`、`系统`。
+
+**关键画面：**
+
+这一帧打开的是 `BP_PlantVat` 内部名为 `PlantGrow` 的时间轴编辑界面。字幕 `These are all values here from 0 to 1 over a period of 5 seconds.` 直接说明这条时间轴输出的是一个在 5 秒内从 0 线性变化到 1 的值
+
+- 节点定义集
+  蓝图 `BP_PlantVat`
+  时间轴标签 `PlantGrow`
+  一条浮点轨道 `NewTrack_0`
+  轨道上的两端关键点
+- 曲线/连线信息
+  时间轴总长度显示为 `5.00`
+  横轴时间从 `0.00` 到 `5.00`
+  纵轴数值范围显示为 `0.00` 到 `1.00`
+  曲线是一条从左下到右上的直线
+  起点位于 `0 秒, 0`
+  终点位于 `5 秒, 1`
+- 设置/参数
+  顶部可见 `Tick Group = TG_PrePhysics`
+  左侧 `External Curve = None`
+  `Synchronize View` 已勾选
+  当前未使用外部曲线资源，而是在时间轴里直接手工定义
+- 输出/用途
+  这条时间轴可以输出一个持续增长的插值系数
+  结合上一小节的 `Lerp`、`Blueprint` 提示，它通常会被送去驱动缩放、材质参数、Niagara 强度或其他“从初始态过渡到完成态”的数值变化
+
+复建时，可在 `BP_PlantVat` 中添加一个长度为 5 秒的 Timeline，让 float 轨道从 `0` 线性爬升到 `1`，把它当成统一的生长进度参数使用
+这一帧是 `BP_PlantVat` 生长逻辑的运行结果图。画面从时间轴和蓝图编辑切回关卡，展示植物实例在场景中的实际状态
+
+- 当前场景与对象
+  顶部播放控件处于模拟或运行状态
+  右侧 `Outliner` 中当前可见对象包括
+  `BP_PlantVat`
+  `BP_ProjectileArou...`
+  `BP_ThirdPersonGa...`
+  `Destruction_Spher...`
+  说明场景里同时存在植物容器、角色和其他测试对象
+- 当前可见结果
+  左侧可见一株亮绿色的风格化植物，叶片已经展开
+  植物后方和侧后方有三个半透明球形体积，颜色分别接近青色、橙色、蓝紫色
+  这些球体看起来像不同阶段的生长可视化、触发范围或叠加效果示意
+  中间偏下位置能看到第三人称角色站在地面上
+  上方还有一个单独的红色发光球体悬在空中
+- 逻辑含义
+  结合上一张 0 到 1 的时间轴，这里说明蓝图驱动的不只是单一数值，而是能在场景里逐步表现出生长后的植物与关联的体积效果
+  如果教程使用 `Lerp` 驱动缩放、位置或材质，这类运行图就是最终验收方式：看对象是否在时间推进后出现正确的形态和层次
+- 输出/验收
+  复建后应能在场景里同时看到植物主体和若干辅助可视化球体
+  角色靠近时，植物系统应已处于可观察和可交互状态，而不是完全静止无变化
+这一帧打开的是材质实例 `MI_PivotPainterTest` 的参数面板。字幕 `We recorded this value in one collection material.` 说明作者把这一组控制值记录成可统一读取的参数集合，而不是散落在单个节点里手工填写
+
+- 当前材质上下文
+  顶部活动页签为 `MI_PivotPainterTest`
+  左侧预览窗口显示一个深色球体材质实例
+  右侧面板处于 `Layer Parameters`
+  `Parent` 可见仍指向 `M_PivotPainterTest`
+- 设置/参数
+  `Global Scalar Parameter Values`
+  `Disappear distance = -1115.015137`
+  `Floating intensity = 80.36618`
+  `Inner Distance = 7.211096`
+  `Outer Distance = 930.416321`
+  `Randomization = 1.38798`
+  `Smoothness = 6.866459`
+  `Speed = 0.15`
+  `Global Static Switch Parameter Values`
+  `Use Custom Direction?` 已勾选
+  `Global Vector Parameter Values`
+  `Direction Vector` 当前显示为一个黑色向量色块
+- 输出/预览
+  左侧球体预览用于即时观察这些参数对材质表现的影响
+  右侧存在 `Save Sibling` 与 `Save Child` 按钮，说明这是可派生保存的实例参数界面
+- 逻辑含义
+  这张图说明教程把若干与距离、漂浮、随机化、平滑度、速度相关的控制量集中记录在一个统一的材质参数体系中
+  这样蓝图或其他材质链就可以按同一套命名读取和驱动，而不必逐个实例手工同步
+
+复建时，如果要让多个对象共享同样的空间变化或生长响应，可先整理一套统一命名的标量和向量参数，再让材质实例或参数集合集中读取这些值
+
+### 00:35:14-00:38:10 Blueprint
+
+- 本段定位：Blueprint。
+- 知识点：可以記錄它们的BlueprintLv。
+- 知识点：如果你點这里, 可以创建一种BlueprintLv。
+- 知识点：这是BlueprintLv, 它可以透过Lv展示。
+- 知识点：它们是个 vector parameters。
+- 知识点：可以在这麼有趣的方式 也能够创建不同的邏輯。
+- 知识点：例如, 可以用这个圖案 来创建动画。
+- 知识点：根據这个位置, 这个位置可以控制。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Blueprint`。
+
+**关键画面：**
+
+这一帧打开的是 `Level_Stylized > Event Graph`，也就是关卡蓝图。画面重点在于把场景中对象的位置实时写入材质参数集合，用来驱动后续材质或特效逻辑
+
+- 节点定义集
+  `Sequence Player` 引用节点
+  `Play` 节点，目标类型显示为 `Movie Scene Sequence Player`
+  `Event Tick`
+  `Get Actor Location`
+  两个 `Set Vector Parameter Value`
+- 连线集
+  上方 `Sequence Player` 连接到 `Play.Target`
+  下方执行链从 `Event Tick` 向右进入第一个 `Set Vector Parameter Value`
+  第一个 `Set Vector Parameter Value` 再串到第二个 `Set Vector Parameter Value`
+  `Get Actor Location.Return Value` 经中间一小段向量拆接后，连接到两个 `Set Vector Parameter Value` 的 `Parameter Value`
+  左侧目标对象输入部分被裁切，但可确认位置值来自某个 Actor 的世界坐标
+- 设置/参数
+  两个节点的 `Collection` 都是 `MPC_Location`
+  第一个节点的 `Parameter Name = Start_Location`
+  第二个节点的 `Parameter Name = SphereMaskShield`
+  左侧变量区可见 `IsHearthTriggered` 布尔变量
+  右侧 `Details` 中也显示 `Is Hearth Triggered`
+- 输出/用途
+  这段蓝图的作用是每帧把 Actor 位置写进 `MPC_Location`，供材质中的向量参数读取
+  这样材质可以根据角色或触发点当前位置生成 `Sphere Mask`、范围动画或位置相关的视觉效果
+
+复建时，可在关卡蓝图里用 `Event Tick -> Get Actor Location -> Set Vector Parameter Value` 的方式，把角色或触发器位置持续写入 `MPC_Location`，再让材质按 `Start_Location` 或 `SphereMaskShield` 这些参数名读取
+这一帧打开的是 `BP_ProjectileAround > Event Graph`。字幕 `It updates here and it spins.` 说明这段蓝图的目标是让某个投射物或环绕特效在每帧更新时持续自转或绕点旋转
+
+- 节点定义集
+  `Event BeginPlay`
+  `Add Niagara Particle System Component`
+  `SET Fx`
+  `Event Tick`
+  变量 `Offset`
+  变量 `Angle`
+  乘法节点 `*`
+  `Rotate Vector Around Axis`
+  右侧 `SET Offset`
+- 连线集
+  `Event BeginPlay` 连接到 `Add Niagara Particle System Component`
+  该节点的 `Return Value` 连接到 `SET Fx`
+  `Event Tick` 的执行输出进入下方更新逻辑
+  `Angle` 与 `Delta Seconds` 进入乘法节点
+  `Offset` 连接到 `Rotate Vector Around Axis.In Vect`
+  乘法结果连接到 `Rotate Vector Around Axis.Angle Deg`
+  `Rotate Vector Around Axis.Return Value` 连接到 `SET Offset`
+- 设置/参数
+  `Add Niagara Particle System Component` 使用的系统资源是 `NS_SmokeTrail`
+  `Target = self`
+  `Rotate Vector Around Axis` 的 `Axis = (0.0, 0.0, 1.0)`
+  左侧变量区可见
+  `offset` 向量
+  `newPos` 向量
+  `origin` 向量
+  `angle` 浮点
+- 输出/用途
+  这段逻辑先在 `BeginPlay` 时给 Actor 挂上一个 Niagara 组件，然后在 `Tick` 中不断把 `Offset` 向量绕 Z 轴旋转
+  这样就能让投射物或拖尾特效围绕某个中心点持续转圈
+
+复建时，可把“角速度 × Delta Seconds”作为每帧增量，送入 `Rotate Vector Around Axis`，再用返回值回写 `Offset`，实现稳定的环绕旋转轨迹
+这一帧从蓝图节点图切回关卡编辑器，展示 `BP_ProjectileAround` 的实例参数以及它与 `MPC` 资源的关系
+
+- 当前场景与对象
+  右侧 `Outliner` 当前选中 `BP_ProjectileAround`
+  同一层级可见
+  `BP_PlantVat`
+  `Destruction_Sphere`
+  `SM_BridgePivotPaint...`
+  `SM_SphereShield01`
+  `SM_SphereShield2`
+  `SM_SphereShield3`
+  说明这个关卡里同时摆放了环绕投射物和多个球形护盾网格
+- 当前资源上下文
+  下方 `Content Browser` 路径位于 `Content > VFX_Library > Materials > MPC`
+  当前可见三个参数集合资源
+  `MPC_Dissolve`
+  `MPC_Location`
+  `MPC_Stylized PostProcess`
+  其中 `MPC_Location` 当前被选中
+- 当前实例参数
+  右下 `Details` 当前是 `BP_ProjectileAround(Self)`
+  `Location = (-106.4, 3589.6, 230.0)` 左右
+  `Scale = 1.0, 1.0, 1.0`
+  `Offset = (500.0, 0.0, 0.0)`
+  `Angle = 90.0`
+- 逻辑含义
+  这张图把前两张里的蓝图逻辑落回到实际场景配置上
+  `BP_ProjectileAround` 实例拥有 `Offset` 和 `Angle` 这样的可调参数，而这些运行结果又会和 `MPC_Location` 一起驱动材质中的位置相关效果
+  `SphereShield` 系列静态网格的存在，也说明这些位置参数很可能被用来控制球形遮罩或护盾类材质表现
+
+复建时，应同时检查两端：一端是 `BP_ProjectileAround` 实例上的 `Offset`、`Angle` 等初始值，另一端是内容浏览器中被蓝图写入的 `MPC_Location` 是否已正确存在并被材质引用
+
+## 补充视觉证据
+
+### S01 00:03:29
+
+这张补充视觉证据展示的是一个新建蓝图 `NewBlueprint` 的组件与详情面板，重点在于说明“角色可以在这里设置”，也就是通过 `SkeletalMesh` 组件挂接角色骨骼网格
+
+- 当前蓝图上下文
+  顶部标签为 `NewBlueprint`
+  左侧 `Components` 中可见
+  `DefaultSceneRoot`
+  `SkeletalMesh`
+  左下图表区已有
+  `Event BeginPlay`
+  `Event ActorBeginOverlap`
+  `Event Tick`
+- 当前组件设置
+  右侧 `Details` 当前选中变量 `SkeletalMesh`
+  `Variable Name = SkeletalMesh`
+  `Location = 0,0,0`
+  `Rotation = 0,0,0`
+  `Scale = 1,1,1`
+  `Animation Mode = Use Animation Blueprint`
+  `Anim Class = None`
+  `Skeletal Mesh Asset = None`
+- 逻辑含义
+  这张图说明角色相关设置并不是在事件图里直接完成，而是先在蓝图组件层级里添加一个 `SkeletalMesh` 组件
+  然后在其详情面板中选择具体角色网格、动画模式以及后续动画蓝图
+- 输出/用途
+  中央视口里当前只显示一个很小的默认组件图标，说明骨骼网格资源还没真正指定
+  只有在 `Skeletal Mesh Asset` 里填入角色资源后，这个蓝图才会变成可见的角色载体
+
+复建时，如果需要让蓝图承载角色或角色驱动的特效，先在组件树中添加 `SkeletalMesh`，再到 `Details` 面板里配置 `Skeletal Mesh Asset` 和动画模式，而不是直接从事件节点开始搭逻辑
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+
+

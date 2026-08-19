@@ -1,0 +1,944 @@
+# 08 Stylized Ice Spikes
+
+# 08 Stylized Ice Spikes
+
+## 关键术语
+
+- `Alpha`、`UV`、`Multiply`、`Add`、`Texture`、`粒子`、`透明度`、`：M_ceGround>Material Graph`、`MATERIAL`、`Niagara`、`发射器`、`颜色`、`Niagara System`、`Emitter`、`Particle`、`Spawn Rate`、`Spawn`、`Initialize Particle`
+
+## 分段知识
+
+### 00:00:05-00:04:47 Alpha、Add、Texture
+
+- 本段定位：Alpha、Add、Texture。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：User Parameter 要保持命名和类型稳定，便于蓝图、材质或系统级控制复用。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：质感的R 頻道 或是G 等等 我们需要整个质感 像是眼睛的质感 这里是高度 这是眼睛的质感 会显示哪部分会有更多深度 哪部分会有少許深度 通常这个质感需要被遮擋。
+- 知识点：让我示範 我们需要把它轉成一个质感的物体 通常可以把它轉成这个质感 把它轉成这里 这里我们要用V 線 只需要 Parallax 5 还有一个质感。
+- 知识点：会被轉成 显示色彩等 我们也把它轉成一个质感 这会是我们的 我们把它轉成这里 更加詳細 让我馬上把預覽關掉 让你们看得到 目前没有深度 我们需要做一些调整。
+- 知识点：首先從最初 这里要求我们选择 V 線從哪里的高度 或深度为V 線 会被取得 在这个情况下 它是從Alpha取得的 这里我们没有Alpha 我们只看到RGB。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Alpha`、`Opacity`、`Texture`、`User Parameter`、`Add`、`Panner`、`Emissive`、`材质`。
+
+**关键画面：**
+
+本图是 `M_IceGround` 裂纹遮罩的预览结果与局部图结构，说明这一节从前一页延续的多层 `UV/Add/BumpOffset` 网络开始被作为可用的裂纹基础材质来审视
+
+节点定义集
+- 注释框 `Comment`：包住当前可见的一段中间网络
+- `UV`：上方和下方各有一枚，分别给不同层提供基础坐标
+- `Add`：位于两层 `UV` 之间，用于在坐标进入 `BumpOffset` 前叠加偏移
+- `BumpOffset`：右侧上下各一枚，可见彩色预览区
+- `T_Crack_Height`：右侧两张蓝色纹理参数节点，接收 `BumpOffset` 输出后的 UV
+
+连线集
+- 上方 `UV` 直接连到上方 `BumpOffset.Coordinate`
+- 中间 `Add` 的输出连到上方 `BumpOffset`，并继续参与下方链路
+- 下方 `UV` 与若干来自左侧的线一起进入下方 `Add/BumpOffset` 结构
+- 每个 `BumpOffset` 的输出都继续送向右侧对应的 `T_Crack_Height.UVs`
+
+设置/参数
+- 左侧 `Details` 面板当前选中的是 `Comment`
+- 可见注释框参数：
+  - `Text = Comment`
+  - `Font Size = 18`
+- 底部统计显示：
+  - `Base pass shader without light map: 241 instructions`
+  - `Base pass vertex shader: 315 instructions`
+  - `Texture samplers: 3/16`
+  - `Texture Lookups (Est.): VS(3), PS(12)`
+- 与 `p72` 末尾相比，当前材质已经处于更完整的合成状态
+
+输出/预览
+- 左侧预览平面显示黑底白裂纹并伴随灰阶拖影与亮点噪声，说明裂纹主遮罩已经成形
+- 本图的重点不是新增某个单独参数，而是确认这一组多层裂纹位移网络已被整理为材质图中的一个可复用模块
+本图展示 `M_IceGround` 新增的冰层深度链：用一张高度纹理驱动 `ParallaxOcclusionMapping`，再把得到的 `Parallax UVs` 送给冰层底纹采样
+
+节点定义集
+- `Texture Sample Parameter2D`（左）：参数名 `Ice Under Height`
+  - `Texture = T_stylized_ice_height`
+  - `Sampler Type = Color`
+- `ParallaxOcclusionMapping`：位于中间，是本图的核心节点
+- `Texture Sample Parameter2D`（右）：参数名 `T_UnderIce`，用于采样冰层下方纹理
+
+连线集
+- `Ice Under Height` 输出 -> `ParallaxOcclusionMapping.Heightmap Texture (T2d)`
+- `ParallaxOcclusionMapping.Parallax UVs` -> `T_UnderIce.UVs`
+
+设置/参数
+- 左侧 `Details` 面板当前选中的是 `Ice Under Height`
+- 可可靠读出的参数有：
+  - `Parameter Name = Ice Under Height`
+  - `Texture = T_stylized_ice_height`
+  - `Sampler Type = Color`
+- `ParallaxOcclusionMapping` 画面中可见的主要输入/输出包括：
+  - 输入：`Height Ratio`、`Min Steps`、`Max Steps`、`UVs`、`Heightmap Channel`
+  - 输出：`Parallax UVs`、`Offset Only`、`Shadow`、`Pixel Depth Offset`
+- 当前截图未显示这些数值已被设置成什么，说明此时仍处于“先把链路搭起来，再做调整”的阶段
+
+输出/预览
+- 左侧预览标题为 `Previewing MaterialExpressionTextureSampleParameter2D_12`
+- 预览图是一张浅灰白的碎冰/冰片纹理，说明 `T_stylized_ice_height` 本身不是黑白裂纹，而是用于描述冰层起伏的高度贴图
+- 本图对应正文里“我们需要一些调整”这一步，核心是把视差深度改为从可控的高度图获取，而不是直接沿用只有 RGB 的普通纹理
+本图是 `T_stylized_ice_roughness` 纹理资源的检查页，用来确认这张冰面贴图本身的显示效果与导入设置已经可接受，可以直接保存使用
+
+节点定义集
+- 当前打开的资源页签是 `T_stylized_ice_roughness`
+- 中央预览区域显示一张浅灰色碎冰/裂缝纹理
+- 右侧是该纹理的 `Details` 属性面板
+
+连线集
+- 本图是纹理资源检查界面，不涉及材质图中的节点连线
+
+设置/参数
+- 右侧面板可可靠读出的信息包括：
+  - `Imported: 1024x1024`
+  - `Displayed: 1024x1024`
+  - `Max In-Game: 1024x1024`
+  - `Resource Size: 663 KB`
+  - `Has Alpha Channel: False`
+  - `Source Alpha Detected: False`
+  - `Format: DXT1`
+  - `Number of Mips: 11`
+  - `Texture Group: World`
+  - `LOD Bias: 0`
+  - `Compression Settings: Default (DXT1/5, BC1/3 on DX11)`
+- 右下区域还能看到：
+  - `sRGB` 已勾选
+  - `Availability = GPU`
+- 结合字幕 `Overall it's great, we can save it like this`，说明教程确认这张纹理无需继续微调
+
+输出/预览
+- 中央预览图显示的是一张由浅色冰片块面与深色裂缝组成的平铺纹理，既可作为粗糙度参考，也能服务于冰层表面细节
+- 这张图的作用是证明前一步选定的冰层相关纹理资源在分辨率、压缩和可视效果上已经满足当前材质需求，可以直接保留
+
+### 00:04:47-00:09:40 UV、颜色
+
+- 本段定位：UV、颜色。
+- 知识点：它非常淡化 可以选择BCC 看看它如何淡化 基本上 这只是给我们一个更好的結果 我们看到 没有再有这种藍色的藍色 它们的深度 就像是下面的一樣。
+- 知识点：我们来用这个例子 还有在前面的东西 下面的东西 而这就是有趣的东西 如果我们想 例如說 我们需要擺動 它是一个座椅 它是一號设置的 如果我把它设置为0.5。
+- 知识点：我们看到嗎? 它更靠近了 现在看起来更好 它更靠近了 现在有很深的深度 我们看看 如果我把它设置为0 它会非常靠近我们 它会看起来有點奇怪 通常是0.5。
+- 知识点：好,我们把它调到2.6,我们也调到UV组织,所以我们必须调到它们,所以我们通常调到UV。
+- 知识点：如果我们调到2,它们也会在这里变化。
+- 知识点：这些UV组织就会变成这个颜色,所以可以通过任何颜色,但是我们需要一个特别的颜色。
+- 知识点：我们就把它调到这个样子,它们也变化了所谓的颜色,所以我们就把颜色调到这里。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+本图是 `M_IceGround` 中冰层视差链的初始搭建画面，先确认存在一条 `Ice Under Height -> ParallaxOcclusionMapping -> T_UnderIce` 的基础通路，用于把冰层底纹做出深度感
+
+节点定义集
+- `Texture Sample Parameter2D`：参数名 `Ice Under Height`，纹理为 `T_stylized_ice_height`
+- `ParallaxOcclusionMapping`
+- `Texture Sample Parameter2D`：参数名 `T_UnderIce`
+
+连线集
+- `Ice Under Height` -> `ParallaxOcclusionMapping.Heightmap Texture (T2d)`
+- `ParallaxOcclusionMapping.Parallax UVs` -> `T_UnderIce.UVs`
+
+设置/参数
+- 左侧 `Details` 面板当前仍选中 `Ice Under Height`
+- 可确认的纹理参数有：
+  - `Texture = T_stylized_ice_height`
+  - `Sampler Type = Color`
+- 当前画面尚未显示 `Height Ratio`、`Steps`、`Heightmap Channel` 的具体常量输入，说明这一帧重点是确认基础链路，而不是参数微调
+
+输出/预览
+- 左侧预览标题仍是 `Previewing MaterialExpressionTextureSampleParameter2D_12`
+- 预览图显示浅灰碎冰纹理，说明当前关注点仍是高度图本身及其如何驱动视差采样
+- 这一帧的作用是先建立“高度图决定视差 UV，视差 UV 再驱动冰层底纹采样”的关系，后续才继续细调参数
+本图补清了 `ParallaxOcclusionMapping` 链的关键参数设置：用 `Ice Under Height` 作为高度图，`Height Ratio` 设为 `0.5`，步数设为 `128`，并指定使用红色通道当作高度通道
+
+节点定义集
+- `Texture Sample Parameter2D`：参数名 `Ice Under Height`，纹理为 `T_stylized_ice_height`
+- `Constant`：数值 `0.5`
+- `Constant`：数值 `128`
+- `Constant4Vector`：值显示为 `1,0,0,0`，颜色预览为纯红
+- `ParallaxOcclusionMapping`
+- `Texture Sample Parameter2D`：参数名 `T_UnderIce`
+
+连线集
+- `Ice Under Height` -> `ParallaxOcclusionMapping.Heightmap Texture (T2d)`
+- `0.5` -> `ParallaxOcclusionMapping.Height Ratio (S)`
+- `128` -> `ParallaxOcclusionMapping.Min Steps (S)`，同时也连到 `Max Steps (S)`
+- `1,0,0,0` -> `ParallaxOcclusionMapping.Heightmap Channel (V4)`
+- `ParallaxOcclusionMapping.Parallax UVs` -> `T_UnderIce.UVs`
+
+设置/参数
+- 左侧 `Details` 面板当前仍选中 `Ice Under Height`
+- 可确认的纹理参数有：
+  - `Texture = T_stylized_ice_height`
+  - `Sampler Type = Color`
+- `Heightmap Channel` 使用红色向量，和正文“高度从哪个通道读取”的讨论一致
+- 将 `Min Steps` 与 `Max Steps` 同时设成 `128`，说明当前先用固定步数稳定观察视差效果
+
+输出/预览
+- 左侧预览标题仍是 `Previewing MaterialExpressionTextureSampleParameter2D_12`
+- 预览图显示浅灰碎冰纹理，说明当前关注点仍是高度图本身及其如何驱动视差采样
+- 这一帧的作用是把 POM 的核心输入条件固定下来，便于后续继续调整 UV 和颜色表现
+本图继续细化冰层颜色控制，重点是给 `Color Ice Under` 选定一组高饱和蓝色，并确认该颜色进入材质输出后的整体视觉结果
+
+节点定义集
+- `Vector Parameter`：`Color Ice Under`
+- `Named Reroute` 或参数节点：`Parallaxice`
+- `Named Reroute` 或参数节点：`Ice Depth`
+- `Vector Parameter`：`Ice Depth Color`
+- `Multiply`（上）
+- `Multiply`（中）
+- `Add(0)`
+- `Material Output`：`M_IceGround`
+
+连线集
+- `Parallaxice` 与上方 `Multiply` 相连
+- `Ice Depth` 与 `Ice Depth Color` 相连后进入中间 `Multiply`
+- 中间 `Multiply` 结果继续送往右侧 `Material Output`
+- 画面中 `Add(0)` 接收来自中间结果的一路输入，但当前截图未展示它之后是否再并入其他颜色结果
+
+设置/参数
+- 当前选中的 `Color Ice Under` 参数仍可见：
+  - `R = 0.0`
+  - `G = 0.123842`
+  - `B = 1.0`
+  - `A = 1.0`
+- `Color Picker` 中的新颜色为明亮的蓝青色，表明教程并未采用低饱和白灰，而是故意让冰层内部带明显冷色辉光
+- 右侧 `Material Output` 仍显示 `Opacity = 1.0`
+
+输出/预览
+- 左侧冰面预览呈现更明确的青蓝色内发光，白色裂缝边缘与深色裂隙之间的对比被进一步拉开
+- 这张图的价值在于确认最终采用的不是任意颜色，而是一组专门服务“冰层深处发冷光”效果的蓝色参数
+
+### 00:09:40-00:14:20 粒子、透明度
+
+- 本段定位：粒子、透明度。
+- 知识点：是結果 然后我们把它们分開 现在我们有深度的隙縫 跟这个眼睛和眼睛的深度很像 可观察到这个眼睛和眼睛的深度 在这个隙縫里 我们来看看。
+- 知识点：從这个角度看 看起来很不錯 这里 我们开始吧 需要加上一些透明度 一些质感来作控制 需要用这个 我们快點来做一些东西 我已经知道需要要什么了。
+- 知识点：我需要一个面膜像这个 需要把它们分開 这就是我们的透明度 就像这樣 我们只需要加上控制的一个模式 基本上 需要要加點调整 让它看起来更好 我们怎麼做呢?。
+- 知识点：需要用一些质感 比較准确的聲音 我们減少了力量 这就是我们的调整 是的,首先目标是 质感不会重複 需要把它们清除 在这兒,是的,它不重複。
+- 知识点：第二,需要把它们轉移一点 在这兒 大概,我们来看看 哦,像这樣 你看,现在它们不一樣了 这里是多,那里是少 之前它们只是圆形 现在我们加了一些。
+- 知识点：有趣的形状 基本上,不应该这樣做 要在质感设计師的面部上 做出这种形状 我们来看看 我们要快點 如果需要,你也可以这樣做 如果需要,你也可以这樣做。
+- 知识点：我们改变了它们的壓力 这樣看起来更好 现在 我们 需要把結果分開 首先,需要分開 然后需要加 然后需要加 然后需要调整 背景色的设置。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`颜色`、`透明度`。
+
+**关键画面：**
+
+本图是 `M_IceGround` 在加入冰层深度与颜色后的总览效果，重点是确认材质已经具备明显的内部深度、裂缝高亮和整体蓝色基调
+
+节点定义集
+- 画面中央是被注释框包住的大型材质网络，包含多列重复节点和一条向右收束的运算链
+- 左侧可见多张蓝色纹理参数节点、若干黄色/绿色渐变节点以及深色运算节点
+- 右侧是逐步收束到输出区的中间运算链
+
+连线集
+- 多层输入从左侧扇出，经过中间多列节点后汇入右侧一串连续运算节点
+- 由于是远景总览，具体每条线的端点名称无法逐一可靠辨认，但可以确认材质图已从单一裂纹链扩展成包含深度、颜色和透明控制的完整网络
+
+设置/参数
+- 左侧 `Details` 面板当前显示材质本体设置：
+  - `Material Domain = Surface`
+  - `Blend Mode = Translucent`
+  - `Shading Model = Unlit`
+  - `Lighting Mode = Volumetric NonDirectional`
+- 底部统计显示：
+  - `Base pass shader without light map: 273 instructions`
+  - `Base pass vertex shader: 315 instructions`
+  - `Texture samplers: 5/16`
+  - `Texture Lookups (Est.): VS(3), PS(13)`
+  - `Preshaders: 17 (64 param fetches, 119 ops)`
+- 相比上一段，采样器和像素着色器计算量继续上升，说明材质复杂度已经明显增加
+
+输出/预览
+- 左侧预览平面呈现深蓝色冰面，白色裂缝边缘发光，裂缝内部有明显层次和颗粒，高低错落感比前一段更强
+- 与字幕 `With depth.` 一致，这一帧的核心是确认“冰面现在已经有足够的深度感”，为后续做透明度和遮罩拆分奠定基础
+本图展示教程为透明度/遮罩增加一条“中心缩放 + 噪声偏移”的 UV 控制链，用来避免遮罩过于规则重复，并生成更自然的形状
+
+节点定义集
+- `Texture Sample`（左）：缩略图是一张模糊灰度噪声纹理
+- `TexCoord[0]`
+- `Multiply(0.25)`：输入来自左侧噪声纹理，节点内 `B = 0.25`
+- `Add`
+- `ScaleUVsByCenter`
+- `Constant`：数值 `0.7`
+- `Texture Sample`（右）：预览是一张白色圆形/软边遮罩
+
+连线集
+- 左侧灰度 `Texture Sample` 输出 -> `Multiply.A`
+- `Multiply` 输出 -> `Add.B`
+- `TexCoord[0]` -> `Add.A`
+- `Add` 输出 -> `ScaleUVsByCenter.UVs (V2)`
+- `0.7` -> `ScaleUVsByCenter.Texture Scale (V2) 0-1 mask`
+- `ScaleUVsByCenter.UVs` 输出 -> 右侧 `Texture Sample.UVs`
+
+设置/参数
+- 这条链明确把噪声乘以 `0.25` 后再叠到基础 UV 上，说明偏移量被刻意控制在较小范围
+- `ScaleUVsByCenter` 的缩放值为 `0.7`，表示遮罩会围绕中心收缩到原来的约七成
+- 底部统计显示：
+  - `Base pass shader without light map: 281 instructions`
+  - `Texture samplers: 7/16`
+- 相比上一张，总体复杂度继续增加，说明这条遮罩修饰链已真实并入材质
+
+输出/预览
+- 左侧视口里冰刺模型变得很小而模糊，当前重点不在场景效果，而在右侧这条局部控制链
+- 右侧 `Texture Sample` 预览的白色软边圆形说明教程正在生成一张可用于透明度或混合强度的基础遮罩，而不是继续直接改裂缝颜色
+本图是 `Stylized_IceSpikes` 场景里的 Sequencer 验证画面，用来确认 `NS_IceSpikes` 在镜头中以平滑渐进的方式出现，而不是突兀闪现
+
+节点定义集
+- `Level Sequencer`：底部时间线已打开当前镜头
+- `CameraActor` 轨道：可见 `CameraComponent`，并显示 `Field Of View = 90.0`
+- `NS_IceSpikes` 轨道：下挂 `NiagaraComponent0`
+- `System Life Cycle`：位于 `NS_IceSpikes > NiagaraComponent0` 下，是本图中的关键控制轨
+- 右侧选中对象是 `LevelSequenceActor (Instance)`，当前资源为 `LS_IceSpikes`
+
+连线集
+- 这是一张时序编辑界面截图，不涉及材质节点连线
+- 关键关系是 `NS_IceSpikes` 被放入 Sequencer，并通过 `System Life Cycle` 轨道控制特效在时间轴上的出现与持续
+
+设置/参数
+- 时间轴左上显示 `60 fps`
+- 当前播放头位于大约 `0.07` 秒处
+- 右侧 `LevelSequenceActor` 详情中可见：
+  - `Level Sequence Asset = LS_IceSpikes`
+  - `Scale = 1.0, 1.0, 1.0`
+- 场景右上 `Outliner` 中选中了 `LevelSequencer`，同时能看到 `NS_IceSpike` 条目，说明当前正在对同一个冰刺镜头做时序调试
+
+输出/预览
+- 主视口中只见两个蓝白发光的冰刺尖端，整体亮度从周围黑蓝背景中缓慢浮现
+- 字幕 `we'd like it to gradually, smoothly transition` 对应的就是这一验证目的：特效需要平滑过渡进入，而不是一下子完整弹出
+- 这张图说明教程已经从材质内部控制推进到镜头级时间控制，开始检查粒子/特效在实际演出中的透明度与过渡表现
+
+### 00:14:20-00:19:00 UV
+
+- 本段定位：UV。
+- 知识点：基本上,我们需要淡化 我们快點加 需要加點聲音 我们的淡化準備好了 需要把它们分成 在这里设置明顯性 像是这樣 最後我们需要的东西是 我们要做的。
+- 知识点：像是淡化 但它只是一个光线 所以需要把它设置为標準 它的质感只是光线 它只是一个光线,它会從UV的位置傳送 我们把它们 像是R頻道 像这樣。
+- 知识点：我把它们反过来 我再次用滑的 消化 这是它们的消化 这是我们的消化 它们的消化 淡化 可以立刻设置一个小的 为什么它们需要 我还在这里。
+- 知识点：我把它们分成明顯性 在这里 我可以把它们放進去 在这里看到它们的光线 它会怎麼看 它会消失像这樣 消失,消失,消失 像这樣 所以它会消失 像是。
+- 知识点：我们来做 我看到这里,我把價值改变了 这里有一个淡化 我们把它们放在这里 放在这里 哦 最後 我们把它们 为我们而设置 把它们放掉,看看。
+
+**关键画面：**
+
+本图展示 `UV` 段开始阶段的局部操作证据：教程在保留蓝色冰面结果预览的同时，准备继续向材质图中添加新的遮罩/淡化控制输入
+
+节点定义集
+- 左侧视口仍显示蓝色冰面与白色裂缝效果
+- 右侧材质图中当前只可见一枚 `Constant4Vector`
+- 左侧 `Details` 面板显示当前选中对象为该 `Constant4Vector`
+
+连线集
+- 当前画面里这枚 `Constant4Vector` 尚未接线
+- 这说明此帧处于“先放入一个新常量节点，再继续接入透明度/淡化链”的过渡状态
+
+设置/参数
+- 左侧 `Details` 面板可可靠读出：
+  - `R = 0.0`
+  - `G = 0.0`
+  - `B = 0.0`
+  - `A = 0.0`
+- 节点颜色预览也是纯黑，说明这是一枚全零向量常量
+- 底部统计显示：
+  - `Base pass shader without light map: 286 instructions`
+  - `Base pass vertex shader: 315 instructions`
+  - `Texture samplers: 7/16`
+  - `Texture Lookups (Est.): VS(3), PS(15)`
+  - `Preshaders: 18 (65 param fetches, 121 ops)`
+
+输出/预览
+- 左侧冰面结果保持可见，表明当前新增操作不会推翻已有深度/颜色效果，而是在此基础上继续叠加淡化控制
+- 配合字幕 `Let's quickly add.`，这张图的重点是“快速加入一个全零向量常量作为后续遮罩或颜色控制的基础输入”
+本图继续记录 `UV` 段里的占位输入设置：教程在材质图中单独摆放一枚全黑 `Constant4Vector`，为后续淡化/透明过渡控制做准备
+
+节点定义集
+- `Constant4Vector`
+- 左侧 `Details` 面板中的 `Material Expression Constant 4Vector`
+
+连线集
+- 当前截图中该常量节点仍没有任何可见连线
+- 这表明本帧主要是定义输入值，而非展示完整网络连接
+
+设置/参数
+- 当前节点内部颜色为黑色
+- 左侧 `Details` 面板再次确认：
+  - `R = 0.0`
+  - `G = 0.0`
+  - `B = 0.0`
+  - `A = 0.0`
+- 这是一组完全关闭的初始值，适合作为后续逐步加亮、加遮罩或做渐隐控制的起点
+
+输出/预览
+- 左侧小型场景预览中冰刺仍然可见但较模糊，说明此时主要关注的是材质内部控制，而不是场景镜头
+- 这一帧的价值在于补足“新加入的控制常量最初到底是什么值”这一事实证据
+本图是 `Stylized_IceSpikes` 场景中的结果回看与资源定位画面，说明教程已经把当前冰面材质整理成实例资源，并在镜头里观察它的最终发光表现
+
+节点定义集
+- 主视口中可见一组已经成形的蓝白发光冰刺
+- 下方内容浏览器定位在 `Content/VFX_Library/Materials/MM/Special/IceSpikes`
+- 当前目录内可见 3 个资源：
+  - `M_Ice`（Material）
+  - `M_IceGround`（Material）
+  - `MI_IceGround_01`（Material Instance）
+- 右侧 `Details` 面板当前选中的是 `LevelSequenceActor (Instance)`，资源名为 `LS_IceSpikes`
+
+连线集
+- 本图不是材质图节点截图，不涉及具体连线
+- 可靠关系是：当前冰刺镜头使用的地面材质已经被整理为 `M_IceGround` 与 `MI_IceGround_01` 这组材质/材质实例资源
+
+设置/参数
+- 内容浏览器顶部面包屑显示路径位于：
+  - `Content > VFX_Library > Materials > MM > _Special > IceSpikes`
+- 右侧 `LevelSequenceActor` 详情中可见：
+  - `Level Sequence Asset = LS_IceSpikes`
+  - `Scale = 1.0, 1.0, 1.0`
+- 场景 `Outliner` 中同时能看到 `LevelSequencer` 与 `NS_IceSpike`
+
+输出/预览
+- 主视口里的冰刺整体呈强烈蓝白辉光，边缘非常亮，周围还有少量飘散光点，说明当前材质实例已经在实际特效镜头中生效
+- 这张图的价值在于把前面在材质图内部做的 UV/淡化/颜色修改，落到最终资源组织和镜头效果上，便于后续继续围绕发射器和粒子初始化做调整
+
+### 00:19:00-00:23:49 发射器生成与粒子初始化
+
+- 本段定位：发射器生成与粒子初始化。
+- 知识点：我们设置一个場地 然后再次设置 发射器,把它们放掉 它会在地上 所以它必须一直在地上 立刻把我们设置的物件 发射 像这樣 一整个物件都在地上。
+- 知识点：生命会长长 也在这里 现在一切都OK 然后设置尺寸 现在它会在地上 把它拉长 把它变大 适当移动这个位置 所以它会变成1 所以它不会 我们看到我们已经有了东西。
+- 知识点：但是我们需要最後一个东西 把它设置好 所以我们设置了这里 设置,然后我们设置它 像这樣 像这樣 然后 直到Z的位置 啊,糟糕了,它会变成一顆。
+- 知识点：,你看 地點 我们已经有了东西 东西已经出现了 只有 問題是,我们必须把它轉正 因此 我们必须把它轉正一点 这里,哇 例如,把它设置好 不 不,不,不。
+- 知识点：,是的,我们可能需要改变批發 哦,像这樣 不可能發生意外 OK,把它移动 让我们看看 现在,地點,一切都在地上 现在我们都OK,适当移动。
+- 知识点：基本上,这就可能了 因为我改变了批發 这可能是一个問題 就是,可以,只要轉動 編輯,把它设置好,大概这里 基本上,它会变成,OK,但。
+- 知识点：Chemos会变成这樣 目标是,只是这个 移动,擺放自己 移动,这里 標示,让我们看看 现在看起来如何 这个样子 现在看起来 需要移动它一点。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`发射器`、`颜色`。
+
+**关键画面：**
+
+本图是进入“发射器生成与粒子初始化”前的场景结果基线，先确认当前冰刺特效已经在镜头中稳定显示，便于后续把材质和发射器参数正式挂到 Niagara 上
+
+节点定义集
+- 主视口中可见一组蓝白发光冰刺，主体沿地面向右上展开
+- 右侧 `Outliner` 中能看到：
+  - `LevelSequencer`
+  - `NS_IceSpike`
+- 右侧 `Details` 面板当前选中的是 `LevelSequenceActor (Instance)`
+- 下方内容浏览器位于 `Content/VFX_Library/Materials/Instances/IceSpikes`
+
+连线集
+- 这是一张场景与资源浏览器画面，不涉及材质节点连线
+- 可确认的关系是：当前镜头已在 `LS_IceSpikes` 中运行，同时下方正定位到即将分配给冰刺特效的材质实例目录
+
+设置/参数
+- `Level Sequence Asset = LS_IceSpikes`
+- `Transform.Scale = 1.0, 1.0, 1.0`
+- 顶部标签显示当前同时打开了 `NS_IceSpikes`、`M_IceGround`、`T_Crack_02Blur`、`T_Crack_02`、`T_stylized_ice_height`、`T_stylized_ice_roughness`
+
+输出/预览
+- 视口中的冰刺亮度很高，周围伴随少量发光粒子，说明基础材质和镜头级展示已经成形
+- 这张图的作用是把后续“生成发射器并传递材质”的操作建立在一个可见且稳定的最终效果基线之上
+本图明确展示要传给冰刺特效的材质实例资源集合，重点是把刚创建的冰面材质实例立即分配给 Niagara/镜头使用
+
+节点定义集
+- 内容浏览器路径位于 `Content/VFX_Library/Materials/Instances/IceSpikes`
+- 当前目录内可见多个材质实例，包括：
+  - `MI_ShockwaveFrost_01`
+  - `MI_GlowAddL_01`
+  - `MI_GlowAddL_02`
+  - `MI_IceGround_01`
+  - `MI_IceSpikes_01`
+  - `MI_IceSpikes_02`
+  - `MI_SmokeFrost_01`
+  - `MI_Snowflakes_01`
+  - `MI_Snowflakes_02`
+  - `MI_Spikes Texture_01`
+  - `MI_Spikes TextureGlow_01`
+- 右侧 `Details` 面板仍显示 `LevelSequenceActor (Instance)`，序列资源为 `LS_IceSpikes`
+
+连线集
+- 本图不是节点图，但字幕 `Immediately pass the material that we created.` 明确说明这里的操作目的，是把当前新建材质实例交给冰刺特效流程使用
+- 可从目录内容推断：`MI_IceGround_01`、`MI_IceSpikes_01/02` 是本镜头最直接相关的候选实例
+
+设置/参数
+- 左侧资源树高亮的是 `Materials > Instances > IceSpikes`
+- 当前目录状态栏显示共有 `11 items`
+- 场景中主视口仍实时显示冰刺发光结果，说明浏览资源的同时正在对镜头效果进行联调
+
+输出/预览
+- 主视口中的冰刺与上一张一致保持强蓝白辉光
+- 这一帧的核心不是修改发射器数值本身，而是确认“材质实例已经准备好，并可立即传递给冰刺特效使用”
+本图展示 `NS_IceSpikes` 里用于把材质实例真正驱动到粒子上的关键配置：通过 `Dynamic Material Parameters` 把 `Dissolve` 曲线写入材质参数，实现生成后的平滑显隐
+
+节点定义集
+- `Niagara System`：当前打开的是 `NS_IceSpikes`
+- 左侧预览窗显示一组正在形成的蓝色冰刺
+- 中间可见两个发射器栈：
+  - `Snowflakes_GlowSpa...`
+  - `Empty`
+- `Empty` 发射器当前可见模块：
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+  - `Initialize Particle`
+  - `Sprite Facing and Alignment`
+  - `Particle State`
+  - `Dynamic Material Parameters`
+  - `Sprite Renderer`
+
+连线集
+- 这是一张 Niagara 栈与参数界面截图，不是节点连线图
+- 关键关系是：`Dynamic Material Parameters` 在 `Particle Update` 阶段写入材质参数索引 `0`，把曲线值传给粒子材质
+
+设置/参数
+- 右侧 `Dynamic Material Parameters` 面板中：
+  - 当前选中 `Index 0`
+  - `Write Parameter Index 0` 已启用
+  - 写入模式为 `Float from Curve`
+  - 曲线源为 `Curve for Floats`
+  - `CurveIndex = PARTICLES.NormalizedAge`
+  - `Scale Curve = 1.0`
+  - `Dissolve = 0.0`
+  - `Param2-0 = 0.0`
+  - `Param3-0 = 0.0`
+- 曲线图显示数值会随着 `NormalizedAge` 增长而逐步下降并趋于平缓，说明该参数被设计成随粒子年龄平滑过渡
+
+输出/预览
+- 左侧预览里的冰刺从雾状/半透明状态向实心发光形态过渡，和前面“需要平滑过渡”的目标一致
+- 这张图把 `发射器生成与粒子初始化` 段真正落到可复现控制上：不是只把材质实例挂上去，而是继续通过 Niagara 动态材质参数驱动 `Dissolve`，控制冰刺出现与消失的节奏
+
+### 00:23:49-00:28:39 关键流程 06
+
+- 本段定位：关键流程 06。
+- 知识点：现在,这里 软件转换 我喜欢它,像这樣 还可以增加,所以,我们有 強度,它会消失 所以,它也会 慢慢地 消失,像这樣 非常好 我们把它,把它,我们把它。
+- 知识点：把它,就像这樣,就是它应该 在所有东西後面,显示 那,基本上,我喜欢这个選項 我们来看看 这个項目的设置 我们来看看 如何可以把它,让它变得更好。
+- 知识点：所有东西,这里,你看,这个 我们有,滑鼠,这些,输入 0 1,如果,猜猜,设置 会显示,转换,我们设置,像这樣 这里,有 基本上 EVE设置。
+- 知识点：我们开始,我喜欢 2,增加,首先 那就是,你能够,像你想要的,转换 变成 EVE,像这樣 可能,我还是会 看到,我能够抓到EVE 然后,像这樣,设置。
+- 知识点：,这里,这里,DODDY,金还在 移动 像这樣,看起来有趣 是的 我们继续,再加颜色 我们设置颜色。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+本图是在 `NS_IceSpikes` 的 `Dynamic Material Parameters` 中继续细调出现/消散曲线，重点是把材质参数 `Appear` 的前段保持在接近满值，再向后平滑下降
+
+节点定义集
+- 当前打开的 Niagara System 为 `NS_IceSpikes`
+- 中间当前关注的发射器为 `Empty`
+- `Empty` 发射器在 `Particle Update` 下包含 `Dynamic Material Parameters`
+- 右侧面板当前选中的是 `Dynamic Material Parameters > Index 0 > Appear`
+
+连线集
+- 这是 Niagara 参数曲线界面，不是节点连线图
+- 可确认的关系是：`Appear` 通过 `Float from Curve` 写入 `Dynamic Parameter Index 0`，并以粒子年龄为驱动源
+
+设置/参数
+- `Write Parameter Index 0` 已启用
+- `Appear = Float from Curve`
+- 曲线源为 `Curve for Floats`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- 当前悬浮的关键点提示为：
+  - `Time: 0`
+  - `Value: 0.95`
+- 下方可见：
+  - `Scale Curve = 1.0`
+  - `Dissolve = 0.0`
+  - `Param2-0 = 0.0`
+  - `Param3-0 = 0.0`
+
+输出/预览
+- 左侧预览中的冰刺从雾化背景中显现，主体已经较亮，但仍保留边缘渐隐，说明曲线前段并未直接给满 `1.0`
+- 这一帧的作用是把“平滑出现”具体化为一条可复现曲线：粒子生命周期起点就接近可见，但仍保留少量余量，便于后续继续柔化过渡
+本图从 Niagara 曲线切回到材质实例 `MI_IceGround_01`，重点是通过实例滑块和贴图槽直接编辑地面冰面效果，而不是继续回到母材质图里改节点
+
+节点定义集
+- 当前打开的是材质实例窗口 `MI_IceGround_01`
+- 右侧 `Details` / `Layer Parameters` 面板中可见两个参数分组：
+  - `Global Scalar Parameter Values`
+  - `Global Texture Parameter Values`
+
+连线集
+- 这是材质实例参数界面，不涉及节点连线
+- 可确认的关系是：实例通过勾选的参数覆盖母材质默认值，并立即反馈到场景中的冰刺/地面表现
+
+设置/参数
+- `Global Scalar Parameter Values`
+  - `Dissolve Smoothness = 1.0`
+  - `Offset = 0.02`
+- `Global Texture Parameter Values`
+  - `Ice Under Height = T_stylized_ice_height`
+  - `T_Crack = T_Crack_02`
+  - `T_Crack_Height = T_Crack_02Blur`
+- 这些参数左侧都已勾选，表示当前实例正在覆盖对应默认值
+
+输出/预览
+- 主视口中的冰刺和地面裂缝在近景里显示得更亮、更锐利，说明实例参数修改已实时生效
+- 字幕 `slider edits` 对应的就是这一操作方式：通过材质实例面板直接调 `Dissolve Smoothness`、`Offset` 以及贴图子项，比回母材质重新编译更适合快速联调
+本图继续在 `MI_IceGround_01` 中直接编辑颜色参数，重点是用颜色选择器微调冰层颜色，使冰刺地面既保留体积感，又不过度发白
+
+节点定义集
+- 当前打开的材质实例仍是 `MI_IceGround_01`
+- 右侧参数面板当前展开：
+  - `Global Texture Parameter Values`
+  - `Global Vector Parameter Values`
+- 可见的矢量参数包括：
+  - `Color Ground`
+  - `Color Ice`
+- 前景打开了 `Color Picker`
+
+连线集
+- 这是材质实例参数编辑界面，不涉及节点连线
+- 可确认的关系是：实例中的颜色参数会直接影响左侧场景里冰刺及地面裂缝的发光配色
+
+设置/参数
+- `Color Picker` 中当前新颜色可可靠读出：
+  - `R = 0.014618`
+  - `G = 0.030229`
+  - `B = 0.131696`
+  - `A = 1.0`
+  - `H = 232.0`
+  - `S = 0.889`
+  - `V = 0.131696`
+  - `Hex Linear = 040822FF`
+  - `Hex sRGB = 203166FF`
+- 颜色预览区显示 `Old` 与 `New` 的对比，`New` 明显更亮、更偏蓝
+- 参数列表里 `Ice Under Height`、`T_Crack`、`T_Crack_Height`、`T_UnderIce` 等贴图项仍保持启用状态
+
+输出/预览
+- 左侧场景里整排冰刺和地面裂缝呈现更统一的深蓝基调，白色裂缝边缘依然醒目，但整体观感更像有体积的冷色冰层
+- 这张图把“再加颜色”具体化为一组可复现的实例颜色值，说明教程正在通过材质实例而不是重新改母材质节点来完成最终调色
+
+### 00:28:39-00:33:17 颜色
+
+- 本段定位：颜色。
+- 知识点：我喜欢 颜色,地面,鋼,鋼 这里,鋼,给,像这樣 太多了,只是一点 像这樣 好奇,高光總体,这 这,所有,这里 不过,需要它变暗 我喜欢 我喜欢。
+- 知识点：当它变暗 我認为,哦,我们把它放下 我看到,我适当没有 制作,质量,为了Dissolva 特意为Dissolva 不过,这里,我已经完成了。
+- 知识点：我们来看看 首先,我们给它一个名字 现在,我们看看可以從所有邊界看 它看起来 很 volumetric,很漂亮 在移动,用parallax的效果。
+- 知识点：看到物体的深度 看起来很棒 可以再加什么 其實,非常简单 我们来拿这个 輸出器,把它剪輯 在上面,我们只会加上 这个,像是,为了光學 我们简单剪輯。
+- 知识点：物体 这就是我们剪輯的 需要確保它有 反应 我们只需要加 進入 Kirin Blending Mode 让它变亮 我们直接拿去 把它替換 这时候需要加一个物体。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+本图是在材质实例 `MI_IceGround_01` 中直接调地面颜色 `Color Ground`，目标是给冰刺下方地面一层更亮、更冷的青蓝色反应
+
+节点定义集
+- 当前打开的是材质实例窗口 `MI_IceGround_01`
+- 参数面板当前展开：
+  - `Global Texture Parameter Values`
+  - `Global Vector Parameter Values`
+- 打开的 `Color Picker` 对应 `Color Ground`
+
+连线集
+- 这是材质实例颜色调节界面，不涉及节点连线
+- 可确认的关系是：`Color Ground` 会直接影响左侧场景中冰刺下方地面的发光和受光颜色
+
+设置/参数
+- `Global Texture Parameter Values` 中可见：
+  - `Ice Under Height = T_stylized_ice_height`
+  - `T_Crack = T_Crack_02`
+  - `T_Crack_Height = T_Crack_02Blur`
+  - `T_UnderIce = T_stylized_ice_roughness`
+- `Color Ground` 的 `Color Picker` 当前新颜色可读为：
+  - `R = 0.514851`
+  - `G = 0.786471`
+  - `B = 1.0`
+  - `A = 1.0`
+  - `H = 206.407806`
+  - `S = 0.485149`
+  - `V = 1.0`
+  - `Hex Linear = 83C9FFFF`
+  - `Hex sRGB = BEE5FFFF`
+- `Old` / `New` 预览显示新颜色比旧颜色更亮、更偏冰蓝
+
+输出/预览
+- 左侧视口里冰刺近景和地面裂缝被一层更亮的白蓝高光覆盖，地面区域大面积发白发亮
+- 这一帧对应正文里“地面…给…这里”的调色意图，说明教程正在单独抬高地面基色，而不是只改冰刺本体颜色
+本图是调完 `Color Ground` 后的结果回看，重点不在参数面板，而在观察地面裂缝是否既有体积感又不过曝
+
+节点定义集
+- 主视口中只保留地面冰裂效果，没有冰刺主体遮挡
+- 顶部标签显示当前同时打开：
+  - `MI_IceGround_01`
+  - `NS_IceSpikes`
+  - `M_IceGround`
+- 下方是 `LS_IceSpikes` 的 Sequencer 时间线
+
+连线集
+- 这是一张场景结果预览图，不涉及材质节点或 Niagara 节点连线
+- 可确认的关系是：前一张在材质实例里修改的 `Color Ground` 已经反馈到实际镜头里的地面冰裂表现
+
+设置/参数
+- 时间轴当前播放头大约在 `1.33` 秒处
+- 顶部视口设置可见：
+  - `Perspective`
+  - `Lit`
+- 右侧 `Outliner` 中同时存在 `LevelSequencer` 与 `NS_IceSpike`
+
+输出/预览
+- 地面裂缝呈明显蓝色体积层，裂缝边缘是高亮白蓝发光线，裂块内部保持较深的蓝黑色
+- 画面整体比上一张更克制，不再被近景高光几乎洗白，说明教程正在把地面颜色调回一个更有层次、更能体现视差深度的状态
+本图把颜色调整从材质实例推进到 Niagara 发射器本身，重点是在地面裂缝发射器的 `Initialize Particle` 中直接设置粒子颜色
+
+节点定义集
+- 当前打开的是 `NS_IceSpikes`
+- 中间可见两个相关发射器：
+  - `IceGround_Cracks`
+  - `IceGround_Cracks_Add`
+- 右侧 `Details` 面板当前选中的是 `IceGround_Cracks_Add`
+- 当前展开模块是 `Initialize Particle`
+- 前景打开了粒子颜色 `Color Picker`
+
+连线集
+- 这是 Niagara 发射器栈界面，不是节点连线图
+- 可确认的关系是：颜色不是只由材质实例提供，`Initialize Particle` 也在直接写粒子基础颜色，从而叠加控制最终裂缝表现
+
+设置/参数
+- `Initialize Particle` 中可见：
+  - `Lifetime Mode = Direct Set`
+  - `Lifetime = 6.0`
+- `Color Picker` 当前新颜色可读为：
+  - `R = 0.0`
+  - `G = 1.335076`
+  - `B = 3.0`
+  - `A = 1.0`
+  - `H = 213.298462`
+  - `S = 1.0`
+  - `V = 3.0`
+  - `Hex Linear = 00FFFFFF`
+  - `Hex sRGB = 00FFFFFF`
+- `Old`/`New` 预览显示从纯白改成更偏青蓝的高亮颜色
+
+输出/预览
+- 左侧预览里的地面裂缝冰片显示出更浓的蓝色内部发光，边缘亮线与薄雾状外轮廓同时存在
+- 这张图说明教程已经不满足于只在地面材质里调色，而是进一步通过裂缝发射器本身的粒子颜色把整体视觉推向更亮、更冷、更具能量感的效果
+
+### 00:33:17-00:37:58 Multiply、颜色
+
+- 本段定位：Multiply、颜色。
+- 知识点：做吧 看看凝固如何 好 真的好 我们还加了凝固 有深度 看起来很棒 我们看看凝固如何 用这个面膜来凝固 慢慢地它会像这个样子 哦 像这个样子 它会留在这里一段时间。
+- 知识点：在地上 我们首先需要做一些灯笔的材料 所以我们 不是材料,而是个体 是的 哪个回归 把这些复制好 这些将会是 在地上的灯笔 把这些复制好 把这些复制好。
+- 知识点：比如说 把这些复制好 把这些复制好 然后需要把我们的复制放在一条 就像这里 我们只需要的东西是相互的 好,现在我们来看看结果 我们有它在这里。
+- 知识点：我们看到它太亮了 它现在完全不见了 我们看到它太远了 我其实喜欢去编辑这个材料 来 以我们有这么有趣的形状 哦 这个转向是很奇怪的 我们必须要确保。
+- 知识点：在开始我们的形状是很窄的 然后它慢慢地伸展 就像我们的阻力在这里 所以我们要找到一些东西 我已经知道可以很聪明 哪个颜色要用。
+- 知识点：这是我们的颜色 这是我们需要的 你看,它很窄 然后它慢慢地伸展 这是我们需要的 这是一个很好的选项 哦,可能是一些BC7 可能是一些BC7。
+- 知识点：非常低的结果 但是基本上还可以 我们也需要 我们需要把我们的溶化 让它显示出 选择一些阻力 像这个,但反过来 这就是所有 回到Premultiply。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Multiply`、`颜色`。
+
+**关键画面：**
+
+本图是 `Multiply、颜色` 段开头的整体验收镜头，用来观察前面材质实例与裂缝发射器调色完成后，整套冰刺效果是否仍然保持通透、明亮和有深度
+
+节点定义集
+- 主视口中包含：
+  - 一整排向右上生长的冰刺主体
+  - 冰刺下方的蓝色地面裂缝层
+  - 冰刺周围的粒子亮点
+- 顶部标签显示当前同时打开：
+  - `MI_IceGround_01`
+  - `NS_IceSpikes`
+  - `M_IceGround`
+- 下方是 `LS_IceSpikes` 的 Sequencer 时间线
+
+连线集
+- 这是场景结果图，不涉及材质或 Niagara 节点连线
+- 可确认的关系是：上一段对地面颜色、裂缝颜色和材质实例参数的修改，已经一起反馈到这一版最终镜头里
+
+设置/参数
+- 时间轴播放头大约位于 `1.73` 秒
+- 视口当前为：
+  - `Perspective`
+  - `Lit`
+- 右侧 `Outliner` 中仍可见 `LevelSequencer` 与 `NS_IceSpike`
+
+输出/预览
+- 冰刺本体呈亮白偏冰蓝，长尖刺边缘非常锐利，主体内部仍保留蓝色体积层次
+- 地面裂缝亮度与冰刺相比被压低，但仍保留清晰的白蓝发光边缘，说明教程已经开始进入“用 Multiply 控制颜色与亮度平衡”的阶段
+- 这一帧对应正文里“看起来很棒…慢慢地它会像这个样子”的评估阶段，说明当前方案已经接近目标视觉
+本图是对当前镜头过渡问题的直接诊断：在时间轴早段，冰刺主体几乎消失，只剩一片蓝雾状残影，教程明确认为这个 transition 很奇怪
+
+节点定义集
+- 主视口中只剩模糊的蓝色发光团，没有清晰的冰刺形状
+- 下方 `Level Sequencer` 当前轨道包括：
+  - `CameraActor`
+  - `NS_IceSpikes > NiagaraComponent0`
+  - `System Life Cycle`
+- 顶部标签仍显示当前已打开：
+  - `MI_IceGround_01`
+  - `NS_IceSpikes`
+  - `M_IceGround`
+  - `MI_IceGroundAdditive...`
+  - `MI_IceGroundGlow_01`
+
+连线集
+- 这是一张场景与时间轴问题定位图，不涉及节点连线
+- 可靠关系是：当前异常不是资源缺失，而是 Niagara 生命周期/材质显隐过渡在某个时间点产生了不自然的雾化结果
+
+设置/参数
+- 时间轴播放头大约位于 `0.68` 秒
+- `NS_IceSpikes > NiagaraComponent0` 下仍可见 `System Life Cycle = Desired Age`
+- 视口为：
+  - `Perspective`
+  - `Lit`
+- 字幕直接指出：`this transition here is very strange`
+
+输出/预览
+- 当前画面缺少清晰冰刺与裂缝结构，只保留一片偏蓝的模糊光斑，说明某个显隐、颜色或 Multiply 结果在过渡时段被压得过头
+- 这张图的价值在于标定“问题帧”本身，为后续继续通过 Multiply、颜色或透明控制去修正过渡异常提供锚点
+本图把“太亮”的问题定位到地面裂缝附加发射器 `IceGround_Cracks_Add001`，教程正在 `Initialize Particle` 中检查颜色和基础粒子属性
+
+节点定义集
+- 当前打开的是 `NS_IceSpikes`
+- 中间可见多个地面裂缝相关发射器：
+  - `IceGround_Cracks`
+  - `IceGround_Cracks_Ac...`
+  - `IceGround_Cracks_Add001`
+- 右侧 `Details` 面板当前选中的是 `IceGround_Cracks_Add001`
+- 当前展开模块是 `Initialize Particle`
+- 前景打开了该发射器的 `Color Picker`
+
+连线集
+- 这是 Niagara 发射器栈与属性界面，不是节点连线图
+- 可靠关系是：当前过亮问题通过修改 `Initialize Particle` 的颜色与粒子基础属性来修正，而不是回材质实例里继续调色
+
+设置/参数
+- `Color Picker` 当前颜色与前一段裂缝附加发射器一致，可读为：
+  - `R = 0.0`
+  - `G = 1.335076`
+  - `B = 3.0`
+  - `A = 1.0`
+  - `H = 213.298477`
+  - `S = 1.0`
+  - `V = 3.0`
+  - `Hex Linear = 00FFFFFF`
+  - `Hex sRGB = 00FFFFFF`
+- `Initialize Particle` 面板中还能看到：
+  - `Lifetime Mode = Direct Set`
+  - `Lifetime = 6.0`
+  - `Color Mode = Direct Set`
+  - `Sprite Size Mode = Non-Uniform`
+  - 尺寸值约为 `1500.0` 和 `2800.0`
+  - `Sprite Rotation Mode = Direct Angle (Degrees)`
+  - `Sprite Rotation Angle = 0.0`
+
+输出/预览
+- 左侧预览里冰刺和地面裂缝被一层强烈的白青色辉光包裹，雾化边缘明显偏亮，和字幕 `Too bright.` 一致
+- 这张图说明教程已经把 Multiply/颜色阶段的问题收敛到一个可操作结论：裂缝附加发射器的粒子颜色和显示强度过高，需要从发射器初始化参数层面继续压低或重分配
+
+### 00:37:58-00:40:57 透明度
+
+- 本段定位：透明度。
+- 知识点：透明度 哦,像这个,然后 现在我们需要,就是把我们的深度 浪费掉,因为我明白 我们的深度浪费掉了 把它们在最上放在0 如果它在地上,我们不需要它。
+- 知识点：嗯,我们看看 这是我们的阻力 现在没有什么 看起来怎么样,在哪里 啊,这里,它们变得一样 好,慢慢地 我们给予了它们的阻力 这里 然后我们需要把这些溶化控制住。
+- 知识点：我们只需要查看 如果我们不需要任何东西 然后,可能 可能,它需要被编辑 但基本上,好,我们看看 它们全部都看起来怎么样 好,所以 我们给予的,现在这里。
+- 知识点：这些,这些是更加的优点 这里,这里,像这个 没有它,像这个,像这个 我认为,它看起来 比较好看,在这里 需要把它们拔掉 还有,这里 还有,这里。
+- 知识点：还不错,这里 它们的地形 看起来就像这个 它,也不太好看 但如果 你把它们拼合起来 它就很像这个 非常好看 非常酷,非常酷 接下来,可以知道。
+- 核对对象：`透明度`。
+
+**关键画面：**
+
+当前处理主题是透明度过渡。画面停在 Niagara System `NS_IceSpikes`，时间轴约 `0.84s`，教程先定位问题层并准备删掉它。
+
+- 当前选中的是发射器 `IceGround_Cracks_Add001`
+- 预览窗口左侧可见冰刺与地面裂缝，底部字幕明确说明“现在需要做的是移除”
+- 右侧 `Initialize Particle` 仍显示这一层的现有初始化设置：
+  - `Lifetime Mode = Direct Set`
+  - `Lifetime = 6.0`
+  - `Color Mode = Direct Set`
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (700.0, 0.0, 1.0)`
+  - `Position Offset Coordinate Space = Simulation`
+  - `Sprite Size Mode = Non-Uniform`
+  - `Sprite Size = (1500.0, 2800.0)`
+  - `Sprite Rotation Mode = Direct Angle (Degrees)`
+  - `Sprite Rotation Angle = 0.0`
+
+这一步的意图不是继续调亮度，而是先把当前导致过渡不自然的附加裂缝层从方案里移除，再观察透明度与整体融合是否更合理
+画面切到 Sequencer 和 Niagara 编辑器并排的工作状态，用来检查裂缝发光层的透明度控制是否接得正确。
+
+- Sequencer 中选中 `NS_IceSpikes`
+  - `NiagaraComponent0 > System Life Cycle = Desired Age`
+  - 播放头约在 `1.20s`
+- Niagara 侧当前选中的是发射器 `IceGround_Cracks_Glow`
+- 右侧定位到 `Dynamic Material Parameters > Index 0`
+  - 已启用 `Dissolve`
+  - 写值方式为 `Float from Curve`
+  - `CurveIndex = PARTICLES.NormalizedAge`
+  - `Scale Curve = 1.0`
+  - `Param1-0/1/2 = 0.0`
+
+这一张图的作用是把“透明度”问题明确落到发光裂缝层的 `Dissolve` 动态材质参数上，说明后续需要继续调这条随粒子生命周期变化的曲线，而不是只看场景结果
+教程继续把“透明度”问题追到材质实例的图层参数面板，当前重点不再是 Niagara 发射器，而是材质里的 `Dissolve` 贴图和遮罩来源。
+
+- 右侧打开 `Layer Parameters`
+- `Base Texture`
+  - `Colormap = VFX_T_ColorMap_Blue_06`
+  - `Premultiply Color? = 1.0`
+  - `T_Main = T_Water_Drop_01`
+- `Dissolve`
+  - 已启用 `T_Dissolve`
+  - `T_Dissolve = T_Gradient13`
+  - `Smoothness = 1.0`
+- `Distortion`
+  - 已启用 `T_Distortion`
+  - `T_Distortion = T_PerlinNoise`
+  - `Distortion Influence = 0.0`
+- `Global Scalar Parameter Values`
+  - `Depth Fade = 0.0`
+- `Mask`
+  - `T_Mask = WhiteSquareTexture`
+
+这张图说明透明度过渡不只由 Niagara 生命周期曲线控制，材质实例本身也通过 `T_Dissolve` 渐变、遮罩和基础纹理共同决定最终消隐效果；如果过渡仍然生硬，就需要同时检查这些材质层参数
+
+## 补充视觉证据
+
+### S01 00:00:25
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 材质节点图
+> - 组成部分: `M_IceGround` 材质预览 + Material Graph 总览 + Material 属性面板 + Stats 面板
+> - 所属: `M_IceGround > Material Graph`
+> - 目的: 展示地面冰裂纹材质的预览结果，以及当前裂纹/高度网络在整张材质图中的位置，说明后续会继续围绕这套裂纹图形和透明度链做扩展
+>
+> 节点定义集:
+> | ID | 节点 | 类型/角色 | 关键端口/默认值 | 输出/副作用 |
+> |---|---|---|---|---|
+> | M01 | `Comment` 注释框内的一组中间网络 | 中间裂纹/位移处理区 | 图中只可确认位于材质图中央偏上 | 承载当前页要讨论的裂纹主链 |
+> | M02 | 多个 `UV` 节点 | 坐标输入 | 节点名可见为 `UV`，具体编号不可辨 | 为后续位移和纹理采样提供坐标 |
+> | M03 | `Add` 节点 | 坐标叠加 | 位于 `UV` 与位移链之间 | 把偏移量叠加到输入坐标 |
+> | M04 | `BumpOffset` 节点 | 高度/视差偏移 | 上下各有一条相似链，具体参数在当前缩放下不可辨 | 生成偏移后的 UV |
+> | M05 | `T_Crack_02`、`T_Crack_02Blur` 相关纹理采样 | 裂纹纹理输入 | 顶部标签可见当前打开了这两张裂纹纹理资源 | 为冰裂纹图形提供采样源 |
+> | M06 | 右侧主材质输出节点 | 材质总输出 | 位于图最右侧，节点内部文字在当前截图不可辨 | 汇总整张材质图结果 |
+>
+> 连线集:
+> | 类型 | 从 | 到 | 含义 |
+> |---|---|---|---|
+> | UV | `M02.UV` | `M03/Add` | 基础坐标先进入偏移叠加 |
+> | UV | `M03` | `M04/BumpOffset` | 用叠加后的坐标驱动视差或高度偏移 |
+> | UV | `M04` | `M05` 相关纹理采样的 `UVs` | 用偏移后的 UV 采样裂纹纹理 |
+> | Material | 中央与底部各组中间节点 | `M06` 主材质输出 | 多组裂纹/颜色/透明度结果最终汇入材质输出 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Material Domain` | `Surface` | 左侧 Details | 当前材质是表面材质 |
+> | `Blend Mode` | `Translucent` | 左侧 Details | 允许做透明裂纹或透光表现 |
+> | `Shading Model` | `Unlit` | 左侧 Details | 材质主要靠自身颜色/发光而非受光照模型 |
+> | `Cast Ray Traced Shadows` | 已勾选 | 左侧 Details | 允许参与光追阴影 |
+> | `Lighting Mode` | `Volumetric NonDirectional` | 左侧 Details 的 `Translucency` 分组 | 当前透明材质使用体积型非定向照明 |
+> | `Base pass shader without light map` | `241 instructions` | 底部 Stats | 当前像素着色复杂度统计 |
+> | `Base pass vertex shader` | `315 instructions` | 底部 Stats | 顶点着色复杂度统计 |
+> | `Texture samplers` | `3/16` | 底部 Stats | 当前已使用 3 个采样器 |
+> | `Texture Lookups (Est.)` | `VS(3), PS(12)` | 底部 Stats | 估算的纹理查找数量 |
+>
+> 输出/预览:
+> - 左侧预览是大面积黑白冰裂纹图案，亮白裂缝沿不规则多边形边界分布，裂缝之间夹杂灰白颗粒和拖影，说明当前材质重点在“裂纹发光边 + 深色裂缝内部”的对比
+> - 当前图的主要价值不是展示单个新节点，而是确认 `M_IceGround` 已经有一套可用的裂纹高度/偏移网络，并且整张材质仍保持 `Translucent + Unlit` 的表现方向
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+
+

@@ -13,8 +13,8 @@
   "cleanup_reports_keep": 120,
   "command_manifest_enabled": true,
   "compatibility_check_enabled": true,
+  "compatibility_cache_ttl_seconds": 5.0,
   "expected_plugin_version_tag": "",
   "crash_capture_enabled": true,
-  "runtime_index_enabled": true,
-  "param_validation_mode": "warn"
+  "runtime_index_enabled": true
 }

@@ -1,0 +1,786 @@
+# 15.Unreal布料效果制作
+
+# 15.Unreal布料效果制作
+
+## 关键术语
+
+- `UV`、`Static Mesh`、`Houdini`、`VAT`、`Mesh`、`材质`、`后处理`、`粒子`、`系统`、`网格`、`Niagara`、`纹理`、`贴图`、`蓝图`、`序列`、`速度`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:05-00:04:45 UV、Static Mesh、Houdini
+
+- 本段定位：UV、Static Mesh、Houdini。
+- 知识点：大家好啊 15号跟大家打招呼啦 把上次做好的布料模拟资源导入 Unreal 再在序列编辑器里简单播放一下 走一遍完整流程 所以现在我们先打开一个新关卡。
+- 知识点：当前必须关闭 Static Mesh 的 Nanite 我们原本导入的模板 Static Mesh 本身就包含大量材质细节。
+- 知识点：许多区域都预留了材质通道 因此这些设置得以保留 完全可以这么理解 大致如此 只有帽子部分是在 Houdini 中处理的 这部分是在 Houdini。
+- 知识点：中专门预留了材质通道后导入的 我们不会全部使用这些通道 比如绳索 拉链和不锈钢等区域 这些区域已被移除 因此无需全部启用通道 应该没问题先用。
+- 知识点：HDR 脚本 把纹理 带孔状态加载一遍 接下来新建材质并使用命名为 Mantabar Valle Cross E 新建了材质帐篷的质感略带。
+- 知识点：一点类似薄膜的质感也通过表面颜色和次表面 颜色来实现光线透入的效果 透光的感觉一起给你们 另外 VT 相关功能目前分四类 不过我们主要用软体形变功能。
+- 知识点：结构上跟 RISC BODY 那边基本 差别不大 所以会拉伸自定义 UV 来用 现在差不多就是复习了 按 1 2 3 这样几步走就行 第四步也这么连上就行。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Houdini`、`材质`、`纹理`、`贴图`、`序列`、`颜色`、`透明度`。
+
+**关键画面：**
+
+这张图是第 15 节 “Unreal 布料效果制作” 的开场工程整理画面，重点是先在 Unreal 新关卡里把后续要用的资源目录准备好。当前界面中能可靠确认：
+
+- 软件是 Unreal Editor，当前打开的是一个空白新关卡
+- 中央视口里只有默认天空和地面网格，还没有摆入角色、布料或序列对象
+- 左侧内容浏览器当前定位到：
+  - `Content/Course_07`
+- 该目录下已经分出 6 个子文件夹：
+  - `Level`
+  - `Material`
+  - `Mesh`
+  - `Particles`
+  - `Sequencer`
+  - `Texture`
+- 右侧 Outliner 当前是空的，显示 `0 actors`
+- 说明这一节在正式导入 Houdini 布料结果前，先从一个干净关卡和清晰目录结构开始
+
+这张图可替换为：为了把上一节在 Houdini 中做好的布料模拟结果带回 Unreal，这一节先新建一个空关卡，并在 `Content/Course_07` 下把资源按 `Level / Material / Mesh / Particles / Sequencer / Texture` 六类文件夹整理好。当前场景里还没有任何演员对象，说明此时的目标不是调效果，而是先把工程结构和资源落点准备清楚，方便后面按步骤导入网格、材质、贴图和序列。
+这张图说明 Houdini 导出的 VAT 资源已经导入 Unreal，并开始在材质编辑器里整理对应的材质与贴图。当前界面中能可靠确认：
+
+- 当前打开的是 Unreal 的材质编辑器
+- 当前材质页签名为：
+  - `M_VAT_Cloth_01`
+- 同时还能看到与其配套的资源页签：
+  - `VAT_Cloth_01`
+  - `VAT_Cloth_01_pos`
+  - `VAT_Cloth_01_rot`
+- 左侧内容浏览器当前定位在：
+  - `Content/Course_07/Mesh/Ex_03_VA...`
+- 该目录下当前可见的资源至少包括：
+  - 一个材质 `M_VAT_Cl...`
+  - 一个静态网格 `VAT_Cloth_0...`
+  - 两张纹理贴图资源
+- 材质预览球当前是深色表面
+- 左下 `Details` 面板中可直接确认：
+  - `Material Domain = Surface`
+  - `Blend Mode = Opaque`
+  - `Shading Model = Default Lit`
+  - `Two Sided`：未勾选
+  - `Use Material Attributes`：未勾选
+- 右侧材质输出端当前可见默认输入：
+  - `Base Color`
+  - `Metallic`
+  - `Specular`
+  - `Roughness`
+  - `Emissive Color`
+  - `Normal`
+  - `World Position Offset`
+  - `Ambient Occlusion`
+
+这张图可替换为：把 Houdini 里导出的 VAT 结果导入 Unreal 后，先在材质编辑器里整理一套专用材质 `M_VAT_Cloth_01`，并配套绑定 `VAT_Cloth_01_pos`、`VAT_Cloth_01_rot` 这类位置/旋转贴图。当前材质先保持 `Surface + Opaque + Default Lit` 的基础状态，说明作者此时还在做导入后的第一轮材质骨架整理，还没有开始叠加更复杂的透光、双面或后处理效果。核心目的，是先把 VAT 静态网格和它依赖的贴图资源对应起来。
+这张图把 VAT 材质真正接入到材质图里，重点是让 Houdini 导出的顶点动画、基础材质参数和布料表面外观在 Unreal 中连通起来。当前图片中能可靠确认：
+
+节点定义集：
+
+- 一个 VAT 材质函数/模块节点
+- `Metallic` 参数节点
+- `Spec` 参数节点
+- `Roughness` 参数节点
+- 材质输出节点 `M_VAT_Cloth_01`
+
+连线集：
+
+- VAT 材质模块的多个输出被接到材质输出端：
+  - `Normal (Tangent Space Normal Off)` 输出接到 `Normal`
+  - `World Position Offset` 输出接到 `World Position Offset`
+  - 多个 `Customized UV` 输出分别接到材质输出节点的 `Customized UV1~UV4`
+- 参数节点连到材质输出端：
+  - `Metallic -> Metallic`
+  - `Spec -> Specular`
+  - `Roughness -> Roughness`
+
+设置/参数：
+
+- 当前材质页签仍是 `M_VAT_Cloth_01`
+- 左下 `Details` 面板中可直接确认：
+  - `Material Domain = Surface`
+  - `Blend Mode = Opaque`
+  - `Shading Model = Subsurface`
+  - `Two Sided`：未勾选
+  - `Use Material Attributes`：未勾选
+- 参数节点当前可直接确认：
+  - `Metallic` 默认值 `0.0`
+  - `Spec` 默认值 `1.0`
+  - `Roughness` 默认值 `0.5`
+- 底部统计区域可见：
+  - `Base pass shader: 176 instructions`
+  - `Samplers Used: 2`
+
+输出/预览：
+
+- 材质预览球当前呈现深绿偏暗、带一定透光感的布料外观
+- 左侧资源区还能看到一批配套材质实例，例如：
+  - `Tent_Bottom`
+  - `Tent_Canva...`
+  - `Tent_Zipper`
+  - `Rope`
+  - `Stainless_Steel`
+- 说明作者并不打算只用一个统一材质糊过去，而是会在 VAT 主材质基础上继续拆分到帐篷布、绳索、金属件等不同表现
+
+这张图可替换为：把 VAT 主材质 `M_VAT_Cloth_01` 的材质网络接起来：一边用 VAT 模块输出 `World Position Offset`、`Normal` 和若干 `Customized UV` 来驱动顶点动画，一边用基础参数控制 `Metallic=0`、`Specular=1`、`Roughness=0.5` 这类表面属性。当前还把 `Shading Model` 改成了 `Subsurface`，这正对应正文里“帐篷有一点薄膜感和透光感”的描述，说明作者希望这块布在 Unreal 中不仅会动，而且在受光时也能像薄布一样呈现轻微透光。
+
+### 00:04:45-00:09:37 网格、速度、纹理
+
+- 本段定位：网格、速度、纹理。
+- 知识点：我们通过添加级别序列来引入一个动画序列 第三个 就叫它 第三个吧 接着就会打开一个新的动画序列编辑器 先从角色开始 先摆一摆角色位置。
+- 知识点：角色用的是Crunch那个 把扫描网格拖到这里就行 动画就用ZDES那个 播放速度也不用太操心。
+- 知识点：差不多就行了 把结束帧设在100帧内 现在播放一下看看 动画片段结束后会直接跳回T-Pose 所以得用个小技巧 复制一段动画片段来处理。
+- 知识点：因为结束时会直接跳回T-Pose 所以要用个巧办法把动画片段复制一段出来 复制一段 拿来用从视觉上把前面的针拉短 固定到后面的针上 把前面的针压短固定在后面的针位置。
+- 知识点：让画面看起来像一只卡住 从而填满空隙得压得很短才行 其实应该先压短再调速率才更顺 这样角色就能一直维持紧贴状态就这么搭好了 位置参数。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`序列`、`速度`。
+
+**关键画面：**
+
+这张图开始从资源导入切换到 Sequencer 搭建，重点是先新建一个用于承载角色和布料动画的 `Level Sequence`。当前界面中能可靠确认：
+
+- 当前弹出了 Unreal 的 `Save Asset As` 对话框
+- 左侧目录树当前位于：
+  - `/All/Game`
+- 对话框中央显示的是项目 `Content` 下的各个顶层文件夹
+- 底部 `Name` 输入框里当前默认名为：
+  - `NewLevelSequence`
+- 右下角当前有 `Save` 按钮
+- 背后仍然能看到左侧内容浏览器当前选中的课程目录以及前面整理好的 VAT / 材质相关资源
+
+这张图可替换为：为了把角色动作和 VAT 布料动画一起放进可编辑时间线，先在 Unreal 中新建一个 `Level Sequence` 资源。当前还处在保存命名阶段，默认名是 `NewLevelSequence`，说明教程此时刚开始建立序列容器，后面才会把角色、动画片段和布料对象逐个拖入并在时间线上排布。
+这张图说明 `Level Sequence` 已经建立，并开始把角色和动作片段真正排入时间线。当前界面中能可靠确认：
+
+- 右侧 Outliner 当前已有：
+  - `Ex_03_Cloth`
+  - 类型是 `LevelSequence`
+- 左侧内容浏览器当前定位到：
+  - `ParagonCrunch/Characters/Global/Heroes/Crunch`
+- 当前选中的角色资源是：
+  - `Crunch`
+  - 类型为 `Skeletal Mesh`
+- 中央视口里已经能看到一个缩小后的 `Crunch` 角色摆在场景中
+- 底部已经打开 `Sequencer` 面板
+- 当前序列名可直接确认：
+  - `Ex_03_Cloth`
+- 时间线里当前已经有一个角色轨道：
+  - `Crunch`
+- 其下包含多个 `Animation` 子轨道
+- 其中一个动画片段当前显示为：
+  - `Death_A`
+- 鼠标悬停提示框可直接确认：
+  - 片段名 `Death_A`
+  - `Duration: 156.271s`
+  - `Play Rate: 0.01x`
+- 当前时间线帧率显示为：
+  - `30 fps`
+
+这张图可替换为：新建好 `Ex_03_Cloth` 这个 `Level Sequence` 后，先把 `Crunch` 角色拖进序列，再把 `Death_A` 动画片段放到时间线上。当前还能看到片段被压到 `Play Rate = 0.01x`，说明作者正在通过极端减速和片段复制的方式，把原本会很快结束并回到 T-Pose 的动画拉长成一段更适合承接布料效果展示的连续动作。这正对应正文里“把动画片段复制一段出来，并把前面的段压短、固定到后面的针位上”的处理思路。
+这张图说明角色动画和 VAT 布料网格已经同时摆进关卡，开始对两者的相对位置做配合。当前界面中能可靠确认：
+
+- 场景中央已经同时存在两个主要对象：
+  - 左侧是 `Crunch` 角色
+  - 右侧是一个被选中的 VAT 布料/帐篷静态网格
+- 被选中的布料对象外轮廓显示为黄色选框，并且当前开启了移动 Gizmo
+- 布料网格目前处于摊开状态，旁边还能看到一块分离的小碎片网格，说明这不是普通骨骼蒙皮布，而是导入后的 VAT 静态网格结果
+- 左侧内容浏览器当前位于：
+  - `Content/Course_07/Mesh`
+- 当前可见并与该对象相关的资源包括：
+  - `VAT_Cloth_01`
+  - `M_VAT_Cloth_01`
+  - `M_VAT_Cloth_01_Ins_01`
+  - 两张 VAT 贴图资源
+- 右侧 Outliner 当前能确认：
+  - 关卡里存在 `Ex_03_Cloth`
+  - 类型为 `LevelSequence`
+- 右下 Details 面板当前对象标签可见为：
+  - `VAT_Cloth_01`
+- 当前对象变换面板可见：
+  - `Rotation` 三轴均为 `0.0`
+  - `Scale` 三轴均为 `1.0`
+
+这张图可替换为：把 `VAT_Cloth_01` 这套布料静态网格连同前面做好的材质一起拖进关卡，放到 `Crunch` 角色旁边，再通过移动工具开始对它和角色动作的相对位置。此时 Sequencer 已经存在，但画面重点不是继续剪时间线，而是先把布料实物摆到角色会接触或压到的位置上，为后面根据角色动作去微调布料朝向、接触区和展示镜头做准备。
+
+### 00:09:37-00:14:22 UV、材质、后处理
+
+- 本段定位：UV、材质、后处理。
+- 知识点：第二个槽位也得补上 Tent X那部分第三个槽位也得加上 动画效果看起来不错 已经确认无误 我们连封立的一并加入模拟 这样一来 布料还没到撕裂前就能自然地。
+- 知识点：随风流动飘动起来的效果很到位 效果不错 这里先删掉倒入到序列编辑器里 放进去用起来 再开始 把第一个和第三个位置都加进去 因为我们接下来要在这些地方。
+- 知识点：设置好关键帧就能播放烘焙动画了 再复制一个材质 披风 单独做个专用材质 第二个 好了抖棚这类物件处理起来略有不同 这次不妨试试加入布料材质看看效果。
+- 知识点：这样挺合适用Mask方式调整 能更好的优化性能 而且这里我们 因为没生成UV就直接倒入了 贴图没法用了现在看着有点遗憾 想测试生成贴图并一同倒入的。
+- 知识点：可以把贴图也一并提取过来效果会更好 那样会更理想 不过我还是选择了保留有点可惜 改成布料后这里的两个输出向会自动激活 一个是发子颜色。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`贴图`、`序列`、`颜色`。
+
+**关键画面：**
+
+这张图说明作者开始把前面做好的 VAT 主材质进一步落到材质实例 `M_VAT_Cloth_01_Ins_01` 上，方便后面在不改主网络的前提下直接调布料表现。当前界面中能可靠确认：
+
+- 顶部当前打开的页签包括：
+  - `VAT_Cloth_01`
+  - `VAT_Cloth_01_pos*`
+  - `VAT_Cloth_01_rot*`
+  - `M_VAT_Cloth_01`
+  - `M_VAT_Cloth_01_Ins_01*`
+- 当前窗口是材质实例编辑器，实例名为：
+  - `M_VAT_Cloth_01_Ins_01`
+- 右侧 `Details` 面板中可见 `Global Scalar Parameter Values`
+- 其中已经启用并可直接确认的三个标量参数为：
+  - `Metallic = 0.0`
+  - `Roughness = 0.5`
+  - `Spec = 1.0`
+- 下方 `Houdini VAT` 参数组中可见：
+  - `Auto Playback` 已勾选
+  - `Game Time at First Frame` 当前未勾选
+  - `Playback Speed = 1.0`
+  - `Houdini FPS = 30.0`
+  - `Interframe Interpolation` 已勾选
+- 同一组里已经指定两张关键贴图：
+  - `Position Texture = VAT_Cloth_01_pos`
+  - `Rotation Texture = VAT_Cloth_01_rot`
+- 更下方还能看到：
+  - `Houdini VAT - Customization`
+  - `Houdini VAT - Debug`
+  - `Houdini VAT - Instancing`
+  - 底部有 `Save Sibling` 与 `Save Child` 按钮
+
+这张图可替换为：新建或打开 `M_VAT_Cloth_01_Ins_01` 这个材质实例后，把 VAT 解算真正依赖的运行参数都放到实例层。基础表面参数先保持 `Metallic=0`、`Roughness=0.5`、`Spec=1`，同时在 `Houdini VAT` 参数组里开启 `Auto Playback`、保持 `Playback Speed=1`、`Houdini FPS=30`，并把 `VAT_Cloth_01_pos` 与 `VAT_Cloth_01_rot` 分别指定到位置贴图和旋转贴图槽。这样后续把实例挂到静态网格上时，布料就能按 VAT 贴图自动播放，不需要每次再回主材质里改节点。
+这张图展示的是第二套 VAT 布料材质 `M_VAT_Cloth_02` 的主材质网络，重点是把材质模式从上一套的实体布改成带裁切与布料着色的版本。可可靠确认如下：
+
+节点定义集：
+
+- 左侧是一个 VAT 材质函数/模块节点，当前可见输出口包括：
+  - `Normal (Tangent Space Normal Off)`
+  - `World Position Offset`
+  - `Customized UV1`
+  - `Customized UV2`
+  - `Customized UV3`
+  - `Customized UV4`
+- 中间有三个标量参数节点：
+  - `Metallic`，默认值 `0.0`
+  - `Spec`，默认值 `1.0`
+  - `Roughness`，默认值 `0.5`
+- 右侧是材质输出节点：
+  - `M_VAT_Cloth_02`
+
+连线集：
+
+- VAT 模块的 `Normal (Tangent Space Normal Off)` 输出连接到材质输出的 `Normal`
+- VAT 模块的 `World Position Offset` 输出连接到材质输出的 `World Position Offset`
+- VAT 模块的 `Customized UV1~UV4` 分别连接到材质输出的 `Customized UV1~UV4`
+- `Metallic` 参数连接到材质输出的 `Metallic`
+- `Spec` 参数连接到材质输出的 `Specular`
+- `Roughness` 参数连接到材质输出的 `Roughness`
+
+设置/参数：
+
+- 左下 `Details` 面板中当前可见材质设置为：
+  - `Material Domain = Surface`
+  - `Blend Mode = Masked`
+  - `Shading Model = Cloth`
+  - `Two Sided` 未勾选
+  - `Use Material Attributes` 未勾选
+  - `Cast Ray Traced Shadows` 已勾选
+  - `Subsurface Profile = None`
+- 底部统计区可见：
+  - `Base pass shader: 165 instructions`
+  - `Stats Resources Used: 4`
+
+输出/预览：
+
+- 左侧预览球当前表现为黑白对比明显的裁切布面，说明这套材质不再只是普通不透明布，而是已经开始引入透明/镂空区域
+- 右侧材质输出口还能看到：
+  - `Opacity` 数值为 `1.0`
+  - `Opacity Mask` 数值为 `1.0`
+  - `Cloth` 数值为 `1.0`
+
+这张图可替换为：复制出第二套 VAT 材质 `M_VAT_Cloth_02` 后，保留 VAT 顶点动画驱动部分不变，仍然由 VAT 模块输出 `Normal`、`World Position Offset` 和 `Customized UV1~UV4`，再把基础表面参数继续用 `Metallic=0`、`Spec=1`、`Roughness=0.5` 控制。与上一套不同的是，这里把材质设置切到 `Blend Mode = Masked`、`Shading Model = Cloth`，说明作者正在准备一块需要裁切透明区、同时保留布料受光特性的帐篷或布面材质。
+这张图是在 `M_VAT_Cloth_02` 的基础上继续补布料边缘受光效果，把一组 `FuzzyShading` 相关控制接进材质输出。可可靠确认如下：
+
+节点定义集：
+
+- 左侧仍是 VAT 材质函数/模块节点，当前可见输出口包括：
+  - `Normal (Tangent Space Normal Off)`
+  - `World Position Offset`
+  - `Customized UV1`
+  - `Customized UV2`
+  - `Customized UV3`
+  - `Customized UV4`
+- 上方还能看到已有的标量参数：
+  - `Spec`，默认值 `1.0`
+  - `Roughness`，默认值 `0.5`
+- 中间新增一个标量参数节点：
+  - `CoreDarkness`，默认值 `1.0`
+- 中间另有一个被选中的标量参数节点，名称只看清前缀为：
+  - `Po...`
+  - 默认值 `1.0`
+  - 该参数完整名称在截图中未完整显示，需按工程内节点名人工确认
+- 右侧新增一个函数节点：
+  - `FuzzyShading`
+- 最右是材质输出节点 `M_VAT_Cloth_02`
+
+连线集：
+
+- VAT 模块的 `Normal` 输出接入 `FuzzyShading` 的 `Normal (V3)`
+- `CoreDarkness` 参数接入 `FuzzyShading` 的 `CoreDarkness (S)`
+- 被选中的 `Po...` 标量参数接入 `FuzzyShading` 的一个标量输入，结合函数命名推断是边缘受光相关控制，但完整输入名在当前截图中不可完整辨认
+- `FuzzyShading` 的 `Result` 输出连接到材质输出的 `Fuzz Color`
+- VAT 模块的 `World Position Offset` 继续连接到材质输出的 `World Position Offset`
+- VAT 模块的 `Customized UV1~UV4` 继续连接到材质输出的 `Customized UV1~UV4`
+
+设置/参数：
+
+- 右侧材质输出区当前仍可见：
+  - `Opacity = 1.0`
+  - `Opacity Mask = 1.0`
+  - `Cloth = 1.0`
+  - `Ambient Occlusion = 1.0`
+- 底部统计区当前可见：
+  - `Base pass shader: 168 instructions`
+  - `Stats Resources Used: 4`
+  - `Samplers Used: 1`
+
+输出/预览：
+
+- 左侧预览球从上一张的黑白裁切外观变成带淡粉色边缘受光的布料外观
+- 说明当前新增的 `Fuzz Color` 控制已经在预览里起作用，用于模拟布料边缘被光扫到时的柔和亮边
+
+这张图可替换为：在第二套 VAT 布料材质 `M_VAT_Cloth_02` 里，保留 VAT 动画驱动和基础表面参数不变，再新增 `FuzzyShading` 节点来专门生成布料的 `Fuzz Color`。其中 `CoreDarkness=1` 已可确认，另一个连接到 `FuzzyShading` 的标量参数名称在截图里只看清 `Po...` 前缀，需到工程内再核对完整命名；但从节点连接关系可以确定，这一步的目的就是给裁切布料补一层更像织物纤维的边缘受光表现。
+
+### 00:14:22-00:19:16 Houdini、材质、网格
+
+- 本段定位：Houdini、材质、网格。
+- 知识点：光泽度就用这个控制就行 接下来也把这个做成实例 挪到静态网格的后部位置看看 自动播放、关掉用显示帧看 顺便把参数调低点。
+- 知识点：和刚才一样 只把需要的参数插纸打开就行 纹理直接用同一个贴图就行了 一个个存一下 关卡也一起存一下 1号和2号 就这么两种用法 现在帮篷放这里。
+- 知识点：摆到中心位置 之前在Houdini里 我们也把静态网格定位在帐篷正中央了 所以一触发就会出现挤压效果 目前这个方向是 好像得转个90度才行。
+- 知识点：这样动画才往这方向走 顺便再看看帐篷撕裂的方向对不对 这应该是用这种挖槽方式做的双层结构 这么一看方向反了 确实是反过来的 这么搭就差不多了。
+- 知识点：我们先从第五帧开始调整 在SE里加上静态网格组件就行 接下来材质槽 这种情况 Y和我们共 用了三个槽 Houdini也加了一共四个 这里把自动播放。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Houdini`、`材质`、`纹理`、`贴图`。
+
+**关键画面：**
+
+这张图把 `M_VAT_Cloth_02` 中 `FuzzyShading` 一段的参数和连线看得更完整，重点是布料边缘明暗控制已经明确成三组标量。可可靠确认如下：
+
+节点定义集：
+
+- 中间可见三个用于 `FuzzyShading` 的标量参数：
+  - `CoreDarkness`，默认值 `1.0`
+  - `Pow`，默认值 `1.0`
+  - `EdgeBrightness`，默认值 `1.0`
+- 中间函数节点为：
+  - `FuzzyShading`
+- 左侧仍能看到 VAT 模块的部分输出线
+- 右侧是材质输出节点，当前可见输入口包括：
+  - `Metallic`
+  - `Specular`
+  - `Roughness`
+  - `Opacity`
+  - `Opacity Mask`
+  - `Normal`
+  - `World Position Offset`
+  - `Fuzz Color`
+  - `Cloth`
+  - `Ambient Occlusion`
+  - `Customized UV0~UV4`
+
+连线集：
+
+- `CoreDarkness` 连接到 `FuzzyShading` 的 `CoreDarkness (S)`
+- `Pow` 连接到 `FuzzyShading` 的 `Power (S)`
+- `EdgeBrightness` 连接到 `FuzzyShading` 的 `EdgeBrightness (S)`
+- VAT 模块提供的法线线继续接入 `FuzzyShading` 的 `Normal (V3)`
+- `FuzzyShading` 的 `Result` 输出当前明确连接到了材质输出的 `Cloth`
+- VAT 模块的其余输出线继续保留到材质输出的 `World Position Offset` 与 `Customized UV1~UV4`
+
+设置/参数：
+
+- 左下 `Details` 面板当前仍可确认：
+  - `Material Domain = Surface`
+  - `Blend Mode = Masked`
+  - `Shading Model = Cloth`
+  - `Two Sided` 未勾选
+  - `Use Material Attributes` 未勾选
+  - `Cast Ray Traced Shadows` 已勾选
+- 底部统计区当前可见：
+  - `Texture samplers: 0/16`
+  - `Texture Lookups (Est.): VS(8), PS(0)`
+  - `User interpolators: 10/12 Scalars (3/4 Vectors)`
+
+输出/预览：
+
+- 左侧预览球当前表现为整体偏灰蓝的布面，而不是上一张那种明显偏粉的边缘高光
+- 说明作者此时还在测试 `FuzzyShading` 结果具体接到哪个布料相关输入口上，观察不同连法对布料受光的影响
+
+这张图可替换为：在 `M_VAT_Cloth_02` 里继续细化布料纤维受光部分，新增三组可调标量 `CoreDarkness`、`Pow`、`EdgeBrightness`，统一送入 `FuzzyShading`，再把函数结果接到材质输出的 `Cloth` 相关通道进行测试。这样做的目的，是把布料中心明暗、边缘亮度和衰减强度拆成可独立调节的参数，便于后面针对帐篷布这类薄材质逐步调出合适的边缘光感。
+这张图说明第二套材质调完后，作者把 VAT 布料静态网格重新拿回关卡里，与角色动画一起对位置和时间线。当前界面中能可靠确认：
+
+- 场景里左侧是 `Crunch` 角色，右侧是一个被选中的绿色帐篷/布料网格
+- 被选中的对象当前显示黄色描边和移动 Gizmo
+- 该网格外观已经不是前一批那种摊开的破碎布，而是更完整的帐篷侧面/棚布形态
+- 左侧内容浏览器当前位于：
+  - `Content/Course_07/Mesh`
+- 当前可见资源包括：
+  - `M_VAT_Clo...` 两个材质实例
+  - `VAT_Cloth_01` 静态网格
+  - 两张 VAT 贴图资源
+- 右侧 Outliner 当前有：
+  - `Ex_03 (Editor)`
+  - `Ex_03_Cloth`
+  - `Ex_03_Cloth` 的类型是 `LevelSequence`
+- 右下 Details 面板当前对象标签为：
+  - `VAT_Cloth_01`
+  - 组件为 `VAT_Cloth_01 (Instance)`
+- 底部 Sequencer 当前序列名为：
+  - `Ex_03_Cloth`
+- 时间线中可见：
+  - 角色轨道 `Crunch`
+  - 一条 `Animation` 轨，片段名为 `Death_A`
+  - 新增了 `VAT_Cloth_01` 轨道
+  - `Spawned` 与 `Transform` 子轨道已经展开
+- 当前播放头停在大约：
+  - `0007` 帧附近
+- 时间线帧率为：
+  - `30 fps`
+
+这张图可替换为：把第二套材质挂回 `VAT_Cloth_01` 后，将这块帐篷布静态网格重新拖进 `Ex_03_Cloth` 的 Sequencer，使它和 `Crunch` 角色一起出现在同一条表演时间线里。此时不仅要在视口里把帐篷摆到角色旁边，还要在 Sequencer 里给该网格建立 `Spawned` 和 `Transform` 轨，方便后面从指定帧开始微调出现时机、位置和朝向，让角色动作与布料受挤压的瞬间对上。
+这张图把 `VAT_Cloth_01` 在 Sequencer 里的轨道结构展开得更细，重点是确认该网格的材质槽和可动画参数。当前界面中能可靠确认：
+
+- 当前序列仍为：
+  - `Ex_03_Cloth`
+- 顶部角色轨道仍包含：
+  - `Crunch`
+  - `Animation`
+  - `Death_A`
+- `VAT_Cloth_01` 轨道已经展开
+- 其下至少可见一个组件轨道：
+  - `StaticMeshComponent0`
+- 在 `StaticMeshComponent0` 下可见多个 `Material Slot` 子轨道：
+  - `Material Slot: hood`
+  - `Material Slot: Tent_Canvas_X_Gree...`
+  - `Material Slot: Tent_Canvas_Y_Gree...`
+- 在这些材质槽下方都能看到一个同名参数轨，当前截图里显示为：
+  - `Display Fram`
+  - 数值均显示为 `1.0`
+- `VAT_Cloth_01` 轨道下方还可见：
+  - `Spawned`
+  - `Transform`
+- 当前时间线播放头位于：
+  - `0000`
+- 角色动画 `Death_A` 片段与 `VAT_Cloth_01` 的多条材质/组件轨在同一时间范围内并列显示
+
+这张图可替换为：把 `VAT_Cloth_01` 加进 `Ex_03_Cloth` 以后，不只是给整个网格做 `Spawned` 和 `Transform`，还要继续展开 `StaticMeshComponent0`，把每个材质槽单独暴露到 Sequencer。当前能确认至少有 `hood`、`Tent_Canvas_X_Gree...`、`Tent_Canvas_Y_Gree...` 这些槽位，而且每个槽下面都挂了一个名为 `Display Fram` 的可动画参数轨，默认值是 `1.0`。这说明作者接下来并不是只移动整块帐篷，而是准备逐材质槽地控制 VAT 显示帧或相关显示参数，让不同布面部分在同一段角色动作里按需要同步或错开播放。
+
+### 00:19:16-00:23:50 材质、粒子、碰撞
+
+- 本段定位：材质、粒子、碰撞。
+- 知识点：既然拿来了就用1 以对齐方式把背帧 放进去关键帧就设好了 应该能实现 我们来验证效果看看这种假效果能不能真实呈现 看起来挺到位的 碰撞效果还原得很准确。
+- 知识点：挺像那么回事的 嗯,确实不错 现在材质本身已体现侧面效果 这边的材质也得设成侧面 没错,这边的材质也处理好了设成侧面了。
+- 知识点：看看有没有漏掉什么发现刺表面颜色还没正常显示 这应该是关键点 这部分从材质开始我们 把不透明度设为一光就透不过去 感觉就是这样 先看看这部分。
+- 知识点：布料模拟方面 目前我们没额外加粒子特效 没用 现在比刚才这光 有点透光了 这样塑料帐篷的感觉就出来了 还有这边背面太黑了 看着有点别扭 这能不能解决还不知道。
+- 知识点：先试试打开侧面看看 阴影似乎有点偏移 阴影似乎有点偏移 但这样已经能明显改善还是开着比较好 还是开着比较好 虽然会带点阴影感 不过 和刚才那种全黑的情况比起来差别明显多了。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`材质`、`粒子`、`颜色`、`透明度`、`碰撞`。
+
+**关键画面：**
+
+这张图继续放大 `Ex_03_Cloth` 里的 Sequencer 轨道，重点是把 `VAT_Cloth_01` 各个材质槽上的显示帧参数对到同一时间点。当前界面中能可靠确认：
+
+- 当前序列为：
+  - `Ex_03_Cloth`
+- 顶部角色轨道仍包含：
+  - `Crunch`
+  - `Animation`
+  - `Death_A`
+- `VAT_Cloth_01` 轨道已经展开到：
+  - `StaticMeshComponent0`
+  - `Material Slot: hood`
+  - `Material Slot: Tent_Canvas_X_Gree...`
+  - `Material Slot: Tent_Canvas_Y_Gree...`
+- 这三个材质槽下都能看到一个参数轨：
+  - `Display Fram`
+- 当前可直接确认的参数值为：
+  - `hood` 槽的 `Display Fram = 100.0`
+  - `Tent_Canvas_X_Gree...` 槽的 `Display Fram = 1.0`
+  - `Tent_Canvas_Y_Gree...` 槽的 `Display Fram = 1.0`
+- 时间线播放头当前位于：
+  - `0100`
+- 在 `0100` 这一列上，多个绿色材质参数轨都能看到关键点对齐
+- `VAT_Cloth_01` 轨道下方仍可见：
+  - `Spawned`
+  - `Transform`
+- 右下参数区还能看到 `Houdini VAT` 相关实例参数，例如：
+  - `Auto Playback`
+  - `Display Frame`
+  - `Interframe Interpolation`
+
+这张图可替换为：在 `VAT_Cloth_01` 被放进 `Ex_03_Cloth` 后，继续展开每个材质槽，把 `Display Fram` 这类驱动 VAT 显示进度的参数直接暴露到 Sequencer，并在目标时间点手动打关键帧。截图里可以确认播放头停在 `0100`，同时至少 `hood` 和另外两个帐篷布材质槽都已经拥有可编辑的 `Display Fram` 轨道，说明作者正在把不同材质槽的 VAT 播放帧对齐到角色动作对应的接触时刻，以验证帐篷挤压和撕裂效果是否会在正确的时间出现。
+这张图从视口角度验证帐篷布的撕裂和挤压效果是否已经接近目标表现。当前界面中能可靠确认：
+
+- 中央视口几乎贴近帐篷布表面，画面主体是一块深绿色的布面和中间形成的狭长开口
+- 开口另一侧可以看到：
+  - 背景天空
+  - `Crunch` 角色身体的一部分
+- 说明布料此时已经不只是平面摆位，而是出现了可以从缝隙中看到角色的穿透/撕裂效果
+- 左侧内容浏览器当前仍位于：
+  - `Content/Course_07/Mesh`
+- 可见资源仍包括：
+  - `VAT_Cloth_01`
+  - 两张 VAT 贴图
+  - 两个 `M_VAT_Clo...` 材质实例
+- 右侧 Outliner 当前仍有：
+  - `Ex_03 (Editor)`
+  - `Ex_03_Cloth`
+- 底部 Sequencer 当前序列为：
+  - `Ex_03_Cloth`
+- 顶部时间线中角色动画片段仍是：
+  - `Death_A`
+- 当前播放头位于：
+  - `0076` 附近
+- 帧率仍为：
+  - `30 fps`
+
+这张图可替换为：在 Sequencer 里把 `VAT_Cloth_01` 的显示帧和角色动画对上之后，切回视口贴近观察帐篷表面，专门检查布料破口、透光和角色顶出布面的视觉效果。当前画面已经能从帐篷裂开的缝隙里看到 `Crunch` 角色和外部天空，说明 VAT 布料的挤压与开裂结果已经在指定时间点被成功触发，作者此时是在做“假效果是否足够像真碰撞”的视觉验收，而不是再添加新的系统逻辑。
+这张图继续展示 `VAT_Cloth_01` 在 Sequencer 里的参数关键帧，但时间点回到了动作前段，用来确认各个材质槽的显示帧是同步推进的。当前界面中能可靠确认：
+
+- 中央视口能看到：
+  - `Crunch` 角色身体一部分
+  - 一大片红色布面/材质效果
+  - 左下角还能看到绿色帐篷边缘
+- 说明当前视口在检查不同布面材质表现，而不只是看单一绿色帐篷外壳
+- 底部 Sequencer 当前序列仍为：
+  - `Ex_03_Cloth`
+- 角色轨道仍包含：
+  - `Crunch`
+  - `Animation`
+  - `Death_A`
+- `VAT_Cloth_01` 下展开的材质槽仍包括：
+  - `hood`
+  - `Tent_Canvas_X_Gree...`
+  - `Tent_Canvas_Y_Gree...`
+- 这三个槽位下的 `Display Fram` 当前都显示为：
+  - `17.83`
+- 当前播放头位于：
+  - `0017` 附近
+- 在该时间点上，三条绿色参数轨右侧都能看到关键点，说明它们被同步控制
+- `VAT_Cloth_01` 下方仍可见：
+  - `Spawned`
+  - `Transform`
+
+这张图可替换为：除了在后段帧位验证帐篷破裂效果，作者还把时间线回拨到大约第 `17` 帧，检查 `VAT_Cloth_01` 各材质槽的 `Display Fram` 是否保持同步。此时 `hood`、`Tent_Canvas_X_Gree...` 和 `Tent_Canvas_Y_Gree...` 三个槽位都显示为 `17.83`，说明这套 VAT 布料不是靠单一材质槽独立播放，而是通过把多个槽位的显示帧统一推进，确保整块帐篷在动作前段、中段和破裂段都能保持一致的形变节奏。
+
+### 00:23:50-00:28:36 UV、Static Mesh、Mesh
+
+- 本段定位：UV、Static Mesh、Mesh。
+- 知识点：选了红色 随便挑了红色这部分细节还是差了点 先这样接下来我们 来调调刚才那几个参数 Core Darkness 这参数嘛阴影区看布料。
+- 知识点：质感像天鹅绒那种 颜色明显变深 特别明显 这些参数挺适合表现这种效果的 边缘亮度 这种情况下 感觉光线散射范围更广一些 边缘和受光区域为主功率值。
+- 知识点：则用来调节高光分布的范围 把高度调低一点就能表现出另一种材质感 这样调下来材质就有点发硬。
+- 知识点：脆脆的感觉了 这到底算什么材质呢 这个橡胶般的质感 还有种类似橡胶的触感 像潜水浮那种面料现在唯一可惜的是 帐篷的厚度若能再厚一些就更好了。
+- 知识点：现在太薄了显得有些塌陷 整体看起来太轻飘 所以把这些细节都调得更到位 整体质感会好得多 那种过于生硬死板的感觉就会消失 即使现在还没用纹理贴图效果。
+- 知识点：已达到这个水准 如果加上贴图一起使用时 布料的表现效果会呈现出更高级的质感 这部分确实有点可惜 主要是我准备得不太到位 这个部分就像这样加个贴图。
+- 知识点：加上贴图 这种情况我自己 不用一起动手练习也没关系 这些内容都讲得很清楚了 这节课已经反复强调过UV相关的设置 后面调色也涉及不少 而且没用戴Gara粒子系统。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`材质`、`纹理`、`贴图`、`粒子`、`系统`、`颜色`、`碰撞`。
+
+**关键画面：**
+
+这张图从另一个更高的视角检查同一早期帧位下的布料表现，重点是确认红色布片和角色身体的贴合关系。当前界面中能可靠确认：
+
+- 中央视口主体是 `Crunch` 角色上半身
+- 角色身体周围能看到多块鲜红色布片/帐篷片段
+- 左下角仍能看到绿色帐篷或地面边缘
+- 红色布片已经明显贴近角色肩部、胸前和身体侧边，说明当前不是远景摆位，而是在观察布料是否贴住角色动作路径
+- 底部 Sequencer 当前序列仍为：
+  - `Ex_03_Cloth`
+- 顶部角色动画片段仍为：
+  - `Death_A`
+- 当前播放头位于：
+  - `0017`
+- `VAT_Cloth_01` 轨道已展开到：
+  - `StaticMeshComponent0`
+  - `Material Slot: hood`
+- 右侧 Outliner 当前仍只有：
+  - `Ex_03 (Editor)`
+  - `Ex_03_Cloth`
+
+这张图可替换为：在把 `VAT_Cloth_01` 的显示帧同步到约第 `17` 帧后，作者切到近景俯视角，专门看红色布片是否已经正确贴附到 `Crunch` 的身体周围。当前能看到红色布面绕到角色肩部和身体侧边，说明这一步是在验证早期挤压阶段的接触感和包裹感，而不是只看最终撕裂结果；如果这个阶段贴合不对，后续再往后推进到破口帧时，布料和角色的关系就会显得假。
+这张图把帐篷整体与角色穿出效果一起放回中景中检查，重点是确认绿色外壳、破洞和内部红色布片是否能组成可信的整体。当前界面中能可靠确认：
+
+- 场景中央是一个绿色帐篷/棚布结构
+- 帐篷侧面已经出现大面积撕裂和破洞
+- `Crunch` 角色身体从帐篷顶部与侧面之间穿出
+- 角色周围还能看到两大片鲜红色布片向上扬起
+- 帐篷内侧可见更深的阴影区域和破口内部结构
+- 左侧内容浏览器当前仍位于：
+  - `Content/Course_07/Mesh`
+- 可见资源仍包括：
+  - `VAT_Cloth_01`
+  - 两张 VAT 贴图
+  - 两个材质实例缩略图
+- 底部 Sequencer 当前序列为：
+  - `Ex_03_Cloth`
+- 当前角色动画片段仍是：
+  - `Death_A`
+- 当前播放头位于：
+  - `0023`
+- 帧率为：
+  - `30 fps`
+
+这张图可替换为：在完成前面几轮局部参数和近景检查后，把镜头退回到能同时看到整个帐篷、角色和飞起布片的中景视角，验证整体演出是否成立。当前画面里绿色帐篷外壳已经被顶破，`Crunch` 从破口中穿出，红色布片也被同时带起，说明作者此时是在检查多层材质与多段 VAT 网格是否能共同组成一个完整的“角色顶破帐篷”的假碰撞效果，而不是单独评估某一块材质贴图。
+这张图是本页效果的最终俯视总览，重点在于检查整套帐篷破碎、角色倒地和布料残片的收尾状态。当前界面中能可靠确认：
+
+- 中央视口从较高角度俯视整个场景
+- 地面上可以看到：
+  - 多块绿色帐篷外壳残片
+  - 一大片橙红色布料/内部布面
+  - `Crunch` 角色倒在残片之间
+- 右侧还能看到一块单独竖起的绿色板状残片
+- 角色周围散落着绳索状或细长碎片构件
+- 左侧内容浏览器当前仍位于：
+  - `Content/Course_07/Mesh`
+- 底部当前打开的资源页签包括：
+  - `M_VAT_Cloth_02`
+  - `M_VAT_Cloth_01_Ins_01*`
+  - `M_VAT_Cloth_02_Ins_01`
+- 右侧 Outliner 当前仍只有：
+  - `Ex_03 (Editor)`
+  - `Ex_03_Cloth`
+- 底部下方已切到材质实例相关面板，说明此时教程已从时间线验证回到材质/资源整理的收尾状态
+
+这张图可替换为：完成整个 `Ex_03_Cloth` 的演出验证后，再用俯视总览看一次最终定格效果。此时不再强调某一帧的 `Display Fram` 或单个材质槽参数，而是看整体是否成立：绿色帐篷外壳已经完全散开，橙红色内层布面暴露出来，`Crunch` 倒在被压塌的帐篷残片之间，旁边还留有独立碎片和绳索构件。这个画面说明作者认为当前版本已经足以在基础场景中完成一套“角色冲破帐篷”的简化效果收尾。
+
+### 00:28:36-00:28:52 材质
+
+- 本段定位：材质。
+- 知识点：可以试着调节材质参数多角度测试模拟效果 熟练掌握收尾方法 感觉不错 那我们就讲到这 谢谢大家。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`。
+
+**关键画面：**
+
+这张图是本页收尾阶段的最终俯视总览之一，重点在于从更规整的俯视角再看一次角色、帐篷外壳和内层布面是否已经形成完整结果。当前界面中能可靠确认：
+
+- 中央视口里可以看到一整堆已倒塌的帐篷残片
+- 主要元素包括：
+  - 多块绿色外壳布片
+  - 一大块橙色内层布面
+  - `Crunch` 角色躺在残片中央
+  - 角色右侧还有一条明显伸出的橙红色长条布片
+- 上下各有一块相对完整、呈三角板状的绿色帐篷边片立起或摊开
+- 右侧 Outliner 当前仍只有：
+  - `Ex_03 (Editor)`
+  - `Ex_03_Cloth`
+- 底部打开的资源页签包括：
+  - `M_VAT_Cloth_02`
+  - `M_VAT_Cloth_01_Ins_01*`
+  - `M_VAT_Cloth_02_Ins_01`
+- 右下当前已经打开材质实例参数区，可见：
+  - `Parameter Groups`
+  - `Global Scalar Parameter Values`
+
+这张图可替换为：在时间线和局部效果都验证完以后，再从规整的俯视角看一次最终落地状态。此时 `Crunch` 已经倒在被压塌的帐篷残片中央，绿色外壳、橙色内层布面和零散长条布片都还保留在场景里，说明作者最终采用的是“在基础场景里直接完成演出摆定，再回到材质实例做最后参数整理”的收尾方式，而不是另外搭一套更复杂的最终镜头工程。
+这张图回到 `Ex_03_Cloth` 的 Sequencer，作为收尾阶段的时间线核对图，重点是再次确认 `VAT_Cloth_01` 多个材质槽的显示帧保持同步。当前界面中能可靠确认：
+
+- 当前序列为：
+  - `Ex_03_Cloth`
+- 顶部角色轨道包含：
+  - `Crunch`
+  - `Animation`
+  - `Death_A`
+- `VAT_Cloth_01` 已展开到：
+  - `StaticMeshComponent0`
+  - `Material Slot: hood`
+  - `Material Slot: Tent_Canvas_X_Gree...`
+  - `Material Slot: Tent_Canvas_Y_Gree...`
+- 这三个材质槽下的 `Display Fram` 当前都显示为：
+  - `31.491543`
+- 当前播放头位于：
+  - `0030`
+- 对应时间线上，三条绿色参数轨的关键点落在同一竖线位置
+- `VAT_Cloth_01` 轨道下方仍可见：
+  - `Spawned`
+  - `Transform`
+- 底部左侧还能看到当前打开的资源页签：
+  - `M_VAT_Cloth_02`
+
+这张图可替换为：在整段演出即将结束的时间点，把 `Ex_03_Cloth` 的时间线停在大约第 `30` 帧，再检查 `VAT_Cloth_01` 多个材质槽的 `Display Fram` 是否依旧一致。当前 `hood`、`Tent_Canvas_X_Gree...` 和 `Tent_Canvas_Y_Gree...` 都被同步到 `31.491543`，说明作者在收尾阶段仍然坚持按统一帧值驱动多槽位 VAT，而不是让每块布面各自漂移；这样才能保证帐篷从挤压、撕裂到倒塌的全过程读起来像一个完整物体，而不是几块互不关联的片段。
+这张图继续展示最终总览效果，但同时保留了底部 Sequencer，可用于对应最终画面出现在时间线中的大致位置。当前界面中能可靠确认：
+
+- 中央视口中仍是帐篷倒塌后的总览状态
+- 可见元素包括：
+  - 一块立起的绿色三角形帐篷边片
+  - 右侧一块长条绿色外壳残片
+  - 散开的绿色布料褶皱
+  - 中央橙色内层布面
+  - `Crunch` 角色倒在残片之间
+- 右侧 Outliner 当前仍有：
+  - `Ex_03 (Editor)`
+  - `Ex_03_Cloth`
+- 左侧内容浏览器当前仍位于：
+  - `Content/Course_07/Mesh`
+- 底部当前打开的资源页签包括：
+  - `M_VAT_Cloth_02`
+  - `M_VAT_Cloth_01_Ins_01*`
+  - `M_VAT_Cloth_02_Ins_01`
+- 底部 Sequencer 当前序列为：
+  - `Ex_03_Cloth`
+- 当前播放头位于：
+  - `0074`
+- 帧率为：
+  - `30 fps`
+
+这张图可替换为：在挑选最终定格效果时，不只看静态俯视图，也保留时间线一起观察，确认这张“帐篷残片铺开、角色倒地、橙色内层布暴露”的结果出现在 Sequencer 的哪个时刻。当前播放头在大约第 `74` 帧，说明作者并不是把最终效果单独摆一个静态 pose，而是在整段 `Ex_03_Cloth` 演出中挑出一个认为最合适的收尾画面，再结合材质实例页签做最后微调。
+
+## 补充视觉证据
+
+### S01 00:01:12
+
+这张补充视觉证据展示的是 `VAT_Cloth_01` 在静态网格编辑器中的参数与材质槽配置，用来补强前面关于网格导入和材质通道准备的步骤。当前界面中能可靠确认：
+
+- 顶部当前资源为：
+  - `VAT_Cloth_01*`
+- 这是静态网格编辑器界面，可见工具项包括：
+  - `Reimport Mesh`
+  - `Reimport Mesh With Dialog`
+  - `Collision`
+  - `UV`
+- 右侧 `Details` 面板当前停在材质槽和 `Nanite Settings` 区域
+- 可见的材质槽/元素包括：
+  - `Element 2` 对应槽位 `Tent_Canvas_X_...`
+  - `Element 3` 对应槽位 `Tent_Zipper`
+  - `Element 4` 对应槽位 `Rope`
+  - `Element 5` 对应槽位 `hood`
+  - 上方还能看到 `Stainless_Steel`
+- 这些元素当前都临时显示为：
+  - `WorldGridMaterial`
+- `Nanite Settings` 中可直接确认：
+  - `Enable Nanite Support` 已勾选
+  - `Position Precision = Auto`
+  - `Normal Precision = Auto (8 bits)`
+  - `Keep Triangle Percent = 100.0`
+  - `Trim Relative Error = 0.0`
+  - `Fallback Target = Auto`
+  - `Displacement UV Channel = 0`
+  - `Displacement Maps = 0 Array element`
+  - `Max Edge Length Factor = 0.0`
+- 左上统计信息区还能看到：
+  - `Nanite Enabled`
+  - `UV Channels: 2`
+  - `Num Collision Primitives: 1`
+
+这张图可替换为：打开 `VAT_Cloth_01` 的静态网格编辑器，检查这套帐篷网格的材质槽拆分和 Nanite 状态。截图能确认它至少包含 `Stainless_Steel`、`Tent_Canvas_X_...`、`Tent_Zipper`、`Rope`、`hood` 等多个独立槽位，同时 `Nanite Settings` 里当前是启用状态。这张补充图的价值在于说明：教程前面反复提到的“材质通道预留”和“静态网格准备”并不是抽象描述，实际导入后的 `VAT_Cloth_01` 确实已经按帐篷布、拉链、绳索、金属件等部件拆开，后续 Sequencer 和材质实例里按槽位分别控制，正是建立在这里的网格结构之上。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+

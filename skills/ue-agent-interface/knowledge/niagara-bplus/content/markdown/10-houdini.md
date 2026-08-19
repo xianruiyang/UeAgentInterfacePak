@@ -1,0 +1,571 @@
+# 10.Houdini粒子模拟缓存制作
+
+# 10.Houdini粒子模拟缓存制作
+
+## 关键术语
+
+- `GPU`、`Houdini`、`粒子`、`系统`、`生命周期`、`速度`、`透明度`、`曲线`、`Niagara`、`Particle`、`Spawn`、`Particle Spawn`、`Normalized Age`、`材质`、`蓝图`、`颜色`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:06-00:05:03 粒子、速度、扰动
+
+- 本段定位：粒子、速度、扰动。
+- 知识点：大家好,第十课见面了,今天本段一起做点粒子动画 毕竟光靠资源本身,想做出那种边缘感和细节效果有点难 所以打算加个粒子缓存,叠在一起用。
+- 知识点：光靠资源本身,质感和细节层次不够,干脆加上粒子缓存,叠在一起用 这样整体看着更真实,质感也上来了 所以顺便把粒子资源也调进来试试。
+- 知识点：顺便一起试试粒子效果,挺有意思的 多集累这累经验,以后遇到类似情况就更有思路了 大家记住就好 之前测试奈雅卡拉缓存时,我们还做过造生型粒子。
+- 知识点：这次也照搬这个方法 那就先弄个空节点,这里就用矢量场把它搭出来 源要用同一个,所以得从这个被控制的源头位置开始生成点 这里设置后,就能精准还原矢量场的速度运动效果。
+- 知识点：再加一个属性造生,用于给位置叠加扰动 再为位置加个造生模式,用起来下面已经做过一次 但那个太粗,得换细一点的 元素尺寸偏大,所以得加点更细密的造生。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`粒子`、`速度`。
+
+**关键画面：**
+
+这一帧是第十课开场时对现有 VDB 烟雾链的总览。作者说明仅靠现有资源本体还不够做出边缘感和细节层次，因此打算在当前效果上再叠一层粒子缓存。
+
+- 当前可见主链从上到下包含：
+  - `resample1`
+  - `add2`
+  - `Null Source`
+  - `attribwrangle2`
+  - `attribnoise1`
+  - `pyrosource1`
+  - `attribnoise2`，属性标记 `burn`
+  - `attribnoise3`，属性标记 `temperature`
+  - `attribnoise4`，属性标记 `density`
+  - `volumerasterizeattributes1`
+  - `pyrosolver1`
+  - `filecache1`
+  - `convertvdb1`
+  - `merge1`
+- 右侧当前选中节点是 `Null Col_Source`，参数面板可见：
+  - `Copy Input` 已勾选
+- 画面结果：
+  - 左侧视口显示角色与一团已经成形的烟雾体积，说明旧的 VDB 模拟结果仍作为基础层保留。
+  - 底部字幕明确说“想做出边缘感和细节效果有点难，所以打算加个粒子缓存”，这就是后续粒子流程的起点。
+这一帧开始真正搭建粒子缓存的前置源数据。作者没有另起一套独立源，而是从原先的 `Null Source` 分支出新的位置扰动链，先给同一份源位置加上更细的噪声。
+
+- 当前可见分支关系：
+  - `Null Source` 向下接到 `attribwrangle2`
+  - 从 `attribwrangle2` 左侧分出一个新节点 `attribnoise5`
+  - 旧的 Pyro 属性链仍保留在右侧：
+    - `attribnoise1`，属性标记 `P`
+    - `pyrosource1`
+    - `attribnoise2`，属性标记 `burn`
+    - `attribnoise3`，属性标记 `temperature`
+    - `attribnoise4`，属性标记 `density`
+- `attribnoise5` 当前可见设置：
+  - `Attribute Names = P`
+  - `Attribute Class = Point`
+  - `Operation = Add`
+  - `Range Values = Positive`
+  - `Amplitude = 0.1`
+  - `Noise Type = Simplex`
+  - `Location Attribute = P`
+  - `Element Size = 0.3`
+- 结果含义：
+  - 这里是在原始位置上叠加一层更细的空间扰动，为后续粒子生成准备更密、更不死板的发射位置分布。
+这一帧已经切进 `popnet` 动力学网络，开始用前面准备好的源数据直接发射粒子。中间网络很简洁，说明这一步先把基础发射跑通，再逐步叠加速度场和扰动。
+
+- 当前可见 POP 网络：
+  - `POP Source source_first_input`
+  - `Merge wire_pops_into_here`
+  - `popsolver`
+  - `output`
+  - 左侧还有 `popobject`
+- `source_first_input` 当前位于 `Birth` 页签，参数可见：
+  - `Impulse Activation = 1`
+  - `Impulse Count = 0`
+  - `Const. Activation = 1`
+  - `Const. Birth Rate = 5000`
+  - `Max Points per Frame = 1000000`
+  - `Probabilistic Emission` 已勾选
+  - `Life Expectancy = 100`
+  - `Life Variance = 0`
+  - `Jitter Birth Time = Positive`
+  - `Interpolate Source = None`
+- 视口结果：
+  - 左侧已经出现大量白色粒子点云，围绕角色和烟雾区域分布，说明粒子缓存的第一版持续发射已经启动。
+
+### 00:05:03-00:09:59 粒子、系统、生命周期
+
+- 本段定位：粒子、系统、生命周期。
+- 知识点：接下来用固定模式生成点,总针数为240,设在220针左右可能出错了 215针左右也行,当动作和刀的运动趋于静止时,可以暂停粒子生成。
+- 知识点：220针也可以合适,220针处已设置激活并添加了关键帧缓入 简单设置一下,生命周期不需要设得太长。
+- 知识点：先按每一秒0.2秒的周期试运行一下 最关键的是用弹出适应体积在中间生成速度 先从此系统里调用之前设定的实量场空节点,再使用它 改成更新速度,设为终点,再给速度混合。
+- 知识点：加个数值试试播放一下,效果和之前完全不同了 结果差别很大,这效果不像有意设计的,银河系的影响几乎没体现出来 感觉有点不对劲把这部分连回之前保存在文件缓存的数据,结果就一致了。
+- 知识点：想通原因了,输出时再做一次烘焙,在版本2中多架一项输出,多提取一个速度场 因为这里要用到速度场,为了优化,之前舍弃了最佳场,改用了次优场。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`系统`、`生命周期`、`速度`。
+
+**关键画面：**
+
+这一帧继续在 `popnet` 的 `POP Source source_first_input` 上调整出生方式，从前一段的大量持续喷发，切到更可控的固定模式发射。
+
+- 当前可见 POP 网络：
+  - `source_first_input`
+  - `Merge wire_pops_into_here`
+  - `popsolver`
+  - `output`
+  - `popobject`
+- `source_first_input` 当前位于 `Birth` 页签，画面可见设置：
+  - `Impulse Activation = 1`
+  - `Impulse Count = 0`
+  - `Const. Activation = 1`
+  - `Const. Birth Rate = 5000`
+  - `Max Points per Frame = 1000000`
+  - `Probabilistic Emission` 已勾选
+  - `Life Expectancy = 100`
+  - `Life Variance = 0`
+  - `Jitter Birth Time = Positive`
+  - `Interpolate Source = None`
+- 字幕上下文明确补充：
+  - 总帧数按 `240` 帧考虑。
+  - 固定模式下的生成停止点大约放在 `220` 帧附近，但作者口头说明这里可能还要再往前收一点。
+- 结果含义：
+  - 这一步的核心不是改粒子外观，而是先把生成窗口限定到动作活跃阶段，避免角色和刀势接近静止后还继续无意义地产生粒子。
+这一帧在 `POP Source` 之后接入了速度场驱动节点，让粒子不再只是原地出生，而是直接跟随之前做好的矢量场运动。
+
+- 当前可见 POP 网络：
+  - `source_first_input`
+  - `popadvectbyvolumes1`
+  - `Merge wire_pops_into_here`
+  - `popsolver`
+  - `output`
+  - `popobject`
+- `popadvectbyvolumes1` 当前可见设置：
+  - `Activation = 1`
+  - `Velocity Source = SOP`
+  - `SOP = /obj/Sword_Trail/VectorField`
+  - `Field Name = vel`
+  - `Velocity Scale = 1`
+  - `Advection Type = Update Velocity`
+  - `Velocity Blend = 1`
+  - `Advection Method = Trace Midpoint`
+  - `CFL Condition = 1`
+- 视口结果：
+  - 左侧白色粒子点云已经沿着蓝色源形状外围拉开，说明粒子速度已经开始受 `VectorField` 中的 `vel` 场控制。
+- 结果含义：
+  - 这一节点就是教程里说的“调用之前设定的矢量场空节点并更新速度”，用同一份速度场还原原始资源的流动方向。
+这一帧仍在检查 `popadvectbyvolumes1` 的结果，但画面已经把粒子路径问题暴露得更明显：白色粒子轨迹和蓝色源形状之间的分离感较强，说明当前调用的速度场与预期表现并不完全一致。
+
+- 当前可见 POP 网络：
+  - `source_first_input`
+  - `popadvectbyvolumes1`
+  - `Merge wire_pops_into_here`
+  - `popsolver`
+  - `popobject`
+- `popadvectbyvolumes1` 当前可见设置仍是：
+  - `Velocity Source = SOP`
+  - `SOP = /obj/Sword_Trail/VectorField`
+  - `Field Name = vel`
+  - `Velocity Scale = 1`
+  - `Advection Type = Update Velocity`
+  - `Velocity Blend = 1`
+  - `Advection Method = Trace Midpoint`
+- 视口结果：
+  - 白色粒子在左上方形成一大段弧形散布，而蓝色源主要集中在左下区域。
+  - 这种结果与原始源体积的贴合度不高，正对应教程口述的“效果和之前完全不同，感觉有点不对劲”。
+- 结果含义：
+  - 这一步的作用不是确认方案正确，而是发现仅直接调用当前 `VectorField` 速度场时，粒子表现与之前缓存版本不一致，因此后续需要回到缓存/输出链检查速度场来源。
+
+### 00:09:59-00:14:29 Niagara、颜色、透明度
+
+- 本段定位：Niagara、颜色、透明度。
+- 知识点：属性模糊这类节点主要作用是位置值更平滑一点,可以这么理解,所以会搜索附近点 这个距离决定了有多少临近点受模糊影响,大致掌握影响几个临近点即可。
+- 知识点：版本1的色彩烘焙已经做好了 不加模糊和加了模糊后差别很明显,画面明显更整齐了 但现在只显示白色,而我们真正需要的是 现在颜色值虽能从Niagara缓存中调用。
+- 知识点：但生成的透明度值加上从手针起就是轨迹效果,建议一并带上渐变色彩,这样更自然 接下来把这部分设为噪声节点,最好让渐变色也随轨迹同步传递。
+- 知识点：这样视觉过度更流畅,接下来把这个部分换成噪声节点 使用Polarin流动噪声,并应附用此前在近置点创建的参数。
+- 知识点：尺寸设为0.5,当前为彩虹色,改为白色,再设为黑色,以形成动画流动的视觉节奏 整体可理解为根据颜色噪声模式混合了色彩。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Niagara`、`颜色`、`透明度`、`噪声`。
+
+**关键画面：**
+
+这一帧回到 `Sword_Trail` 的上层网络，准备在粒子分支里补一个属性平滑节点。教程此时开始处理 Niagara 缓存会用到的颜色/透明度相关属性，让点数据先变得更规整。
+
+- 当前可见上层分支：
+  - `Null Source`
+  - `attribwrangle2`
+  - `attribnoise5`
+  - `DOP Network popnet`
+  - 右侧旧的 Pyro 链仍保留：
+    - `attribnoise1`
+    - `pyrosource1`
+    - `attribnoise2`
+    - `attribnoise3`
+- 当前操作：
+  - 节点菜单搜索关键字是 `attri`
+  - 菜单中高亮的是 `Attribute Blur`
+- `popnet` 右侧参数面板当前可见仿真设置：
+  - `Timestep = 0.0333333`
+  - `Substeps = 1`
+  - `Offset Time = 2.3`
+  - `Start Frame = 70`
+  - `Scale Time = 1`
+  - `Max Feedback Loops = 2`
+- 结果含义：
+  - 这一步是在粒子分支外层继续补 SOP 级属性处理，为后续把粒子缓存导回 Niagara 时提供更平滑、更可控的颜色或透明度属性基础。
+这一帧已经把颜色处理链接到粒子分支上。`popnet` 输出先经过 `attribblur1` 做位置/属性平滑，再通过 `attribadjustcolor1` 开始正式写入颜色属性 `Cd`。
+
+- 当前可见粒子分支：
+  - `attribnoise5`
+  - `DOP Network popnet`
+  - `attribblur1`
+  - `attribadjustcolor1`
+- `attribadjustcolor1` 当前可见设置：
+  - 节点类型：`Attribute Adjust Color`
+  - `Attribute Name = Cd`
+  - `Attribute Class = Point`
+  - `Adjust Value` 已勾选
+  - `Operation = Set Always`
+  - `Pattern Type = Constant`
+  - `Constant Color = 白色`
+- 视口结果：
+  - 左侧显示的是已经更规整的白色粒子轮廓，而不是前面那种大面积散乱点云。
+- 结果含义：
+  - 这里先把粒子颜色统一成基础白色，为后续再叠噪声、渐变或透明度控制做准备；同时 `attribblur1` 负责让相邻点之间的属性过渡更平滑。
+这一帧继续细化 `attribadjustcolor1`，不再把 `Cd` 固定成纯白，而是切到噪声驱动的颜色分布，让粒子颜色随流动产生节奏感。
+
+- 当前可见粒子分支：
+  - `attribnoise5`
+  - `DOP Network popnet`
+  - `attribblur1`
+  - `attribadjustcolor1`
+- `attribadjustcolor1` 当前可见设置：
+  - `Attribute Name = Cd`
+  - `Attribute Class = Point`
+  - `Adjust Value` 已勾选
+  - `Operation = Set Always`
+  - `Pattern Type = Noise`
+  - `Range Values = Color Ramp`
+  - `Color Ramp` 为黑到白的渐变
+  - `Noise Type = Perlin Flow`
+  - `Location Attribute = rest`
+  - `Element Size = 0.5`
+  - `Offset = 0`
+  - `Animate Noise` 已勾选
+  - `Pulse Duration = 3`
+- 视口结果：
+  - 左侧粒子已经呈现更有层次的白色轨迹体量，不再只是均匀一片，说明噪声颜色开始参与塑造流动感。
+- 结果含义：
+  - 这一步正对应教程里说的“把这部分换成噪声节点，让渐变色随轨迹同步传递”；虽然当前色带仍是灰阶，但结构已经切换到可动画的流动噪声颜色模式。
+
+### 00:14:29-00:19:14 粒子、系统、生命周期
+
+- 本段定位：粒子、系统、生命周期。
+- 知识点：配置完成后,用A值值和总生命周期创建调制参数,并将调制方式替换为样调曲线调制器 属性名设为H13,原CD值成以后再相减即可当前默认Spline已加载。
+- 知识点：前部区域呈黑色,大致可视为这种曲线效果 用这种曲线图试试看如何,随着时间推移,点的颜色逐渐变暗并渐隐,可以这样理解。
+- 知识点：注意,当前扩散设置中,仅CD值在变化 当前仅CD值在变化,因此透明度值固定为1,这部分也应新增一参数来控制。
+- 知识点：通过绑定导出提取属性后,即可实现透明度值随生命周期同步调控,完成第二阶段设定 因此,Niagara粒子系统的一大优势在于,即便在粒子内部也能轻松实现对生命周期和属性值的外部控制。
+- 知识点：在外部同样可以轻松完成调节,这才是其核心优势 粒子系统本就旨在自动生成这些基础属性,目前可获取的属性,以基本配置完成。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Niagara`、`粒子`、`系统`、`生命周期`、`速度`、`颜色`、`透明度`、`曲线`。
+
+**关键画面：**
+
+这一帧切进 `pointvop1` 内部，开始用粒子的生命周期属性搭一个调制链。字幕明确说要利用 `age` 值和总生命周期做参数，再把调制方式换成样条曲线。
+
+- 当前所处位置：
+  - `Sword_Trail/pointvop1`
+- 当前可见 VOP 节点：
+  - `opglobal1`
+  - `divide1`
+- `opglobal1` 左侧当前可见可用属性包括：
+  - `P`
+  - `v`
+  - `force`
+  - `age`
+  - `life`
+  - `id`
+  - `Cd`
+  - `uv`
+  - `N`
+- 当前结构含义：
+  - `divide1` 只有一个 `input1 -> div` 的最初始结构，说明这一步刚开始搭“`age / life`”这一类归一化调制值。
+- 视口结果：
+  - 左侧仍显示白色粒子轮廓，说明当前操作重点已经转到属性计算，而不是继续改粒子空间分布。
+这一帧把生命周期调制链搭得更完整了。`divide1` 输出的归一化生命周期值同时喂给两个 Ramp 参数，分别控制颜色变化和透明度变化，再送去后续乘法组合。
+
+- 当前可见 VOP 节点：
+  - `divide1`
+  - `age_cd / ramp1`
+  - `age_al / ramp2`
+  - `multiply1`
+- 连线关系：
+  - `divide1.div` 输出同时连接到 `ramp1.input` 和 `ramp2.input`
+  - 两个 Ramp 的输出再接入 `multiply1`
+- 右侧 `ramp2` 参数面板当前可见：
+  - `Name = age_al`
+  - `Ramp Type = Spline Ramp (float)`
+  - `Default Interpolation = Linear`
+  - Ramp 形状是从左低到右高的线性上升
+- 结构含义：
+  - `age_cd`：用于控制 `Cd` 随生命周期的变化曲线。
+  - `age_al`：用于控制透明度/Alpha 随生命周期的变化曲线。
+  - `multiply1`：把这些基于年龄的调制结果继续组合到后续属性输出里。
+- 结果含义：
+  - 这一步正对应教程里“用 age 值和总生命周期创建调制参数，并将调制方式替换为样条曲线调制器”。
+这一帧回到 `popnet`，继续微调粒子受速度场驱动的力度。相比前面直接全量套用速度场，这里把速度混合降了一半，用来缓和粒子随场运动的强度。
+
+- 当前可见 POP 网络：
+  - `source_first_input`
+  - `popadvectbyvolumes1`
+  - `Merge wire_pops_into_here`
+  - `popobject`
+- `popadvectbyvolumes1` 当前可见设置：
+  - `Velocity Source = SOP`
+  - `SOP = /obj/Sword_Trail/VectorField`
+  - `Field Name = vel`
+  - `Velocity Scale = 1`
+  - `Advection Type = Update Velocity`
+  - `Velocity Blend = 0.5`
+  - `Advection Method = Trace Midpoint`
+  - `CFL Condition = 1`
+- 结果含义：
+  - 这一步是在粒子速度已经接入矢量场之后，进一步把场速度和粒子自身运动做折中，避免粒子被速度场带得过猛。
+
+### 00:19:14-00:24:05 粒子、生命周期、透明度
+
+- 本段定位：粒子、生命周期、透明度。
+- 知识点：无论是用于影视机制作的VDB资源,还是这里的粒子资源,目前都处于轻量级工作环境 可以理解为当前正处于轻量化的工作环境中 如果真要追求更高精度,就别太在意文件体积,重点往质量上考虑调整就好。
+- 知识点：刚才把粗糙度混合调低了,现在反而太死板了,还是调回1.5再看看效果 之前可能是点数太少导致的 好了,烘焙完成了,播放一下看看效果。
+- 知识点：生命周期略显偏短,可能是因为透明度值的影响,导致粒子运动显得不够自然 生命周期太长会显得突兀,适当调长一点即可,点数也适当增加,特别是几何体部分。
+- 知识点：可适当缩小点尺寸,当前部分显得过于粗糙 再叠加一点锋利,轻微融入噪声,提升视觉层次 这样处理后预览一下最终添加缓存后,仍能察觉轻微晃动,还有一点残留的抖动感。
+- 知识点：残留抖动仍能存在,我打算提高子部长来提升计算精度,虽然耗时会稍长一些 缓存时间会稍长,这类问题建议最后再点测试按钮确认 好的,最终缓存已生成。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`生命周期`、`透明度`、`噪声`。
+
+**关键画面：**
+
+这一帧进入粒子缓存写盘阶段。粒子分支在 `pointvop1` 完成颜色/生命周期处理后，直接接到新的 `filecache2`，开始把粒子结果缓存出来。
+
+- 当前可见粒子分支：
+  - `attribnoise5`
+  - `DOP Network popnet`
+  - `attribblur1`
+  - `attribadjustcolor1`
+  - `Attribute VOP pointvop1`
+  - `filecache2`
+- `filecache2` 当前可见设置：
+  - `File Path = Constructed`
+  - `Time Dependent Cache` 已勾选
+  - `Base Name = $HIPNAME.$OS`
+  - `Base Folder = $HIP/geo`
+  - `Version = 1`
+  - `Evaluate As = Frame Range`
+  - `Simulation` 已勾选
+  - `Start/End/Inc = 70 / 240 / 1`
+  - `Substeps = 1`
+- 执行状态：
+  - 画面弹出进度窗口，显示正在缓存粒子序列，当前可见 `render frame 121 (52 of 171)`。
+  - 节点下方文件名模式可见为 `$HIPNAME.$OS_v1.$F4.bgeo.sc`
+- 结果含义：
+  - 这一步说明前面的粒子生成、速度场驱动、颜色/透明度调制已经准备完成，接下来要把粒子缓存作为单独资源导出，供 Niagara 读取。
+这一帧展示的是粒子缓存分支的稳定成型版本。左侧粒子专用链已经从源头一路接到 `filecache2`，和右侧原有 Pyro/VDB 链并行存在，说明作者正在把“粒子补细节层”正式纳入整套效果工程。
+
+- 当前可见粒子分支：
+  - `attribnoise5`
+  - `DOP Network popnet`
+  - `attribblur1`
+  - `attribadjustcolor1`
+  - `Attribute VOP pointvop1`
+  - `filecache2`
+- `popnet` 右侧参数面板当前可见仿真设置：
+  - `Timestep = 0.0333333`
+  - `Substeps = 1`
+  - `Offset Time = 2.3`
+  - `Start Frame = 70`
+  - `Scale Time = 1`
+  - `Max Feedback Loops = 2`
+  - `Enable Automatic Resimulation` 已勾选
+  - `Provide Data Hints` 已勾选
+  - `Interpolate Display Data` 已勾选
+- 结果含义：
+  - 这一步不是新增单个节点，而是确认粒子缓存整条处理链已经打通，可以在现有烟雾资源链旁独立导出、后续单独读取和叠加。
+这一帧把粒子缓存和原有 VDB 结果放到同一套预览里检查。粒子缓存 `filecache2` 已经接入新的合并节点，与右侧烟雾/VDB 输出链一起构成最终复合效果。
+
+- 当前可见粒子/VDB 合成链：
+  - 粒子侧：
+    - `Attribute VOP pointvop1`
+    - `filecache2`
+    - `merge2`
+  - 烟雾/VDB 侧：
+    - `attribnoise4`
+    - `volumerasterizeattributes1`
+    - `pyrosolver1`
+    - `filecache1`
+    - `convertvdb1`
+    - `ROP Geometry Output Knight_Trail_VDB_01`
+  - 参考/中间节点：
+    - `Null VectorField`
+- `filecache2` 当前可见设置仍是：
+  - `Base Name = Ex_02.filecache2`
+  - `Start/End/Inc = 70 / 240 / 1`
+- 视口结果：
+  - 左侧角色周围同时出现粒子点云和体积包围框，说明此时已经在用粒子缓存补强原有 VDB 边缘与细节。
+- 结果含义：
+  - 这一步对应本课最初目标：不是用粒子替代烟雾，而是把粒子缓存作为补细节层与 VDB 结果叠加，形成更丰富的最终效果。
+
+### 00:24:06-00:27:03 Niagara、GPU、粒子
+
+- 本段定位：Niagara、GPU、粒子。
+- 知识点：用缓存针导入,命名为缓存,由系统自动生成 在导出路径中新建一个缓存文件夹 这里对于属性节点,发现无需导入,类型信息也无需导入。
+- 知识点：粒子大小也完全没必要保留,这样保留就足够了 最后点一下渲染按钮,粒子相关的资源就差不多准备好了。
+- 知识点：最后保存资源渲染完成就大功告成了 这次我们用第二个粒子,来试试这种新形态的资源 可用于VDB的资源和Niagara缓存,如果关键点太多,烘焙缓存的时间也会明显变长。
+- 知识点：这部分大家可以留意一下 现在这个程度已经很快了,可以这么理解 即使粒子数量多起来,和少的时候差别也不大。
+- 知识点：就算现在每秒生成2万个粒子,增加到10万个左右,效果也还是会显得很微弱 毕竟要达到这种效果,至少得有50万到100万个点,才能呈现出视频级别的质感。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Niagara`、`GPU`、`粒子`、`系统`。
+
+**关键画面：**
+
+这一帧开始把粒子缓存转换成可供 Niagara 使用的导出格式。新的 `Labs Niagara ROP niagara1` 直接从 `filecache2` 读取粒子缓存，并准备输出为 Houdini Niagara 读取用的 JSON 描述文件。
+
+- 当前可见相关链路：
+  - `Attribute VOP pointvop1`
+  - `filecache2`
+  - `niagara1`
+  - 旁边仍保留旧的 VDB 链：
+    - `pyrosolver1`
+    - `filecache1`
+    - `convertvdb1`
+    - `ROP Geometry Output Knight_Trail_VDB_01`
+    - `merge2`
+- `niagara1` 当前可见设置：
+  - 节点类型：`Labs Niagara ROP`
+  - `Frame Range / Time = Render Frame Range`
+  - `Start/End/Inc = 70 / 240 / 1`
+  - `Create Intermediate Directories` 已勾选
+  - `Output Path = $HIP/$OS.hbjson`
+- `Attributes` 当前可见设置：
+  - `Number of Renames = 0`
+  - `Overwrite Existing Attributes` 未勾选
+  - `Keep Attributes` 字段中可见：
+    - `P`
+    - `id`
+    - `time`
+    - `N`
+    - `v`
+    - `life`
+    - `type`
+    - `Cd`
+    - `Alpha`
+    - `age`
+    - `pscale`
+  - `Cast Attributes = 2`
+  - `Clamp Attributes That Are Outside Type Range` 已勾选
+- 结果含义：
+  - 这一步不是再改粒子表现，而是明确导出 Niagara 侧真正需要的基础属性集合，把 Houdini 粒子缓存打包成可供 Niagara 读取的 `hbjson` 数据。
+这一帧把 Niagara 导出节点整理成更正式的资源导出版本。节点名称从泛用的 `niagara1` 变成 `Trail_Cache_01`，输出目录也改成了项目化的缓存路径。
+
+- 当前可见相关链路：
+  - `pointvop1`
+  - `filecache2`
+  - `Labs Niagara ROP Trail_Cache_01`
+  - 旁边并行保留：
+    - `pyrosolver1`
+    - `filecache1`
+    - `convertvdb1`
+    - `ROP Geometry Output Knight_Trail_VDB_01`
+    - `merge2`
+- `Trail_Cache_01` 当前可见设置：
+  - `Frame Range / Time = Render Frame Range`
+  - `Start/End/Inc = 70 / 240 / 1`
+  - `Create Intermediate Directories` 已勾选
+  - `Output Path = $HIP/OUT/Cache/$OS.hbjson`
+- `Attributes` 当前可见：
+  - `Number of Renames = 0`
+  - `Keep Attributes` 字段中可见：
+    - `P`
+    - `id`
+    - `time`
+    - `v`
+    - `life`
+    - `Cd`
+    - `Alpha`
+    - `age`
+  - `Cast Attributes = 2`
+  - `Clamp Attributes That Are Outside Type Range` 已勾选
+- 结果含义：
+  - 这一步是把导出节点从试验状态整理成正式可交付的 Niagara 缓存输出，既固定了输出文件位置，也收敛了需要带过去的属性集合。
+这一帧已经正式执行 `Trail_Cache_01` 的 Niagara 导出。画面弹出 ROP 进度窗口，同时字幕说明本课先把资源收尾，下一课会把这些新资源带到 Unreal 里继续完成特效。
+
+- 当前可见相关链路：
+  - `pointvop1`
+  - `filecache2`
+  - `Labs Niagara ROP Trail_Cache_01`
+  - 旁边并行保留：
+    - `filecache1`
+    - `convertvdb1`
+    - `ROP Geometry Output Knight_Trail_VDB_01`
+    - `merge2`
+- `Trail_Cache_01` 当前可见设置仍是：
+  - `Output Path = $HIP/OUT/Cache/$OS.hbjson`
+  - `Start/End/Inc = 70 / 240 / 1`
+  - `Keep Attributes = P id time v life Cd Alpha age`
+- 执行状态：
+  - 进度窗口显示 `ROP frame 193 (124 of 171)`
+  - 当前状态为 `Evaluating python`
+- 结果含义：
+  - 这一步表明 Houdini 侧的粒子缓存已经进入最终 Niagara 数据导出阶段，本课目标是在 Houdini 中把粒子资源准备好，后续在 Unreal/Niagara 中继续完成正式特效组装。
+
+## 补充视觉证据
+
+### S01 00:01:51
+
+这张补充图展示的是 Houdini `Sword_Trail` 网络里，如何把刀刃几何整理成后续 `pyrosource` 可用的 source 链。当前视图停在一个竖向节点链上，右侧选中的是 `attribwrangle2`，其作用是先给点写入基础体积属性，再继续进入噪声和 `pyrosource1`。
+
+节点定义集：
+
+- 当前网络路径：`/obj/Sword_Trail`
+- 中间当前可见节点链：
+  - `add1`
+  - `resample1`
+  - `add2`
+  - `Null Source`
+  - `attribwrangle2`
+  - `attribnoise1`
+  - `pyrosource1`
+  - `attribnoise2`
+- 左侧预览：
+  - 一块单独提取出来的白色几何片，形状接近刀刃/切片轮廓
+  - 说明这一步已经不是整个人物与武器输入，而是聚焦到后续做 source 的局部几何
+
+连线集：
+
+- `add1 -> resample1 -> add2 -> Null Source -> attribwrangle2 -> attribnoise1 -> pyrosource1 -> attribnoise2`
+
+设置/参数：
+
+- 当前选中节点：`attribwrangle2`
+- 右侧 `Attribute Wrangle` 面板可确认：
+  - `Group`：空
+  - `Group Type = Guess from Group`
+  - `Run Over = Points`
+  - `VEXpression`：
+    - `@density = 1;`
+  - `Attributes to Create = *`
+  - `Enforce Prototypes`：未勾选
+
+输出/预览：
+
+- `Null Source` 的命名说明前面的 `add/resample/add` 已先把几何整理成一条可作为 source 的基础输入。
+- `attribwrangle2` 在这里直接写入 `density`，意味着后续 `pyrosource1` 不需要再从零猜测体积强度，而是有了明确的体积源标量。
+- 字幕强调“这样设置后，就能精确还原矢量场的速度运动效果”，与当前链路相符：先准备好 source 点/面，再通过后续 `attribnoise` 与 `pyrosource1` 构建更适合流体/烟雾推进的属性场。
+
+这张图可替换为：在 `Sword_Trail` 网络里先把刀刃几何经过 `add1 -> resample1 -> add2` 整理成 `Source`，再用 `attribwrangle2` 按点写入 `@density = 1;` 作为基础体积源属性，随后交给 `attribnoise1` 和 `pyrosource1` 继续生成用于恢复速度场与体积效果的 source 数据。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

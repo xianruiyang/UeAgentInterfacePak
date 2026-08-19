@@ -1,0 +1,547 @@
+# 09-1.Houdini pyro模拟VDB制作
+
+# 09-1.Houdini pyro模拟VDB制作
+
+## 关键术语
+
+- `Houdini`、`材质`、`粒子`、`系统`、`网格`、`碰撞`、`速度`、`噪声`、`扰动`、`烟雾`、`缓存`、`Niagara`、`蓝图`、`用户参数`、`火焰`、`Niagara System`、`Emitter`、`Spawn Rate`
+
+## 分段知识
+
+### 00:00:06-00:04:28 材质、系统、网格
+
+- 本段定位：材质、系统、网格。
+- 知识点：现在系统会自动按30帧标准适配,已经同步到240帧了。
+- 知识点：从Unreal导入时是以30帧为基准的,现在已自动同步到240帧。
+- 知识点：打开实时预览,进入容器内部,就能看到角色网格完整加载了。
+- 知识点：新建一个主材质命名为对象合并。
+- 知识点：把角色导入后,就用它来构建对象合并。
+- 知识点：既然对象合并很常用,往下看看,导入名为格雷斯顿的网格。
+- 知识点：把Introduce Object改成对应设置,角色才能完整继承当前的变形位置数据。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`系统`、`序列`。
+
+**关键画面：**
+
+这是 Houdini 的对象级初始场景，左侧视口为空网格地面，中间网络区位于 `/obj`，尚未创建任何节点。当前步骤不是搭节点，而是先做工程准备：
+
+- 先把角色模型导入 Houdini，并提前设置好资源路径。
+- 导入完成后，回到当前对象层级作为后续对象合并和变形继承的起点。
+- 按画面字幕要求，先关闭场景里默认的灯光和摄像机，避免影响后续在容器内部查看角色网格。
+这一帧进入 `/obj/Sword_Trail` 几何对象，网络中只有一个 `object_merge1`，用来把角色网格从已有角色对象中引入当前工作流。
+
+- 节点：`object_merge1`
+- 作用：把角色模型引用到当前 `Sword_Trail` 容器内，作为后续刀光路径、散点和烟雾源的基础网格。
+- 关键设置：
+  - `Object 1` 指向角色对象路径，画面中可见来源是 `/obj/Ex_02_Greystone_...`
+  - `Transform` 下拉框设置为 `Into This Object`
+- 结果：角色当前的变形/位移会按当前对象空间正确继承到 `Sword_Trail` 内，不会因为对象空间不一致而丢失动画位置。
+这一帧继续在 `/obj/Sword_Trail` 中整理导入后的角色网格，节点链已经扩展为 `object_merge1 -> transform1 -> matchsize1`，说明教程开始把角色摆到适合后续刀光与 Pyro 处理的位置和尺寸。
+
+- 节点链：
+  - `object_merge1`：从 `/obj/Ex_02_Greystone_01_FBX/Greystone` 引入角色网格。
+  - `transform1`：对导入网格做统一缩放与位移校正。
+  - `matchsize1`：在变换后继续整理模型的包围盒/中心位置，方便后续对象合并、散点和求解器使用。
+- `transform1` 当前可见参数：
+  - `Translate = (20.1331, -99.7392, -12.4252)`
+  - `Scale = (1, 1, 1)`
+  - `Uniform Scale = 0.01`
+- 视口结果：角色已正确显示在场景中，外侧包围框可见，说明网格已经完成导入并进入可继续处理的工作状态。
+
+### 00:04:28-00:09:10 网格、速度、噪声
+
+- 本段定位：网格、速度、噪声。
+- 知识点：删除后会自动生成Blast节点,设置为未选中即可将刀刃部分单独分离, 作为原数据使用。
+- 知识点：用Scatter生成点,先键点,再将刀刃经过的位置按针标记。
+- 知识点：连接后对网格添加噪点,即可作为烟雾求解器的原数据使用。
+- 知识点：Scatter点可适当加密分布,以更好覆盖路径。
+- 知识点：再把AttripAngleID这个属性加到属性里。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`速度`、`噪声`、`烟雾`。
+
+**关键画面：**
+
+这一帧仍位于 `/obj/Sword_Trail`，正在整理导入后的基础网格。网络里可见 `object_merge1 -> transform1 -> matchsize1`，其中当前选中的是 `transform1`。
+
+- 当前节点状态：
+  - `object_merge1` 继续引用角色网格。
+  - `transform1` 处于生效状态。
+  - `matchsize1` 显示为未生效/旁路状态，说明当前还在先校正基础变换。
+- `transform1` 当前可见参数：
+  - `Translate = (0, 0, 0)`
+  - `Rotate = (0, 0, 0)`
+  - `Scale = (1, 1, 1)`
+  - `Uniform Scale = 0.01`
+- 视口结果：角色以缩小后的比例显示在场景中，说明这一阶段先把导入模型统一到可继续做删面、分离和散点处理的标准尺寸。
+这一帧已经进入刀刃轨迹源数据的处理中段，网络从角色导入发展到“删选刀刃区域 -> 撒点 -> 写属性 -> 固定静止位置”的流程，当前选中的是 `rest1`。
+
+- 节点链：
+  - `transform1`
+  - `blast1`
+  - `matchsize1`
+  - `scatter1`
+  - `attribwrangle1`
+  - `timeshift1`
+  - `rest1`
+- 可确认设置与含义：
+  - `blast1` 旁标注 `not: selection`，说明通过反选方式删除不需要的部分，只保留刀刃相关区域作为后续原数据。
+  - `scatter1`：在保留的几何体表面生成点，用于后续烟雾或路径源。
+  - `timeshift1`：为静止帧/冻结帧准备输入。
+  - `rest1`：添加静止位置属性，右侧参数面板可见 `Mode = Store Rest`、`Rest Attrib = rest`。
+- 视口结果：左侧只显示一把白色刀刃形状的点云/散点源，说明角色主体已被剔除，当前只保留将作为烟雾源的武器区域。
+这一帧继续在刀刃散点源上生成时间轨迹，网络已经从 `scatter1` 之后延伸到 `trail1` 和 `trail2`，用于把刀刃运动路径转换为可供后续噪声和烟雾求解使用的连续轨迹数据。
+
+- 当前可见节点链：
+  - `scatter1`
+  - `attribwrangle1`
+  - `timeshift1`
+  - `rest1`
+  - `trail1`
+  - `trail2`
+- `trail2` 当前可见参数：
+  - `Result Type = Preserve Original`
+  - `Trail Length = 2`
+  - `Trail Increment = 1`
+  - `Cache Size = 2`
+  - `Close rows` 已勾选
+- 结构含义：
+  - `attribwrangle1` 写入散点标识或路径相关属性。
+  - `timeshift1 + rest1` 提供冻结参考位置。
+  - `trail1 / trail2` 根据时间帧把散点连接成短轨迹，用来表示刀刃经过的位置。
+- 视口结果：左侧仍是刀刃区域的白色点状几何，说明当前重点在生成运动轨迹属性，而不是恢复角色整体模型。
+
+### 00:09:10-00:13:21 网格、噪声
+
+- 本段定位：网格、噪声。
+- 知识点：在此状态添加节点,用生成的ID将当前针与前一针的网格连接起来,实现大组绑定。
+- 知识点：可理解为匹配的索引间通过多边形相连。
+- 知识点：对这部分进行重采样,增加点的数量,使差值点大幅增多,从而更密集的填充空间。
+- 知识点：将紧油线连接的边删除,只保留点即可。
+- 知识点：这些点可直接作为原数据使用,导入PyroSource 延续创建一个名为Density 的属性。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`噪声`。
+
+**关键画面：**
+
+这一帧继续查看 `trail2` 的结果，目标是把刀刃散点转换成随时间弯折的运动轨迹，而不是停留在单帧静止形状。
+
+- 当前可见节点链：
+  - `scatter1`
+  - `attribwrangle1`
+  - `timeshift1`
+  - `rest1`
+  - `trail1`
+  - `trail2`
+- `trail2` 当前可见参数仍是：
+  - `Result Type = Preserve Original`
+  - `Trail Length = 2`
+  - `Trail Increment = 1`
+  - `Cache Size = 2`
+  - `Close rows` 已勾选
+- 视口结果：刀刃已经不再保持笔直静止，而是出现明显折弯的拖尾轮廓，说明 `trail` 节点开始把不同时间帧的位置连接起来，用来表达武器挥动路径。
+这一帧已经把前面的刀刃运动轨迹整理成更完整的源数据形态，网络顶部可见 `add2`，其后接一个命名为 `Source` 的 `Null` 输出节点，用来标记这段源数据的正式输出口。
+
+- 当前可见节点：
+  - `add2`
+  - `Null Source`
+- 输出节点状态：
+  - `Null` 名称为 `Source`
+  - 右侧参数中 `Copy Input` 已勾选，表示继续透传上游输入几何
+- 视口结果：
+  - 左侧显示一大片蓝色散点/连点形成的楔形体量，说明前面通过轨迹、连线和加点处理后，已经把刀刃经过空间扩展成适合作为后续 Pyro Source 的空间样本。
+- 操作意图：
+  - 先用 `Null Source` 固定一个明确的输出锚点，方便后续节点从这份源数据继续做重采样、删边或体积求解输入。
+这一帧已经把刀刃轨迹源送入 Pyro 预处理链，开始为后续体积烟雾生成准备密度/燃烧相关属性。当前选中的是 `attribnoise2`。
+
+- 当前可见节点链：
+  - `attribwrangle2`
+  - `attribnoise1`
+  - `pyrosource1`
+  - `attribnoise2`
+- 结构含义：
+  - `attribwrangle2`：先写入后续 Pyro 需要的基础属性。
+  - `attribnoise1`：对点位置或源分布加入噪声扰动，节点旁可见属性标记 `P`。
+  - `pyrosource1`：把当前点源整理成 Pyro Source 所需的数据结构。
+  - `attribnoise2`：继续给源点附加噪声属性，节点旁可见属性标记 `Cd`。
+- `attribnoise2` 当前可见参数：
+  - `Attribute Class = Point`
+  - `Operation = Add`
+  - `Range Values = Positive`
+  - `Amplitude = 1`
+  - `Noise Type = Simplex`
+  - `Location Attribute = P`
+  - `Element Size = 1`
+  - `Attribute Names` 字段中可见 `burn`
+- 视口结果：左侧保留的是规则程度更高的蓝色点体量，说明这一步已经不再只是几何轨迹，而是在为烟雾求解器准备带噪声分布的燃烧/源点属性。
+
+### 00:13:21-00:17:56 粒子、网格、碰撞
+
+- 本段定位：粒子、网格、碰撞。
+- 知识点：元素尺寸设为0.8左右。
+- 知识点：以创建温度场与燃烧属性并添加,但此处审视为向量类型,可能因此无法识别。
+- 知识点：做到这一步,就相当于未进入文件导出求解器做好了准备。
+- 知识点：把密度、扰、扰动、温度和弹性系数都加上就行。
+- 知识点：现在粒子缩放太大了,先调小点。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`粒子`、`噪声`、`碰撞`。
+
+**关键画面：**
+
+这一帧继续调整 `pyrosource1` 后的 `attribnoise2`，目标是给 `burn` 属性附加更合适的噪声分布。当前画面直接给出了这一段里提到的关键粒度参数。
+
+- 当前可见节点链：
+  - `attribwrangle2`
+  - `attribnoise1`
+  - `pyrosource1`
+  - `attribnoise2`
+- `attribnoise2` 当前可见设置：
+  - `Attribute Names = burn`
+  - `Attribute Class = Point`
+  - `Operation = Add`
+  - `Range Values = Min/Max`
+  - `Min Value = -1.5`
+  - `Max Value = 1.5`
+  - `Noise Type = Simplex`
+  - `Location Attribute = P`
+  - `Element Size = 0.8`
+- 结果含义：
+  - 这里把燃烧属性的噪声尺度控制在 `0.8` 左右，并通过 `Min/Max` 范围给源点加入更明显的强弱差异，供后续 Pyro 求解使用。
+这一步继续在 `pyrosource1` 后补充多个属性噪声节点，当前选中的是 `attribnoise4`。但画面中的节点标注与参数面板属性名不完全一致，不能安全断言该节点最终服务于哪一个属性，因此需要。
+
+- 当前可见节点链：
+  - `attribnoise1`
+  - `pyrosource1`
+  - `attribnoise2`
+  - `attribnoise3`
+  - `attribnoise4`
+- 已确认信息：
+  - `attribnoise2` 节点旁可见属性标记 `burn`
+  - `attribnoise3`、`attribnoise4` 节点旁都显示为 `temperature`
+  - 右侧 `attribnoise4` 参数面板中可见：
+    - `Attribute Class = Point`
+    - `Operation = Add`
+    - `Range Values = Zero Centered`
+    - `Amplitude = 1`
+    - `Noise Type = Simplex`
+    - `Location Attribute = P`
+    - `Element Size = 0.5`
+    - `Offset = 10`
+    - `Attribute Names` 字段显示为 `density`
+  - 当前选中的 `attribnoise4` 到底是在给 `temperature` 还是 `density` 加噪声，画面证据存在冲突，不能据此编造最终属性归属。
+这一帧切回 `Sword_Trail` 的整体工作网络和角色视口，同时右侧参数面板已经打开 `pyrosolver1`。这说明源点、属性和基础几何准备完成后，流程开始进入正式的 Pyro Solver 检查阶段。
+
+- 画面可见网络上游仍包含：
+  - `object_merge1`
+  - `transform1`
+  - `blast1`
+  - `matchsize1`
+  - `scatter1`
+  - `attribwrangle1`
+- 右侧 `pyrosolver1` 参数面板当前可见设置：
+  - `Start Frame = 1`
+  - 处于 `Output` 页签
+  - `Voxel Size = 0.1`
+  - `Velocity Voxel Scale = 1`
+  - `Time Scale = 1`
+  - `Simulation Type = Sparse`
+  - `Global Substeps = 1`
+  - `Min Substeps = 1`
+  - `Max Substeps = 1`
+  - `CFL Condition = 1`
+  - `Advection-Reflection = Disabled`
+  - `Cache Memory (MB) = 5000`
+- 视口结果：角色整体重新显示出来，说明此时在对照角色与源数据的相对位置，同时检查求解器输出相关参数，为后续碰撞和烟雾模拟做准备。
+
+### 00:17:56-00:22:31 碰撞、速度、烟雾
+
+- 本段定位：碰撞、速度、烟雾。
+- 知识点：这种带点神圣感的烟雾,直接从70帧左右开始模拟就行。
+- 知识点：把帧率从30调到70,提速尺寸先设成0.05左右,再让单个模块的动作更生动些。
+- 知识点：边界框,只关掉地面平面的歪轴碰撞,其他参数重点看原设置。
+- 知识点：温度场默认设在50左右,先看看效果再定。
+- 知识点：速度场也留意一下Limit Source Range的循环直接关掉就行。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`速度`、`碰撞`、`烟雾`、`火焰`。
+
+**关键画面：**
+
+这一帧继续处于 `pyrosolver1` 检查阶段，但左侧视口已经切到角色挥剑动作中的姿态，用来核对角色运动与刀刃源数据的相对时序。
+
+- 画面可见网络上游：
+  - `object_merge1`
+  - `transform1`
+  - `blast1`
+  - `matchsize1`
+  - `scatter1`
+  - `attribwrangle1`
+- 右侧 `pyrosolver1` 参数面板当前仍可见：
+  - `Start Frame = 1`
+  - `Output` 页签
+  - `Voxel Size = 0.1`
+  - `Velocity Voxel Scale = 1`
+  - `Time Scale = 1`
+  - `Simulation Type = Sparse`
+  - `Global Substeps = 1`
+  - `Min Substeps = 1`
+  - `Max Substeps = 1`
+  - `CFL Condition = 1`
+  - `Cache Memory (MB) = 5000`
+- 视口结果：角色已经处于动作中途而非静止 T 姿，说明这一步是在对照实际动作帧查看刀刃源数据和后续烟雾求解的时间对应关系。
+这一帧已经进入正式的 Pyro 求解搭建阶段。源点属性链和碰撞输入都已接入 `pyrosolver1`，并且求解起始帧与体素尺寸都调整到了本段讲解的数值。
+
+- 当前可见求解链：
+  - `attribnoise1`，属性标记 `P`
+  - `pyrosource1`
+  - `attribnoise2`，属性标记 `burn`
+  - `attribnoise3`，属性标记 `temperature`
+  - `attribnoise4`，属性标记 `density`
+  - `volumerasterizeattributes1`
+  - `Null Col_Source`
+  - `pyrosolver1`
+- 输入关系：
+  - `volumerasterizeattributes1` 从左侧接入 `pyrosolver1`，作为体积化后的主源数据。
+  - `Null Col_Source` 从右侧接入 `pyrosolver1`，作为碰撞输入源。
+- `pyrosolver1` 当前可见设置：
+  - `Start Frame = 70`
+  - 当前位于 `Sourcing` 页签
+  - 节点下方可见数值 `0.05`，对应本段提到的较小体素/尺寸级别设置
+  - `Buoyancy = 1`
+- 结果含义：
+  - 这一步把刀刃轨迹源、燃烧/温度/密度属性和碰撞对象一起送入求解器，准备从大约第 `70` 帧开始模拟带神圣感的烟雾效果。
+这一帧展示的是 Pyro 模拟的缓存输出阶段。`pyrosolver1` 下游已经接上 `filecache1`，并开始把模拟结果按帧写到磁盘。
+
+- 当前可见节点关系：
+  - `attribnoise3`，属性标记 `temperature`
+  - `attribnoise4`，属性标记 `density`
+  - `volumerasterizeattributes1`
+  - `Null Col_Source`
+  - `pyrosolver1`
+  - `filecache1`
+- `filecache1` 当前可见设置：
+  - `File Path = Constructed`
+  - `Time Dependent Cache` 已勾选
+  - `Base Name = $HIPNAME.$OS`
+  - `Base Folder = $HIP/geo`
+  - `Version = 1`
+  - `Evaluate As = Frame Range`
+  - `Simulation` 已勾选
+  - `Start/End/Inc = 70 / 240 / 1`
+  - `Substeps = 1`
+- 执行状态：
+  - 画面弹出进度窗口，显示正在渲染/缓存帧序列，说明求解器结果已经开始写入磁盘。
+  - 节点下方文件名模式可见为 `$HIPNAME.$OS_v1.$F4.bgeo.sc`
+- 结果含义：
+  - 这一阶段不是继续调源点，而是把从第 `70` 帧开始的烟雾模拟结果缓存出来，供后续回放、检查和导入 Unreal 使用。
+
+### 00:22:31-00:27:25 粒子、碰撞、速度
+
+- 本段定位：粒子、碰撞、速度。
+- 知识点：速度很快,中间部分也不用特意放慢,完成之后看效果,实在难判断具体怎么回事。
+- 知识点：烟雾看起来像是凭空冒出来似的,动作也显得不太对劲,只看着效果,实在看不出到底怎么回事。
+- 知识点：先把体速大小再调小一点,提升计算精度试试,再把体积密度调低点试试。
+- 知识点：可能出问题的地方还有粒子大小,也调低一点试试。
+- 知识点：再跑一遍其实要快速预览,不用完整运行,直接实时模拟就行,只要打开这里显示就行。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`粒子`、`速度`、`碰撞`、`烟雾`。
+
+**关键画面：**
+
+这一帧仍在 `pyrosolver1 -> filecache1` 的缓存预览阶段，教程开始说明仅凭当前回放效果还很难判断烟雾问题到底出在哪里，因此先边缓存边观察。
+
+- 当前可见节点关系：
+  - `attribnoise3`，属性标记 `temperature`
+  - `attribnoise4`，属性标记 `density`
+  - `volumerasterizeattributes1`
+  - `Null Col_Source`
+  - `pyrosolver1`
+  - `filecache1`
+- `filecache1` 当前仍可见：
+  - `Evaluate As = Frame Range`
+  - `Simulation` 已勾选
+  - `Start/End/Inc = 70 / 240 / 1`
+- 执行状态：
+  - 进度窗口显示正在缓存中段帧，画面中可见 `render frame 213 (144 of 171)`，说明这是在完整缓存过程中抽查结果。
+  - 进度窗口下方还能看到当前烹饪路径包含 `Sword_Trail/blast1`。
+- 结果含义：
+  - 当前重点不是再改节点，而是通过缓存中的预览判断烟雾是否存在“凭空冒出”或动作不自然的问题，再决定回头调速度、密度或粒子尺度。
+这一帧转入快速预览方式：不再要求完整缓存一遍，而是直接打开实时显示来观察烟雾形态，同时进一步把求解尺寸调小以提高判断精度。
+
+- 当前可见节点关系：
+  - `attribnoise4`，属性标记 `density`
+  - `volumerasterizeattributes1`
+  - `Null Col_Source`
+  - `pyrosolver1`
+  - `filecache1`
+  - `merge1`
+- 可确认设置与状态：
+  - `pyrosolver1` 节点下方当前显示数值为 `0.03`，说明这一轮又把求解尺寸/体素尺度继续调小。
+  - `filecache1` 右侧仍保持 `Start/End/Inc = 70 / 240 / 1`
+  - 字幕明确说明“不完整运行，直接实时模拟也可以，只要打开显示就行”。
+- 视口结果：
+  - 左侧场景里已经能直接看到烟雾体积轮廓，说明此时重点是用实时显示快速判断体积速度、密度和粒子大小是否合适，而不是等待整段缓存结束。
+这一帧把实时显示和 `pyrosolver1` 的 `Sourcing` 页面放在一起检查，直接对照烟雾形态去调整各个输入体积的注入方式，重点是把速度影响再压低。
+
+- 当前可见节点关系：
+  - `attribnoise4`，属性标记 `density`
+  - `volumerasterizeattributes1`
+  - `Null Col_Source`
+  - `pyrosolver1`
+  - `filecache1`
+  - `merge1`
+- `pyrosolver1` 当前可见设置：
+  - `Source Type = Individual Volumes`
+  - `Limit Source Range` 已开启
+  - `Range Type = Frame Range`
+  - `Frame Range = 70 - 240`
+  - `Number of Sources = 4`
+- `Source Volumes` 列表当前可见配置：
+  - `Source 1: density`
+    - `Operation = Add`
+    - `Source Volume = density`
+    - `Target Field = density`
+    - `Source Scale = 1`
+  - `Source 2: temperature`
+    - `Operation = Pull`
+    - `Source Volume = temperature`
+    - `Target Field = temperature`
+    - `Source Scale = 1`
+    - `Acceleration Strength = 10`
+    - `Deceleration Strength = 0`
+  - `Source 3: flame`
+    - `Operation = Maximum`
+    - `Source Volume = burn`
+    - `Target Field = flame`
+    - `Source Scale = 1`
+  - `Source 4: vel`
+    - `Operation = Add`
+    - `Source Volume = v`
+    - `Target Field = vel`
+    - `Source Scale = 0.35`
+- 视口结果：
+  - 左侧可直接看到烟雾团在包围框里的实时形态，说明这一步是用可视结果反推 `vel`、密度和温度注入是否过强，特别是把速度源缩放压到 `0.35` 以缓解动作过猛的问题。
+
+### 00:27:25-00:29:59 噪声、缓存
+
+- 本段定位：噪声、缓存。
+- 知识点：温度降下来后,扩散力也跟着减弱了,不如干脆调低些,再在这个位置加入一个湍流,让运动更生动些。
+- 知识点：这样能打破单调感,我觉得挺合适的。
+- 知识点：K值设为0.5,XR尺寸是为1左右,或者0.8也行。
+- 知识点：控制场全部打开,这个直接反向设置就行。
+- 知识点：密度越高,越有重量感,噪声也会更明显,其他参数不用动。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`噪声`。
+
+**关键画面：**
+
+这一帧延续上一段的实时预览检查，继续在 `pyrosolver1` 的 `Sourcing` 页面观察烟雾形态，并准备按字幕建议把当前某项注入力度调低，再加入一个 `turbulence` 让运动更生动。
+
+- 当前可见节点关系：
+  - `attribnoise4`，属性标记 `density`
+  - `volumerasterizeattributes1`
+  - `Null Col_Source`
+  - `pyrosolver1`
+  - `filecache1`
+  - `merge1`
+- `pyrosolver1` 当前仍可见：
+  - `Source Type = Individual Volumes`
+  - `Frame Range = 70 - 240`
+  - `Number of Sources = 4`
+  - `Source 4: vel`
+    - `Operation = Add`
+    - `Source Volume = v`
+    - `Target Field = vel`
+    - `Source Scale = 0.35`
+- 视口结果：
+  - 左侧烟雾团已经能稳定显示，但字幕明确指出当前运动还可以更灵动，因此这一帧的重点是基于现有实时效果，准备进一步降低现有驱动力并额外引入湍流。
+这一帧转到 `pyrosolver1` 的场与火焰衰减相关设置，开始直接调烟雾扩散、温度冷却和火焰寿命，而不是继续只看 source 注入。
+
+- 当前可见节点关系：
+  - `attribnoise4`，属性标记 `density`
+  - `volumerasterizeattributes1`
+  - `Null Col_Source`
+  - `pyrosolver1`
+  - `filecache1`
+  - `merge1`
+- `pyrosolver1` 当前可见设置：
+  - `Start Frame = 70`
+  - 仍处于 `0.03` 尺度版本
+  - `Dissipation = 0.1`
+  - `Clamp Below = 0.005`
+  - `Temperature`
+    - `Diffusion = 0`
+    - `Cooling Rate = 0.5`
+  - `Flame`
+    - `Flame Lifespan = 0.2`
+- 结果含义：
+  - 这一轮是在把温度和火焰影响压低，控制烟雾扩散与持续时间，作为上一条“先调低一些再增强运动表现”的具体落点。
+这一帧展示的是当前调参后的合成预览链。`filecache1` 输出的烟雾结果与碰撞/参考对象一起送入 `merge1`，左侧视口直接检查角色与烟雾在同一包围框中的最终关系。
+
+- 当前可见节点关系：
+  - `attribnoise4`，属性标记 `density`
+  - `volumerasterizeattributes1`
+  - `Null Col_Source`
+  - `pyrosolver1`
+  - `filecache1`
+  - `merge1`
+- `merge1` 当前可见输入：
+  - `filecache1`
+  - `Col_Source`
+- 视口结果：
+  - 左侧同时显示角色模型与大块烟雾体积，说明这一步已经进入“合成后看最终效果”的阶段，而不是单独检查源点或求解器内部字段。
+  - 烟雾轮廓贴着角色挥剑路径展开，可用于判断前面降低速度、调节扩散/冷却后，整体运动是否比之前更自然。
+
+## 补充视觉证据
+
+### S02 00:04:48
+
+这张补充图展示的是 Houdini 中 `Sword_Trail` 网络最前面的输入与尺度整理步骤，用来补证“先把角色/武器导进来，再把整体缩放到适合处理刀刃轨迹的尺寸”。左侧视口能看到角色和横向摆放的长剑，右侧则是 `transform1` 的参数面板。
+
+节点定义集：
+
+- 当前网络路径：`/obj/Sword_Trail`
+- 中间网络可见节点：
+  - `object_merge1`
+  - `transform1`
+  - `matchsize1`
+- `object_merge1` 下方能读到来源对象路径片段：
+  - `/obj/Ex_02_Greystone_01_FBX/Grey...`
+  - 可确认这里是在把 `Greystone` 角色/武器相关 FBX 几何并入当前 `Sword_Trail` 网络
+
+连线集：
+
+- `object_merge1 -> transform1 -> matchsize1`
+
+设置/参数：
+
+- 当前选中节点：`transform1`
+- 右侧 `Transform` 面板可确认：
+  - `Transform Order = Scale Rot Trans`
+  - 旋转顺序为 `Rx Ry Rz`
+  - `Translate = (0, 0, 0)`
+  - `Rotate = (0, 0, 0)`
+  - `Scale = (1, 1, 1)`
+  - `Uniform Scale = 0.01`
+- `Pre-Transform` 区域可见：
+  - `Move Centroid to Origin`
+  - `Move Pivot to Centroid`
+- Attributes/法线相关选项可见并处于开启状态：
+  - `Recompute Point Normals`
+  - `Recompute Affected Normals`
+  - `Preserve Normal Length`
+- `Invert Transformation`：未勾选
+
+输出/预览：
+
+- 左侧视口中，角色与长剑已被一起导入到工作区，说明当前阶段还在做刀轨/切割前的输入准备，而不是烟雾求解。
+- 底部字幕语义是“先把角色移到适合切刀刃的帧段，先选中刀刃部分，然后删除……”，与当前网络只保留输入、变换、尺寸整理三步相吻合。
+- 这张图可替换为：在 `Sword_Trail` 网络里先把 `Greystone` 角色/武器几何通过 `object_merge1` 导入，再用 `transform1` 把整体统一缩放到 `0.01`，随后交给 `matchsize1` 继续做尺寸对齐。这样后面无论是提取刀刃几何还是生成刀轨体积，都会基于适合 Houdini 处理的统一比例。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

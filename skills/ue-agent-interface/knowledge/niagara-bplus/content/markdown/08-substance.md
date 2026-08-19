@@ -1,0 +1,1275 @@
+# 08 创建 Substance 纹理资源
+
+# 08 创建 Substance 纹理资源
+
+## 关键术语
+
+- `UV`、`Substance`、`材质`、`粒子`、`网格`、`速度`、`透明度`、`不透明度`、`纹理`、`Niagara`、`Normalized Age`、`系统`、`蓝图`、`生命周期`、`颜色`、`曲线`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:05-00:04:43 材质、速度、纹理
+
+- 本段定位：材质、速度、纹理。
+- 知识点：这次的时间将会是制作纹理资源的时间。
+- 知识点：这次我们总共会制作三张纹理。
+- 知识点：这就是根据那种形状制作的纹理。
+- 知识点：就比如说,例如需要制作这种形状的线形纹理。
+- 知识点：看起来会和四代形状的纹理有点像。
+- 知识点：需要在虚幻材质中实现这个形状。
+- 知识点：可能会制作大约三种这种形状的纹理。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`速度`、`曲线`。
+
+**关键画面：**
+
+这张图展示的是：作者正式切到 `Adobe Substance 3D Designer`，准备开始本节的纹理资源制作工作。
+
+- 软件标题栏显示当前应用为 `Adobe Substance 3D Designer (Steam edition)`。
+- 当前停留在欢迎首页 `Welcome to Substance 3D Designer`。
+- 左侧起始操作区可以看到：
+  - `New Substance graph...`
+  - `Open package...`
+  - `New MDL graph...`
+  - `Import AxF...`
+- 左侧导航栏显示当前位于 `Home`，下方还有 `Learn`。
+- 中间欢迎区说明这是一个用于程序化创建无缝材质、图案和图像滤镜的节点式制作工具。
+- 页面下半部分的 `Recent` 列表中可见近期项目示例，包括：
+  - `Gradation.sbs`
+  - `cell.sbsar`
+  - `Normal.sbs`
+  - `Lightning.sbs`
+  - `Toon.sbs`
+  - `Spark.sbs`
+  - `Decal.sbs`
+  - `Mask.sbs`
+  - `Hit.sbs`
+  - `Tile.sbs`
+- 字幕说明“不用长篇大论，直接开始”，与正文“这次的时间将会是制作纹理资源的时间”一致，表示当前画面只是进入工具并准备立刻新建纹理图。
+
+这张图的关键意义是：本节的工作环境从 Unreal / Sequencer 转到了 `Substance Designer`。后续要制作的线形、渐变或爆发类纹理，不是在引擎里直接画，而是先在这个节点式纹理工具中建立资源，再回到材质或 Niagara 中使用。
+这张图展示的是：作者已经在 `Substance_graph_1` 中放入一个 `Voronoi` 生成节点，用它作为后续线形/裂纹类纹理的基础图案来源。
+
+节点定义集
+
+- `Voronoi`
+  - 节点标题可见为 `Voronoi`
+  - 节点预览缩略图显示为高亮圆斑拼接的胞状分布
+
+连线集
+
+- 当前图中只看到单个 `Voronoi` 节点，未与其他节点建立可见连线。
+- 画布左下提示 `No output node defined`，说明此时还没有连接到最终输出节点。
+
+设置/参数
+
+- 左上资源树显示当前包是 `Unsaved Package*`，其中包含图表 `Substance_graph_1`。
+- 右侧 `BASE PARAMETERS` 当前可见字段包括：
+  - `Output Size`
+    - `Width = 0`
+    - `Height = 0`
+  - `Pixel Size`
+    - `Width = 1`
+    - `Height = 1`
+  - `Pixel Ratio = Square`
+  - `Random Seed = 0`
+- 右侧 `INSTANCE PARAMETERS` 中可见 `Invert = False`。
+- 左下 `LIBRARY` 当前展开 `Texture generators > Noises`，可见同类噪声资源，如：
+  - `3D Perlin Noise`
+  - `3D Ridged Noise`
+  - 其他 `3D` / 噪声类节点
+
+输出/预览
+
+- 下方 `2D VIEW` 已经显示 `Voronoi` 的灰度结果：大量柔和高亮斑点紧密拼接，形成类似细胞/石纹的噪声底图。
+- 右下 `3D VIEW` 中，一个立方体模型显示了当前灰度纹理的基础投射效果。
+- 这张图能确认的阶段是：作者先选一个程序化噪声作为原始形状来源，再在后续步骤中继续改造它，使其逼近教程要的线形或四向扩散类纹理轮廓。
+这张图展示的是：作者把前面的噪声基础图接入 `Cross_section` 节点，通过截面变换把原本分散的胞状噪声改造成一排尖锐起伏的白色峰形，为后续线状纹理打底。
+
+节点定义集
+
+- 左侧噪声节点
+  - 名称在截图中未完全清晰，但缩略图与前一张一致，为前一步生成的灰度噪声源
+- `Cross_section`
+  - 右侧当前选中的属性面板标题显示为 `cross_section - PROPERTIES`
+  - 节点缩略图显示为黑底上排列的白色尖峰/山脊状截面
+
+连线集
+
+- 左侧噪声节点的输出连接到 `Cross_section` 的输入。
+- 当前图中没有再往后连接到输出节点，因此画布仍显示 `No output node defined`。
+
+设置/参数
+
+- 顶部图表栏显示当前父尺寸为：
+  - `Parent Size = 2048`
+  - 另一侧分辨率下拉可见 `1024`
+- 右侧 `cross_section - PROPERTIES` 中可见参数包括：
+  - `Pixel Ratio = square`
+  - `Random Seed = 0`
+- `INSTANCE PARAMETERS` 可见字段包括：
+  - `Cross section coordinate = 0.5`
+  - `Section axis = X`
+  - `Show Helper = False`
+  - `Height scale = 1`
+  - `Height offset = 0`
+  - `Drawing style = Gradient`
+  - `Invert Gradient = False`
+  - `Smooth / Polygonal = Smooth`
+  - `Background color`
+- 左下 `LIBRARY` 仍停留在 `Texture generators > Noises` 分类。
+
+输出/预览
+
+- 下方 `2D VIEW` 当前预览的是 `Cross_section` 结果：黑底上密集排列的白色尖峰，峰顶高低不一，底部带柔和渐变。
+- 该结果相比前一张的胞状噪声，已经从“面状噪声分布”转成“单方向截取后的高低轮廓”。
+- 这一步的作用是把原始随机噪声压缩成可用于后续速度线、裂纹边缘或放射条纹的基础轮廓形，后面再继续裁切、拉伸或重组，才更接近教程目标纹理。
+
+### 00:04:43-00:09:17 纹理
+
+- 本段定位：纹理。
+- 知识点：可能会更好看起来。
+- 知识点：这样加重模糊的原因是。
+- 知识点：在第二部分已经讨论过。
+- 知识点：我们现在在第二部分讨论过。
+- 知识点：把这些数据适当转移一下。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`。
+
+**关键画面：**
+
+这张图展示的是：作者继续调整 `Cross_section` 节点，把截面位置稍微偏移，以改变下方白色尖峰纹理的形态分布。
+
+节点定义集
+
+- 左侧噪声输入节点
+  - 作为 `Cross_section` 的上游输入，缩略图仍是灰度噪声
+- `Cross_section`
+  - 当前选中节点
+  - 缩略图显示为黑底白峰的截面结果
+
+连线集
+
+- 左侧噪声节点输出连接到 `Cross_section` 输入。
+- 当前仍未连接输出节点，画布左下继续显示 `No output node defined`。
+
+设置/参数
+
+- 右侧 `cross_section - PROPERTIES` 中，当前核心可见参数包括：
+  - `Cross section coordinate = 0.5`
+  - `Section axis = X`
+  - `Show Helper = False`
+  - `Height scale = 1`
+  - `Height offset = 0`
+  - `Drawing style = Gradient`
+  - `Invert Gradient = False`
+  - `Smooth / Polygonal = Smooth`
+- 顶部可见当前图表分辨率相关信息：
+  - `Parent Size = 2048`
+  - 另一侧分辨率下拉显示 `1024`
+- 左下预览状态栏可见当前图像尺寸为 `2048 x 1024 (Grayscale, 16bpc)`。
+
+输出/预览
+
+- 下方 `2D VIEW` 预览中，结果是横向展开的黑底白色尖峰群，峰顶高低不一，底部有柔和渐变过渡。
+- 字幕提到“稍微偏移一下”，结合当前选中的 `Cross section coordinate` 可判断，作者此时主要是在移动截面位置，让生成的轮廓分布更顺眼。
+- 这一阶段还没有增加新节点，而是在已有的截面转换结果上，通过细调截面采样位置改善纹理整体节奏和观感。
+这张图展示的是：作者已经把最初的截面纹理接成一条多节点处理链，并在中途加入类似高亮扩散/焦散的处理节点，同时准备继续叠加 `blur` 类模糊节点来柔化结果。
+
+节点定义集
+
+- 左侧噪声源节点
+  - 作为整条链的起点，名称在截图中不可完全确认
+- `Cross Section`
+  - 将噪声转换为横向白色峰形截面
+- 一个名称中含 `Blur HQ Grayscale` 的节点
+  - 位于 `Cross Section` 后方，用于灰度高质量模糊
+- `rt_caustics_grayscale`
+  - 当前选中节点，右侧属性栏标题可见为 `rt_caustics_grayscale - PROPERTIES`
+- `Auto Levels`
+  - 位于链路更右侧，用于重新拉伸亮暗范围
+
+连线集
+
+- 左侧噪声源节点输出连接到 `Cross Section`。
+- `Cross Section` 输出连接到 `Blur HQ Grayscale` 类节点。
+- 该模糊节点输出继续连接到 `rt_caustics_grayscale`。
+- `rt_caustics_grayscale` 输出再连接到 `Auto Levels`。
+- 当前仍未接最终输出节点，因此画布左下继续显示 `No output node defined`。
+
+设置/参数
+
+- 右侧 `rt_caustics_grayscale - PROPERTIES` 中可见的 `INSTANCE PARAMETERS` 包括：
+  - `Output Color Space = Raw`
+  - `Photon Grid Size = Auto`
+  - `Surface Height Scale = 0.29`
+  - `Surface Height Position = 0.21`
+  - `Surface IOR = 1.32`
+  - `Photon Size = 10`
+  - `Jittering = 0`
+  - `Light Position`
+    - `X = 0.5`
+    - `Y = 0.5`
+  - `Non Square Expansion = True`
+- 画面中央打开了节点搜索框，搜索关键字是 `blur`，列表中可见：
+  - `Blur`
+  - `Blur HQ Color`
+  - `Blur HQ Grayscale`
+  - `Directional Blur`
+  - `Anisotropic Blur Color`
+  - `Anisotropic Blur Grayscale`
+  - `Edge Blur`
+  - `Non-Uniform Blur Color`
+  - `Non-Uniform Blur Grayscale`
+  - `Radial Blur Color`
+  - `Radial Blur Grayscale`
+  - `Slope Blur Color`
+  - `Slope Blur Grayscale`
+
+输出/预览
+
+- 下方 `2D VIEW` 当前显示的是一条横向延展的白色发光带，中间局部鼓起、上方有较暗雾化拖影，已经不再是前一张的纯尖峰截面。
+- 这说明作者开始把原本生硬的截面峰形，转化为更适合做能量条纹、速度线或发光边缘的柔化轮廓。
+- 从当前步骤可以确认，作者不是只靠单一噪声，而是在通过“截面转换 + 模糊 + 焦散/高亮塑形 + 自动拉级”逐步把基础噪声加工成可用纹理。
+这张图展示的是：作者在主纹理链路末端加入一条辅助渐变支路，并用 `Blend` 节点以 `Multiply` 方式把它压到主结果上，用来进一步控制亮带的分布和衰减。
+
+节点定义集
+
+- 主链节点，从左到右可见：
+  - 左侧灰度噪声源节点
+  - `Cross Section`
+  - 一个 `Blur HQ Grayscale` 类节点
+  - `rt Caustics grayscale`
+  - `Auto Levels`
+  - 另一枚 `Blur HQ Grayscale` 类节点
+- 辅助支路可见：
+  - 一个 `Gradient Linear 1` 节点
+  - 一个绿色调节节点
+    - 名称在截图中不可完全辨认，位于 `Gradient Linear 1` 之后
+- 末端节点：
+  - `Blend`
+    - 当前选中，右侧属性栏标题为 `Blend - PROPERTIES`
+
+连线集
+
+- 主链从左到右逐节点串联，一直连到 `Blend` 的其中一个输入。
+- `Gradient Linear 1` 输出连接到下方绿色调节节点。
+- 该绿色调节节点输出再连接到 `Blend` 的另一个输入。
+- `Blend` 当前是整条可见链路的末端，但依然没有接到正式输出节点，所以画布左下仍显示 `No output node defined`。
+
+设置/参数
+
+- 右侧 `Blend - PROPERTIES` 的 `SPECIFIC PARAMETERS` 可见：
+  - `Opacity = 1`
+  - `Blending Mode = Multiply`
+  - `Cropping Area`
+    - `Left = 0`
+    - `Right = 1`
+    - `Top = 0`
+    - `Bottom = 1`
+- 顶部图表尺寸信息依旧显示：
+  - `Parent Size = 2048`
+  - 另一侧分辨率下拉为 `1024`
+- 左下状态栏显示当前预览尺寸仍是 `2048 x 1024 (Grayscale, 16bpc)`。
+
+输出/预览
+
+- 下方 `2D VIEW` 当前结果是一条较长的横向白色能量带，整体比前一张更平顺，顶部突起被控制得更柔和，边缘衰减更自然。
+- 由于 `Blend` 模式是 `Multiply`，可判断下方辅助渐变支路的作用是在空间上压暗或限制主链结果，而不是直接新增发光区域。
+- 这一步的意义是：在主链已经形成基础亮带后，再用一条可控渐变对其做整体包络裁形，使纹理更接近实际可用的速度线/冲击纹理，而不是随机亮斑堆积。
+
+### 00:09:17-00:11:54 速度、纹理
+
+- 本段定位：速度、纹理。
+- 知识点：做了这种状态的模板图。
+- 知识点：这种形状的纹理很常用。
+- 知识点：这种东西现在就是用映射色调。
+- 知识点：在巴特利尔会制作的样子。
+- 知识点：想要更有速度感的人可以这样。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`速度`。
+
+**关键画面：**
+
+这张图展示的是：作者在前一批已经完成的主纹理链末端，再追加一个 `blur_hq_grayscale` 节点，用高质量模糊进一步柔化亮带轮廓，让纹理更有速度感。
+
+节点定义集
+
+- 主链可见节点，从左到右包括：
+  - `Cross Section`
+  - `rt Caustics Grayscale`
+  - `Auto Levels`
+  - 一个 `Blur HQ Grayscale` 类节点
+  - `Blend`
+- 辅助支路仍可见：
+  - `Gradient Linear 1`
+  - 下游绿色调节节点
+- 新增末端节点：
+  - `blur_hq_grayscale`
+    - 当前选中，右侧属性栏标题为 `blur_hq_grayscale - PROPERTIES`
+
+连线集
+
+- 主链原本在 `Blend` 结束。
+- 当前 `Blend` 的输出继续连接到右侧新增的 `blur_hq_grayscale` 输入。
+- 辅助支路仍先经过绿色调节节点，再并入 `Blend` 的其中一个输入。
+- 当前新增模糊节点后，整条链依然未接到最终输出节点，因此左下继续显示 `No output node defined`。
+
+设置/参数
+
+- 右侧 `blur_hq_grayscale - PROPERTIES` 的 `INSTANCE PARAMETERS` 可见：
+  - `Intensity = 2`
+  - `Quality = 0`
+- 顶部图表分辨率信息依旧显示：
+  - `Parent Size = 2048`
+  - 另一侧分辨率下拉为 `1024`
+- 左下状态栏显示当前预览尺寸仍为 `2048 x 1024 (Grayscale, 16bpc)`。
+
+输出/预览
+
+- 下方 `2D VIEW` 结果是一条横向延展的白色发光带，亮区比上一批更连贯，峰间过渡被抹平，整体更像速度拖尾或能量流带。
+- 字幕提到“现在用映射色调器来做这种东西”，结合当前又追加了一层模糊，可判断作者是在把这条基础亮带往更常见的高速纹理模板方向推进。
+- 这一步的核心作用是：在已有包络控制基础上，再做一次整体平滑，让纹理后续更适合通过材质映射、拉伸或旋转来制造速度感。
+这张图展示的是：作者把前面做好的横向亮带结果送入 `shape_mapper`，映射到一个圆形模板上，再通过 `Directional Blur` 继续处理，生成一圈更有速度感的环状纹理示例。
+
+节点定义集
+
+- 左侧主链保留：
+  - `Auto Levels`
+  - `Blur HQ Grayscale`
+  - `Blend`
+- 下方辅助支路仍可见：
+  - `Gradient Linear 1`
+  - `Levels`
+- 新增上方分支节点：
+  - `shape_mapper`
+    - 当前选中，右侧属性栏标题为 `shape_mapper - PROPERTIES`
+  - `Directional Blur`
+    - 位于 `shape_mapper` 右侧
+
+连线集
+
+- 左侧主链结果先流入 `Blend`。
+- `Blend` 的输出向上连接到 `shape_mapper` 的输入。
+- `shape_mapper` 的输出继续连接到右侧 `Directional Blur`。
+- `Blend` 与 `shape_mapper` 之间还能看到另一条回接/辅助输入线，说明 `shape_mapper` 不只吃单一输入，还在使用额外形状控制输入，但截图里无法完整确认每根线对应的具体输入端名。
+- 当前这组新节点依旧没有接到正式输出节点，因此左下仍显示 `No output node defined`。
+
+设置/参数
+
+- 右侧 `shape_mapper - PROPERTIES` 的 `INSTANCE PARAMETERS` 可见：
+  - `Shape = Circle`
+  - `Pattern Amount = 4`
+  - `Radius = 0.07`
+  - `Width = 1`
+  - `Rotation`
+    - `Turns = 0`
+    - `Degrees = 0`
+  - `Flip one on two = False`
+  - `Non Square Expansion = True`
+- 顶部图表尺寸信息仍显示：
+  - `Parent Size = 2048`
+  - 分辨率下拉为 `1024`
+
+输出/预览
+
+- 下方 `2D VIEW` 现在不再是横向亮带，而是一圈黑底白边的环状能量纹理，外缘有不规则突起，内圈较暗，中间留出圆形空洞。
+- 这表明 `shape_mapper` 的作用是把前面的速度条纹或亮带模板沿圆周排布，转成更适合冲击环、环形爆发或旋转效果的纹理基础。
+- 字幕提到“这是一个例子”，说明作者在演示：同一条基础亮带纹理，不只是横着用，也可以通过形状映射转换成另一类常用速度纹理。
+这张图展示的是：作者把视线拉回到第一张横向速度纹理的主链，并新放入一个 `gradient_linear_3` 节点，作为后续第二张纹理制作的起点控制元素。
+
+节点定义集
+
+- 左侧主链仍保持：
+  - 多个上游灰度处理节点
+  - `Blend`
+- 下方辅助支路仍保留：
+  - `Gradient Linear 1`
+  - `Levels`
+- 新增节点：
+  - `gradient_linear_3`
+    - 当前选中，右侧属性栏标题为 `gradient_linear_3 - PROPERTIES`
+
+连线集
+
+- 主链继续流入当前的 `Blend` 节点。
+- 下方辅助支路仍连接到 `Blend` 的一个输入。
+- `Blend` 的输出向上连接到新放置的 `gradient_linear_3` 节点。
+- 当前截图中只显示 `gradient_linear_3` 被摆到链路上方，后续是否作为正式输入参与下一条链尚未在本图中完全展开。
+- 当前整张图依然未接最终输出节点，左下继续显示 `No output node defined`。
+
+设置/参数
+
+- 右侧 `gradient_linear_3 - PROPERTIES` 的 `INSTANCE PARAMETERS` 可见：
+  - `Tiling = 1`
+  - `Position = 0.61`
+  - `Rotation = 0`
+- 顶部图表尺寸信息依然是：
+  - `Parent Size = 2048`
+  - 分辨率下拉 `1024`
+
+输出/预览
+
+- 下方 `2D VIEW` 当前仍显示第一张纹理的横向白色亮带结果，说明新节点虽然已经放到图表中，但这张图的预览重点仍是前一条已完成的基础模板。
+- 字幕明确提到“首先第一个纹理是这样制作的”，说明作者在此处先对第一张纹理做总结，然后再转入第二张纹理的搭建。
+- 这张图的关键信息是工作流切换：第一张速度亮带模板链已经基本稳定，新加入的 `gradient_linear_3` 则是下一张纹理或下一阶段控制形状时要用到的新起点节点。
+
+### 00:12:06-00:17:04 速度、透明度、不透明度
+
+- 本段定位：速度、透明度、不透明度。
+- 知识点：接下来第二个纹理会再做一个品牌。
+- 知识点：这里要再带一个辐尸剂。
+- 知识点：出来的品牌表现是。
+- 知识点：用Costic来制造这种感觉的好处。
+- 知识点：就是尝试制作纹理。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`速度`、`透明度`。
+
+**关键画面：**
+
+这张图展示的是：作者开始搭第二张纹理的处理结构，把前一阶段的主链结果重新分支到新的 `Shape Mapper` 和 `Blend` 组合中，并把混合模式切到 `Copy`，为新的透明/不透明纹理试验做准备。
+
+节点定义集
+
+- 左侧延续的主链节点包括：
+  - `Auto Levels`
+  - `Blur HQ Grayscale`
+- 中间节点：
+  - `Blend`
+    - 当前选中，右侧属性栏标题为 `Blend - PROPERTIES`
+- 上方新增节点：
+  - `Shape Mapper`
+- 下方仍保留两个辅助节点：
+  - `Gradient Linear 1`
+  - `Levels`
+- 右侧还有一枚灰度输出处理节点
+  - 名称在截图中未完整清晰
+
+连线集
+
+- 左侧主链继续流入当前这个 `Blend`。
+- `Blend` 的输出分成多路：
+  - 一路向上连接到 `Shape Mapper`
+  - 一路向右连接到右侧灰度节点
+  - 一路向下连接到下方辅助支路区域
+- `Shape Mapper` 目前已经摆到链路上，但本图中尚未看到它后续接到更完整的新链路结果。
+- 当前图仍未连接最终输出节点，左下继续显示 `No output node defined`。
+
+设置/参数
+
+- 右侧 `Blend - PROPERTIES` 的 `SPECIFIC PARAMETERS` 可见：
+  - `Opacity = 1`
+  - `Blending Mode = Copy`
+  - `Cropping Area`
+    - `Left = 0`
+    - `Right = 1`
+    - `Top = 0`
+    - `Bottom = 1`
+- 顶部图表尺寸依旧为：
+  - `Parent Size = 2048`
+  - 分辨率下拉 `1024`
+
+输出/预览
+
+- 下方 `2D VIEW` 当前几乎是纯黑画面，说明这一步还处在重建链路和切换混合逻辑的阶段，尚未得到有效可视纹理。
+- 结合正文“第二个纹理会再做一个”与本图结构变化，可以判断作者此时不是微调第一张纹理，而是开始为第二张、偏透明/不透明控制感的纹理单独搭一套分支。
+- 这一帧的关键信息是结构切换：把 `Blend` 从前一阶段的包络混合用法，改成更直接的 `Copy` 复制逻辑，为下一步重新塑形和输出留出干净基础。
+这张图展示的是：作者把第二张纹理的多条灰度链重新汇合，通过 `Blend` 的 `Add (Linear Dodge)` 强化线条亮部，再送入 `Shape Mapper`，得到一圈边缘更强的环状纹理。
+
+节点定义集
+
+- 左侧可见多条灰度处理链：
+  - 上方一条来自 `Blur HQ Grayscale`
+  - 中间一条经过 `Blend`
+  - 上方还有 `Auto Levels`
+- 中部第二个汇合节点：
+  - `Blend`
+    - 当前选中，右侧属性栏为 `Blend - PROPERTIES`
+- 右侧末端节点：
+  - `Shape Mapper`
+    - 当前用于把结果映射成圆形结构
+
+连线集
+
+- 左侧至少两路灰度结果汇入当前选中的 `Blend`。
+- `Blend` 的输出直接连接到右侧的 `Shape Mapper` 输入。
+- 左侧更早的一个 `Blend` 仍在参与汇合，为当前节点提供其中一路输入。
+- 这说明当前结构不是单链单输出，而是把几段不同处理过的灰度纹理叠加后，再统一做形状映射。
+- 当前图中仍没有正式输出节点，因此左下继续显示 `No output node defined`。
+
+设置/参数
+
+- 右侧 `Blend - PROPERTIES` 的 `SPECIFIC PARAMETERS` 显示：
+  - `Opacity = 1`
+  - `Blending Mode = Add (Linear Dodge)`
+  - `Cropping Area`
+    - `Left = 0`
+    - `Right = 1`
+    - `Top = 0`
+    - `Bottom = 1`
+- 顶部图表尺寸信息仍为：
+  - `Parent Size = 2048`
+  - 分辨率下拉 `1024`
+
+输出/预览
+
+- 下方 `2D VIEW` 结果是一圈发光边缘明显增强的环状纹理，外圈轮廓更亮、更尖锐，中间保持黑色空心。
+- 字幕提到“这样来强调线条”，与 `Add (Linear Dodge)` 的使用一致，说明作者当前是在把几路灰度结果相加，增强环边的亮线表现。
+- 这一阶段的重点是：第二张纹理不再只是复制第一张的逻辑，而是通过多路叠加和形状映射，把“线感”和“透明/不透明边缘对比”做得更强，方便后续作为另一种速度或冲击纹理使用。
+这张图展示的是：作者继续扩展第二张纹理的完整处理链，并在后段使用 `Directional Blur` 调整边缘方向感，让亮线尾部更有流动和速度感。
+
+节点定义集
+
+- 左侧起始与中段节点可见：
+  - `rt Caustics Grayscale`
+  - `Auto Levels`
+  - `Blur HQ Grayscale`
+  - `Blend`
+- 下方辅助链可见：
+  - `Gradient Linear 1`
+  - `Levels`
+  - 右下方另一个绿色节点
+    - 名称在截图中不可完全确认
+- 上方与后段节点可见：
+  - 另一枚 `rt Caustics Grayscale`
+  - `Shape Mapper`
+  - `Auto Levels`
+  - `Directional Blur`
+  - 右侧末端还有一个 `Blend`
+
+连线集
+
+- 左侧主链先经过 `rt Caustics Grayscale -> Auto Levels -> Blur HQ Grayscale -> Blend`。
+- 该 `Blend` 的输出分成多路：
+  - 一路向上进入上方的 `rt Caustics Grayscale`
+  - 一路连到上方后段链中的 `Blend / Auto Levels / Directional Blur` 区域
+  - 一路向右直连到最右侧末端 `Blend`
+  - 一路向下连入下方辅助绿色节点
+- 上方链中，`Shape Mapper` 的输出进入 `Directional Blur`。
+- `Directional Blur` 的输出继续并入右侧末端 `Blend`。
+- 当前仍未接正式输出节点，左下继续显示 `No output node defined`。
+
+设置/参数
+
+- 右侧 `Directional Blur - PROPERTIES` 的 `SPECIFIC PARAMETERS` 可见：
+  - `Intensity = 1`
+  - `Angle`
+    - `Turns = 0.261`
+    - `Degrees = 93.96`
+- 顶部图表尺寸依旧显示：
+  - `Parent Size = 2048`
+  - 分辨率下拉 `1024`
+
+输出/预览
+
+- 下方 `2D VIEW` 当前是横向展开的白色亮带，但和前几批相比，亮带下沿被拉出更明显的垂向拖尾，边缘起伏更有生命力。
+- 字幕提到“想让边缘看起来更有活力”，与 `Directional Blur` 的使用目的完全一致，说明作者是在通过定向模糊给亮边加方向性和动势。
+- 这一步的关键作用是：在第二张纹理的主亮线已经成型后，不再只做静态明暗叠加，而是通过方向性拖拽让边缘出现更自然的流动感，从而更适合速度感、透明边缘或冲击拖尾类效果。
+
+### 00:17:04-00:18:04 纹理
+
+- 本段定位：纹理。
+- 知识点：叠加一个色调也不错。
+- 知识点：可以自由发挥产生不同的结果。
+- 知识点：我这样倒过来的原因是。
+- 知识点：毕竟我们并不是在做放射型的。
+- 知识点：这种形态有时也会变化。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`。
+
+**关键画面：**
+
+这张图展示的是：作者重新利用 `Cross_section`，但这次不再输出渐变峰形，而是切换成细线型截面，用来做一种非放射型的折线纹理。
+
+节点定义集
+
+- 左侧起始链可见：
+  - 噪声源节点
+  - `Cross_section`
+  - `Blur HQ Grayscale`
+- 中段与右侧可见：
+  - 一枚 `rt Caustics Grayscale`
+  - `Auto Levels`
+  - 另一枚 `Blur HQ Grayscale`
+  - 右端 `Blend`
+- 下方辅助支路仍可见：
+  - `Gradient Linear 1`
+  - `Levels`
+- 上方还能看到另一枚 `rt Caustics Grayscale`，作为额外分支结果
+
+连线集
+
+- 主链从噪声源进入 `Cross_section`，再接到 `Blur HQ Grayscale`。
+- 之后主链继续进入中段的 `rt Caustics Grayscale -> Auto Levels -> Blur HQ Grayscale`。
+- 右端 `Blend` 接收来自主链和下方辅助支路的输入。
+- 画面中还能看到从中段向上分出一条虚线/细线连接到上方另一枚 `rt Caustics Grayscale`，说明作者在尝试额外分支形态。
+- 当前仍未连接正式输出节点，左下继续显示 `No output node defined`。
+
+设置/参数
+
+- 右侧 `cross_section - PROPERTIES` 的 `INSTANCE PARAMETERS` 可见：
+  - `Cross section coordinate = 0.5`
+  - `Section axis = X`
+  - `Show Helper = False`
+  - `Height scale = 0.5`
+  - `Height offset = 0.3`
+  - `Drawing style = Line`
+  - `Segment amount = 32`
+  - `Line thickness = 0.01`
+  - `Line style = Smooth`
+  - `Line smoothness`
+- 顶部图表尺寸仍为：
+  - `Parent Size = 2048`
+  - 分辨率下拉 `1024`
+
+输出/预览
+
+- 下方 `2D VIEW` 当前结果是一条黑底白色折线，线段有高低起伏，但已经不再是前面那种宽亮带或环形边缘。
+- 正文提到“并不是在做放射型的”，与这里把 `Drawing style` 切到 `Line` 一致，说明作者正在演示另一类更像边缘电流、裂线或轮廓折线的纹理基底。
+- 这一步的关键在于：同一个 `Cross_section` 不只可以输出面积型渐变，也能通过线型模式直接生成细折线，从而快速得到另一种用途完全不同的纹理骨架。
+这张图展示的是：作者继续用前面构建好的链路生成横向亮带结果，并在末端选中 `Transformation 2D`，准备通过二维变换来调整纹理的摆放、偏移和伸缩。
+
+节点定义集
+
+- 左侧至中段可见：
+  - `Blend`
+  - `Auto Levels`
+  - `Directional Blur`
+- 上方支路：
+  - `Shape Mapper`
+- 下方支路：
+  - 绿色调节节点
+    - 名称在截图中不可完全确认
+- 右端当前选中节点：
+  - `Transformation 2D`
+    - 右侧属性栏标题为 `Transformation 2D - PROPERTIES`
+
+连线集
+
+- 左侧主链和下方支路共同汇入中间的 `Blend`。
+- `Blend` 的输出一方面继续向右接到 `Transformation 2D`，另一方面向上接到 `Shape Mapper` 分支。
+- `Directional Blur` 也作为上游节点参与进入当前 `Blend` 的结果塑形。
+- 当前图依旧没有接正式输出节点，左下继续显示 `No output node defined`。
+
+设置/参数
+
+- 右侧 `Transformation 2D - PROPERTIES` 的 `SPECIFIC PARAMETERS` 可见：
+  - `Rotation`
+    - `Angle = 0.00`
+  - `Stretch`
+    - `Width = 100.00%`
+    - `Height = 100.00%`
+  - `Offset`
+    - `X = 0`
+    - `Y = 0.03`
+  - `Mipmap Mode = Automatic`
+- 右侧还可见 `Transform matrix`、`Apply Angle`、`Apply Width`、`Apply Height`、`Edit Matrix Values` 等操作入口。
+
+输出/预览
+
+- 下方 `2D VIEW` 当前预览是一条横向白色亮带，带有向下拖出的灰白尾迹，左右边界出现了虚线框选区域，说明作者正在直接在 2D 视图中编辑变换范围。
+- 由于 `Angle` 仍是 `0`，而 `Offset Y = 0.03` 已经不是零，可判断当前主要是在轻微平移纹理位置，而不是旋转它。
+- 这一步的关键作用是：在纹理形状已经成型后，不必重新改节点结构，也可以用 `Transformation 2D` 快速调整最终图案在画布中的落点和比例，为后续材质采样或 UV 使用做准备。
+这张图展示的是：作者把经过 `Transformation 2D` 调整后的亮带结果再送入 `shape_mapper`，映射成一圈带有放射感的亮环，用来说明同一套线形纹理也可以得到类似光芒四射的表现。
+
+节点定义集
+
+- 左侧与中段链路可见：
+  - `Blend`
+  - `Auto Levels`
+  - `Directional Blur`
+  - 下方绿色调节节点
+- 右侧分支节点：
+  - `Transformation 2D`
+  - `shape_mapper`
+    - 当前选中，右侧属性栏标题为 `shape_mapper - PROPERTIES`
+
+连线集
+
+- 左侧多路结果汇入中间的 `Blend`。
+- `Blend` 的输出接到 `Transformation 2D`。
+- `Transformation 2D` 的输出继续连接到右上方的 `shape_mapper`。
+- 当前这条右侧分支显示得很清楚：先做二维位置/比例整理，再进行形状映射。
+- 整个图表仍未连接最终输出节点，左下继续显示 `No output node defined`。
+
+设置/参数
+
+- 右侧 `shape_mapper - PROPERTIES` 的 `INSTANCE PARAMETERS` 可见：
+  - `Shape = Circle`
+  - `Pattern Amount = 4`
+  - `Radius = 0.07`
+  - `Width = 1`
+  - `Rotation`
+    - `Turns = 0`
+    - `Degrees = 0`
+  - `Flip one on two = False`
+  - `Non Square Expansion = True`
+- 顶部图表尺寸仍为：
+  - `Parent Size = 2048`
+  - 分辨率下拉 `1024`
+
+输出/预览
+
+- 下方 `2D VIEW` 结果是一圈亮边带放射突刺的环状纹理，中心留黑，外圈的亮边呈现不规则向外扩散的感觉。
+- 字幕提到“会有一种光芒四射的感觉”，与当前环状结果完全一致，说明作者是在展示：虽然本段不是专门做放射型纹理，但通过 `shape_mapper` 重新映射，同样能得到带光芒外射观感的版本。
+- 这一步的关键意义是：线形亮带、二维变换和形状映射可以自由组合，从而在同一张基础纹理上快速派生出横向拖尾版和环状放射版两种不同的视觉用途。
+
+### 00:18:07-00:22:44 UV、颜色
+
+- 本段定位：UV、颜色。
+- 知识点：这种方法也挺不错的。
+- 知识点：给了太大的偏移了。
+- 知识点：最后再加一层Source UV Bray。
+- 知识点：再复制一个这个杯子。
+- 知识点：这个会适当粗一点。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这张图展示的是：作者继续在环状纹理分支上微调 `shape_mapper`，通过圆形映射参数把环的收缩程度和外射形态控制到更合适的状态。
+
+节点定义集
+
+- 左侧主链仍可见：
+  - `Blend`
+  - `Auto Levels`
+  - `Directional Blur`
+- 下方辅助节点：
+  - 绿色调节节点
+- 右侧当前分支：
+  - `Transformation 2D`
+  - `shape_mapper`
+    - 当前选中，右侧属性栏为 `shape_mapper - PROPERTIES`
+
+连线集
+
+- 左侧多路结果汇入中间 `Blend`。
+- `Blend` 输出继续连接到 `Transformation 2D`。
+- `Transformation 2D` 输出再送入右上方的 `shape_mapper`。
+- 当前图中这条链路很明确：先汇合亮带结果，再做二维调整，最后映射到圆形。
+- 当前仍未接正式输出节点，左下继续显示 `No output node defined`。
+
+设置/参数
+
+- 右侧 `shape_mapper - PROPERTIES` 的 `INSTANCE PARAMETERS` 可见：
+  - `Shape = Circle`
+  - `Pattern Amount = 4`
+  - `Radius`
+    - 当前正在被调整，具体值在截图中被滑杆遮挡，无法可靠读出
+  - `Width = 1`
+  - `Rotation`
+    - `Turns = 0`
+    - `Degrees = 0`
+  - `Flip one on two = False`
+  - `Non Square Expansion = True`
+- 顶部图表尺寸信息仍为：
+  - `Parent Size = 2048`
+  - 分辨率下拉 `1024`
+
+输出/预览
+
+- 下方 `2D VIEW` 当前结果是一圈较为集中的亮环，中心黑洞清晰，外侧亮刺较短，整体比前一批末图更紧凑。
+- 由于正文提到“给了太大的偏移了”，而当前正处在 `UV、颜色` 小节中，这一步可理解为作者在回调环形映射的空间分布，避免外扩过头。
+- 这一步的核心是把已经成形的环状纹理收拢到更可控的尺寸和密度，为后续继续叠加颜色、UV 偏移或复制变体打基础。
+这张图展示的是：作者把前面做好的灰度纹理链整理到颜色输出流程中，加入 `ColorMap`、`RGBA Merge` 和 `output` 节点，开始把灰度效果正式打包为可输出的彩色/通道结果。
+
+节点定义集
+
+- 左侧输入来源：
+  - `Blend`
+- 中间灰度处理节点：
+  - `Transformation 2D`
+  - `Shape Mapper`
+  - 下方另一枚 `Transformation 2D`
+- 颜色/输出相关节点：
+  - `ColorMap`
+  - `RGBA Merge`
+  - `output`
+- 下方还能看到一个被部分遮挡的蓝色节点
+  - 名称不可完全确认
+
+连线集
+
+- 左侧 `Blend` 输出分成多路，分别送往两个 `Transformation 2D` 分支。
+- 上方 `Transformation 2D` 输出连接到 `Shape Mapper`。
+- 下方 `Transformation 2D` 输出连接到 `ColorMap`。
+- `ColorMap` 的输出再连接到右侧的 `output` 节点。
+- `RGBA Merge` 当前位于上方，但从本图可见线来看，还没有清楚显示它已经并入最终 `output`；更像是为后续通道合并准备的额外节点。
+- 左侧资源树中已经能看到 `output` 条目，说明这个图表此时开始定义正式输出。
+
+设置/参数
+
+- 当前选中的是右侧属性栏中的 `Transformation 2D - PROPERTIES`，可见：
+  - `Rotation`
+    - `Angle = 0.00`
+  - `Stretch`
+    - `Width = 100.00%`
+    - `Height = 100.00%`
+  - `Offset`
+    - `X = 0`
+    - `Y = 0`
+  - `Mipmap Mode = Automatic`
+- 下方状态栏显示当前预览格式已经变成 `2048 x 1024 (RGBA, 8bpc)`，与前面纯灰度阶段不同。
+
+输出/预览
+
+- 下方 `2D VIEW` 当前几乎是黑画面，但预览格式已经是 `RGBA`，说明作者正在搭输出链和颜色映射路径，而不是单纯看灰度形状。
+- 字幕提到“这种方法也挺不错的”，与当前把灰度链转成颜色输出流程的动作一致，说明作者在尝试一种可直接导出结果的打包方式。
+- 这一步的关键意义是：前面生成的灰度纹理不再只作为中间形状存在，而是开始进入最终贴图产出阶段，后续可以继续在 `ColorMap` 或通道合并层面补颜色与 UV 相关控制。
+这张图展示的是：作者回到一条完整展开的灰度纹理主链，继续利用 `rt_caustics_grayscale` 调整横向亮线的表面高低与高光分布，让这条纹理更适合后续粒子和材质使用。
+
+节点定义集
+
+- 左侧起始链清晰可见：
+  - 噪声源节点
+  - `Cross Section`
+  - `Blur HQ Grayscale`
+- 中段主链可见：
+  - `rt Caustics Grayscale`
+  - `Auto Levels`
+  - `Blur HQ Grayscale`
+  - `Blend`
+- 分支节点可见：
+  - 上方一枚 `Shape Mapper`
+  - 下方一枚 `Transformation 2D`
+  - 下方辅助支路 `Gradient Linear 1 + Levels`
+  - 右下绿色节点
+- 右侧末端链可见：
+  - 一枚 `Blend`
+  - `Auto Levels`
+  - 上方另一枚 `rt_caustics_grayscale`
+- 左侧资源树中已经能看到 `output`，说明当前图表已有正式输出定义。
+
+连线集
+
+- 主链从左向右流过 `Cross Section -> Blur HQ Grayscale -> rt Caustics Grayscale -> Auto Levels -> Blur HQ Grayscale -> Blend`。
+- 该 `Blend` 的结果继续分出多路：
+  - 一路向上送往 `Shape Mapper`
+  - 一路向下送往 `Transformation 2D`
+  - 一路与下方 `Gradient Linear 1 + Levels` 支路汇合
+  - 一路继续进入右侧末端 `Blend`
+- 右侧末端 `Blend` 的结果再送入 `Auto Levels`，并继续连到右上方另一枚 `rt_caustics_grayscale`。
+- 这说明作者不是只改局部节点，而是在多分支整合后的基础上，再对最终亮线做一次高光塑形。
+
+设置/参数
+
+- 右侧当前选中的是 `rt_caustics_grayscale - PROPERTIES`，可见 `INSTANCE PARAMETERS` 包括：
+  - `Output Color Space = Raw`
+  - `Photon Grid Size = Auto`
+  - `Surface Height Scale = 0.54`
+  - `Surface Height Position = 0.21`
+  - `Surface IOR = 1.32`
+  - `Photon Size = 10`
+  - `Jittering = 0`
+  - `Light Position`
+    - `X = 0.5`
+    - `Y = 0.5`
+  - `Non Square Expansion = True`
+
+输出/预览
+
+- 下方 `2D VIEW` 当前结果是一条横向白色亮线，顶部局部鼓起形成高亮尖峰，整体比前面的宽亮带更细、更适合做边缘或能量丝带。
+- 预览中还能看到亮线下方较暗、上方局部有发亮竖向突起，说明 `rt_caustics_grayscale` 正在用于塑造表面起伏与高光集中感。
+- 这一步的关键意义是：在纹理已经具备基本形状后，再利用焦散/高光类节点把平面灰度线塑造成更像真实能量边缘的亮带，从而为后续的粒子贴图、颜色映射和材质发光打下更好的基础。
+
+### 00:22:44-00:27:30 粒子、纹理
+
+- 本段定位：粒子、纹理。
+- 知识点：这个模糊现在就有点太强了。
+- 知识点：这个只要轻轻地就可以。
+- 知识点：感觉有点太往下倾斜了。
+- 知识点：内部有点充实的感觉。
+- 知识点：需要能做一个纹理。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`粒子`。
+
+**关键画面：**
+
+这张图展示的是：作者在已经建立正式输出的完整图表上，继续调 `rt_caustics_grayscale` 的焦散/表面参数，把横向亮线塑造成更像粒子薄膜或半透明片带的纹理。
+
+节点定义集
+
+- 左侧主链可见：
+  - 噪声源节点
+  - `Cross Section`
+  - `Blur HQ Grayscale`
+  - `rt Caustics Grayscale`
+  - `Auto Levels`
+  - `Blur HQ Grayscale`
+  - `Blend`
+- 分支链可见：
+  - 上方 `Shape Mapper`
+  - 下方 `Transformation 2D`
+  - `Gradient Linear 1`
+  - `Levels`
+  - 右下绿色节点
+- 右侧末端链可见：
+  - `Blend`
+  - `Auto Levels`
+  - 右上选中的 `rt_caustics_grayscale`
+- 左侧资源树中可见正式 `output`
+
+连线集
+
+- 主链从左到右流经基础噪声、截面、模糊与焦散塑形，再进入中部 `Blend`。
+- 中部 `Blend` 的结果分流到：
+  - 上方 `Shape Mapper`
+  - 下方 `Transformation 2D`
+  - 下方辅助 `Gradient Linear 1 + Levels`
+  - 右侧末端 `Blend`
+- 右侧末端 `Blend` 的结果再经 `Auto Levels` 送入右上方当前选中的 `rt_caustics_grayscale`。
+- 这一结构表明当前调整的是最终成片前的最后一层焦散/高光塑形，而不是最初的粗形状阶段。
+
+设置/参数
+
+- 右侧当前选中的是 `rt_caustics_grayscale - PROPERTIES`，可见 `INSTANCE PARAMETERS` 包括：
+  - `Output Color Space = Raw`
+  - `Photon Grid Size = Auto`
+  - `Surface Height Scale = 0.57`
+  - `Surface Height Position = 0.47`
+  - `Surface IOR = 1.91`
+  - `Photon Size = 10`
+  - `Jittering = 0`
+  - `Light Position`
+    - `X = 0.5`
+    - `Y = 0.5`
+  - `Non Square Expansion = True`
+
+输出/预览
+
+- 下方 `2D VIEW` 当前结果是一条横向延展的半透明亮膜，顶部边缘平滑起伏，下方垂出若干尖细或片状拖影，看起来比上一批更像粒子贴片或能量幕帘。
+- 正文提到“这个模糊有点太强了”“只要轻轻地就可以”，与当前这种更柔和但仍有内部充实感的结果一致，说明作者在抑制过强模糊、保留体积感。
+- 这一步的关键意义是：在最终纹理要服务于粒子时，不能只有单薄的亮线，还要通过焦散与表面参数让内部带一点厚度和透明膜感，这样实际挂到粒子上时才不显得过扁。
+这张图展示的是：作者切到颜色/输出混合区域，准备把几条已经做好的纹理结果混到一起，并用较低透明度的 `Add (Linear Dodge)` 方式叠加，避免效果过重。
+
+节点定义集
+
+- 中央主干可见：
+  - 一个 `Blend`
+  - 右侧另一个 `Blend`
+  - 多枚 `Transformation 2D`
+  - 绿色颜色映射/调节节点
+    - 名称在截图中不可完全确认
+- 下方还能看到一组：
+  - `Levels`
+  - `Blend`
+- 右侧独立可见：
+  - `output`
+    - 端口标签可见 `Usage`、`Identifier`
+
+连线集
+
+- 左侧主链结果先进入中部 `Blend`。
+- 该结果再经过右侧 `Blend`，并继续分流到两枚 `Transformation 2D` 与绿色节点所在的区域。
+- 下方另有一组 `Levels -> Blend` 的辅助混合链。
+- 右侧 `output` 节点当前独立摆放，说明作者正在整理最终输出前的混合层级。
+- 从字幕“把这个混在这里”可确认，当前操作重点就是把某一路结果混到现有链中，而不是新建基础形状。
+
+设置/参数
+
+- 右侧当前选中的是 `Blend - PROPERTIES`，可见 `SPECIFIC PARAMETERS` 为：
+  - `Opacity = 0.33`
+  - `Blending Mode = Add (Linear Dodge)`
+  - `Cropping Area`
+    - `Left = 0`
+    - `Right = 1`
+    - `Top = 0`
+    - `Bottom = 1`
+- 左下状态栏显示当前预览格式为 `2048 x 1024 (RGBA, 8bpc)`。
+
+输出/预览
+
+- 下方 `2D VIEW` 当前是黑画面，说明这一刻主要在搭和调输出混合关系，尚未把最终可视结果单独打开到预览窗。
+- `Opacity = 0.33` 与正文“只要轻轻地就可以”一致，说明作者不是想强烈叠加，而是只轻微加入一层辅助效果。
+- 这一步的关键意义是：当多种纹理或颜色结果要服务粒子时，不能全强度相加，而是要在最终输出前通过低透明度的 `Add` 混合慢慢叠层，控制纹理厚度、亮度和内部充实感。
+这张图展示的是：作者在最终输出前再次选中 `Transformation 2D`，直接对已经成形的半透明片带纹理做位置和厚度微调，让整体不要过分下垂或过厚。
+
+节点定义集
+
+- 左中部仍可见多条混合链：
+  - 多个 `Blend`
+  - `Auto Levels`
+  - `Directional Blur`
+  - 若干绿色调节节点
+- 右侧输出前链可见：
+  - 多枚 `Transformation 2D`
+  - 一枚颜色/通道合并样式节点
+    - 名称在截图中不可完全确认
+  - `output`
+- 当前选中节点：
+  - `Transformation 2D`
+    - 右侧属性栏标题为 `Transformation 2D - PROPERTIES`
+
+连线集
+
+- 左侧多路纹理结果汇入中部 `Blend`。
+- 中部结果再分流到右侧多枚 `Transformation 2D`、绿色节点以及颜色/通道合并区域。
+- 当前选中的 `Transformation 2D` 位于输出前的下方分支上，用来对最终成片前的其中一路结果做位置修正。
+- 右侧已有 `output` 节点，说明现在的操作已经是贴近最终导出结果的最后整理，而不是中途实验分支。
+
+设置/参数
+
+- 右侧 `Transformation 2D - PROPERTIES` 的 `SPECIFIC PARAMETERS` 可见：
+  - `Rotation`
+    - `Angle = 0.00`
+  - `Stretch`
+    - `Width = 100.00%`
+    - `Height = 100.00%`
+  - `Offset`
+    - `X = 0.0018`
+    - `Y = -0.0621`
+  - `Mipmap Mode = Automatic`
+- 预览窗内可见变换框，说明作者正在直接用 2D 操作框观察成片范围。
+
+输出/预览
+
+- 下方 `2D VIEW` 当前结果是一张横向片带纹理：顶部是较平滑的亮边波浪线，底部有较宽的薄膜区间，并伴随几处竖向拖尾和局部高亮尖点。
+- 字幕提到“稍微减薄一下”，与当前 `Transformation 2D` 微调以及成片预览一致，说明作者在压最终纹理的厚度和垂向占比。
+- 这一步的关键意义是：在最终输出前，不再去改大结构，而是用 `Transformation 2D` 这种轻量级手段微调纹理的落点、厚薄和倾斜感，确保做出来的粒子贴图既有内部充实感，又不会下垂过度或模糊过强。
+
+### 00:27:30-00:31:19 网格、纹理
+
+- 本段定位：网格、纹理。
+- 知识点：这样获取最后的纹理。
+- 知识点：这样做了一次纹理的制作。
+- 知识点：不同感觉的纹理不断生产。
+- 知识点：也可以作为四代轨迹的纹理。
+- 知识点：这种纹理在网格中。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`。
+
+**关键画面：**
+
+这张图展示的是：作者在最终纹理输出前，继续用 `Transformation 2D` 微调整张片带纹理的位置和构图，让它更适合拿去做网格或轨迹类贴图。
+
+- 当前图表已经处于有正式 `output` 的后期整理阶段，左侧资源树中可见 `output`。
+- 右侧当前选中的是 `Transformation 2D - PROPERTIES`。
+- 右侧可见参数为：
+  - `Rotation`
+    - `Angle = 0.00`
+  - `Stretch`
+    - `Width = 100.00%`
+    - `Height = 100.00%`
+  - `Offset`
+    - `X = 0.0018`
+    - `Y = -0.0787`
+  - `Mipmap Mode = Automatic`
+- 中间节点区可见当前输出前的主要结构仍由多条 `Blend`、多枚 `Transformation 2D`、绿色调节节点和右侧颜色/输出节点共同组成。
+- 当前选中的 `Transformation 2D` 位于右下输出前分支上，并且下方预览窗出现了白色变换框，说明作者正在直接以可视框选方式微调最终贴图的有效区域。
+- 下方 `2D VIEW` 结果是一张横向片带纹理：上缘是起伏的亮线，下方延展出更宽的透明膜状区域，并夹杂几处竖向尖刺。
+- 正文提到“这样获取最后的纹理”，与当前处于输出前微调阶段一致，说明作者已经不再新增基础节点，而是在收拢最终成片布局。
+
+这张图的关键意义是：最终给网格、轨迹或片状粒子用的纹理，不只要形状对，还要在画布里摆得合适。这里通过 `Transformation 2D` 直接细调整张贴图的上下位置与占比，保证导出后在材质中更容易得到预期的边缘和拖尾效果。
+这张图展示的是：作者把另一条环状/放射型纹理分支也整理到输出前，并通过 `shape_mapper` 的圆形参数控制最终的放射表现，让同一套基础纹理派生出适合放射演出的版本。
+
+节点定义集
+
+- 左侧可见旧的环状处理链：
+  - `Shape Mapper`
+  - `Auto Levels`
+  - `Directional Blur`
+- 中央输出前主干可见：
+  - `Blend`
+  - 多枚 `Transformation 2D`
+  - 绿色调节节点
+  - `Rgba Merge`
+  - `output`
+- 下方还保留一条较低位置的辅助输出分支：
+  - `Blend`
+  - `Transformation 2D`
+  - 绿色调节节点
+- 当前选中节点：
+  - 右上方 `shape_mapper`
+    - 右侧属性栏标题为 `shape_mapper - PROPERTIES`
+
+连线集
+
+- 中央 `Blend` 的结果分成多路，分别接入多枚 `Transformation 2D`。
+- 这些 `Transformation 2D` 的结果再汇入绿色调节节点与 `Rgba Merge`。
+- `Rgba Merge` 的结果继续送往右侧 `output`。
+- 右上方当前选中的 `shape_mapper` 是并列分支的一部分，用来把其中一路结果映射成环状放射形，再参与后续输出组织。
+- 这说明当前图已经进入“不同纹理变体统一整理进输出”的阶段。
+
+设置/参数
+
+- 右侧 `shape_mapper - PROPERTIES` 的 `INSTANCE PARAMETERS` 可见：
+  - `Shape = Circle`
+  - `Pattern Amount = 4`
+  - `Radius`
+    - 当前具体值被滑杆遮挡，无法可靠读出
+  - `Width = 1`
+  - `Rotation`
+    - `Turns = 0`
+    - `Degrees = 0`
+  - `Flip one on two = False`
+  - `Non Square Expansion = True`
+
+输出/预览
+
+- 下方 `2D VIEW` 当前结果是一圈黑底白亮的放射环，边缘有清晰外突光刺，中间留空，已经接近可直接作为放射纹理使用的状态。
+- 字幕提到“放射型的表现根据这种形态”，与这里基于 `shape_mapper` 的环状输出完全一致，说明作者在强调：基础亮带只要经过不同形状映射和整理，就能派生出另一种用途的最终贴图。
+- 这一步的关键意义是：不仅要做出单张纹理，还要把同一素材逻辑扩展成多种输出形态。这里就是把网格/轨迹式横向贴图之外，再额外产出一个可用于放射表现的环状纹理版本。
+这张图展示的是：作者把整张 Substance 图表完整展开，进入最终颜色映射与多分支整理阶段，当前选中 `Gradient Map`，用来给已经成形的灰度纹理做颜色/灰度渐变映射并产出不同风格版本。
+
+节点定义集
+
+- 整体图中可见多条并行链路，包含：
+  - 多枚噪声、`Cross Section`、`rt Caustics Grayscale`、`Auto Levels`、`Blur HQ Grayscale`
+  - 多个 `Blend`
+  - 多枚 `Transformation 2D`
+  - 多个绿色调节节点
+  - `Rgba Merge`
+  - `output`
+- 当前选中节点：
+  - `Gradient Map`
+    - 右侧属性栏标题为 `Gradient Map - PROPERTIES`
+
+连线集
+
+- 左侧多条灰度生成链在中部汇合，再分别分流到右侧多个 `Transformation 2D`、绿色调节节点和颜色输出分支。
+- 右侧上方的一组结果继续并入 `Rgba Merge` 和 `output`。
+- 下方还能看到另一组由 `Blend -> Transformation 2D -> 绿色节点 -> 红色节点` 组成的派生链。
+- 当前 `Gradient Map` 位于整图后段，说明它是在基础灰度形状已经稳定后，再用于生成不同观感版本，而不是最早期造形节点。
+
+设置/参数
+
+- 右侧属性栏当前只显示 `Gradient Map - PROPERTIES` 标题，具体参数区没有展开可见内容，因此本图无法可靠确认该节点内的色标或插值细节。
+- 左下状态栏显示当前预览尺寸为 `512 x 256 (RGBA, 8bpc)`，说明此时查看的是一个较小分辨率的已输出/派生结果，而不是完整大尺寸中间灰度图。
+
+输出/预览
+
+- 下方 `2D VIEW` 当前结果是一张较小尺寸的横向亮线纹理，黑底上有一条起伏的白色亮边，并带少量上扬尖峰，已经接近最终可导出的贴图预览。
+- 字幕提到“把这个稍微偏一下”，说明即使到了最终派生输出阶段，作者仍在通过局部偏移和映射调整，让同一基础纹理产生不同感觉的变体。
+- 这张图的关键意义是：整套纹理制作并不是只产出一张固定图，而是通过 `Gradient Map`、变换和分支混合，把同一基础结构整理成多种最终版本。这样后续无论用于网格、轨迹还是放射表现，都可以快速挑选或继续派生不同风格的纹理。
+
+## 补充视觉证据
+
+### S01 00:02:25
+
+这张图展示的是：`S01 00:02:25` 的补充节点证据，确认第一张纹理最初确实是从单个 `Voronoi` 节点开始搭建的。
+
+节点定义集
+
+- `Voronoi`
+  - 节点标题清晰可见为 `Voronoi`
+  - 缩略图为灰白胞状噪声分布
+
+连线集
+
+- 当前图中只看到单个 `Voronoi` 节点，没有连接到其他节点。
+- 画布左下明确显示 `No output node defined`，说明这时仍是最初原始噪声阶段。
+
+设置/参数
+
+- 左侧资源树显示当前包为 `Unsaved Package*`，图表为 `Substance_graph_1`。
+- 右侧 `BASE PARAMETERS` 可见：
+  - `Output Size`
+    - `Width = 0`
+    - `Height = 0`
+  - `Pixel Size`
+    - `Width = 1`
+    - `Height = 1`
+  - `Pixel Ratio = Square`
+  - `Random Seed = 0`
+- `INSTANCE PARAMETERS` 可见：
+  - `Invert = False`
+- 左下 `LIBRARY` 停留在 `Texture generators > Noises`，可见 `3D Perlin Noise`、`3D Ridged Noise` 等噪声素材。
+
+输出/预览
+
+- 下方 `2D VIEW` 当前预览就是 `Voronoi` 的原始灰度胞状噪声。
+- 右下 `3D VIEW` 中立方体也显示了同一份基础灰度投射效果。
+- 这张补图的关键作用是补证：后面所有截面、模糊、焦散和映射的复杂纹理，源头就是这样一个未连接输出、只有单节点的基础程序化噪声。
+
+### S04 00:13:19
+
+这张图展示的是：`S04 00:13:19` 的补充节点证据，确认第二张纹理中段确实使用 `rt_caustics_grayscale` 来给横向亮线补高光和内部起伏。
+
+节点定义集
+
+- 上方当前选中节点：
+  - `rt_caustics_grayscale`
+- 中下部可见链路：
+  - `Auto Levels`
+  - `Blur HQ Grayscale`
+  - `Blend`
+  - `Gradient Linear 1`
+  - `Levels`
+- 右上还可见一枚 `Shape Mapper`
+
+连线集
+
+- 下方 `Auto Levels -> Blur HQ Grayscale -> Blend` 构成主亮线链。
+- `Gradient Linear 1 -> Levels` 辅助支路也并入该 `Blend`。
+- 上方当前选中的 `rt_caustics_grayscale` 输出继续连接到右侧另一枚 `Blend`。
+- 右上 `Shape Mapper` 当前独立摆在上方，说明该阶段已经在为后续环状映射分支做准备。
+- 画布左下仍显示 `No output node defined`，说明此图还处于中期塑形阶段，未进入最终输出。
+
+设置/参数
+
+- 右侧 `rt_caustics_grayscale - PROPERTIES` 的 `INSTANCE PARAMETERS` 可见：
+  - `Output Color Space = Raw`
+  - `Photon Grid Size = Auto`
+  - `Surface Height Scale = 0.4`
+  - `Surface Height Position = 0.21`
+  - `Surface IOR = 1.32`
+  - `Photon Size = 10`
+  - `Jittering = 0`
+  - `Light Position`
+    - `X = 0.5`
+    - `Y = 0.5`
+  - `Non Square Expansion = True`
+
+输出/预览
+
+- 下方 `2D VIEW` 当前是一条较细的横向白色亮线，局部峰值略微抬起，整体比后期版本更轻、更薄。
+- 这说明此时作者是在用相对温和的焦散参数先把“活性边缘”做出来，而不是直接把纹理做得很厚重。
+- 这张补图的关键作用是补证：`S04` 阶段“强调线条”“补一点内部充实感”的实现核心，就是这一层 `rt_caustics_grayscale` 对亮线高光轮廓的塑形。
+
+### S07 00:25:57
+
+这张图展示的是：`S07 00:25:57` 的补充节点证据，确认在最终输出前，作者确实通过 `Transformation 2D` 微调成片纹理的纵向位置和画布占比。
+
+节点定义集
+
+- 中上部可见：
+  - `Blend`
+  - `Transformation 2D`
+- 中下部可见：
+  - 另一枚 `Blend`
+- 左侧资源树中可见正式 `output`
+
+连线集
+
+- 上方 `Blend` 的结果送入当前选中的 `Transformation 2D`。
+- 同一上方 `Blend` 还向下分出一路，连接到下方另一枚 `Blend`。
+- 当前截图聚焦在输出前这一小段链路，说明补图目的就是补足“最终变换整理”这一步，而不是展示整张大图的全部结构。
+
+设置/参数
+
+- 右侧 `Transformation 2D - PROPERTIES` 的 `SPECIFIC PARAMETERS` 可见：
+  - `Rotation`
+    - `Angle = 0.00`
+  - `Stretch`
+    - `Width = 100.00%`
+    - `Height = 100.00%`
+  - `Offset`
+    - `X = 0`
+    - `Y = 0.2144`
+  - `Mipmap Mode = Automatic`
+- 下方预览窗中显示了 2D 变换框，说明作者正在直接以画布框选方式修正最终纹理位置。
+
+输出/预览
+
+- 下方 `2D VIEW` 当前结果是一张横向半透明片带纹理：顶部亮边起伏连续，底部出现薄膜状下垂与数处竖向亮尖。
+- 相比前面多数中间过程，这张补图的重点不是新增节点，而是把现有纹理整体向上或向下挪到更合适的位置。
+- 这张补图的关键作用是补证：`S07` 阶段“稍微减薄一下”“不要太往下倾斜”的最后落地方式，确实是通过输出前的 `Transformation 2D` 偏移来完成的，而不是重新改底层生成逻辑。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+

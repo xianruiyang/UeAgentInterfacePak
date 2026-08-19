@@ -1,0 +1,652 @@
+# 16.Houdini粒子模拟缓存制作
+
+# 16.Houdini粒子模拟缓存制作
+
+## 关键术语
+
+- `Houdini`、`VAT`、`粒子`、`系统`、`网格`、`生命周期`、`速度`、`透明度`、`噪声`、`Niagara`、`Emitter`、`Particle`、`Spawn Rate`、`Spawn`、`Particle Spawn`、`Lifetime`、`Niagara System`、`Initialize Particle`
+
+## 分段知识
+
+### 00:00:06-00:05:03 粒子、系统、网格
+
+- 本段定位：粒子、系统、网格。
+- 知识点：大家好,我是你们的讲师,第16课 大家好,上节课我们已经把wait资源做完了 现在资源都已准备好 这节课我们简单做个粒子资源,就差不多结束了。
+- 知识点：这节课我们先新建一个几何体 再加一个节点命名为particle source 这个先删掉 然后用object merge把之前做好的particle。
+- 知识点：就是指在这些开始下落飞散的碎片区域生成粒子 虽然有这个想法,但初始网格部分不能一直生成粒子。
+- 知识点：否则区域会像溶解一样不断向外扩展 只要在区域中央刚开始下落的瞬间生成粒子就够了 所以虽然分组会逐步向外蔓延,但我们只保留最开始那一段。
+- 知识点：我们只在起始阶段做分组,先用速度节点再提取一次速度数据 接下来我们用点属性节点创建一个长度节点 是的,把速度连到长度节点上,创建一个用来测量点之间距离的属性。
+- 知识点：用索引查看器确认一下length值,这只是个查看用的临时步骤 用fuel range把这个值重新映射,再连到T度参数,就能按设定的颜色表现出来。
+- 知识点：用这个颜色做分组,然后删掉其中一部分点 这样就只留下可用于粒子系统的那部分数据了 现在中键点击range,就能把它作为外部参数提出来。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Particle`、`粒子`、`系统`、`速度`、`颜色`。
+
+**关键画面：**
+
+这一帧是第 `16` 课的开场承接图。教程先不直接开始做新粒子节点，而是回顾上一课已经完成的 VAT 资源，明确当前 `Soft-Body Deformation` 的网格动画输出已经准备好，本节只需要在此基础上再补一套粒子资源即可。
+
+当前可确认的界面状态如下：
+
+- 当前网络路径仍位于 `out`
+- 当前输出节点：`vertex_animation_textures1`
+- 节点类型：`Labs Vertex Animation T...`
+- `Mode / Target Engine`
+  - 模式：`Soft-Body Deformatio...`
+  - 目标引擎：`Unreal Engine`
+- 帧范围：`Start/End = 1 / 200`
+- 输入几何：`/obj/VAT/OUT_Render`
+- 输出设置
+  - `Texture Format = HDR (EXR/TIFF as RGBA 16/32...)`
+  - `Input Geometry Is Cached to Interp Frames`：勾选
+  - `Include Hidden Debug Plane in Geometry`：勾选
+  - `Target Texture Width = 4096`
+  - `Last Render's Texture Size = 4096 x 16000`
+
+左侧视口里仍能看到上一课导出的上半身碎裂角色网格，说明当前工程文件没有切换到全新资源，而是继续沿用 `Ex_04` 的 Vellum/VAT 成果。结合正文“上节课我们已经把 VAT 资源做完了，现在资源都已准备好，这节课我们简单做个粒子资源”，这张图表达的前提是：
+
+1. 上一课的 VAT 网格动画资源已经完成并保留在当前 Houdini 工程中。
+2. 本节新做的不是新的 VAT，而是围绕这套碎裂网格动画补一套粒子缓存资源。
+3. 因此后续粒子发射区域、速度来源和分组逻辑都会直接依赖当前这份已完成的碎裂网格结果。
+这一帧已经从 `out` 网络切到新的 `geo1` 粒子源处理链。教程不再直接操作 `vertex_animation_textures1`，而是先建立一个专门的几何网络，把上一课已经做好的碎裂粒子源几何 `object merge` 进来，再用 `trail1` 从时序变化里重新计算速度，为后续“只在刚开始下落的碎片区域发射粒子”提供判定依据。
+
+当前可确认的网络结构如下：
+
+- 当前容器：`geo1`
+- 当前节点链：
+  - `object_merge1`
+  - `trail1`
+- `object_merge1`
+  - 源路径可见为：`/obj/VAT/Particle_Src`
+- 当前选中节点：`trail1`
+
+右侧 `Trail trail1` 参数可直接确认：
+
+- `Result Type = Compute Velocity`
+- `Trail Increment = 1`
+- `Cache Size = 2`
+- `Evaluate Within Frame Range`：未勾选
+- `Connectivity = Quadrilaterals`
+- `Close Rows`：勾选
+- `Velocity Scale = 1`
+- `Velocity Approximation = Backward Difference`
+- `Compute Acceleration`：未勾选
+- `Compute Angular Velocity`：未勾选
+- `Match by Attribute`：未勾选
+
+结合正文“先新建一个几何体，再加一个节点命名为 particle source”“然后用 object merge 把之前做好的 particle...”“我们只在起始阶段做分组，先用速度节点再提取一次速度数据”，这张图表达的操作逻辑是：
+
+1. 单独新建一条粒子源几何网络，而不是在 VAT 输出节点上直接继续堆处理。
+2. 通过 `object_merge1` 引用上一课已经准备好的碎裂源几何 `Particle_Src`。
+3. 用 `trail1` 的 `Compute Velocity` 模式重新计算点速度，让后续节点能够根据“哪些点刚开始下落、速度开始变化”来筛出真正需要发射粒子的区域。
+这一帧已经把 `trail1` 输出的速度数据送进 `pointvop1`，开始做“速度长度 -> 颜色可视化”的映射。教程此时的重点不是直接发粒子，而是先通过一个临时可视化步骤确认哪些点真的在起始下落阶段产生了足够速度，再把这部分点筛出来作为粒子源。
+
+当前可确认的网络结构如下：
+
+- 当前容器仍为：`geo1`
+- 当前节点链：
+  - `object_merge1`
+    - 源路径：`/obj/VAT/Particle_Src`
+  - `trail1`
+  - `pointvop1`
+- 当前选中节点：`pointvop1`
+- 当前 TAB 菜单也打开在 `Point VOP` 附近，说明教程正在继续围绕属性处理补节点
+
+右侧 `Attribute VOP pointvop1` 可直接确认：
+
+- `Run Over = Points`
+- `Vex Source = Myself`
+- `Enable Multithreading`：勾选
+- 下方存在一个 `ramp` 参数，用于把输入数值映射成颜色/范围
+- `ramp` 关键参数当前可见：
+  - `Point No. = 2`
+  - `Position = 0.709779`
+  - 当前选中色值接近黄绿色，`Color = (0, 1, 1)` 一带的调色滑块可见
+  - `Interpolation = Linear`
+  - `Minimum Value In So... = 0.25`
+  - `Maximum Value In So... = 0.4`
+  - `Minimum Value In De... = 0`
+  - `Maximum Value In De... = 1`
+
+左侧视口里模型整体变为近乎纯黑，说明当前 `pointvop1` 的结果正在以颜色方式覆盖显示，而此时大部分点还没有进入被强调的速度区间。结合正文“用点属性节点创建一个长度节点，把速度连到长度节点上”“用索引查看器确认一下 length 值”“用 fit range 把这个值重新映射，再连到颜色参数，就能按设定的颜色表现出来”，这张图表达的操作流程是：
+
+1. 先从 `trail1` 的速度向量里取长度值，作为衡量点运动强弱的依据。
+2. 在 `pointvop1` 中用类似 `fit range` 的重映射逻辑，把速度长度从原始区间压到 `0-1` 范围。
+3. 再通过 `ramp` 把这个 `0-1` 数值转成颜色显示，这样就能直观看出哪些点属于“刚开始飞散、值得发粒子”的候选区域。
+4. 后续真正的分组和删点，会建立在这一步的颜色/数值筛选结果上，而不是对整块碎裂模型一视同仁地持续发粒子。
+
+### 00:05:03-00:09:41 粒子、系统、网格
+
+- 本段定位：粒子、系统、网格。
+- 知识点：运动时会按顺序一个个飞出去,逐渐变白 开始时略带白色,一段时间后又变回黑色,这样就完成了动态分组 接下来我们通过角度参数删掉几个点。
+- 知识点：在plot中创建一个叫luminance的属性 基于当前颜色值,创建一个黑白亮度属性 用刚才创建的属性作为判断依据来删除新参数对应的点。
+- 知识点：我们把这个参数命名为预值 将salapetinum作为索引值,添加到新点中哦 按下这个按钮,之前创建的参数会自动添加到界面中。
+- 知识点：后续会分组预值设为0.1,由于黑色颜色值为0 因此只有高于0.1的点才能保留下来 因为当前值为0,只有速度值高于0.1的点才能保留。
+- 知识点：这意味着,数数速度在0.2到0.4之间的点才能存活下来 之所以能保留,是因为我把速度超过0.4的点重新设为黑色。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`系统`、`速度`、`颜色`。
+
+**关键画面：**
+
+这一帧展示的是 `pointvop1` 颜色映射已经开始产生明显的动态筛选效果。左侧视口里，角色头顶和右上方正在飞散的碎片区域被映射成更亮、更接近白色的点，而主体大部分仍保持黑色，这正是教程想要的“只在起始飞散阶段保留一段区域做粒子源”的可视化结果。
+
+当前可确认的网络仍为：
+
+- `object_merge1`
+  - 源路径：`/obj/VAT/Particle_Src`
+- `trail1`
+- `pointvop1`
+
+当前选中节点：`pointvop1`
+
+右侧 `Attribute VOP pointvop1` 仍可确认的关键设置：
+
+- `Run Over = Points`
+- `Vex Source = Myself`
+- `Enable Multithreading`：勾选
+- `ramp`
+  - `Point No. = 2`
+  - `Position = 0.709779`
+  - `Interpolation = Linear`
+  - `Minimum Value In So... = 0.25`
+  - `Maximum Value In So... = 0.4`
+  - `Minimum Value In De... = 0`
+  - `Maximum Value In De... = 1`
+
+从左侧结果可以可靠读出：
+
+- 亮色区域并不是均匀覆盖整块模型，而是只集中在头顶和上方飞散中的碎片带
+- 主体下半部分和未开始飞散的区域仍保持黑色
+- 时间轴播放头已推进到约 `74` 帧，说明这是在时间推进中观察动态分组结果，而非单帧静态蒙版
+
+结合正文“运动时会按顺序一个个飞出去，逐渐变白，开始时略带白色，一段时间后又变回黑色，这样就完成了动态分组”，这张图表达的是：
+
+1. 速度长度经过重映射后，已经能把“刚开始飞散”的点高亮出来。
+2. 这种高亮不是永久性的，而是会随着运动阶段推进先亮后灭，因此非常适合作为一次性粒子发射条件。
+3. 也就是说，当前颜色并不是为了最终渲染，而是把“哪些点此刻值得发粒子”可视化出来，供后面删点和建组使用。
+这一帧已经把颜色可视化结果推进成真正的删点筛选逻辑。网络在 `pointvop1` 之后新增了 `attribwrangle1`，右侧代码清楚显示：先从当前颜色 `@Cd` 计算亮度 `luminance`，再根据一个可调阈值 `threshold` 删除亮度不够的点。因此这一步不是再做新颜色，而是把“亮的点保留、暗的点删掉”变成正式的粒子源过滤条件。
+
+当前可确认的网络结构如下：
+
+- `object_merge1`
+  - 源路径：`/obj/VAT/Particle_Src`
+- `trail1`
+- `pointvop1`
+- `attribwrangle1`
+
+当前选中节点：`attribwrangle1`
+
+右侧 `Attribute Wrangle attribwrangle1` 可直接确认：
+
+- `Run Over = Points`
+- 暴露参数：`threshold = 0.1`
+- `VEXpression`
+
+```c
+float lum = luminance(@Cd);
+
+if(lum < chf("threshold"))
+{
+    removepoint(0, @ptnum);
+}
+```
+
+这段逻辑能可靠说明：
+
+- 先把当前点颜色 `@Cd` 转成黑白亮度 `lum`
+- 如果亮度小于界面参数 `threshold`，就执行 `removepoint(0, @ptnum)` 删除该点
+- 当前阈值设为 `0.1`
+
+左侧视口结果也与此一致：
+
+- 大量原始点已经被删掉
+- 当前只剩极少数高亮区域对应的点/碎片残留在空场景中
+- 时间轴播放头约在 `22` 帧，说明这一步仍在时间推进中观察筛选后的动态结果
+
+结合正文“在 VOP 中创建一个叫 luminance 的属性，基于当前颜色值创建一个黑白亮度属性”“用刚才创建的属性作为判断依据来删除对应的点”“后续会把阈值设为 0.1，只有高于 0.1 的点才能保留下来”，这张图表达的实质是：
+
+1. 颜色映射只是中间可视化；真正决定粒子源保留与否的是亮度阈值。
+2. 阈值 `0.1` 让大部分黑色或接近黑色的静止点被删掉，只留下飞散初期速度足够高的点。
+3. 这样后续发粒子时，粒子只会在“刚开始脱离主体的碎片区域”出现，而不会在整片碎裂模型上持续生成。
+这一帧说明粒子源筛选链已经基本定型，并准备正式送入粒子模拟网络。经过 `trail1 -> pointvop1 -> attribwrangle1` 的速度计算、颜色映射和亮度删点之后，教程又补了 `color1` 和 `clean1`，最后把结果接到 `popnet`，也就是开始从“挑哪些点能发粒子”过渡到“这些点进入真实 POP 粒子系统”。
+
+当前可确认的完整节点链如下：
+
+- `object_merge1`
+  - 源路径：`/obj/VAT/Particle_Src`
+- `trail1`
+- `pointvop1`
+- `attribwrangle1`
+- `color1`
+- `clean1`
+- `popnet`
+
+当前选中节点：`popnet`
+
+右侧 `DOP Network popnet` 可确认的初始状态：
+
+- `Number of Objects = 1`
+- `Object Merge`
+  - `Enable`：勾选
+  - `Object = *`
+  - `Data` 输入框可见
+
+从这张图还能稳定判断出：
+
+- 左侧视口已经看不到大块角色或明显高亮点，说明保留下来的粒子源点非常少，符合“只保留起始阶段一小段点”的目标
+- `color1` 在这里的作用已经从前面的中间判定过渡为结果可视化整理
+- `clean1` 的加入意味着教程在送入 `popnet` 之前，先清理掉临时筛选流程留下的冗余数据或不需要的几何成分，避免把脏数据直接带入粒子求解
+
+结合正文“用这个颜色做分组，然后删掉其中一部分点，这样就只留下可用于粒子系统的那部分数据”，这张图表达的实际流程是：
+
+1. 先用颜色和亮度阈值把粒子源点筛到足够少、足够精准。
+2. 用 `clean1` 做一次送入求解器前的数据整理。
+3. 最后把整理后的点集接到 `popnet`，作为正式粒子发射输入，而不是直接拿原始碎裂几何整块去发粒子。
+
+### 00:09:41-00:14:20 VAT、粒子、生命周期
+
+- 本段定位：VAT、粒子、生命周期。
+- 知识点：粒子数量先设为5000,生命时间3秒,波动范围1秒左右 再用脉冲发射的噪声混合三次 VAT资源已在X轴方向加入锋利影响,粒子也保持相同运动趋势。
+- 知识点：保持相似的噪声模式其中一部分粒子数量适当减少 同时,这次还要加入透明度控制,添加更新透明度节点,并启用VAX表达式 接下来,沈重这里的随年龄剑影预设,生命周期就会自动从0到1。
+- 知识点：再加个基础的弹力阻力,稍作空气阻尼效果 粒子效果看到这就行了,把导入像设为场类型 接下来从PubNet里选对象,只取粒子即可。
+- 知识点：直接选其中的粒子对象就行,比如烟雾这类也在这 种类不少,选粒子就行,按U式操作,缓存就放在原阶段。
+- 知识点：建议先烘焙一次,确认VAT中只用了第一次文件缓存 这里设为第二次更清爽,否则路径名重复,之前烘焙的VAT资源会被覆盖 务必注意这点,记得保存,保存资源,然后开始烘焙缓存。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`生命周期`、`透明度`、`噪声`、`烟雾`。
+
+**关键画面：**
+
+这一帧已经进入 `geo1/popnet` 内部，说明教程正式开始搭建 POP 粒子系统。当前主链非常简洁：`popobject -> source_first_input -> wire_pops_into_here -> popsolver -> output`。这张图里最关键的是 `source_first_input` 的发射模式设置，教程正在决定粒子究竟是按点直接发射，还是在筛出来的几何表面上进行散布式发射。
+
+当前可确认的 POP 网络结构如下：
+
+- `popobject`
+- `source_first_input`
+- `wire_pops_into_here`
+  - 作为后续继续插入 POP 节点的合并入口
+- `popsolver`
+- `output`
+
+当前选中节点：`source_first_input`
+
+右侧 `POP Source source_first_input` 参数可直接确认：
+
+- 当前页签：`Source`
+- `Emission Type` 下拉框已展开，可见选项：
+  - `All Points`
+  - `All Geometry`
+  - `Points`
+  - `Scatter onto Surfaces`
+- 当前高亮/选中的选项为：`Scatter onto Surfaces`
+- 其余可见字段还包括：
+  - `Geometry Source`
+  - `SOP`
+  - `Source Group`
+  - `Group Type = Guess from Group`
+  - `Scale Point Count by Area`：未勾选
+  - `Remove Overlapping = None`
+
+结合正文“粒子数量先设为 5000”“VAT 资源已在 X 轴方向加入锋利影响，粒子也保持相同运动趋势”，这张图表达的起点是：
+
+1. 粒子系统已经从单纯筛点网络切换到真正的 POP 发生器网络。
+2. 教程此时优先考虑用 `Scatter onto Surfaces` 这类表面散布方式来发粒子，而不是把所有输入点原样逐点照抄发射。
+3. 这样做的目的，是让粒子在筛出来的碎裂表面区域上形成更自然、更均匀的分布，便于后面再叠加数量、寿命和噪声控制。
+这一帧回到 `geo1` 的 SOP 主网络，教程在 `popnet` 后面新增了一个 `dopimportfield1`，用于把 DOP/POP 模拟里的结果重新取回到 SOP 流程。当前画面最关键的信息不是节点连线细节，而是“从哪个 DOP 对象取数据”这一步。
+
+当前可确认的 SOP 链如下：
+
+- `trail1`
+- `pointvop1`
+- `attribwrangle1`
+- `color1`
+- `clean1`
+- `popnet`
+- `dopimportfield1`
+
+当前选中节点：`dopimportfield1`
+
+右侧 `DOP Import Fields dopimportfield1` 参数界面可确认：
+
+- 顶部页签可见：`Object Merge`、`Simulation`、`Cache`
+- `Enable`：已勾选
+- `Fields to Import = 0`
+- 当前正在为 `Object` 之类的对象选择字段打开 `Choose Operator` 弹窗
+
+`Choose Operator` 弹窗中可直接看到：
+
+- 正在浏览 `obj` 层级
+- `geo1` 已展开
+- `geo1` 下存在 `popnet`
+- 画面字幕明确写着：`接下来从 Popnet 里选对象，只取粒子即可`
+
+结合这张图，可以把这一操作还原为：
+
+1. 在 `popnet` 求解完成后，新增 `dopimportfield1` 作为回读节点。
+2. 为它指定数据来源时，进入 `geo1/popnet` 的对象层级中选取 DOP 对象。
+3. 本步只需要把粒子对象取出来，不需要把其他可能存在的求解对象一并导回。
+
+这张图传达的核心目的，是把 POP 粒子的模拟结果单独提取出来，作为后续继续处理、缓存或观察的 SOP 输入。
+这一帧的重点已经从“导回粒子对象”切换到“开始做缓存”。画面中被选中的是 `filecache2`，它位于 `clean1` 与 `popnet` 之间，说明教程正在给进入 POP 模拟之前的这段 SOP 数据流建立一个独立缓存，并准备执行保存。
+
+当前可确认的网络顺序如下：
+
+- `trail1`
+- `pointvop1`
+- `attribwrangle1`
+- `color1`
+- `clean1`
+- `filecache2`
+- `popnet`
+- `dopimportfield1`
+
+当前选中节点：`filecache2`
+
+右侧 `File Cache filecache2` 面板可直接确认：
+
+- `Load from Disk` 按钮可见
+- `Reload Geometry` 按钮可见
+- `File Path = Constructed`
+- `Base Name = Ex_04.filecache2`
+- `Base Folder = $HIP/geo`
+- `Evaluate As = Frame Range`
+- `Simulation`：已勾选
+- `Start/End/Inc = 1 / 200 / 1`
+- `Load = All Geometry`
+- 可执行按钮包括：
+  - `Save to Disk`
+  - `Save to Disk in Background`
+
+按这张图可直接复建的操作意图是：
+
+1. 在进入 `popnet` 之前，用 `filecache2` 先把当前整理好的输入几何序列缓存成磁盘文件。
+2. 缓存范围是 `1-200` 帧，按模拟序列方式输出。
+3. 输出目录落在 `$HIP/geo` 下，文件基名为 `Ex_04.filecache2`。
+4. 这一帧还没有展示粒子导回后的进一步处理，而是在正式继续烘焙前，先确认缓存节点、帧范围和保存按钮都已就位。
+
+结合本段正文“先烘焙一次，注意不要覆盖先前 VAT 缓存，保存后开始烘焙”，这张图对应的就是开始缓存前的参数确认画面。
+
+### 00:14:20-00:19:13 粒子、颜色、噪声
+
+- 本段定位：粒子、颜色、噪声。
+- 知识点：开始烘焙了,点数不多,生成非常快,不过肉眼不容易察觉 大概就是这样,先重新看一下视图,现在数的显示太小了 原本点吸入器调大应该能正常吸点,但现在看起来像出了问题。
+- 知识点：请再调出一次New Girls Rap,这样就好多了 现在看起来正常了,叠加后噪声效果也差不多飘动 不用完全一致,控制到这个程度就够了。
+- 知识点：帧率已调好,30-60帧大致对应一秒,现在有8000个点生成 我们正在,这次要对娜雅卡拉缓存点做两次烘焙 一是保留较多点数,模拟点状飘散的效果。
+- 知识点：二是大幅减少点数,叠加尘埃质感的粒子,补上空间中间的空隙 大致就用这两种方法,现在可能需要稍多加些粒子再试一次。
+- 知识点：现在是5000个 先用约1万个点做第一次烘焙,接下来比刚才多一些 点数多了不少,颜色有点偏淡紫,不过不用太在意。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`颜色`、`噪声`。
+
+**关键画面：**
+
+这一帧显示教程已经把从 `popnet` 导回的粒子结果继续接到新的缓存节点上。`dopimportfield1` 下方新增了 `filecache3`，说明这一段开始保存 POP 粒子模拟后的点缓存，而不是只缓存进入模拟前的输入几何。
+
+当前可确认的网络顺序如下：
+
+- `color1`
+- `clean1`
+- `filecache2`
+- `popnet`
+- `dopimportfield1`
+- `filecache3`
+
+当前选中节点：`filecache3`
+
+右侧 `File Cache filecache3` 参数面板可直接确认：
+
+- `Load from Disk` 按钮可见
+- `Reload Geometry` 按钮可见
+- `Time Dependent Cache`：已勾选
+- `File Path = Constructed`
+- `Base Name = $HIPNAME.$OS`
+- `Base Folder = $HIP/geo`
+- `Evaluate As = Frame Range`
+- `Simulation`：已勾选
+- `Start/End/Inc = 1 / 200 / 1`
+- `Load = All Geometry`
+- 可执行按钮包括：
+  - `Save to Disk`
+  - `Save to Disk in Background`
+
+按这张图可以直接还原出本步目的：
+
+1. `filecache2` 继续负责进入 `popnet` 之前的输入序列。
+2. `dopimportfield1` 把 POP 求解后的粒子对象重新导回 SOP。
+3. `filecache3` 则专门用于缓存这批导回后的粒子结果，供后面继续调粒子数量、颜色和噪声时反复读取。
+
+这张图对应的就是“第二层缓存”建立完成后的参数确认画面。
+这一帧是在检查 `filecache3` 保存下来的粒子缓存是否正常。视口左侧已经切到粒子结果的查看状态，能看到角色轮廓附近由大量亮点组成的粒子形态；中间节点网络则显示 `filecache3` 后面继续接了 `color2`，说明教程接下来准备在这批缓存点上继续调颜色表现。
+
+当前可确认的网络顺序如下：
+
+- `clean1`
+- `filecache2`
+- `popnet`
+- `dopimportfield1`
+- `filecache3`
+- `color2`
+
+当前选中节点：`filecache3`
+
+`filecache3` 的节点信息浮窗可直接确认：
+
+- 节点类型：`File Cache Sop`
+- `Points = 8,167`
+- `Primitives = 0`
+- `Vertices = 0`
+- `Unconnected Points = 8,167`
+- 当前时间相关状态：`Time Dependent = Yes`
+
+浮窗里还能直接看到一批已经存在的点属性，说明缓存结果并不是只有位置点，而是保留了后续着色和控制会用到的属性数据，例如：
+
+- `Alpha`
+- `Cd`
+- `age`
+- `life`
+- `mass`
+- `pscale`
+- `rest2_ratio`
+- `sourceprim`
+- `sourcev`
+- `targetuv`
+- `v`
+- `vlast`
+
+结合视口表现与本段正文“现在有 8000 个点生成”“先用约 1 万个点做第一次烘焙”，这张图可还原出的结论是：
+
+1. `filecache3` 输出的确是一组纯点缓存，数量级在 8000 点左右。
+2. 这些点已经形成角色体表向上飘散的整体形态，可以继续用于后续颜色和噪声处理。
+3. 教程此时在确认缓存是否成功、点数是否符合预期，以及缓存点是否保留了足够的属性供后续节点继续加工。
+当前能确认的信息只有：
+
+- 当前场景路径切换到了 `obj > particle`
+- 原有链路仍可见：
+  - `clean1`
+  - `filecache2`
+  - `popnet`
+  - `dopimportfield1`
+  - `filecache3`
+  - `color2`
+- 新出现的节点：
+  - `niagara1`
+  - `niagara2`
+- 当前被高亮选中的节点是：`niagara2`
+- 右侧参数面板仍停留在 `File Cache filecache3`
+- 左侧视口显示的是角色整体模型轮廓，而不是上一张那种明显的粒子点云状态
+
+- `niagara1` 与 `niagara2` 是否是串联关系，还是分别从 `filecache3` / `color2` 分支取数
+- `niagara2` 是否直接消费了 `color2` 的输出
+- 当前视口中的整模显示，是因为显示旗标切回了模型节点，还是 `niagara` 节点本身输出了新的可视化结果
+### 00:19:13-00:21:45 粒子、缓存
+
+- 本段定位：粒子、缓存。
+- 知识点：这样能尽量减少空洞感,这个数量验证效果就行,要是觉得多,随时调整 粒子数量多也没关系,因为烘焙不费时间,直接调少点再试一次就行。
+- 知识点：实际做起来再看看怎么调整就好 CD不用带,现在这数量就够用了,复制一下 第一个,烘焙第一个娜雅卡拉粒子时设为1号,烘焙后改个名字两种版本都渲染一下。
+- 知识点：这样处理的话,第一个粒子数量会逐渐增加,所以烘焙娜雅卡拉缓存反而更快了 这样把第二个缓存也渲染完 这次资源制作就结束了,下次课我们接着在Unreal里把这些资源全部用上,一起做完最后的整合 这节课就到这里,再见!。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+这一帧把上一批里刚出现的 `niagara1` 节点说明清楚了：它不是普通处理节点，而是一个 `Labs Niagara ROP` 导出节点，用来把前面 `filecache3` 中缓存好的粒子点序列导出成 Niagara 可消费的缓存文件。
+
+当前可确认的网络关系如下：
+
+- 主链仍然是：
+  - `clean1`
+  - `filecache2`
+  - `popnet`
+  - `dopimportfield1`
+  - `filecache3`
+  - `color2`
+- `filecache3` 左侧接出了 `niagara1`
+- `niagara2` 也已经存在，并与 `filecache3` 一侧形成后续分支
+
+当前选中节点：`niagara1`
+
+右侧参数面板可直接确认：
+
+- 节点类型：`Labs Niagara ROP`
+- `Frame Range / Time... = Render Frame Range`
+- `Start/End/Inc = 1 / 200 / 1`
+- `Create Intermediate Directories`：已勾选
+- `Output Path = $HIP/$OS.hbjson`
+- `Number of Renames = 0`
+- `Keep Attributes` 中保留的属性可见为：
+  - `P`
+  - `id`
+  - `time`
+  - `N`
+  - `v`
+  - `life`
+  - `type`
+  - `Cd`
+  - `Alpha`
+  - `age`
+- `Clamp Attributes That Are Outside Type Range`：已勾选
+- 顶部存在执行按钮：`Render`
+
+结合视口中已经显示的大量粒子点云，这一步可以直接还原为：
+
+1. 用 `filecache3` 提供已经模拟并缓存好的粒子点序列。
+2. 通过 `Labs Niagara ROP` 把点缓存导出为 Niagara 侧可读取的 `.hbjson` 文件。
+3. 导出时保留位置、法线、速度、生命周期、颜色、透明度和年龄等关键属性，方便 Unreal/Niagara 里继续复现粒子表现。
+
+这张图对应的就是“第一个 Niagara 粒子缓存导出节点配置完成”的状态。
+这一帧说明教程并不是只导出一份 Niagara 缓存，而是把 `niagara1` 复制出第二个导出节点 `niagara2`，再针对第二份缓存裁掉一部分属性，做成更精简的导出版本。画面也正好对应正文里“复制一下第一个”“两种版本都渲染一下”的做法。
+
+当前可确认的网络关系如下：
+
+- `filecache3` 下方同时接出两个 Niagara 导出节点：
+  - `niagara1`
+  - `niagara2`
+- 当前高亮选中的节点是：`niagara2`
+- 节点环形菜单正停留在 `niagara1` 附近，说明此时很可能刚执行了复制或相关操作
+
+右侧 `Labs Niagara ROP niagara2` 参数面板可直接确认：
+
+- `Frame Range / Time... = Render Frame Range`
+- `Start/End/Inc = 1 / 200 / 1`
+- `Create Intermediate Directories`：已勾选
+- `Output Path = $HIP/$OS.hbjson`
+- `Number of Renames = 0`
+- `Keep Attributes` 中当前可见保留项为：
+  - `P`
+  - `id`
+  - `time`
+  - `v`
+  - `life`
+  - `Alpha`
+  - `age`
+- 与上一张 `niagara1` 相比，此处看不到 `N`、`type`、`Cd`
+- `Clamp Attributes That Are Outside Type Range`：已勾选
+
+这张图可以可靠还原出的操作是：
+
+1. 先保留一份较完整的 `niagara1` 导出配置。
+2. 再复制出 `niagara2`，作为第二个导出版本。
+3. 第二个版本删去一部分不必要属性，只保留位置、ID、时间、速度、生命周期、透明度、年龄等核心字段，用于生成更轻量的一组粒子缓存。
+
+它对应的就是“两套 Niagara 缓存导出配置”中的第二套精简版设置画面。
+这一帧展示的是最终导出阶段。前一张里还是 `niagara1`、`niagara2` 的两个导出节点，此时已经被正式命名为两份用途不同的 Niagara 缓存输出，并且其中一份正在执行渲染。
+
+当前可确认的网络关系如下：
+
+- `filecache3` 下方连接着两个 `Labs Niagara ROP`
+- 上方节点已命名为：`Ex_04_Particle`
+- 下方节点已命名为：`Ex_04_Smoke`
+- 当前高亮选中的节点是：`Ex_04_Particle`
+- 右侧参数面板标题也显示为：`Labs Niagara ROP Ex_04_Particle`
+
+右侧 `Ex_04_Particle` 参数中仍可直接确认：
+
+- `Frame Range / Time... = Render Frame Range`
+- `Start/End/Inc = 1 / 200 / 1`
+- `Output Path = $HIP/$OS.hbjson`
+- `Keep Attributes` 仍为：
+  - `P`
+  - `id`
+  - `time`
+  - `v`
+  - `life`
+  - `Alpha`
+  - `age`
+
+画面中央弹出的渲染进度窗口可直接确认：
+
+- 正在执行 `ROP frame 88 (88 of 200)`
+- 当前状态：`Evaluating Python`
+- 进度时间显示约为 `0:32`
+
+结合正文“烘焙第一个娜雅卡拉粒子时设为1号，烘焙后改个名字，两种版本都渲染一下”“第二个缓存也渲染完”，这一帧可还原出的最终步骤是：
+
+1. 把两份 Niagara 导出节点分别命名为不同用途的缓存版本。
+2. 第一份命名为 `Ex_04_Particle`，用于主要粒子点效果。
+3. 第二份命名为 `Ex_04_Smoke`，用于较轻或偏烟尘感的辅助缓存。
+4. 对两份导出节点分别执行 `Render`，生成最终要带到 Unreal/Niagara 中使用的 `.hbjson` 缓存文件。
+
+这张图对应的就是本节 Houdini 资源制作收尾时的最终导出画面。
+
+## 补充视觉证据
+
+### S01 00:03:19
+
+这张补充截图展示的是 `geo1/pointvop1` 内部的一个简单 VOP 计算：把速度向量 `v` 的长度求出来，并绑定为一个名为 `vlength` 的浮点属性，供后续筛选或控制使用。
+
+当前可确认的节点关系如下：
+
+- `geometryvopglobal1`
+- `length1`
+- `bind1`
+- `geometryvopoutput1`
+
+连线关系可直接确认：
+
+- `geometryvopglobal1` 的 `v` 输出连接到 `length1` 的 `vec` 输入
+- `length1` 的 `len` 输出连接到 `bind1` 的 `input`
+
+当前选中节点：`bind1`
+
+右侧 `Bind bind1` 参数面板可直接确认：
+
+- `Name = vlength`
+- `Type = Float (float)`
+- `Override Type with Input`：已勾选
+- `1 Float Default = 0`
+- `Use This Node to Set Parameter Attributes`：已勾选
+- `Export = When Input Is Connected`
+
+按这张图可以直接复建为：
+
+1. 从全局输入里读取每个点的速度向量 `v`。
+2. 用 `length1` 计算该向量的模长。
+3. 用 `bind1` 把结果写入一个新的浮点属性 `vlength`。
+
+这一步的作用，是把原本三维的速度向量压缩成一个可直接比较和阈值筛选的标量速度值，方便后续按运动强弱选点或调节效果。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

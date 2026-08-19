@@ -1,0 +1,809 @@
+# 05 Stylized Ice Spikes
+
+# 05 Stylized Ice Spikes
+
+## 关键术语
+
+- `Emitter`、`System`、`Spawn`、`Spawn Rate`、`Lifetime`、`Color`、`Alpha`、`Dynamic Parameter`、`Material`、`UV`、`Add`、`Niagara`、`Normalized Age`、`Texture`、`Curve`、`Noise`、`Niagara System`、`Particle`
+
+## 分段知识
+
+### 00:00:05-00:04:58 Color、Alpha、Dynamic Parameter
+
+- 本段定位：Color、Alpha、Dynamic Parameter。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。；烟雾效果通常依赖较长 Lifetime、透明度衰减、噪声扰动和柔和的材质混合。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：烟雾效果通常依赖较长 Lifetime、透明度衰减、噪声扰动和柔和的材质混合。
+- 知识点：角色或镜头演示需要导入 FBX/骨骼/动画，并用 Sequencer 校准触发时机。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Alpha` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：User Parameter 要保持命名和类型稳定，便于蓝图、材质或系统级控制复用。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`Lifetime`、`Color`、`Alpha`、`Opacity`、`Material`、`Texture`、`Dynamic Parameter`、`User Parameter`。
+
+**关键画面：**
+
+该图是本段开场展示的目标效果参考图。画面中一列大型冰刺从角色前方向远处延展开，主冰刺呈半透明蓝白色，尖端和边缘有明显高亮，周围还包裹了一层贴地扩散的寒气、冰霜纹路和轻微雾状体积
+
+从整体构成可确认这个版本不再只做单纯的冰刺主体，而是要继续为效果补充多层细节，包括：
+
+- 冰刺主体的高亮边缘和内部半透明层次
+- 地面沿路径扩散的冰霜/寒气拖尾
+- 冰刺周围的白色冷雾或烟状体积
+- 小型碎冰、雪花或类似粒子细节
+
+字幕说明“要把各种细节加到效果中，雪花和类似的东西”，因此这张图的作用是定义本页教程的目标方向：在原有冰刺骨架上继续补充 `Color`、`Alpha` 与细节粒子层，让整体从基础形态提升为更完整的冰霜技能表现
+该图切换到材质编辑器，新建并打开材质 `M_Smoke`。当前图中还没有接入任何节点，只显示默认的材质输出根节点和左侧材质属性面板，说明教程要从一个全新的烟雾材质开始搭建
+
+左侧 `Details` 面板当前可确认的基础设置为：
+
+- `Material Domain = Surface`
+- `Blend Mode = Opaque`
+- `Shading Model = Default Lit`
+- `Two Sided` 未启用
+- `Use Material Attributes` 未启用
+- `Cast Ray Traced Shadows` 已启用
+
+根节点输出端当前可见的默认输入包括 `Base Color`、`Metallic`、`Specular`、`Roughness`、`Emissive Color`、`Normal`、`Tangent`、`World Position Offset`、`Ambient Occlusion`、`Pixel Depth Offset` 等，但 `Opacity` 和 `Opacity Mask` 处于灰置状态，说明在当前 `Opaque` 混合模式下还不能直接使用透明度输入
+
+因此这张图的重点不是具体贴图或曲线，而是建立 `M_Smoke` 的起始状态：教程接下来会围绕烟雾材质的 `Alpha`/透明表现继续调整混合模式和相关参数
+该图展示 `M_Smoke` 材质图中的一段已搭建节点，用 `Dynamic Parameter` 驱动烟雾扭曲贴图的 UV 缩放和后续强度计算。当前截图右上角节点不完整，因此以下只记录图中可直接确认的部分
+
+节点定义集：
+
+- `Dynamic Parameter`
+  - `Parameter Index = 0`
+  - 参数名数组可见为：
+    - `Index[0] = Distortion`
+    - `Index[1] = UV_Scale`
+    - `Index[2] = Param3`
+    - `Index[3] = Param4`
+  - 默认值区域可见：
+    - `R = 0.0`
+    - `G = 1.0`
+    - `B = 1.0`
+    - `A = 1.0`
+- `ScaleUVsByCenter`
+  - 输入名可见为 `UVs (V2)` 与 `Texture Scale (V2)`
+- 纹理参数 `T_Distortion`
+  - `Parameter2D`
+- `Mask (R G)`
+- 右上角局部可见节点：
+  - `Multiply`
+  - `Subtract`
+
+连线集：
+
+- `Dynamic Parameter` 的绿色输出 `UV_Scale` 连接到 `ScaleUVsByCenter` 的 `Texture Scale (V2)`
+- `ScaleUVsByCenter` 的 `UVs` 输出连接到 `T_Distortion` 的 `UVs`
+- `T_Distortion` 的 `RGB` 输出连接到 `Mask (R G)`
+- `Mask (R G)` 的输出继续连接到右上角的 `Multiply`
+- `Dynamic Parameter` 还有一条上方连线通向右上角区域，但由于截图裁切，最终接入的具体节点端口无法在本图中可靠确认
+
+设置/参数：
+
+- 材质用动态参数区分了 `Distortion` 与 `UV_Scale` 两个语义参数，说明 Niagara 侧后续可以分别控制扭曲强度和贴图缩放
+- `T_Distortion` 是一张灰度云状噪声贴图，用作烟雾扰动来源
+
+输出/预览：
+
+- 左侧预览球当前整体接近纯黑，说明这一段网络还只是中间计算链的一部分，尚未在当前视图中形成可见的最终发光或透明烟雾结果
+- 字幕提到“这里的扭曲非常扭曲，最有趣的是缩放”，与图中 `Distortion`、`UV_Scale` 两个动态参数的设置方向一致
+
+### 00:04:58-00:09:54 System、Color、Multiply
+
+- 本段定位：System、Color、Multiply。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Color`、`Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle`、`Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：it by our texture.。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Particle`、`Color`、`Alpha`、`Opacity`、`Texture`、`Multiply`、`Add`、`Panner`。
+
+**关键画面：**
+
+该图继续展示 `M_Smoke` 材质中的扭曲采样链，并重点说明 `UV_Scale` 将由 Niagara System 侧控制。当前截图比上一段更完整地显示了中间网络和被选中的纹理采样预览
+
+节点定义集：
+
+- `Dynamic Parameter`
+  - `Parameter Index = 0`
+  - 参数名：
+    - `Distortion`
+    - `UV_Scale`
+    - `Param3`
+    - `Param4`
+  - 默认值可见：
+    - `R = 0.0`
+    - `G ≈ 1.096762`
+    - `B = 1.0`
+    - `A = 1.0`
+- `ScaleUVsByCenter`
+- `T_Distortion`
+  - `Parameter2D`
+  - 当前处于 `Previewing` 状态
+- `Mask (R G)`
+- 右上角局部可见：
+  - `Multiply`
+  - 一个被裁切的后续节点
+
+连线集：
+
+- `Dynamic Parameter.UV_Scale` 连接到 `ScaleUVsByCenter.Texture Scale (V2)`
+- `ScaleUVsByCenter.UVs` 连接到 `T_Distortion.UVs`
+- `T_Distortion.RGB` 连接到 `Mask (R G)`
+- `Mask (R G)` 输出接入右上角 `Multiply`
+- `Dynamic Parameter` 还有一条上方连线直接接入右上角区域，但终点因截图裁切无法可靠确认
+
+设置/参数：
+
+- 左侧参数面板表明当前选中的仍是 `Dynamic Parameter` 节点
+- 教程口述说明“我们将在系统部分进行控制，它控制着规模”，对应这里把 `UV_Scale` 暴露为 Niagara 侧可调参数，用于控制扭曲纹理的采样缩放
+
+输出/预览：
+
+- 左侧预览窗口显示的是被单独预览的贴图采样结果，画面为灰色棋盘背景上的噪声纹理平面，不是最终烟雾材质成品
+- 因此这一张图的核心信息是：烟雾扭曲的纹理尺度将通过 `Dynamic Parameter -> UV_Scale` 从系统侧传入材质
+该图继续完善 `M_Smoke` 的 UV 缩放控制链，并加入一个演示用的时间信号，让扭曲贴图的采样缩放在可视化调试时变化，但最小值不会低于 `0.5`
+
+节点定义集：
+
+- `Dynamic Parameter`
+- `DebugTimeSine`
+  - 输入：`Speed (S)`
+  - 输出：`Result`
+- `Max(0.5)`
+  - `Const B = 0.5`
+- `ScaleUVsByCenter`
+- `T_Distortion`
+- `Mask (R G)`
+- 右上角局部可见：
+  - `Multiply`
+  - 上方还有一个被裁切的节点，无法完整识别
+
+连线集：
+
+- `DebugTimeSine.Result` 连接到 `Max(0.5).A`
+- `Max(0.5)` 的输出连接到 `ScaleUVsByCenter.Texture Scale (V2)`
+- `ScaleUVsByCenter.UVs` 连接到 `T_Distortion.UVs`
+- `T_Distortion.RGB` 连接到 `Mask (R G)`
+- `Mask (R G)` 输出继续连接右上角的 `Multiply`
+- `Dynamic Parameter` 的上方长连线仍然接入右上角区域，但终点在本图中不可见
+
+设置/参数：
+
+- 左侧详情面板显示当前选中的是 `Material Expression Max`
+- `Const A = 0.0`
+- `Const B = 0.5`
+
+输出/预览：
+
+- 左侧预览窗口正在单独预览一张白色柔边烟雾贴图/采样结果，而不是最终材质整体
+- 字幕提到“从 `0.5` 到 `1`，现在会是这样，只是为了演示”，与 `Max(0.5)` 的作用一致：即使缩放在动态变化，也保证下限不低于 `0.5`，便于观察不同 UV 缩放对烟雾纹理外观的影响
+该图展示 `M_Smoke` 靠近材质输出端的一小段网络，教程开始把前面生成的遮罩结果接向材质 `Opacity`，并额外加入一个可调控制值
+
+节点定义集：
+
+- `Multiply`
+- `Lerp(0,1,0.5)`
+  - `Const A = 0.0`
+  - `Const B = 1.0`
+  - `Const Alpha = 0.5`
+- 材质输出节点 `M_Smoke`
+  - 当前可见输入包括 `Emissive Color`、`Opacity`、`World Position Offset`
+  - `Opacity` 端口右侧当前显示数值 `1.0`
+
+连线集：
+
+- 左侧有一条来自上游网络的连线进入当前区域，并向材质输出节点方向延伸
+- `Multiply` 与 `Lerp(0,1,0.5)` 位于这条输出链附近，用于对遮罩结果再做一次乘法和插值控制
+- 由于截图只截到局部，`Multiply` 与 `Lerp` 的最终完整连线关系在本图中不能百分之百确认，但可可靠判断它们服务于材质透明度控制链
+
+设置/参数：
+
+- 左侧详情面板显示当前选中的是 `Material Expression Linear Interpolate`
+- 该 `Lerp` 用 `0 -> 1` 的固定范围和 `0.5` 的默认插值，充当一个中间控制值示例
+
+输出/预览：
+
+- 左侧预览窗口显示的是被选中节点的单独预览结果，形态为黑底上的白色柔边圆形遮罩
+- 字幕提到“这是这个 mask 的输出，还要设置控制，如果我们想完全控制它”，与当前图中把遮罩结果接到 `Opacity` 并增加额外控制节点的做法一致，说明教程正在为烟雾透明度建立可调节的遮罩输出
+
+### 00:09:54-00:14:18 System、Material、Multiply
+
+- 本段定位：System、Material、Multiply。
+- 知识点：本段围绕 `Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Particle`、`Alpha`、`Opacity`、`Material`、`Texture`、`Noise`、`Multiply`、`Add`。
+
+**关键画面：**
+
+该图继续展示 `M_Smoke` 的透明度控制链，当前重点是把贴图遮罩结果、粒子颜色与一个可调节的遮罩影响参数组合起来，再送往材质输出端附近
+
+节点定义集：
+
+- `Particle Color`
+- `Power`
+  - 当前处于 `Previewing` 状态
+- `Multiply`
+- `Lerp(?, ?, 0.5)`
+  - `Alpha = 0.5`
+  - `A` 与 `B` 的实际来源在本图中能看到有连线接入，但数值/完整来源未全部显示
+- 标量参数 `Smoke Mask Influence`
+  - 参数名显示为 `Param`
+  - `Default Value = 0.0`
+- 材质输出节点 `M_Smoke`
+  - 可见输入包括 `Opacity`、`World Position Offset`
+
+连线集：
+
+- `Particle Color` 的输出连向当前透明度控制区域
+- `Power` 的输出同时接入下游计算链
+- `Power` 的输出与另一条上游线一起进入 `Multiply`
+- `Multiply` 的输出接入 `Lerp` 的一个输入端
+- 另一条上游曲线/遮罩连线直接接入 `Lerp` 的另一个输入端
+- `Smoke Mask Influence` 节点位于该控制链附近，用于提供一个独立的可调节标量，但本图中它的输出端尚未看到实际连到哪一端
+
+设置/参数：
+
+- 左侧详情面板显示当前选中的是一个 `Material Expression Scalar Parameter`
+- `Default Value = 0.0`
+- `Slider Min = 0.0`
+- `Slider Max = 0.0`
+
+输出/预览：
+
+- 左侧预览窗口显示的是一个白色柔边圆形遮罩，说明当前查看的仍然是透明度/遮罩相关中间结果，而非最终烟雾成品
+- 字幕说明这里“再与透明度相乘”，并且要做一个 `0` 到 `1` 的控制，因此这张图的核心含义是：为烟雾贴图遮罩增加一个可控的影响强度，再把它乘回透明度链中
+该图把 `M_Smoke` 的控制链继续扩展到溶解阶段，明确加入 `Dissolve` 动态参数和 `MF_SmoothDissolve` 材质函数，用于对烟雾遮罩做平滑溶解控制
+
+节点定义集：
+
+- `Dynamic Parameter`
+  - 参数名：
+    - `Distortion`
+    - `UV_Scale`
+    - `Dissolve`
+    - `Param4`
+  - 默认值可见：
+    - `R = 0.0`
+    - `G = 1.0`
+    - `B = 0.0`
+    - `A = 1.0`
+- 标量参数 `Smoothness`
+  - 当前数值可见为 `0.2`
+- 材质函数 `MF_SmoothDissolve`
+  - 输入：
+    - `Dissolve (S)`
+    - `Smoothness (S)`
+    - `Value (S)`
+  - 输出：
+    - `Edge`
+    - `Mask`
+
+连线集：
+
+- `Dynamic Parameter` 的蓝色输出 `Dissolve` 连接到 `MF_SmoothDissolve.Dissolve (S)`
+- `Smoothness` 参数输出连接到 `MF_SmoothDissolve.Smoothness (S)`
+- 另一条来自下方上游网络的数值线连接到 `MF_SmoothDissolve.Value (S)`
+
+设置/参数：
+
+- 左侧详情面板显示当前选中的仍是 `Dynamic Parameter`
+- 与前一阶段相比，`Index[2]` 的语义名已经从通用占位改成了 `Dissolve`，说明教程正式把第三个动态参数通道专门用于溶解控制
+
+输出/预览：
+
+- 左侧预览仍然是柔边白色烟雾遮罩，说明当前视图关注的是遮罩形状如何被溶解控制影响
+- 字幕提到“这是溶解控制值，剩下的是增加更多的溶解”，与图中 `Dissolve + Smoothness + Value -> MF_SmoothDissolve` 的结构完全对应
+该图切回 Niagara System `NS_IceSpikes`，说明教程在完成 `M_Smoke` 的基础材质控制后，不准备从零新建全部效果，而是回到已有系统里复用和扩展现成发射器
+
+画面中可确认当前选中的是发射器 `Frost_Shockwave` 的 `System Location` 模块，右侧参数与此前保持一致：
+
+- `Offset = Make Vector`
+- `X = Float from Curve`
+- 曲线使用 `Emitter.NormalizedLoopAge` 作为横轴
+- `Scale Curve = 1.0`
+- `Y = 0.0`
+- `Z = 1.0`
+- `Offset Coordinate Space = Local`
+
+系统总览中还能看到附近已有多个发射器，例如：
+
+- `Spikes_SpriteGlow01`
+- `Spikes_Sparks`
+- `Spikes_Pieces`
+- `Frost_Shockwave`
+
+字幕说明“或者说我们不从头开始，我们使用已经准备好的”，因此这张图的作用是交代后续工作方式：烟雾或霜冻补充层不会独立从零搭系统，而是基于 `NS_IceSpikes` 当前已有的发射器和偏移逻辑继续扩展
+
+### 00:14:18-00:17:43 Spawn、Spawn Rate、Color
+
+- 本段定位：Spawn、Spawn Rate、Color。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：使用 Spawn Rate 连续生成粒子，并根据效果密度调整每秒生成数量。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Alpha` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：烟雾效果通常依赖较长 Lifetime、透明度衰减、噪声扰动和柔和的材质混合。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Color`、`Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`Particle`、`Spawn Rate`、`Spawn`、`Lifetime`、`Color`、`Alpha`、`Opacity`、`Material`。
+
+**关键画面：**
+
+该图切回 `NS_IceSpikes`，当前选中的是新加入或已准备好的发射器 `Smoke`，并打开其 `Render` 下的 `Sprite Renderer` 模块。教程在这里开始把烟雾层接入系统
+
+右侧 `Sprite Rendering` 面板中可确认：
+
+- `Material = MI_GlowAdd_01`
+- `Material User Param Binding = None`
+- `Source Mode = Particles`
+- `Alignment = Automatic`
+- `Facing Mode = Automatic`
+- `Macro UV Radius = 0.0`
+- `Default Pivot in UV Space = (0.5, 0.5)`
+- `Remove HMD Roll` 未启用
+- `Pixel Coverage Mode = Automatic`
+- `Pixel Coverage Blend = 1.0`
+- `Min Facing Camera Blend Distance = 0.0`
+- `Max Facing Camera Blend Distance = 0.0`
+
+下方还能确认：
+
+- `Sort Mode = None`
+- `Enable Camera Distance Culling` 未启用
+- `Renderer Visibility = 0`
+
+字幕说明“我们选择火花……进入材质”，结合当前材质槽可知，这一步的目的就是先让 `Smoke` 发射器以 `Sprite Renderer` 方式工作，并临时指定一个可见的加法材质 `MI_GlowAdd_01`，为后续替换成烟雾材质或继续调颜色、透明度做准备
+该图是关卡序列器中的实时预览。烟雾层已经被添加到冰刺效果中，能看到冰刺上方和后方出现了一团团浅灰白色烟雾，但当前烟雾体块明显偏大，覆盖范围过宽
+
+从画面可确认：
+
+- 冰刺主体仍保持蓝白高亮的主视觉
+- 新增的烟雾主要集中在冰刺上方的后景区域
+- 烟雾并非完全不显示，而是已经显示出来，只是尺寸或相关控制过大，导致形态偏臃肿
+
+字幕直接指出“表面上看什么都没出现，但实际上这里有些东西太大了”，并接着提到 `Particle Color`，说明教程此时是在排查烟雾层的显示问题，重点怀疑粒子颜色或相关可视化控制与尺寸/透明表现共同导致当前观感不理想
+
+因此这张图的作用是给出一个中间问题状态：`Smoke` 发射器已成功参与渲染，但烟雾需要进一步缩小、调色或调整透明度，才能与冰刺主体协调
+该图显示 `NS_IceSpikes` 中 `Smoke` 发射器的 `Particle Update -> Dynamic Material Parameters` 模块，教程开始把前面在 `M_Smoke` 里预留的动态参数真正从 Niagara 侧写入材质
+
+可确认当前打开的是 `Dynamic Parameter Index 0`，并启用了 `Write Parameter Index 0`
+
+当前可见参数与设置为：
+
+- `Distortion = Float from Curve`
+  - 曲线横轴使用 `Particles.NormalizedAge`
+  - 曲线从生命周期初期约 `0.1` 左右逐步上升，到末端接近 `1.0`
+  - `Scale Curve = 1.0`
+- `UV_Scale = Float from Curve`
+  - 曲线横轴同样使用 `Particles.NormalizedAge`
+  - 曲线从约 `0.2` 左右逐步上升，到末端约 `0.85`
+  - `Scale Curve = 1.0`
+- `Dissolve = 0.0`
+- `Param3-0 = 0.0`
+
+其余索引状态可见为：
+
+- `Dynamic Parameter Index 1` 未启用写入
+- `Dynamic Parameter Index 2` 未启用写入
+- `Dynamic Parameter Index 3` 未启用写入
+
+左侧预览中已经能看到贴地扩散的浅灰白烟雾，字幕则指出“这就是结果，不过我觉得扭曲还是太……”，说明这一步已经把 `Smoke` 材质参数接通并跑起来，但当前 `Distortion` 仍然偏强，后续还会继续微调
+
+### 00:17:43-00:22:36 Emitter、System、Lifetime
+
+- 本段定位：Emitter、System、Lifetime。
+- 知识点：烟雾效果通常依赖较长 Lifetime、透明度衰减、噪声扰动和柔和的材质混合。
+- 知识点：本段围绕 `Alpha` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Curve` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Color`、`Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Emitter`、`Spawn`、`Lifetime`、`Color`、`Alpha`、`Opacity`、`Texture`、`Curve`。
+
+**关键画面：**
+
+该图是关卡序列器中的问题状态预览。当前烟雾层几乎完全铺满整个镜头，画面被大面积灰白色半透明层覆盖，已经看不到冰刺主体或地面细节
+
+从结果可确认当前 `Smoke` 发射器已经不是“不显示”，而是相反地生成得过多、过密，并且单个粒子的透明度过高，导致整体叠加后变成一整片发白的遮挡层
+
+字幕直接指出“太多了，太不透明了”，并说明接下来要先修改它，因此这张图的作用是明确当前需要优先解决的两个问题：
+
+- 烟雾粒子数量或屏幕密度过高
+- 烟雾材质/颜色的透明度不足，叠加后遮挡主效果
+该图回到 `NS_IceSpikes` 的 `Smoke` 发射器，并选中 `Particle Update -> Scale Color` 模块。教程在这里直接修改烟雾粒子的颜色与透明度衰减，让结果从“整屏发白”回到更贴近冰刺氛围的浅蓝白烟雾
+
+当前可确认的设置为：
+
+- `Scale Mode = RGB and Alpha Separately`
+- `Scale RGB = Make Vector from Linear Color RGB`
+- 当前打开颜色选择器，新的颜色值为：
+  - `R = 0.427`
+  - `G = 0.7517`
+  - `B = 1.0`
+  - `A = 1.0`
+  - `H = 206.0`
+  - `S = 0.573`
+  - `V = 1.0`
+  - `Hex Linear = 6DC0FFFF`
+  - `Hex sRGB = AFE1FFFF`
+
+`Scale Alpha` 仍使用 `Float from Curve`，右侧可见曲线继续采用 `Particles.NormalizedAge` 作为横轴，并从生命周期前段的较高值逐步衰减到后段较低值，用于持续降低烟雾透明度
+
+左侧预览里已经重新能看到冰刺主体，说明仅通过把 `Scale RGB` 调成偏冷的浅蓝白色，并保留 Alpha 衰减，烟雾遮挡问题就被明显缓和。字幕“先这样设，看看现在是什么样”也说明这是一次中间调色后的即时观察
+该图切到 `Smoke` 发射器的 `Particle Spawn -> System Location` 模块，教程开始继续调整烟雾生成位置，重点是让烟雾在发射器生命周期内沿合适的高度和前进方向分布
+
+当前可确认的设置与状态为：
+
+- `Offset = Make Vector`
+- `X = Float from Curve`
+  - 曲线横轴使用 `Emitter.NormalizedLoopAge`
+  - `Scale Curve = 1.0`
+- `Y = 0.0`
+- `Z` 也使用 `Float from Curve`
+  - 当前可见曲线同样以 `Particles.NormalizedAge` 或生命周期相关归一化量为横轴显示在曲线编辑区
+  - `Scale Curve = 1.0`
+- `Offset Coordinate Space = Local`
+
+右侧弹出的搜索面板里输入了 `emitt`，说明教程正在查找与 `Emitter` 生命周期或相关上下文变量有关的输入，用来驱动位置曲线
+
+字幕说明“这一切取决于发射器的寿命和 700，大致设置高度为这样”，因此这张图可确认的核心意图是：烟雾的纵向高度和沿路径偏移不是固定常数，而是依赖发射器寿命进度进行调节；其中还涉及一个约 `700` 的高度级别或尺度参考，但该具体数值对应的输入框在本图中未直接显示
+
+### 00:22:36-00:26:48 System、Spawn、Color
+
+- 本段定位：System、Spawn、Color。
+- 知识点：烟雾效果通常依赖较长 Lifetime、透明度衰减、噪声扰动和柔和的材质混合。
+- 知识点：本段围绕 `Curve` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Spawn`、`Lifetime`、`Color`、`Curve`、`Add`、`材质`、`透明度`、`噪声`。
+
+**关键画面：**
+
+该图继续调整 `Smoke` 发射器的 `Particle Spawn -> System Location` 模块，重点是把烟雾的纵向高度分布曲线拉高，并在生命周期末端增加更高的终点值
+
+当前可确认的设置为：
+
+- `Offset = Make Vector`
+- `X = Float from Curve`
+  - 横轴：`Emitter.NormalizedLoopAge`
+  - 曲线从接近 `0` 的起点线性上升到末端约 `1.0`
+  - `Scale Curve = 1.0`
+- `Y = 0.0`
+- `Z = Float from Curve`
+  - 横轴：`Emitter.NormalizedLoopAge`
+  - 曲线前半段缓慢上升，后半段明显抬升，末端到达约 `1.0`
+  - 当前可见右侧末端关键值为 `1.2`
+  - `Scale Curve = 700.0`
+- `Offset Coordinate Space = Local`
+
+左侧预览里烟雾已经不再遮满镜头，只剩冰刺附近少量飘散层。结合字幕“可以把终点提高，这样它们最后会……更高的值”，可知教程这里是在通过提高 `Z` 偏移曲线尾段和把整体高度尺度设为 `700`，让烟雾在生命周期后段抬升得更高，避免始终贴在地面或冰刺根部
+该图继续在 `Smoke` 发射器的 `Particle Spawn` 阶段调整 `Shape Location`，通过一个细长的盒体发射范围来控制烟雾出现的横向长度、宽度和厚度
+
+当前可确认的设置为：
+
+- `Shape` 页签处于激活状态
+- `Shape Primitive = Box / Plane`
+- `Box / Plane Mode = Box`
+- `Box Size = (500.0, 100.0, 100.0)`
+- `Box Midpoint = (0.5, 0.5, 0.5)`
+
+其余可见设置为：
+
+- `Surface Only Band Thickness = 0.0`
+- `Transform Order = Scale / Rotate / Offset`
+- `Scale Mode = Default`
+- `Non Uniform Scale = (1.0, 1.0, 1.0)`
+- `Rotation Mode = Default`
+- `Rotation Coordinate Space = Local`
+- `Offset Mode = None`
+- `Shape Origin = STACKCONTEXT Position`
+
+这说明教程不是让烟雾在一个球形体积里随机爆开，而是用一个沿冰刺路径展开的扁长盒体做出生区域。`500 x 100 x 100` 的尺寸让烟雾更容易沿技能前进方向铺开，同时控制上下和左右的发射厚度
+该图切到 `Smoke` 发射器的 `Particle Update -> Scale Sprite Size` 模块，教程在这里为烟雾精灵建立一条统一尺寸曲线，让粒子在生命周期开始时较小，随后逐渐放大并逼近稳定值
+
+当前可确认的设置为：
+
+- `Scale Sprite Size Mode = Uniform Curve`
+- `Uniform Sprite Scale = Curve for Floats`
+- 曲线横轴使用 `Particles.NormalizedAge`
+- `Uniform Curve Scale = 1.0`
+
+从曲线形状可确认：
+
+- 生命周期起点附近的尺寸约为 `0.2`
+- 在前半段较快上升到约 `0.7`
+- 后续继续缓慢增加
+- 生命周期末段逼近 `1.0`
+- 当前界面下方可见关键值中包含 `0.5` 与 `1.0`
+
+字幕说明“这个值会逐渐接近 1，大概得到这样的曲线”，与当前曲线形状完全一致。因此这一步的目的是让烟雾粒子不是一出生就达到最大尺寸，而是先小后大地扩散，从而让烟雾生长过程更自然
+
+### 00:26:52-00:31:40 关键流程 07
+
+- 本段定位：关键流程 07。
+- 知识点：可能要更快 因为我知道它需要很快的显示 可能这种颜色也会很慢慢显示 我们也会做一个随机的拉动 从0到1让它是 需要加强度 所以它会慢慢下降。
+- 知识点：大概35度 所以它会慢慢下降 另外,这颗烟要加强度 从一边到另一边 随机的拉动 所以需要加强度 强度 是的,像这样 晚上它会有一个特别的旋律。
+- 知识点：到旁边,然后它会下降 看看它会出现,它会先上升 然后它会慢慢下降,像这样 我们已经安排好了 需要选择185.1 来加一些变化 像这样 现在看起来还不错。
+- 知识点：很好 这是我们的主烟 摄像机的安排 很好 我们再次进行 需要加更多烟 把这个名字的留下来 我们把它编辑出来 这些,通常都不一样 一样,我们先开始。
+- 知识点：会比较少 在这个压力的部分 可以调整一下 所以我们有一些变化 有一定的烟 比如,有一个烟在高度上 还有一个在低度上 还有一个在地上 这是哪些呢。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`、`透明度`。
+
+**关键画面：**
+
+该图继续调整 `Smoke` 发射器的 `Particle Update -> Scale Sprite Size` 曲线，这次把烟雾精灵的整体尺寸压得更小，并让它在生命周期前段更缓慢地出现
+
+当前可确认的设置为：
+
+- `Scale Sprite Size Mode = Uniform Curve`
+- `Uniform Sprite Scale = Curve for Floats`
+- 横轴使用 `Particles.NormalizedAge`
+- `Uniform Curve Scale = 1.0`
+
+曲线形状与关键值可确认：
+
+- 起点附近约为 `0.075`
+- 很快抬升到约 `0.75`
+- 后续继续轻微上升
+- 生命周期末段接近 `1.0`
+
+从左侧预览可见，烟雾已经被压到比较薄的层次，不再大面积遮挡冰刺。字幕提到“这些颜色会非常缓慢地出现”，说明这里的尺寸曲线不是为了让烟雾迅速膨胀，而是配合颜色/透明度让烟雾以更柔和的节奏渐显
+该图显示在原有 `Smoke` 发射器旁边新增了第二个烟雾发射器 `Smoke001`，并打开其 `Particle Spawn -> Initialize Particle` 模块。教程在这里通过随机寿命、随机颜色和随机尺寸，为第二层烟雾制造变化
+
+当前可确认的设置为：
+
+- `Lifetime Mode = Random`
+- `Lifetime Min = 5.0`
+- `Lifetime Max = 6.25`
+- `Color Mode = Random Range`
+- `Color Minimum` 为一组偏灰白的低值颜色
+- `Color Maximum` 为更亮的白色范围
+- `Color Channel Mode = Link RGB / Link A`
+- `Position Mode = Simulation Position`
+- `Position Offset = (0.0, 0.0, 0.0)`
+- `Mass Mode = Unset / (Mass of 1)`
+
+`Sprite Attributes` 中可确认：
+
+- `Sprite Size Mode = Random Uniform`
+- `Uniform Sprite Size Min = 400.0`
+- `Uniform Sprite Size Max = 600.0`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+
+其余可见状态：
+
+- `Mesh Scale Mode = Unset`
+- `Mesh Renderer Array Visibility Mode = Unset`
+- `Ribbon Width Mode = Unset`
+- `Ribbon Facing Mode = Unset`
+- `Ribbon Twist Mode = Unset`
+
+字幕说明“在这个范围内我们可以调整透明度，这样就有一些变动”，结合 `Random Range` 的颜色模式可知，这个发射器的目标不是保持统一外观，而是让第二层烟雾在寿命、亮度/透明度和尺寸上都有随机变化，避免所有烟块完全一致
+该图是关卡序列器中的阶段性结果预览。此时冰刺主体已经保持清晰的蓝白高亮形态，周围只残留较薄的烟雾层，整体观感比前面的“整屏发白”状态干净很多
+
+从画面可确认：
+
+- 冰刺主体仍是当前视觉中心，没有被烟雾遮住
+- 烟雾主要作为贴近地面和冰刺周边的辅助层存在
+- 烟雾密度已经明显下降，变成弱辅助氛围，而不是主画面遮挡层
+
+字幕说明“透明度像一个辅助，接下来我们将添加一个非常快速的烟雾”，因此这张图的作用有两层：
+
+- 说明当前这一层主烟已经基本调到可接受状态，透明度只作为辅助控制
+- 交代后续还会再补一层响应更快的烟雾，用来配合冰刺出现瞬间的节奏
+
+### 00:31:40-00:36:39 关键流程 08
+
+- 本段定位：关键流程 08。
+- 知识点：我们来把这个選項剪輯出来。
+- 知识点：以色彩来說,我们可能把它叫做, 这个大小会把它叫做大, 然后这里需要需要把它叫做烟霧。
+- 知识点：也許把它轉回1700, 另外,烟霧会继续继续升。
+- 知识点：基本上,我们只能让它变化, 可以把它叫做烟霧。
+- 知识点：即使它是一樣的,我们把它叫做烟霧。
+- 核对对象：`透明度`。
+
+**关键画面：**
+
+该图选中 `Smoke001` 发射器，教程说明要复制这一类烟雾选项，再做一层“快速升起并逐渐消失”的烟雾
+
+右侧 `Emitter Properties` 中可确认：
+
+- `Local Space` 已启用
+- `Determinism` 已启用
+- `Random Seed = 119`
+- `Interpolated Spawning` 已启用
+- `Sim Target = CPUSim`
+- `Calculate Bounds Mode = Dynamic`
+- `Requires Persistent IDs` 未启用
+
+`Emitter State -> Life Cycle` 中可确认：
+
+- `Life Cycle Mode = Self`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Once`
+- `Loop Duration Mode = Fixed`
+- `Loop Duration = 0.5`
+- `Loop Delay = 0.0`
+
+下方 `Spawn Rate` 仍使用 `Float from Curve`，可见：
+
+- 曲线横轴使用 `Emitter.NormalizedLoopAge`
+- 当前曲线从早期较低值逐步上升到末段较高值
+- 界面底部可见一个关键值约为 `0.4`
+
+字幕说明“它需要快速上升并逐渐消失，所以让我们复制这个选项”，因此这张图的作用是交代新一层烟雾仍沿用 `Smoke001` 这套发射器框架，只是在相同生命周期结构上继续做更快的升起与消散节奏
+该图是关卡序列器中的结果预览。冰刺已经在前景显现，而新增的快速烟雾层只在冰刺后方和上方留下较淡的云团，没有再像之前那样大面积盖住镜头
+
+从画面与字幕可确认当前教程在调节这层快速烟雾的触发时机。字幕明确说明“需要在生成之前添加一些延迟，所以我们将添加 `0.06`”，也就是让这层烟雾不要和冰刺完全同时出现，而是稍微滞后一点
+
+这张图的作用是说明延迟的视觉效果：在时间线约 `0.37` 秒处，冰刺主体已先一步成为主视觉，而烟雾作为随后补上的辅助层才开始显现。这样可以让冰刺的爆发更清楚，同时避免烟雾过早遮住生成瞬间
+该图回到 `NS_IceSpikes` 的系统总览，重点不是单个参数，而是烟雾发射器的组织结构已经被拆分成多层
+
+当前可确认系统中已经存在多组烟雾相关发射器：
+
+- `Smoke`
+- `Smoke_Fast`
+- `Smoke001`
+- `Smoke002`
+
+其中左侧被高亮选中的发射器名已经明确改为 `Smoke_Fast`，说明教程把“快速出现、快速消散”的那一层烟单独抽成一个专门的发射器，而不是继续混在主烟层里
+
+右侧详情区域当前没有展开具体参数，左侧预览也处于 `Compiling...` 状态，因此这张图更适合作为流程组织说明：到这一阶段，烟雾已经不再是单一发射器，而是按节奏和用途拆成主烟、快速烟以及其它变化层，便于分别调节速度、透明度和出现位置
+
+### 00:36:39-00:40:25 速度
+
+- 本段定位：速度。
+- 知识点：在这里,基本上,可以把它改变。
+- 知识点：需要減少它的大小,所以它不太大。
+- 知识点：系统的位置,是的。
+- 知识点：它只是在地上,就这樣。
+- 知识点：唯一可能会被剪輯的东西是它的反应。
+- 核对对象：`系统`、`速度`。
+
+**关键画面：**
+
+该图切到 `Smoke002` 发射器的 `Particle Spawn -> Initialize Particle` 模块。教程说明这一层基本沿用前面的快速烟方案，但要把粒子尺寸缩小，避免烟团过大
+
+当前可确认的设置为：
+
+- `Lifetime Mode = Random`
+- `Lifetime Min = 2.0`
+- `Lifetime Max = 2.0`
+- `Color Mode = Random Range`
+- `Color Minimum` 为偏灰白的随机下限
+- `Color Maximum` 为更亮的白色随机上限
+- `Color Channel Mode = Link RGB / Link A`
+- `Position Mode = Simulation Position`
+- `Position Offset = (0.0, 0.0, 0.0)`
+- `Mass Mode = Unset / (Mass of 1)`
+
+`Sprite Attributes` 中可确认：
+
+- `Sprite Size Mode = Random Uniform`
+- `Uniform Sprite Size Min = 600.0`
+- `Uniform Sprite Size Max = 800.0`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+
+其余可见状态：
+
+- `Mesh Scale Mode = Unset`
+- `Mesh Renderer Array Visibility Mode = Unset`
+- `Ribbon Width Mode = Unset`
+- `Ribbon Facing Mode = Unset`
+- `Ribbon Twist Mode = Unset`
+
+字幕明确说明“我们保持一切原样，会减少它的大小，这样就不会太大”，与这里把尺寸限制在 `600-800` 的随机范围一致。这表示 `Smoke002` 不是全新逻辑，而是沿用现有烟层结构，只在尺度上做收缩控制
+该图继续调整 `Smoke002` 发射器的 `Particle Spawn -> Shape Location`，通过一个更扁的盒体分布让这层烟更贴近镜头前方或地面区域展开
+
+当前可确认的设置为：
+
+- `Shape Primitive = Box / Plane`
+- `Box / Plane Mode = Box`
+- `Box Size = (250.0, 600.0, 0.0)`
+- `Box Midpoint = (0.5, 0.5, 0.5)`
+
+分布与变换设置中可确认：
+
+- `Surface Only Band Thickness = 0.0`
+- `Transform Order = Scale / Rotate / Offset`
+- `Scale Mode = Default`
+- `Non Uniform Scale = (1.0, 1.0, 1.0)`
+- `Rotation Mode = Default`
+- `Rotation Coordinate Space = Local`
+- `Offset Mode = Default`
+- `Shape Origin = STACKCONTEXT Position`
+- `Offset = (0.0, 0.0, 0.0)`
+- `Offset Coordinate Space = Simulation`
+
+这个尺寸组合说明教程把 `Smoke002` 的发射体积做成了“窄 X、宽 Y、零厚度 Z”的扁平区域，更像贴着一张平面分布烟雾。字幕提到“更靠近我们”，与这种更平、更宽的发射范围一致，目的是让这层烟在镜头附近形成横向展开，而不是在空间中鼓成厚块
+该图是关卡序列器中的整体效果预览。经过前面几层烟雾的拆分和调节后，冰刺主体依然保持清晰的蓝白高亮，而烟雾已经退到更薄、更弱的辅助层，只在冰刺周围和后方轻微扩散
+
+从当前画面可确认：
+
+- 冰刺本体仍然是画面的主视觉中心
+- 烟雾不再形成整片遮挡，只作为环境氛围层存在
+- 不同烟层叠加后整体仍然保持较干净的轮廓，没有破坏冰刺的造型识别
+
+字幕说明“现在，我将提供更多细节，看看整体效果如何”，表示到这一刻为止，教程已经把主烟、快烟和近景烟的大体结构组织好，接下来会在这个基础上继续增加更多细节层，而不是再大改当前主体烟雾框架
+
+## 补充视觉证据
+
+### S03 00:11:52
+
+该图是 `M_Smoke` 材质中溶解控制区域的补充参数截图，重点展示了 `Dynamic Parameter`、平滑度参数、溶解贴图和 `MF_SmoothDissolve` 材质函数之间的关系
+
+节点定义集：
+
+- `Dynamic Parameter`
+  - 参数名：
+    - `Index[0] = Distortion`
+    - `Index[1] = UV_Scale`
+    - `Index[2] = Param3`
+    - `Index[3] = Param4`
+  - 默认值可见：
+    - `R = 0.589714`
+    - `G = 0.382857`
+    - `B = 1.0`
+    - `A = 1.0`
+  - `Parameter Index = 0`
+- 标量参数 `Dissolve Smoothness`
+  - 标签显示 `Param (0.2)`
+  - `Default Value = 0.2`
+- 纹理参数 `T_Dissolve`
+  - `Parameter2D`
+- 材质函数 `MF_SmoothDissolve`
+  - 输入：
+    - `Dissolve (S)`
+    - `Smoothness (S)`
+    - `Value (S)`
+  - 输出：
+    - `Edge`
+    - `Mask`
+
+连线集：
+
+- `Dissolve Smoothness` 的输出连接到 `MF_SmoothDissolve.Smoothness (S)`
+- `T_Dissolve` 的红色通道 `R` 输出连接到 `MF_SmoothDissolve.Value (S)`
+- `Dynamic Parameter` 位于该控制区中心，用于向材质传入动态参数；本图中它与 `MF_SmoothDissolve` 的直接连线未完整显示，但从上下文和字幕可知其中一个通道用于控制溶解值
+
+设置/参数：
+
+- 左侧预览窗口显示的是黑底白色圆形遮罩，上面叠加了不规则破碎边缘，说明当前正在预览溶解遮罩效果
+- 字幕明确说明“用一个参数控制 dissolve 值，默认设为 0”，因此这一块的目的就是把溶解值暴露为可调参数，并配合 `Smoothness = 0.2` 与 `T_Dissolve` 贴图生成平滑溶解边界
+
+输出/预览：
+
+- 当前补充图主要服务于材质内部控制链说明，不是最终烟雾成品
+- 读者可以据此复建：用 `T_Dissolve.R` 作为输入值、用独立平滑度参数控制过渡宽度，再通过 `MF_SmoothDissolve` 输出 `Mask/Edge` 供后续透明度链使用
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

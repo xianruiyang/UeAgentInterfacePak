@@ -1,0 +1,887 @@
+# 16 Sequencer设置和骨骼网格模块说明
+
+# 16 Sequencer设置和骨骼网格模块说明
+
+## 关键术语
+
+- `GPU`、`Sequencer`、`Water`、`粒子`、`网格`、`速度`、`骨骼网格`、`+Add`、`6 aenoes (I selected)`、`此次16强开始将进行第五个示例`、`Niagara`、`Add`、`材质`、`发射器`、`Niagara System`、`Emitter`、`Spawn Rate`、`Spawn`
+
+## 分段知识
+
+### 00:00:04-00:03:01 Sequencer
+
+- 本段定位：Sequencer。
+- 知识点：你好,16強时再次問候 此次16強开始将进行第五个示例 嗯 此次第五个例子呢 是后续会在第七个例子中进行位置映射 在制作那个演出之前 关于規模化地點的模塊。
+- 知识点：对,那部分的理解是必要的 前期工作 我認为可以这麼看 对,那个模塊的理解是这樣的 但为了让角色消失 需要一起应用溶解的材质进行說明。
+- 知识点：第七个例子就是 如果适当没有预先說明 進入那个部分的話 会覺得太難 此次示例中那部分 消失的部分和滑冰者網格位置 利用音頻的部分 需要提前品嘗一下。
+- 知识点：抓住这个感覺 在第七个例子中再使用一次 所以可以認为这是一种品嘗的演出 此次示例是 所以第一时间設置序列器 如何利用这个模塊 一些選項 就一起看一下。
+- 知识点：死亡相關的演出 需要制作一个 那麼开始吧 现在我打開的等級是 第四个制作 等級打開了 这个单独線 定存 开始吧 5號命名为Death Skeletal。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`材质`、`序列`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `04_Thunder_Explosion` 起始关卡状态
+> - 组成部分: Level Viewport + Content Browser + Outliner + Floor Details + 字幕
+> - 所属: Level `04_Thunder_Explosion`，选中对象 `Floor`。
+> - 目的: 从上一示例关卡开始，确认地面、光照和 Level 资产状态，为后续复制/命名第五示例做准备。
+>
+> Level Viewport:
+> - Viewport 显示灰色棋盘地面、Directional Light 图标和选中对象 Gizmo。
+> - 视口模式为 `Perspective / Lit / Show`。
+> - 画面底部字幕为“此次16强开始将进行第五个示例。”
+>
+> Content Browser / Outliner:
+> - Content Browser 位于 `Content/Coloso_1/Tutorial/Level`，可见 `01_Sword_...`、`02_Earth_...`、`03_Ice_...`、`04_Thun...` Level 资产。
+> - Outliner 中当前 World 为 `04_Thunder_Explosion (Editor)`，可见 `Lighting`、`DirectionalLight`、`01_Swing_Trail`、`Floor`、`PlayerStart`、`PostProcessVolume`。
+> - `Floor` 被选中，类型显示为 `StaticMeshActor`。
+>
+> Details:
+> - Owner: `Floor` / `StaticMeshComponent`。
+> - Transform 可读值: `Location=(0.0, 0.0, -0.5)`，`Rotation=(0.0, 0.0, 0.0)`，`Scale=(8.0, 8.0, 8.0)`；只记录字段值，不额外断言坐标系。
+> - Static Mesh 为 `SM_Template_Map_...`。
+> - Materials / Element 0 使用 `MI_ProcGrid`。
+>
+> 画面含义: 该帧记录第五示例开始前的基础关卡与地面设置，后续会从该基础环境转到死亡/骨骼网格示例。
+> 图表转写（UE-GTXT v4）
+> - 类型: 溶解材质和粒子演出说明帧
+> - 组成部分: Level Viewport + Content Browser + Outliner + Floor Details + 字幕
+> - 所属: Level `04_Thunder_Explosion`，选中对象 `Floor`。
+> - 目的: 在同一基础关卡状态下说明本示例将结合溶解材质与粒子解散效果。
+>
+> Level Viewport:
+> - Viewport 仍显示灰色棋盘地面、Directional Light 图标和选中对象 Gizmo。
+> - 视口模式为 `Perspective / Lit / Show`。
+>
+> Content Browser / Outliner:
+> - Content Browser 位于 `Content/Coloso_1/Tutorial/Level`，可见 4 个 Level 资产缩略图。
+> - Outliner 中 `04_Thunder_Explosion (Editor)` 下 `Floor` 被选中。
+>
+> Details:
+> - Owner: `Floor` / `StaticMeshComponent`。
+> - Transform 可读值: `Location=(0.0, 0.0, -0.5)`，`Rotation=(0.0, 0.0, 0.0)`，`Scale=(8.0, 8.0, 8.0)`；只记录字段值，不额外断言坐标系。
+> - Static Mesh 为 `SM_Template_Map_...`，材质 Element 0 为 `MI_ProcGrid`。
+>
+> 字幕:
+> - 字幕文本为“接下来时间解散材料如何构成一次看一下。最后粒子部分也解散效果一起带走如何使用。”
+>
+> 画面含义: 该帧本身未新增节点或材质图，主要用字幕明确后续主题为角色溶解材质和粒子解散效果的组合。
+> 图表转写（UE-GTXT v4）
+> - 类型: `05_Death_Skeletal` Level Sequence Actor 设置
+> - 组成部分: Level Viewport + Content Browser + Outliner + Level Sequence Actor Details + 字幕
+> - 所属: Level `05_Death_Skeletal`，选中对象 `01_Swing_Trail`。
+> - 目的: 在新建/切换到死亡骨骼网格示例关卡后，检查 Level Sequence Actor 和 Sequencer 资产引用。
+>
+> Level Viewport:
+> - 当前关卡标签为 `05_Death_Skeletal`。
+> - Viewport 显示灰色棋盘地面、光照图标和选中对象 Gizmo。
+>
+> Content Browser / Outliner:
+> - Content Browser 位于 `Content/Coloso_1/Tutorial/Sequencer`，可见 `01_Swing_...`、`02_Earth_...`、`03_Ice_...`、`04_...` 等 Level Sequence 资产，以及一个名为 `Skelet...` 的 Level Sequence 资产被选中。
+> - Outliner 当前 World 为 `05_Death_Skeletal (Editor)`，可见 `Lighting`、`DirectionalLight`、`01_Swing_Trail`、`Floor`、`PlayerStart`、`PostProcessVolume`。
+> - `01_Swing_Trail` 被选中，类型为 `LevelSequenceActor`。
+>
+> Details:
+> - Owner: `01_Swing_Trail` / `LevelSequenceActor`。
+> - Transform 可读值: `Location=(0.0, 0.0, 0.0)`，`Rotation=(0.0, 0.0, 0.0)`，`Scale=(1.0, 1.0, 1.0)`；只记录字段值，不额外断言坐标系。
+> - `Level Sequence Asset` 字段显示仍引用 `04_Thunder_Explosi...`。
+> - Playback 中 `Loop = Don't Loop`，`Play Rate = 1.0x`，`Start Offset = 0.0s`；`Auto Play` 未勾选。
+>
+> 字幕:
+> - 字幕文本为“命名为 moveon-chessr scaletal，放在这里。”其中名称疑似 OCR/字幕转写误差，按截图原文保留。
+>
+> 画面含义: 该帧记录第五示例关卡与 Sequencer 资产的初始状态，需要后续把序列和角色动画调整到死亡骨骼网格演出。
+
+### 00:03:09-00:06:01 粒子
+
+- 本段定位：粒子。
+- 知识点：用Delete 然后这次也要删除Shade 这次視力会比較近 第抓拍鏡頭 对焦設置在15左右 而且还得再引入角色 这次視力使用的角色 之前使用过的那个叫格雷斯頓的角色。
+- 知识点：進入網格部分就是獲取骷髏網格 然后还得進入什么動作吧 動作 这里點動 搜索一下Steven 有个叫Sunstar的動作 这个動作看起来不錯。
+- 知识点：需要用这个動作来 然后需要使用这个動作 这个動作 持续时间大約設为105 我们来看一下動作 是的 这个是倒下的動作 在倒下的过程中 这个角色消失了。
+- 知识点：并且会创建出橫向变形的感覺演出 角色設置应该很快就完成了 需要保存一次 相機需要先固定好这个 暫时就固定到这个程度 接下来要制作粒子了。
+- 知识点：这个粒子这次暫时会给大家展示一下 文件夾需要新建一个 并会新建一个名为 Naya的納米发射器。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`粒子`、`发射器`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 镜头近景设置
+> - 组成部分: Level Viewport + Sequencer + Content Browser + Outliner + Cine Camera Details + 字幕
+> - 所属: Level/Sequence `05_Death_Skeletal`，选中对象 `Cine Camera Actor`。
+> - 目的: 为死亡骨骼网格示例设置较近的镜头、焦距和相机抖动轨道。
+>
+> Sequencer:
+> - Sequencer 名称显示为 `05_Death_Skeletal`，帧率为 `30 fps`。
+> - 当前时间在 `0000`，显示 `1 of 90`。
+> - 可见轨道包括 `Camera Cuts`、`Cine Camera Actor`、`CameraComponent`。
+> - `Camera Shake` 轨道被选中，轨道片段为 `ExShake_02_C`。
+> - `Current Aperture = 2.8`，`Current Focal Length = 25.0`，`Manual Focus Distance (Focus Settings) = 100000.0`。
+> - `Spawned` 轨道复选框为勾选状态。
+>
+> Level Viewport / Outliner:
+> - Viewport 显示灰色棋盘地面与光照图标。
+> - Outliner 中 `Cine Camera Ac` 被选中，属于 `05_Death_Skeletal`，并可见 `01_Swing_Trail`、`Floor`、`PlayerStart`、`PostProcessVolume`、`SpotLight`。
+>
+> Details:
+> - Owner: `Cine Camera Actor / CameraComponent`。
+> - Details 中可读 `16:9 Digital Film`、`Universal Zoom`、`No Crop`。
+> - 镜头参数显示 `25.0`、`2.8`、`100000.0`，与 Sequencer 轨道值一致。
+>
+> 字幕:
+> - 字幕文本为“这次示例会比较近地抓拍镜头,”。
+>
+> 画面含义: 该帧记录 S02 开始时的近景镜头与相机参数，后续角色和粒子会在这个镜头范围内验证。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Greystone` 角色放置与动画预览
+> - 组成部分: Level Viewport + Content Browser + Outliner + Sequencer + 字幕
+> - 所属: Level/Sequence `05_Death_Skeletal`，角色对象 `Greystone`。
+> - 目的: 在关卡与 Sequencer 中导入/放置 Greystone 角色，并预览倒下过程中角色消失的演出区间。
+>
+> Level Viewport:
+> - Viewport 中可见 `Greystone` 角色站在灰色棋盘地面上，角色穿银灰盔甲并手持武器。
+> - 该帧是关卡预览，不额外断言角色朝向或地面坐标系。
+>
+> Content Browser:
+> - Content Browser 位于 `ParagonGreystone/Characters/Heroes/Greystone/Meshes`。
+> - 可见 `Greystone` Skeletal Mesh 被选中，旁边还有 `Greystone_PhysicsAsset` 等资源缩略图。
+>
+> Outliner / Sequencer:
+> - Outliner 中可见 `Cine Camera Ac`、`Greystone`、`Floor`、`PlayerStart`、`PostProcessVolume`，其中 `Greystone` 属于 `05_Death_Skeletal`。
+> - Sequencer 打开 `05_Death_Skeletal`，当前约 `0097`，显示 `98 of 105`，帧率 `30 fps`。
+> - `Camera Cuts` 轨道可见，缩略图显示角色从站立到倒地的动画区间。
+>
+> 字幕:
+> - 字幕文本为“在倒下的过程中角色消失了”。
+>
+> 画面含义: 该帧确认 Greystone 角色和序列动画已经进入关卡，死亡/倒下动画将作为后续溶解与粒子生成的时间参照。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Death_01` Niagara System 与角色动画轨道
+> - 组成部分: Content Browser + Sequencer + Greystone Animation Track + Camera Track
+> - 所属: Level/Sequence `05_Death_Skeletal`，Niagara System `Death_01`，角色 `Greystone`。
+> - 目的: 在完成角色和相机基础设置后，新建/选中 `Death_01` Niagara System，并确认 Greystone 倒下动画轨道。
+>
+> Content Browser:
+> - Content Browser 位于 `Content/Coloso_1/Tutorial/Particle/05`。
+> - `Death_01` Niagara System 被选中。
+>
+> Sequencer:
+> - Sequencer 名称显示为 `05_Death_Skeletal`，帧率为 `30 fps`。
+> - 当前时间约 `0076`，显示 `77 of 105`。
+> - 可见 `Camera Cuts`、`Cine Camera Actor`、`CameraComponent`、`Greystone` 轨道。
+> - `Cine Camera Actor` 下有 `Current Aperture = 2.8`、`Current Focal Length = 15.0`、`Manual Focus Distance (Focus Settings) = 100000.0`，`Spawned` 为勾选。
+> - `Greystone` 下可见 `Animation` 轨道，动画片段名为 `Stun_Start`；`Spawned` 为勾选，`Transform` 轨道可见。
+>
+> 画面含义: 该帧把角色动画、相机参数和新建的 `Death_01` Niagara System 放在同一编辑语境中，后续粒子将围绕 Greystone 的死亡/倒下动画生成。
+
+### 00:06:13-00:09:10 GPU、粒子
+
+- 本段定位：GPU、粒子。
+- 知识点：这也是一樣的 需要将附加點設为灰石的輪 并且持续擴展幀數 然后在第一幀 然后这个前幀上生成 然后在兩个框架中關掉生成器 这樣会继续產生吧。
+- 知识点：那麼首先在这个縮放上 輕輕看一下粒子是否生成 打開粒子 现在什么都没有 用Aid Metronome做一个 那接下来的話 既然我们要使用GPU。
+- 知识点：那就勾选GPVU 当然需要改为固定值 然后设置就是rate吧 设置就是rate吧 rate设置大約500个線 然后大小設置为随机 非常小。
+- 知识点：改为self 試試设置为2秒 然后现在先播放这个 首先要確認 在这个縮放上粒子是否生成 所以在这縮縮模塊的話 就输入縮放 有網格的位置。
+- 知识点：把这一部分导入使用 就能得到这樣显示的 我们正在使用的 因为这里现在 用於預覽網格 这里没有網格也可以 这个滑動網格如果更新了 粒子会自動拿到这个滑動網格 所以这个部分可以看作是。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`GPU`、`粒子`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 中 `Death 01` Niagara 轨道设置
+> - 组成部分: Content Browser + Sequencer + Camera/Greystone/Death 01 轨道 + 字幕
+> - 所属: Level/Sequence `05_Death_Skeletal`，Niagara Actor/Track `Death 01`。
+> - 目的: 把 `Death_01` Niagara System 添加到 Sequencer，并让其在角色倒下动画期间生成。
+>
+> Content Browser:
+> - `Content/Coloso_1/Tutorial/Particle/05` 中 `Death_01` Niagara System 被选中。
+>
+> Sequencer:
+> - Sequencer 名称为 `05_Death_Skeletal`，帧率 `30 fps`。
+> - 当前时间约 `0076`，显示 `77 of 105`。
+> - 可见轨道包括 `Camera Cuts`、`Cine Camera Actor / CameraComponent`、`Greystone`、`Death 01`。
+> - `Death 01` 下可见 `Attach`、`Spawned`、`Transform` 轨道。
+> - `Spawned` 为勾选状态；`Death 01` 的片段从约 `0037` 帧附近开始，并延伸到后段。
+> - `Greystone` 下方仍可见 `Animation` 轨道片段 `Stun_Start`，作为角色倒下演出的时间参照。
+>
+> 字幕:
+> - 字幕文本为“并且持续扩展帧数。”
+>
+> 画面含义: 该帧记录 `Death_01` 在 Sequencer 中的触发区间和生成状态，后续粒子会与 `Greystone` 的 `Stun_Start` 动画同步。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Death_01.Empty.Initialize Particle` GPU 粒子初始化
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Initialize Particle Details + Timeline + 字幕
+> - 所属: `Death_01 / Empty`。
+> - 目的: 使用 GPU Emitter 初始化大量小 Sprite 粒子，并把 Sprite Size 模式改为随机非均匀。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中可见灰色背景上一团高亮白色粒子点。
+> - Particle Counts 显示约 `1,883 Current / 1,806 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - System 为 `Death_01`，Emitter 为 `Empty`。
+> - `Empty` 显示 GPU 标记。
+> - Stack 中可见 `Emitter State`、`Spawn Rate`、`Initialize Particle`、`Particle State`、`Sprite Renderer`。
+> - `Initialize Particle` 被选中。
+>
+> Details:
+> - Owner: `Empty.Initialize Particle`。
+> - `Lifetime Mode = Direct Set`，`Lifetime = 5.0`。
+> - `Color Mode = Unset`。
+> - `Position Mode = Simulation Position`，`Position Offset = (0.0, 0.0, 0.0)`；只记录字段值，不额外断言坐标系。
+> - `Mass Mode = Unset / (Mass of 1)`。
+> - `Sprite Size Mode` 下拉菜单展开，可选项包括 `Unset`、`Uniform`、`Random Uniform`、`Non-Uniform`、`Random Non-Uniform`；当前高亮 `Non-Uniform`，上下文字幕说明要设置为随机且很小。
+>
+> Timeline:
+> - Niagara Timeline 当前约 `6.45` 秒，帧率 `240 fps`，`Empty` 轨道可见。
+>
+> 字幕:
+> - 字幕文本为“然后大小设置为随机非常小。”
+>
+> 画面含义: 该帧记录 `Empty` GPU Emitter 的初始寿命、位置模式和 Sprite Size 模式选择过程，用于先确认粒子能大量生成。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Death_01.Empty.Skeletal Mesh Location` 未指定 Mesh 状态
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Level/Sequencer 背景 + 字幕
+> - 所属: `Death_01 / Empty`。
+> - 目的: 添加 `Skeletal Mesh Location` 后检查采样网格是否已设置；当前截图显示还没有指定网格。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中只有少量集中白色粒子点。
+> - Particle Counts 显示约 `2,534 Current / 2,067 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - System 为 `Death_01`，Emitter 为 `Empty`。
+> - `Empty` 显示 GPU 标记和警告图标。
+> - Stack 中 `Skeletal Mesh Location` 被选中，位于 `Particle Spawn` 下，标签显示 `Bones`、`Random`。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - Details 顶部显示 `Object has warnings`，并在 `Errors And Warnings` 中显示 `No mesh assigned warning`。
+> - `Mesh / Source Mode = Default`。
+> - `Preview Mesh = None`。
+> - `Source Actor = None`。
+> - `Component` 为 `0 Array element`，`Mesh User... = None`，`Skinning... = Skin on the Fly`，`Sampling R... = 0 Array element`，`Whole Mesh = -1`。
+>
+> 字幕:
+> - 字幕文本为“这个滑动网格如果更新了”。
+>
+> 画面含义: 该帧记录 `Skeletal Mesh Location` 已添加但尚未绑定 Preview Mesh/Source Mesh，因此模块有无网格警告，采样位置还不能代表角色骨骼分布。
+
+### 00:09:17-00:12:16 粒子
+
+- 本段定位：粒子。
+- 知识点：在这里视图中查看的用途 在视图中也需要看 所以需要放上去 那麼在视图中就这樣出现了 现在默認值显示的選項 是适当減少一点大小 这樣显示出来的標準。
+- 知识点：是这里標註为比例瓦片本 随机編號 比例瓦片所擁有的 在这里我们看一下 这里有一个圆呼呼的本 可以想像在本这个位置上 有粒子出现。
+- 知识点：在預覽中这里 每个都有一个什么 紙頭有很多本 所以这里适当密集一些 臉部也是一樣 而这里漂浮着的每个 是武器附加的本 我们是因为在生成上。
+- 知识点：掃描匹配位置 但如果现在角色移动时 这樣分數留在这个世界上 就这樣 当然取消了本地檢查 现在僅在生成时獲取位置值 位置值 现在如果更新时也一起。
+- 知识点：这部分加入的話 基於分數 可以認为持续显示點值更新 这樣使用的情况当然有 所以需要了解如何區分使用 我们现在只会在生成时使用这个 让我们查探一下使用生成的選項。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Skeletal Mesh Location` 绑定 `Greystone` 后的骨骼采样预览
+> - 组成部分: Content Browser + Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Timeline + 字幕
+> - 所属: `Death_01 / Empty`，Preview Mesh `Greystone`。
+> - 目的: 将 Preview Mesh 设为 `Greystone`，让粒子按骨骼随机采样显示在角色轮廓上。
+>
+> Content Browser:
+> - Content Browser 位于 `ParagonGreystone/Characters/Heroes/Greystone/Meshes`。
+> - `Greystone` Skeletal Mesh 被选中，旁边可见 `Greystone_Skeleton`。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中白色粒子点沿角色上半身、手臂、躯干和腿部形成稀疏轮廓。
+> - Particle Counts 显示约 `1,760 Current / 1,020 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - `Death_01 / Empty` 中 `Skeletal Mesh Location` 被选中，标签为 `Bones`、`Random`。
+> - Stack 中可见 `Emitter State`、`Spawn Rate`、`Initialize Particle`、`Skeletal Mesh Location`、`Particle State`、`Sprite Renderer`。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - `Preview Mesh = Greystone`。
+> - `Source Mode = Default`，`Source Actor = None`。
+> - `Skinning... = Skin on the Fly`，`Whole Mesh = -1`。
+> - `Mesh Sampling Type = Skeleton (Bones)`。
+> - `Bone Sampling Mode = Random (All Bones)`。
+> - `Uv Set Index = 0`。
+>
+> Timeline / 字幕:
+> - Niagara Timeline 当前约 `3.56` 秒，帧率 `240 fps`。
+> - 字幕文本为“那么在视图中就这样出现了。”。
+>
+> 画面含义: 该帧证明 `Greystone` Preview Mesh 绑定成功，粒子已经按骨骼采样生成在角色形状范围内。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Skeletal Mesh Location` 采样参数细化
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Timeline + 字幕
+> - 所属: `Death_01 / Empty`，Preview Mesh `Greystone`。
+> - 目的: 查看粒子沿 `Greystone` 骨骼分布后的密度，并确认 Position Sampling 写回设置。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中白色粒子点沿角色轮廓分布，头部、身体中线、手臂和腿部均有点状粒子；一侧武器附近也有一串点。
+> - Particle Counts 显示约 `1,360 Current / 2,550 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - System 为 `Death_01`，Emitter 为 `Empty`，GPU 标记可见。
+> - `Skeletal Mesh Location` 被选中，标签为 `Bones`、`Random`。
+> - `Emitter State = Self / Infinite`，`Spawn Rate`、`Initialize Particle`、`Particle State`、`Sprite Renderer` 均可见。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - `Source Mode = Default`。
+> - `Preview Mesh = Greystone`。
+> - `Source Actor = None`。
+> - `Component = 0 Array element`。
+> - `Mesh User... = None`。
+> - `Skinning... = Skin on the Fly`。
+> - `Sampling R... = 0 Array element`。
+> - `Whole Mesh = -1`。
+> - `Filtered Bo... = 0 Array element`，`Filtered So... = 0 Array element`。
+> - `Uv Set Index = 0`。
+> - `Require Cur...` 勾选。
+> - `Mesh Sampling Type = Skeleton (Bones)`。
+> - `Bone Sampling Mode = Random (All Bones)`。
+> - `Position Sampling = Apply (Rigid)`。
+> - `Sampled Position = (0.0, 0.0, 0.0)`；只记录字段值，不额外断言坐标系。
+> - `Sampled Position` 来源下拉为 `Sampled Mesh`。
+> - `Write To Particle` 勾选。
+> - `Velocity Sampling = Output`。
+> - `Orientation Sampling = Apply`。
+> - `Use Sampled Mesh...` 勾选。
+>
+> Timeline / 字幕:
+> - Niagara Timeline 当前约 `2.76` 秒，帧率 `240 fps`。
+> - 字幕文本为“指头有很多本，所以这里稍微密集一些。”。
+>
+> 画面含义: 该帧记录骨骼随机采样到粒子位置的关键设置，并说明手指/骨骼数量较多区域会显示更密集的粒子点。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Skeletal Mesh Location` 持续采样与后续模块验证
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Timeline
+> - 所属: `Death_01 / Empty`，Preview Mesh `Greystone`。
+> - 目的: 继续验证骨骼采样粒子在播放过程中的分布，并记录后续 `Skeletal Mesh Location 001` 模块已出现在 Stack 中。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中白色粒子点形成更完整的角色轮廓，头部、躯干、手臂、腿部和武器附近均有点状分布。
+> - Particle Counts 显示约 `2,516 Current / 4,483 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - System 为 `Death_01`，Emitter 为 `Empty`，GPU 标记可见。
+> - 当前选中 `Skeletal Mesh Location`，标签为 `Bones`、`Random`。
+> - Stack 中在 `Particle Update` 下可见后续 `Skeletal Mesh Location 001`，同样标注 `Bones`、`Random`。
+> - `Sprite Renderer` 位于 Render 组。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - `Source Mode = Default`。
+> - `Preview Mesh = Greystone`。
+> - `Source Actor = None`。
+> - `Component = 0 Array element`。
+> - `Mesh User... = None`。
+> - `Skinning... = Skin on the Fly`。
+> - `Sampling R... = 0 Array element`。
+> - `Whole Mesh = -1`。
+> - `Uv Set Index = 0`。
+> - `Require Cur...` 勾选。
+> - `Mesh Sampling Type = Skeleton (Bones)`。
+> - `Bone Sampling Mode = Random (All Bones)`。
+> - `Position Sampling = Apply (Rigid)`。
+> - `Sampled Position = (0.0, 0.0, 0.0)`；只记录字段值，不额外断言坐标系。
+> - `Sampled Position` 来源为 `Sampled Mesh`。
+> - `Write To Particle` 勾选。
+> - `Velocity Sampling = Output`。
+> - `Orientation Sampling = Apply`。
+> - `Use Sampled Mesh...` 勾选。
+>
+> Timeline:
+> - Niagara Timeline 当前约 `6.01` 秒，帧率 `240 fps`。
+>
+> 画面含义: 该帧说明骨骼随机采样在更晚时间仍保持角色轮廓粒子分布，并为后续区分 Spawn 时采样与 Update 时采样提供对照。
+
+### 00:12:20-00:16:08 速度
+
+- 本段定位：速度。
+- 知识点：给你们展示幾个案例 我们现在最重要的選項 当然是如何採樣 根據什么標準将位置值放置於此 可以認为是確定该標準的 尺度瓦片網格的 屬性值就是要確定的視線。
+- 知识点：默認是本体 这里有插槽 当然这里設置的插槽 可以認为是可以取用这些插槽 而且使用插槽的情况并不多 定要时可以使用 最常用的情况是三角形 如果更改三角形。
+- 知识点：則会按照所有面的標準 以表面的標準显示出来 这次暫时关闭 如果用線框查看 可以認为在这里三角形面 是從这樣的面生成的 那麼相反 如果选择这里的表面頂點部分。
+- 知识点：就会在構成该面的點上生成 然后这里应用的屬性是 位置的偏移值 简单来說是基於位置的 基於位置生成这个偏移值 变得胖了 然后这个偏移值是在什么轴上。
+- 知识点：偏移的空间是決定的 然后速度的情况在应用时动画时 角色移动时 然后獲取移动方向的速度 可以認为受到了该速度的影响。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`速度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Skeletal Mesh Location` 的 Bone Sampling Mode 说明
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Tooltip + Timeline + 字幕
+> - 所属: `Death_01 / Empty`，Preview Mesh `Greystone`。
+> - 目的: 说明骨骼采样模式如何决定粒子位置来源，并记录当前仍使用全部骨骼随机采样。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中白色粒子点沿 `Greystone` 角色轮廓分布，头部、躯干、手臂和腿部区域均有点状粒子。
+> - Particle Counts 显示约 `2,534 Current / 4,483 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - System 为 `Death_01`，Emitter 为 `Empty`，GPU 标记可见。
+> - `Skeletal Mesh Location` 被选中，标签为 `Bones`、`Random`。
+> - Stack 中可见后续 `Skeletal Mesh Location 001`，位于 `Particle Update` 下。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - `Preview Mesh = Greystone`。
+> - `Source Mode = Default`，`Source Actor = None`。
+> - `Skinning Mode = Skin on the Fly`，`Whole Mesh LOD = -1`。
+> - `Filtered Bones = 0 Array element`，`Filtered Sockets = 0 Array element`。
+> - `Uv Set Index = 0`，`Require Current Fra...` 勾选。
+> - `Mesh Sampling Type = Skeleton (Bones)`。
+> - `Bone Sampling Mode = Random (All Bones)`。
+>
+> Tooltip:
+> - `Bone Sampling Mode` 提示说明可用三种模式：`All` 从除 Exclusion Bone 外的全部骨骼选择；`Filtered` 从 filtered list 中选择；`Unfiltered` 从不在 filtered list 中的骨骼选择。
+> - Tooltip 中还显示 `Name: Bone Sampling Mode`，`Type: ENiagaraBoneSamplingMode`。
+>
+> Timeline / 字幕:
+> - Niagara Timeline 当前约 `8.89` 秒，帧率 `240 fps`。
+> - 字幕文本为“根据什么标准将位置值放置于此”。
+>
+> 画面含义: 该帧记录骨骼采样模式的选择逻辑，当前粒子按 `Greystone` 的全部骨骼随机生成。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Skeletal Mesh Location` 三角面表面采样
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Timeline + 字幕
+> - 所属: `Death_01 / Empty`，Preview Mesh `Greystone`。
+> - 目的: 将采样方式从骨骼切换到网格三角面表面，观察粒子覆盖角色表面的效果。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中白色粒子点密集覆盖 `Greystone` 角色表面，头部、躯干、手臂、腿部与一侧武器附近均可见点状分布。
+> - Particle Counts 显示约 `2,517 Current / 1,750 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - System 为 `Death_01`，Emitter 为 `Empty`，GPU 标记和警告图标可见。
+> - `Skeletal Mesh Location` 被选中，标签为 `Triangles`、`Random`。
+> - Stack 中 `Emitter State = Self / Infinite`，`Spawn Rate`、`Initialize Particle`、`Particle State`、`Sprite Renderer` 可见。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - `Preview Mesh = Greystone`。
+> - `Source Mode = Default`，`Source Actor = None`。
+> - `Skinning Mode = Skin on the Fly`，`Whole Mesh LOD = -1`。
+> - `Filtered Bones = 0 Array element`，`Filtered Sockets = 0 Array element`。
+> - `Uv Set Index = 0`，`Require Current Fra...` 勾选。
+> - `Mesh Sampling Type = Surface (Triangles)`。
+> - `Triangle Sampling Mode = Random (All Triangles)`。
+> - `Sampled UV Index = 0`。
+> - `Position Sampling = Apply (Rigid)`。
+> - `Sampled Position Offset = (0.0, 0.0, 0.0)`；只记录字段值，不额外断言坐标系。
+> - `Sampled Position Offset` 来源下拉为 `Sampled Mesh`。
+> - `Write To Particle Position` 勾选。
+> - `Velocity Sampling = Output`。
+> - `Orientation Sampling = Apply`。
+> - `Use Sampled Mesh Attr...` 勾选。
+>
+> Timeline / 字幕:
+> - Niagara Timeline 当前约 `8.89` 秒，帧率 `240 fps`。
+> - 字幕文本为“然后这里应用的属性是位置的偏移值，简单来说是基于位置的，基于位置生成偏移值。”
+>
+> 画面含义: 该帧记录 `Surface (Triangles)` 随机三角面采样和位置写回设置，粒子由骨骼点分布变为更贴近网格表面的密集分布。
+> 图表转写（UE-GTXT v4）
+> - 类型: 三角面采样状态与字幕中的骨骼模式说明
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Timeline + 字幕
+> - 所属: `Death_01 / Empty`，Preview Mesh `Greystone`。
+> - 目的: 继续查看 `Surface (Triangles)` 采样下的粒子分布，同时字幕提示教学流程会先设置为骨骼。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中白色粒子点沿 `Greystone` 表面形成角色轮廓，整体密度低于上一帧但仍覆盖头部、躯干、手臂、腿部和武器附近。
+> - Particle Counts 显示约 `1,066 Current / 3,716 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - `Skeletal Mesh Location` 被选中，标签仍显示 `Triangles`、`Random`。
+> - `Skeletal Mesh Location 001` 在 `Particle Update` 下可见，标签为 `Bones`、`Random`。
+> - `Sprite Renderer` 位于 Render 组。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - `Preview Mesh = Greystone`。
+> - `Source Mode = Default`，`Source Actor = None`。
+> - `Skinning Mode = Skin on the Fly`，`Whole Mesh LOD = -1`。
+> - `Filtered Bones = 0 Array element`，`Filtered Sockets = 0 Array element`。
+> - `Uv Set Index = 0`，`Require Current Fra...` 勾选。
+> - `Mesh Sampling Type = Surface (Triangles)`。
+> - `Triangle Sampling Mode = Random (All Triangles)`。
+> - `Sampled UV Index = 0`。
+> - `Position Sampling = Apply (Rigid)`。
+> - `Sampled Position Offset = (0.0, 0.0, 0.0)`；只记录字段值，不额外断言坐标系。
+> - `Sampled Position Offset` 来源为 `Sampled Mesh`。
+>
+> Timeline / 字幕:
+> - Niagara Timeline 当前约 `2.21` 秒，帧率 `240 fps`。
+> - 字幕文本为“这个先设置为骨骼。”。
+>
+> 画面含义: 截图当前可读字段仍是三角面表面采样；字幕表达教学口述正在说明先设为骨骼。两者记录为同一时刻的 UI 状态与口述说明，不合并成同一个参数结论。
+
+### 00:16:24-00:19:24 关键流程 06
+
+- 本段定位：关键流程 06。
+- 知识点：这是选择想要排除的骨骼 现在跟於我们剛剛选择的 登骨重疊 看起来像是無法排除 排除的部分我覺得可以这樣理解 胸部这个骨量有點多 確認起来有點模糊。
+- 知识点：看这樣的骨頭比較好 外層互对 分辨率有點不同 可能这里选择有點不太合適 所以剛才这里有个點 但现在消失了 现在这樣解鎖就会出现 这里是想要生成的。
+- 知识点：非对象的选择選項 那麼过濾的对象 反而是在这里生长 所以现在勾选这个 然后再选择一次 剛才我们选择Shield Outer 进行选择 这里随机选择也没關係。
+- 知识点：直接选择也没關係 这里标记为Filtrated Bone 需要选择Filtrated Bone 那麼就在这里生成 你们可以选择想要的对象。
+- 知识点：只在选择的对象中生成 特定部位的对象 那麼这里随机非过濾的对象 选择反轉的对白 未选择的本。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Skeletal Mesh Location` 排除骨骼名称搜索
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Bone 下拉列表
+> - 所属: `Death_01 / Empty`，Preview Mesh `Greystone`。
+> - 目的: 在骨骼采样模式下输入排除骨骼名称，查看可选骨骼候选。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中白色粒子点沿角色骨骼轮廓稀疏分布。
+> - Particle Counts 显示约 `2,517 Current / 3,366 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - `Skeletal Mesh Location` 被选中，标签为 `Bones`、`Random`。
+> - `Skeletal Mesh Location 001` 在 `Particle Update` 下可见，标签为 `Bones`、`Random`。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - `Preview Mesh = Greystone`。
+> - `Source Mode = Default`，`Source Actor = None`。
+> - `Skinning Mode = Skin on the Fly`，`Whole Mesh LOD = -1`。
+> - `Filtered Bones = 0 Array element`，`Filtered Sockets = 0 Array element`。
+> - `Exclude Bone Name` 复选框处于勾选状态。
+> - 骨骼搜索框输入 `ik`。
+> - 下拉候选可读项包括 `ik_foot_root`、`ik_foot_l`、`ik_foot_r`、`ik_hand_root`、`ik_hand_gun`、`ik_hand_l`、`ik_hand_r`。
+> - `Mesh Sampling Type = Skeleton (Bones)`。
+> - `Position Sampling = Apply (Rigid)`，`Sampled Position Offset = (0.0, 0.0, 0.0)`；只记录字段值，不额外断言坐标系。
+> - `Write To Particle Position` 勾选。
+>
+> 画面含义: 该帧记录通过 `Exclude Bone Name` 选择要排除的骨骼，当前正在按 `ik` 搜索 IK 相关骨骼名称。
+> 图表转写（UE-GTXT v4）
+> - 类型: 骨骼列表浏览与排除骨骼字段
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Bone 下拉列表
+> - 所属: `Death_01 / Empty`，Preview Mesh `Greystone`。
+> - 目的: 在骨骼下拉列表中浏览可用于过滤/排除的骨骼名称，并记录当前字段值。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中白色粒子点沿角色轮廓分布，点数比前一帧少，主要集中在头部、躯干、手臂、腿部和一侧武器附近。
+> - Particle Counts 显示约 `466 Current / 3,616 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - `Skeletal Mesh Location` 被选中，标签为 `Bones`、`Random`。
+> - Emitter `Empty` 显示 GPU 标记。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - 骨骼下拉列表展开，搜索框显示 `Search Elements`。
+> - 列表可读项包括 `root`、`pelvis`、`butt_cloth_l_01`、`butt_cloth_l_02`、`butt_cloth_r_01`、`butt_cloth_r_02`、`loin_cloth_01`、`loin_cloth_02`、`loin_cloth_03`、`loin_cloth_04`、`spine_01`、`spine_02`、`spine_03`、`back_fur_1_c`、`back_fur_2_c`、`back_fur_1_l`、`back_fur_2_l`、`back_fur_3_l`、`back_fur_1_r`、`back_fur_2_r`、`back_fur_3_r`。
+> - `Exclude Bone Name` 勾选，字段当前显示 `L_brow_outer`。
+> - `Mesh Sampling Type = Skeleton (Bones)`。
+> - `Bone Sampling Mode = Random (All Bones)`。
+> - `Position Sampling = Apply (Rigid)`，`Sampled Position Offset = (0.0, 0.0, 0.0)`；只记录字段值，不额外断言坐标系。
+> - `Write To Particle Position` 勾选。
+>
+> 画面含义: 该帧记录骨骼候选列表的可读名称，并显示当前排除骨骼字段为 `L_brow_outer`。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Filtered Bones` 过滤骨骼采样
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Timeline + 字幕
+> - 所属: `Death_01 / Empty`，Preview Mesh `Greystone`。
+> - 目的: 将采样改为只从过滤骨骼中随机选择，示例骨骼为 `shield_outer`。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中只剩少量白色粒子点，集中为单个小亮点。
+> - Particle Counts 显示约 `33 Current / 3,417 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - `Skeletal Mesh Location` 被选中，标签为 `Bones`、`Random`。
+> - `Empty` 显示 GPU 标记和警告图标。
+> - `Sprite Renderer` 位于 Render 组。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - 顶部显示 warning: `Filtered bones may not animate in all LODs.`。
+> - `Preview Mesh = Greystone`。
+> - `Source Mode = Default`，`Source Actor = None`。
+> - `Skinning Mode = Skin on the Fly`，`Whole Mesh LOD = -1`。
+> - `Filtered Bones = 2 Array elements`。
+> - `Element #0 = shield_outer`，`Element #1 = None`。
+> - `Filtered Sockets = 0 Array element`。
+> - `Exclude Bone Name` 未勾选，字段显示 `shield_outer` 但处于灰置状态。
+> - `Uv Set Index = 0`，`Require Current Fra...` 勾选。
+> - `Mesh Sampling Type = Skeleton (Bones)`。
+> - `Bone Sampling Mode = Random (Filtered Bones)`。
+> - `Position Sampling = Apply (Rigid)`。
+> - `Sampled Position Offset = (0.0, 0.0, 0.0)`；只记录字段值，不额外断言坐标系。
+> - `Sampled Position Offset` 来源为 `Sampled Mesh`。
+>
+> Timeline / 字幕:
+> - Niagara Timeline 当前约 `0.13` 秒，帧率 `240 fps`。
+> - 字幕文本为“你们可以选择想要的对象，只在选择的对象中生成,”。
+>
+> 画面含义: 该帧记录 `Filtered Bones` 模式下粒子只从选中的 `shield_outer` 等骨骼中生成，预览点数明显减少。
+
+### 00:19:27-00:22:25 Water
+
+- 本段定位：Water。
+- 知识点：不相關的本才会使用 然后插座 可以用相同的工作方法 就这樣看 所以可以不单独测试 然后再给大家展示一个测试 这樣也可以設置所需区域 这是以本为標準的部分。
+- 知识点：如果我们利用表面 这樣做时也可能想要设置区域 进行生成 这种情况下后续会继续观察 这里写着採樣区域 后续会增加一个 现在这里是3.5 增加一个。
+- 知识点：现在这里標有1 所以没有显示内容 在这里的比例表中 后续会搜索資產細節 如果查看区域 现在可观察到没有任何内容 将尝试添加一次 那麼有選項。
+- 知识点：可以写名稱 我们先写做Body 那麼 Waterwell Filter和Born Filter就在这里 我们剛才添加的樣本 只在所需这个樣本中生成了。
+- 知识点：可以認为它與那个選項相同 但是后续会查看这个網格的標準 所以 我们先添加一个材质 有一个写入材质名稱的空间。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Skeletal Mesh Location` 的 Unfiltered Bones 采样
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Timeline
+> - 所属: `Death_01 / Empty`，Preview Mesh `Greystone`。
+> - 目的: 从 `Filtered Bones` 切到反向骨骼过滤，说明粒子可在过滤列表以外的骨骼中生成。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中白色粒子点沿 `Greystone` 角色和骨架轮廓分布，数量明显多于只采样 `Filtered Bones` 的状态。
+> - Particle Counts 显示约 `1,850 Current / 1,723 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - System 为 `Death_01`，Emitter 为 `Empty`，Details 顶部显示 `Empty` 勾选。
+> - `Skeletal Mesh Location` 被选中，标签为 `Bones`、`Random`。
+> - `Skeletal Mesh Location 001` 在 `Particle Update` 下可见，Render 组中有 `Sprite Renderer`。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - `Preview Mesh = Greystone`。
+> - `Source Mode = Default`，`Source Actor = None`。
+> - `Component Tags = 0 Array element`，`Mesh User Param... = None`。
+> - `Skinning Mode = Skin on the Fly`。
+> - `Sampling Regions = 0 Array element`。
+> - `Whole Mesh LOD = -1`。
+> - warning: `Filtered bones may not animate in all LODs.`。
+> - `Filtered Bones = 2 Array elements`，`Element #0 = shield_outer`，`Element #1 = None`。
+> - `Filtered Sockets = 0 Array element`。
+> - `Exclude Bone Name` 未勾选且灰置，字段显示 `shield_outer`。
+> - `Uv Set Index = 0`，`Require Current Fra...` 勾选。
+> - `Mesh Sampling Type = Skeleton (Bones)`。
+> - `Bone Sampling Mode = Random (Unfiltered Bones)`。
+> - `Position Sampling = Apply (Rigid)`。
+> - `Sampled Position Offset = (0.0, 0.0, 0.0)`；只记录字段值，不额外断言坐标系。
+> - `Sampled Position Offset` 来源为 `Sampled Mesh`。
+>
+> Timeline:
+> - Niagara Timeline 当前约 `3.77` 秒，帧率 `240 fps`。
+>
+> 画面含义: `Filtered Bones` 中仍记录 `shield_outer`，但 `Bone Sampling Mode` 设为 `Random (Unfiltered Bones)` 后，采样对象变为过滤列表以外的骨骼。
+> 图表转写（UE-GTXT v4）
+> - 类型: Skeletal Mesh Editor 中添加 Sampling Region
+> - 组成部分: Skeletal Mesh Viewport + Skeleton Tree + Asset Details + Content Browser + 字幕
+> - 所属: `Greystone` Skeletal Mesh。
+> - 目的: 在 Skeletal Mesh 资产上查看并准备添加 `Sampling Regions`，为后续 Niagara 只在指定区域采样做准备。
+>
+> Skeletal Mesh Viewport:
+> - 当前打开 `Greystone*`，视口模式可读为 `Perspective`、`Wireframe`、`Character`、`LOD Auto`。
+> - Viewport 左上角显示 `Previewing Reference Pose`。
+> - 统计信息: `LOD: 0`，`Current Screen Size: 7.142`，`Triangles: 87,117`，`Vertices: 59,362`，`UV Channels: 2`，`Approx Size: 305x339x319`。
+> - 视口中显示 `Greystone` 上半身线框和骨骼叠加，用于确认骨骼/区域编辑对象。
+>
+> Skeleton Tree:
+> - 可读骨骼项包括 `pinky_03_l`、`ring_01_l`、`ring_02_l`、`ring_03_l`、`thumb_01_l`、`thumb_02_l`、`thumb_03_l`、`lowerarm_twist_01_l`、`shield_inner`、`shield_outer`、`lowerarm_twist_02_l`、`lowerarm_twist_03_l`、`upperarm_twist_01_l`、`upperarm_twist_02_l`、`clavicle_r`、`shoulderPad_r`、`shoulder_r`、`upperarm_r`。
+>
+> Asset Details:
+> - Details 搜索框输入 `reg`。
+> - `Sampling > Regions = 0 Array element`。
+> - `Regions` 右侧有 Add Element 按钮，用于新增采样区域。
+>
+> Content Browser / 字幕:
+> - Content Browser 当前选中 `Greystone` Skeletal Mesh。
+> - 字幕文本为“那么有选项，这里可以写名称。”。
+>
+> 画面含义: 该帧定位到 `Greystone` Skeletal Mesh 的 `Sampling > Regions` 数组，当前没有区域，下一步将在这里新增命名区域。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Skeletal Mesh Location` 的 Sampling Region 表面采样
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Timeline + 字幕
+> - 所属: `Death_01 / Empty`，Preview Mesh `Greystone`。
+> - 目的: 记录已加入 `Body` 采样区域后，`Surface (Triangles)` 采样仍按三角面模式生成粒子。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中白色粒子点覆盖 `Greystone` 角色表面区域，角色附近之外还可见少量离散点。
+> - Particle Counts 显示约 `483 Current / 4,516 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - `Skeletal Mesh Location` 被选中，标签为 `Triangles`、`Random`。
+> - `Skeletal Mesh Location 001` 在 `Particle Update` 下可见。
+> - `Sprite Renderer` 位于 Render 组。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - `Preview Mesh = Greystone`。
+> - `Source Mode = Default`，`Source Actor = None`。
+> - `Skinning Mode = Skin on the Fly`。
+> - `Sampling Regions = 1 Array element`。
+> - `Element #0 = Body`。
+> - `Whole Mesh LOD = -1`。
+> - `Filtered Bones = 0 Array element`，`Filtered Sockets = 0 Array element`。
+> - `Exclude Bone Name` 灰置，字段显示 `shield_outer`。
+> - `Uv Set Index = 0`，`Require Current Fra...` 勾选。
+> - `Mesh Sampling Type = Surface (Triangles)`。
+> - `Triangle Sampling Mode = Random (All Triangles)`。
+> - `Sampled UV Index = 0`。
+> - `Position Sampling = Apply (Rigid)`。
+> - `Sampled Position Offset = (0.0, 0.0, 0.0)`；只记录字段值，不额外断言坐标系。
+> - `Sampled Position Offset` 来源为 `Sampled Mesh`。
+>
+> Timeline / 字幕:
+> - Niagara Timeline 当前约 `10.17` 秒，帧率 `240 fps`。
+> - 字幕文本为“不仅仅是设置所需区域,”。
+>
+> 画面含义: `Sampling Regions` 中已有 `Body`，但当前 `Triangle Sampling Mode` 仍为 `Random (All Triangles)`，因此这帧重点是确认区域已绑定到模块而非切换到区域过滤模式。
+
+### 00:22:35-00:25:10 关键流程 08
+
+- 本段定位：关键流程 08。
+- 知识点：只在包裝的那个網格中出现 这张是一个非常實用的功能吧 在某些特定武器中發光或者冒火 在这种情况下 使用这种選項的情况会很多 这种功能如果没有的話。
+- 知识点：可能就是項目程序員們 会制作一个選項来找到这个部分 因为有選項 所以这樣做也不用吧 所以这个部分我就解釋一下 比想像的简单吧 首先关于滑行者網格位置的模塊。
+- 知识点：如何利用音頻也是很重要的 您可以这麼理解 这里现在作为本尝验证效果 我们来一次进行Direct Allboard 现在设置为0 这个是本的縮影號碼。
+- 知识点：您可以这麼理解 这樣会不斷移动 那麼输入某个变量的話 就可以成为一个一次掃描的選項吧 可以这樣利用一下 那麼简单来說就是 这次課程简单D。
+- 知识点：說明了滑行者網格位置的選項 及其使用方法 关于如何利用这部分 我先保存资源 選項的部分好像不需要保存 可以删除 下次需要學習这个角色 如何溶解消失。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Sampling Regions` 限定三角面采样
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Timeline + 字幕
+> - 所属: `Death_01 / Empty`，Preview Mesh `Greystone`。
+> - 目的: 将三角面采样限定到 `Body` Sampling Region，展示粒子只在指定区域内生成的用法。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中白色粒子点密集分布在 `Greystone` 的局部表面区域，呈多个分离的身体/表面簇，而不是均匀覆盖全部角色。
+> - Particle Counts 显示约 `2,533 Current / 1,730 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - `Skeletal Mesh Location` 被选中，标签为 `Triangles`、`Random`。
+> - `Skeletal Mesh Location 001` 在 `Particle Update` 下可见，Render 组包含 `Sprite Renderer`。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - `Preview Mesh = Greystone`。
+> - `Source Mode = Default`，`Source Actor = None`。
+> - `Skinning Mode = Skin on the Fly`。
+> - `Sampling Regions = 1 Array element`。
+> - `Element #0 = Body`。
+> - `Whole Mesh LOD = -1`。
+> - `Filtered Bones = 0 Array element`，`Filtered Sockets = 0 Array element`。
+> - `Uv Set Index = 0`，`Require Current Fra...` 勾选。
+> - `Mesh Sampling Type = Surface (Triangles)`。
+> - `Triangle Sampling Mode = Random (Sampling Regions)`。
+> - `Sampled UV Index = 0`。
+> - `Position Sampling = Apply (Rigid)`。
+> - `Sampled Position Offset = (0.0, 0.0, 0.0)`；只记录字段值，不额外断言坐标系。
+> - `Sampled Position Offset` 来源为 `Sampled Mesh`。
+>
+> Timeline / 字幕:
+> - Niagara Timeline 当前约 `9.03` 秒，帧率 `240 fps`。
+> - 字幕文本为“这将是一个非常实用的功能吧？”。
+>
+> 画面含义: `Triangle Sampling Mode` 已切到 `Random (Sampling Regions)`，并使用 `Body` 区域作为采样范围；预览用于验证粒子生成被限定到区域对应的表面部分。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Bone Sampling Mode` 的 Direct 模式选择
+> - 组成部分: Niagara Preview + Particle Counts + System Overview + Skeletal Mesh Location Details + Bone Sampling Mode 下拉列表 + Timeline + 字幕
+> - 所属: `Death_01 / Empty`，Preview Mesh `Greystone`。
+> - 目的: 展开骨骼采样模式，说明可从随机采样切换为 Direct 模式，并以索引值选择骨骼集合中的项。
+>
+> Niagara Preview / Particle Counts:
+> - Preview 中白色粒子点稀疏分布在 `Greystone` 的头部、躯干、四肢和武器轮廓附近。
+> - Particle Counts 显示约 `2,516 Current / 3,400 Max (est.) - [Empty] [Active]`。
+>
+> System Overview / Stack:
+> - `Skeletal Mesh Location` 被选中，标签为 `Bones`、`Random`。
+> - `Skeletal Mesh Location 001` 在 `Particle Update` 下可见。
+>
+> Details:
+> - Owner: `Empty.Skeletal Mesh Location`。
+> - `Preview Mesh = Greystone`。
+> - `Source Mode = Default`。
+> - `Sampling Regions = 1 Array element`，`Element #0 = Body`。
+> - `Whole Mesh LOD = -1`。
+> - `Filtered Bones = 0 Array element`，`Filtered Sockets = 0 Array element`。
+> - `Mesh Sampling Type = Skeleton (Bones)`。
+> - `Bone Sampling Mode` 下拉列表展开。
+> - 下拉选项可读为 `Random (Filtered Bones)`、`Random (Unfiltered Bones)`、`Random (All Bones)`、`Direct (Filtered Bones)`、`Direct (Unfiltered Bones)`、`Direct (All Bones)`。
+> - 当前高亮项为 `Direct (Unfiltered Bones)`；字段原值行仍显示 `Random (Unfiltered Bones)`，表示正在选择模式。
+> - `Position Sampling = Apply (Rigid)`。
+>
+> Timeline / 字幕:
+> - Niagara Timeline 当前约 `0.30` 秒，帧率 `240 fps`。
+> - 字幕文本为“现在设为0”。
+>
+> 画面含义: 下拉列表给出 Random 与 Direct 两类骨骼采样方式；结合上下文，Direct 模式用于按索引选择骨骼集合中的项，当前演示将索引设为 `0` 的用法。
+> 图表转写（UE-GTXT v4）
+> - 类型: 关卡视口与 Sequencer 收尾状态
+> - 组成部分: Level Viewport + Content Browser + Outliner + Details + Sequencer + Niagara Editor 局部 + 字幕
+> - 所属: Level `05_Death_Skeletal`，Niagara System `Death_01`。
+> - 目的: 保存/回看当前死亡角色效果场景，并预告下一节角色溶解消失内容。
+>
+> Level Viewport:
+> - 当前关卡标签为 `05_Death_Skeletal`。
+> - Viewport 顶部显示正在 `Pilot Actor: Cine Camera Actor`。
+> - 画面中 `Greystone` 角色跪伏在网格地面上，前方可见大剑，视口用于确认死亡姿态和镜头构图状态。
+>
+> Content Browser:
+> - 当前目录在 `Content/ParagonGreystone/Characters/Heroes/Greystone/Meshes`。
+> - 可见资源包括 `Greystone` Skeletal Mesh、两个 Greystone Physics Asset，以及 `Greystone_Skeleton`。
+>
+> Outliner / Details:
+> - Outliner 可读对象包括 `DirectionalLig...`、`01_Swing_Trail`、`Cine Camera Ac...`、`Floor`、`Greystone`、`Death 01`、`PlayerStart`。
+> - `Death 01` 类型列显示为 Niagara 相关对象，Sequencer 列关联 `05_Death_Skeletal`。
+> - Details 面板显示未选中对象提示 `Select an object to view details.`。
+>
+> Sequencer / Niagara Editor:
+> - 底部 Sequencer 面板打开，帧率 `30 fps`，当前序列名可读为 `05_Death_Skeletal`。
+> - 下方同时露出 `Death_01` Niagara Editor 的一部分，可见 `Particle Counts` 约 `0 Current / 486 Max (est.) - [Empty] [Active]` 和 Details 的 `Empty` 面板顶部。
+>
+> 字幕:
+> - 字幕文本为“下次我会学习这个角色如何溶解消失”。
+>
+> 画面含义: 该帧不是新的 Niagara 参数设置，而是回到关卡与 Sequencer，确认 `Death_01` 已放入死亡角色场景并结束本节 `Skeletal Mesh Location` 说明。
+
+## 补充视觉证据
+
+### S02 00:05:18
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 补充截图
+> - 组成部分: Sequencer Timeline + Track 列表 + Level Viewport 顶部 + Content Browser + Outliner + 字幕
+> - 所属: Level Sequence `05_Death_Skeletal`。
+> - 目的: 补充记录本节早段 Sequencer 中角色、摄像机和动画段的配置状态。
+>
+> Sequencer Timeline:
+> - Sequencer 当前打开 `05_Death_Skeletal`，帧率 `30 fps`。
+> - 当前帧/时间指示可读为 `0076`，并显示 `77 of 105`。
+> - 顶部有 Camera Cuts 预览条，包含多个缩略画面。
+> - 轨道列表包含 `Camera Cuts`、`Cine Camera Actor`、`CameraComponent` 和 `Greystone`。
+> - `CameraComponent` 下可见 `Current Aperture = 2.8`、`Current Focal Length = 15.0`、`Manual Focus Distance (Focus Settings) = 100000.0`、`Spawned` 勾选，以及 `Transform` 轨道。
+> - `Greystone` 下可见 `Animation`、`Spawned` 勾选和 `Transform` 轨道。
+> - `Greystone.Animation` 轨道中有紫色动画段 `Stun_Start`。
+>
+> Level / Content / Outliner:
+> - 顶部关卡为 `05_Death_Skeletal`，Viewport 处于 `Pilot Actor: Cine Camera Actor`。
+> - Content Browser 中可见并选中 `Greystone` Skeletal Mesh。
+> - Outliner 中可见 `Cine Camera Actor`、`Greystone`、`Death 01` 等对象，Sequencer 列关联 `05_Death_Skeletal`。
+>
+> 字幕:
+> - 字幕文本为“接下来要制作粒子了。粒子这次暂时会给大家展示一下”。
+>
+> 画面含义: 补充图实际是 Sequencer 配置截图，不是 Niagara 节点图；它记录摄像机参数轨道、`Greystone` 的 `Stun_Start` 动画段、Spawned/Transform 轨道和当前序列帧。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

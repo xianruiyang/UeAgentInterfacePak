@@ -1,0 +1,634 @@
+# 09-1 制作Niagara粒子特效
+
+# 09-1 制作Niagara粒子特效
+
+## 关键术语
+
+- `Lifetime`、`Velocity`、`Color`、`Alpha`、`Scale Color`、`SubUV`、`UV`、`Add`、`Texture`、`材质`、`粒子`、`Niagara`、`Emitter`、`Particle`、`Spawn Rate`、`Spawn`、`Niagara System`、`Initialize Particle`
+
+## 分段知识
+
+### 00:00:05-00:04:57 Color、Scale Color、材质
+
+- 本段定位：Color、Scale Color、材质。
+- 知识点：你好,我在口腔中再次问候你 上次我们简单地利用天花材质进行了粒子工作 接下来我们要正式进行一次粒子工作。
+- 知识点：粒子工作会涉及很多元素 可能会用到超过十多发射器 所以从发光效果开始 首先简单处理一下初始爆炸的元素 在把握紧张感的同时向上爆炸的感觉。
+- 知识点：烟雾元素,碎片元素,以及最后的后期和写录元素 后续会快速进行,因为要加入的元素很多 所以后续会快速进行 上次我们已经进行了这里了 首先会用空的发射器开始。
+- 知识点：需要写上Glow E这个名字 然后材质需要用到在第一次试力中使用过的 这个Spark Elative这个实力,然后复制过来 这次使用。
+- 知识点：需要连接这个并且打开 然后这是替换纹理 纹理将使用这个发光纹理 用Self once创建一个 用First创建一个就是适当减少摄像机的偏移。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Color`、`Scale Color`、`材质`、`纹理`、`粒子`、`发射器`、`生命周期`、`曲线`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara 初始状态与 Decal 曲线遗留上下文
+> - 组成部分: Niagara System Overview + Details + Curve Editor + Timeline + Preview
+> - 所属: `Exp_01 / Decal`
+> - 目的: 记录 p10 开头仍停留在上节 Decal 发射器与 Scale Color 曲线状态，随后开始制作新的 Glow 发射器。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | System Overview | `Exp_01` 系统节点和 `Decal` 发射器节点可见 |
+> | Details Owner | `Decal`，显示 `1 Particles` |
+> | 当前模块 | `Initialize Particle` |
+> | Lifetime Mode | `Direct Set` |
+> | Lifetime | `3.0` |
+> | Color Mode | `Unset` |
+> | Position Mode | `Simulation Position` |
+> | Sprite/Mesh/Ribbon 多项 | `Unset` |
+> | Curve Editor | `Decal Emitter > Scale Color > Scale Alpha / Scale RGB`，曲线从高值快速衰减到接近 `0` |
+> | Timeline | `Decal` 轨道可见 |
+>
+> 联动关系: 此图作为 p10 开始前的基线，说明 `Exp_01` 已有 Decal 发射器和 Scale Color 衰减曲线；后续新增的 Glow 发射器是在同一 Niagara System 内继续叠加。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Glow_01` Sprite Renderer 绑定
+> - 组成部分: Content Browser + Niagara Stack + Renderer Details + Curve Editor + Timeline
+> - 所属: `Exp_01 / Glow_01 / Sprite Renderer`
+> - 目的: 为第一个发光元素绑定加法发光材质实例。
+>
+> 模块栈:
+> | 组 | 模块/项 | 状态 |
+> |---|---|---|
+> | Emitter Summary | `Glow_01` | Enabled |
+> | Emitter Update | `Emitter State` | Enabled |
+> | Particle Spawn | `Initialize Particle` | Enabled |
+> | Particle Update | `Particle State` | Enabled |
+> | Render | `Sprite Renderer` | 当前选中并启用 |
+>
+> Renderer Details:
+> | 字段 | 值 |
+> |---|---|
+> | Material | `M_AdditiveDe_v01_Ins_01` |
+> | Material User Param Binding | `None` |
+> | Source Mode | `Particles` |
+> | Alignment | `Automatic` |
+> | Facing Mode | `Automatic` |
+> | Macro UV Radius | `0.0` |
+> | Default Pivot in UV Space | `0.5, 0.5` |
+> | Sort Mode | `None` |
+>
+> 关联状态:
+> - Content Browser 中可见并选中 `M_Additive...` 材质实例缩略图。
+> - Timeline 中 `Decal` 与 `Glow_01` 轨道同时存在，`Glow_01` 片段从时间 `0.00` 附近开始。
+>
+> 联动关系: `Sprite Renderer.Material` 决定 `Glow_01` 的可见发光纹理；`Source Mode=Particles` 表示渲染器读取粒子属性输出 Sprite。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Glow_01` Scale Color 基础设置
+> - 组成部分: Niagara Stack + Scale Color Details + Curve Editor + Timeline
+> - 所属: `Exp_01 / Glow_01 / Scale Color`
+> - 目的: 设置第一个发光元素的颜色基值，并保留 Alpha 衰减曲线上下文。
+>
+> 模块栈:
+> | 组 | 模块/项 | 状态 |
+> |---|---|---|
+> | Emitter Update | `Emitter State` | `Self` / `Once` 可见 |
+> | Particle Spawn | `Initialize Particle` | Enabled |
+> | Particle Spawn | `Camera Offset` | Enabled |
+> | Particle Update | `Particle State` | Enabled |
+> | Particle Update | `Scale Sprite Size` | Enabled |
+> | Particle Update | `Scale Color` | 当前选中并启用 |
+> | Render | `Sprite Renderer` | Enabled |
+>
+> Scale Color Details:
+> | 字段 | 值 |
+> |---|---|
+> | Scale Mode | `RGB and Alpha Separately` |
+> | Scale RGB | `Multiply Vector by Float` |
+> | Vector | `1.0, 1.0, 1.0` |
+> | Float | `1.0` |
+> | Scale Alpha | `1.0` |
+>
+> 曲线与时间线:
+> - Curve Editor 列表中可见 `Decal Emitter > Scale Color > Scale Alpha / Scale RGB`，当前曲线为从 `1.0` 附近下降到 `0` 的 Float 曲线。
+> - Timeline 中 `Decal` 与 `Glow_01` 轨道可见。
+>
+> 联动关系: `Glow_01.Scale Color` 先以白色基值输出，后续通过调整 RGB 向偏黄/金色变化，并用 Alpha 曲线控制消失。
+
+### 00:04:57-00:09:28 Alpha、生命周期、颜色
+
+- 本段定位：Alpha、生命周期、颜色。
+- 知识点：程度和Alpha适当平滑地消失的感觉 0.1变成1值,然后在0.5变成1值,消失 这就出现了这样消失的效果 现在的光韵已经完成了 简单的光韵。
+- 知识点：现在第一个光韵出来了 第二个光韵,也试着制作一下 把这个复制过来使用,为了快速 几乎颜色只会类似的东西就差不多。
+- 知识点：张力或生命期也是差不多 暂时换个材料使用 用之前的材料的纹力 复制实力放在这里 将使用这个纹力 这个纹力是在天地的位置 天地的位置和天地的位置。
+- 知识点：是一样的,只看这个大小 就会有这种形状 然后天移值适当降低一些 大约50,然后颜色和大小保持一样。
+- 知识点：有什么光在地上爆炸 就感觉有点强烈 然后复制一个,变成3号 这个是一个往上延伸的形状 需要放一个底部有点圆 然后上面越往上越尖的驱动器。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`生命周期`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Glow_01` RGB 与 Alpha 分离曲线
+> - 组成部分: Niagara Stack + Scale Color Details + Curve Editor + Timeline
+> - 所属: `Exp_01 / Glow_01 / Scale Color`
+> - 目的: 将发光颜色调成偏暖色，并让 Alpha 在生命周期前段保持、后段淡出。
+>
+> Scale Color Details:
+> | 字段 | 值 |
+> |---|---|
+> | Scale Mode | `RGB and Alpha Separately` |
+> | Scale RGB | `Multiply Vector by Float` |
+> | Vector | `5.0, 2.0, 1.0` |
+> | Float | `1.0` |
+> | Scale Alpha | `Float from Curve` |
+> | FloatCurve | `Curve for Floats` |
+> | CurveIndex | `PARTICLES NormalizedAge` |
+> | Scale Curve | `1.0` |
+>
+> 曲线:
+> - 右侧曲线编辑器显示 Alpha 曲线：起始约 `0`，约 `0.1` 时升至 `1.0`，在中段保持，后段回落到 `0`。
+> - 左下 Curve Editor 仍可见同一类 Float 曲线，用于对照 Scale Color 的衰减设置。
+>
+> 联动关系: RGB 向量 `5.0, 2.0, 1.0` 让 Glow 偏暖黄；Alpha 曲线让粒子先显现、保持一段时间，再按 `Particles.NormalizedAge` 消失。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Glow_02` Initialize Particle 设置
+> - 组成部分: Niagara System Overview + Initialize Particle Details + Curve Editor + Timeline
+> - 所属: `Exp_01 / Glow_02 / Initialize Particle`
+> - 目的: 复制第二个发光 Emitter，并设置较短寿命、偏移和非均匀 Sprite 尺寸。
+>
+> System Overview:
+> | 发射器 | 可见模块 |
+> |---|---|
+> | `Glow_01` | `Emitter State`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Camera Offset`、`Particle State`、`Scale Sprite Size`、`Scale Color`、`Sprite Renderer` |
+> | `Glow_02` | 与 `Glow_01` 类似，当前选中 `Initialize Particle` |
+>
+> Initialize Particle Details:
+> | 分组 | 字段 | 值 |
+> |---|---|---|
+> | Point Attributes | Lifetime Mode | `Direct Set` |
+> | Point Attributes | Lifetime | `0.35` |
+> | Point Attributes | Color Mode | `Unset` |
+> | Point Attributes | Position Mode | `Simulation Position` |
+> | Point Attributes | Position Offset | `0.0, 0.0, 20.0` |
+> | Point Attributes | Position Offset Coordinate Space | `Simulation` |
+> | Sprite Attributes | Sprite Size Mode | `Non-Uniform` |
+> | Sprite Attributes | Sprite Size | `300.0, 300.0` |
+> | Sprite Attributes | Sprite Rotation Mode | `Unset` |
+> | Sprite Attributes | Sprite UV Mode | `Unset` |
+>
+> Timeline: `Decal`、`Glow_01`、`Glow_02` 轨道可见，`Glow_02` 片段从时间 `0.00` 附近开始。
+>
+> 联动关系: `Glow_02` 通过短 Lifetime 和 `300.0 x 300.0` 的 Sprite Size 形成第二层较短的发光爆发；`Position Offset` 只记录为图中字段值，不额外断言坐标系。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Glow_03` Initialize Particle 设置
+> - 组成部分: Niagara System Overview + Initialize Particle Details + Curve Editor + Timeline
+> - 所属: `Exp_01 / Glow_03 / Initialize Particle`
+> - 目的: 制作第三个发光 Emitter，使用窄宽比例制造向上延伸的发光形状。
+>
+> Initialize Particle Details:
+> | 分组 | 字段 | 值 |
+> |---|---|---|
+> | Point Attributes | Lifetime Mode | `Direct Set` |
+> | Point Attributes | Lifetime | `0.35` |
+> | Point Attributes | Color Mode | `Unset` |
+> | Point Attributes | Position Mode | `Simulation Position` |
+> | Point Attributes | Position Offset | `0.0, 0.0, -20.0` |
+> | Point Attributes | Position Offset Coordinate Space | `Simulation` |
+> | Point Attributes | Mass Mode | `Unset / (Mass of 1)` |
+> | Sprite Attributes | Sprite Size Mode | `Non-Uniform` |
+> | Sprite Attributes | Sprite Size | `70.0, 300.0` |
+> | Sprite Attributes | Sprite Rotation Mode | `Unset` |
+> | Sprite Attributes | Sprite UV Mode | `Unset` |
+>
+> System Overview:
+> - `Glow_02` 和 `Glow_03` 发射器并列可见。
+> - `Glow_03` 的 Stack 中启用 `Emitter State`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Camera Offset`、`Particle State`、`Scale Sprite Size`、`Scale Color` 和 `Sprite Renderer`。
+>
+> 联动关系: `Glow_03` 的非均匀尺寸 `70.0, 300.0` 让发光 Sprite 成为窄而高的形态；`Position Offset` 作为 Simulation 坐标空间字段值记录，用于与 `Glow_02` 区分位置设定。
+
+### 00:09:28-00:14:25 精灵、生命周期、速度
+
+- 本段定位：精灵、生命周期、速度。
+- 知识点：精灵大小不是均匀曲线 论不规则,取胜知足 这个在0.5-6左右 按一次快捷键,有点瞬间 所以可能变化太快的话,生命周期变短。
+- 知识点：而且红色频道从0.5开始 这种感觉应该可以 颜色质,可以适当高饱和度 然后这个一开始可以亮一些 后面加曲线比较好 更自然,消失的感觉更强。
+- 知识点：这种话,然后我在这里加了封面 这个就放着 不知道为何有种不变的感觉 有种色就要变自然了 感觉有点弱呢,就这样吧 这种感觉就要看上面的。
+- 知识点：通过速度对齐 关闭Opcet添加Veloci 50大约会是 所以从任何方向看,都是向上 因为有LCT 把这个复制再来一个 需要写 我也会单独用一个点击。
+- 知识点：它在下面适当整理一下发型 这种纹理被使用 保存笔 要连上吧 这里上面产生了 这种感觉确实会出现 它更快一些 更高低,快速上升比 把这个尺码再加大一点。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`生命周期`、`速度`、`颜色`、`曲线`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Glow_03` Scale Sprite Size 曲线
+> - 组成部分: Niagara Stack + Scale Sprite Size Details + Curve Editor + Timeline
+> - 所属: `Exp_01 / Glow_03 / Scale Sprite Size`
+> - 目的: 让第三个发光 Sprite 的非均匀尺寸随生命周期变化。
+>
+> Scale Sprite Size Details:
+> | 字段 | 值 |
+> |---|---|
+> | Scale Sprite Size Mode | `Non-Uniform Curve` |
+> | Non-Uniform Curve | `Curve for Vector2D's` |
+> | CurveIndex | `PARTICLES NormalizedAge` |
+> | X Curve | 图中为红色曲线，当前值字段 `1.0` |
+> | Y Curve | 图中为绿色曲线，当前值字段 `1.0` |
+>
+> 曲线形态:
+> - 右侧曲线编辑器中 Y 曲线从生命周期开始的低值逐步升至接近 `1.0`。
+> - X 曲线在图中保持较低/接近水平的状态，用于与 Y 方向变化形成非均匀尺寸变化。
+>
+> 联动关系: `Glow_03.Initialize Particle` 已设置 `70.0, 300.0` 的基础非均匀尺寸；此处 `Scale Sprite Size` 再按 `Particles.NormalizedAge` 缩放 X/Y，形成随生命周期变化的窄高发光元素。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Glow_02` Scale Color 高强度曲线
+> - 组成部分: Niagara Stack + Scale Color Details + Curve Editor + Timeline + Preview
+> - 所属: `Exp_01 / Glow_02 / Scale Color`
+> - 目的: 增强第二个发光层的颜色强度，并用 Alpha 曲线控制出现与淡出。
+>
+> Scale Color Details:
+> | 字段 | 值 |
+> |---|---|
+> | Scale Mode | `RGB and Alpha Separately` |
+> | Scale RGB | `Multiply Vector by Float` |
+> | Vector | `10.0, 4.0, 1.5` |
+> | Float | `1.0` |
+> | Scale Alpha | `Float from Curve` |
+> | FloatCurve | `Curve for Floats` |
+> | CurveIndex | `PARTICLES NormalizedAge` |
+> | Scale Curve | `1.0` |
+>
+> 曲线与预览:
+> - 右侧 Alpha 曲线从 `0` 快速升至 `1`，在前中段保持，后段下降到 `0`。
+> - 左侧 Preview 处于 `Compiling...` 状态，当前图不记录最终粒子视觉结果。
+> - Timeline 中 `Decal`、`Glow_01`、`Glow_02` 轨道可见，`Glow_02` 当前选中。
+>
+> 联动关系: RGB 向量 `10.0, 4.0, 1.5` 提升 `Glow_02` 的暖色发光强度；Alpha 曲线决定它在生命周期中的可见时间段。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Glow_04` Initialize Particle 与 Add Velocity
+> - 组成部分: Niagara System Overview + Initialize Particle Details + Curve Editor + Timeline
+> - 所属: `Exp_01 / Glow_04`
+> - 目的: 复制第四个发光 Emitter，并准备通过速度模块让粒子向教程语义中的上方延伸。
+>
+> 模块栈:
+> | 组 | 模块/项 | 状态 |
+> |---|---|---|
+> | Emitter Update | `Emitter State` | `Self` / `Once` 可见 |
+> | Particle Spawn | `Initialize Particle` | 当前选中并启用 |
+> | Particle Spawn | `Add Velocity` | Enabled，模式标记 `Linear` |
+> | Particle Update | `Particle State` | Enabled |
+> | Particle Update | `Scale Sprite Size` | Enabled |
+> | Particle Update | `Scale Color` | Enabled |
+> | Particle Update | `Solve Forces and Velocity` | Enabled |
+> | Render | `Sprite Renderer` | Enabled |
+>
+> Initialize Particle Details:
+> | 分组 | 字段 | 值 |
+> |---|---|---|
+> | Point Attributes | Lifetime Mode | `Direct Set` |
+> | Point Attributes | Lifetime | `0.25` |
+> | Point Attributes | Color Mode | `Unset` |
+> | Point Attributes | Position Mode | `Simulation Position` |
+> | Point Attributes | Position Offset | `0.0, 0.0, -20.0` |
+> | Point Attributes | Position Offset Coordinate Space | `Simulation` |
+> | Sprite Attributes | Sprite Size Mode | `Non-Uniform` |
+> | Sprite Attributes | Sprite Size | `100.0, 350.0` |
+> | Sprite Attributes | Sprite Rotation Mode | `Unset` |
+> | Sprite Attributes | Sprite UV Mode | `Unset` |
+>
+> 联动关系: `Glow_04` 延续短寿命、非均匀 Sprite 和暖色发光层的做法，并新增 `Add Velocity` / `Solve Forces and Velocity`，为后续速度驱动的上升感做准备；图中未展开速度字段，因此本条只记录模块存在与当前可见初始化参数。
+
+### 00:14:25-00:18:49 Alpha、SubUV、UV
+
+- 本段定位：Alpha、SubUV、UV。
+- 知识点：基础的发光感觉就已经初步确定了 蓬松点 需要先保存一次 接下来会先加入一个扭曲元素 与光柱一起 这部分稍后再添加 比如说先放入灰尘和碎片。
+- 知识点：再添加 从灰尘元素开始 我们先来做一下 这也要以MT开始 需要命名为Smoke E 首先得把材料导入使用使用 灰尘材料是在我提供的主材料中。
+- 知识点：现在发光使用的是这个Adative E 灰尘将会使用这个 在制作的材料中 利用Adative E的一个复制品 暂时切断glow的材料 首先放入纹理。
+- 知识点：这灰尘是辐射状地 扩散的灰尘 首先会生成 需要使用这个资源 这将使用第一 不是第一说过 将使用第二 现在这个纹理的情况是。
+- 知识点：Alpha纹理部分 Alpha通道是单独存在的 我觉得这个主材质是 Alpha通道可以切换使用 结构已经搭建好了 可以看看这一部分 要把这个扩散器部分拿回来用。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`SubUV`、`材质`、`纹理`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 发光元素收尾与烟雾材质准备
+> - 组成部分: Level Viewport + Content Browser + Niagara Editor 局部
+> - 所属: `02_Earth_Explosion / Exp_01`
+> - 目的: 在开始制作烟雾前，复查关卡中已有爆炸贴花和多个发光材质实例。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Content Browser | `Material/02` 文件夹中可见多个 `M_Additive...` 材质实例和 `M_Decal_01` 材质实例 |
+> | Level Viewport | 地面上有 3 个爆炸贴花，中心为白色裂纹发光，周围有暗色碎裂和灰尘边缘 |
+> | 角色/场景 | `Greystone` 角色位于贴花附近；Outliner 可见 `Exp 01`、`Exp 02`、`Exp 03`、`Floor`、`Cine Camera Actor` |
+> | Niagara Editor 局部 | 下方仍打开 `Exp_01`，当前可见 `Glow_04` Details 搜索框和 Stack 局部 |
+>
+> 联动关系: 该图记录发光和贴花层已经叠加到测试场景中，下一步转向创建烟雾材质与 `Smoke_01` 发射器。
+> 图表转写（UE-GTXT v4）
+> - 类型: 烟雾材质实例预览
+> - 组成部分: Content Browser + Material Instance Preview + Details
+> - 所属: `M_AdditiveDe_v01_Ins_05`
+> - 目的: 选择用于烟雾的贴图/材质实例，并确认该纹理为序列图块形式。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Content Browser | 位于 `Content/Coloso_Second/Tutorial/Material`，可见 `Ex_02_Earth_Explosion`、`Ex_05_DeathSkeletal`、多个材质实例和纹理资产 |
+> | 当前选中 | `M_AdditiveDe_v01_Ins_05` 材质实例 |
+> | Preview | 白色方形面片上重复排列多格灰色烟雾形状，呈序列纹理/Flipbook 图块外观 |
+> | Stats | 可见 Base pass 与 Texture Lookups 统计 |
+> | Details 参数组 | `Desaturation`、`Diff_Pow`、`Diff_Str`、`Fade_Dist`、`Diff_Tex` 均显示为可编辑参数 |
+> | 字幕 | 说明将使用 `D02`，当前纹理部分为 Alpha 纹理部分 |
+>
+> 联动关系: `M_AdditiveDe_v01_Ins_05` 提供烟雾 Sprite 的材质和纹理来源；后续 Niagara Sprite Renderer 绑定该材质实例，并用 SubUV/Flipbook 播放序列图块。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Smoke_01` Sprite Renderer 与 SubUV 设置
+> - 组成部分: Niagara Stack + Sprite Renderer Details + Curve Editor + Timeline + Preview
+> - 所属: `Exp_01 / Smoke_01 / Sprite Renderer`
+> - 目的: 为烟雾发射器绑定材质实例，并设置 SubUV 图块尺寸。
+>
+> Renderer Details:
+> | 字段 | 值 |
+> |---|---|
+> | Material | `M_AdditiveDe_v01_Ins_05` |
+> | Material User Param Binding | `None` |
+> | Source Mode | `Particles` |
+> | Alignment | `Automatic` |
+> | Facing Mode | `Automatic` |
+> | Macro UV Radius | `0.0` |
+> | Default Pivot in UV Space | `0.5, 0.5` |
+> | Sort Mode | `None` |
+> | Sub Image Size | `1.0, 1.0` |
+>
+> Stack 状态:
+> - `Smoke_01` 中可见 `Emitter State`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Particle State`、`Sprite Renderer`。
+> - 左侧 Preview 显示一个很小的方形烟雾 Sprite 预览。
+>
+> 联动关系: `Smoke_01.Sprite Renderer` 绑定烟雾材质实例；`Sub Image Size` 先为 `1.0, 1.0`，后续会根据序列贴图帧数调整为多图块播放。
+
+### 00:18:55-00:23:37 Lifetime、SubUV、UV
+
+- 本段定位：Lifetime、SubUV、UV。
+- 知识点：需要适当增大尺寸 是的这样 第一针会出现 这个形状 需要动画的部分 在这里更新部分 有一个SubUV动画的音频 在这里需要使用喷气 需要使用Sprite。
+- 知识点：已经有0到63进入 因为88有64针 这意味着从D0针到D62针进行 这样进展下去 那么就有动画了 神奇了 而且Lifetime是随机的。
+- 知识点：我们不会只生成一个 因为需要生成多个 所以需要给大约20个剧透 关于这个位置 现在就是要分散开来 在来之前需要适当抬到位置值 检查本地。
+- 知识点：使用修齿位置 用原形的方式 所以大约是100大小 像这样 然后需要通过添加速度 使用重点 这种时候当位置值相同 大约100时 从当前位置中心。
+- 知识点：会产生方向性 并以该方向以100的速度移动 因为烟雾的形状过于单一 所以需要随机改变旋转 这样形状就会变得非常随机多样 但由于速度扩散的。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Lifetime`、`SubUV`、`速度`、`烟雾`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Smoke_01` Initialize Particle 初始尺寸
+> - 组成部分: Niagara Stack + Initialize Particle Details + Curve Editor + Timeline
+> - 所属: `Exp_01 / Smoke_01 / Initialize Particle`
+> - 目的: 设置烟雾粒子的寿命和基础随机尺寸。
+>
+> Initialize Particle Details:
+> | 分组 | 字段 | 值 |
+> |---|---|---|
+> | Point Attributes | Lifetime Mode | `Direct Set` |
+> | Point Attributes | Lifetime | `5.0` |
+> | Point Attributes | Color Mode | `Unset` |
+> | Point Attributes | Position Mode | `Simulation Position` |
+> | Point Attributes | Position Offset | 未启用，值框显示 `0.0, 0.0, 0.0` |
+> | Sprite Attributes | Sprite Size Mode | `Random Uniform` |
+> | Sprite Attributes | Uniform Sprite Size Min | `5.0` |
+> | Sprite Attributes | Uniform Sprite Size Max | `10.0` |
+> | Sprite Attributes | Sprite Rotation Mode | `Unset` |
+> | Sprite Attributes | Sprite UV Mode | `Unset` |
+>
+> Stack 状态: `Smoke_01` 中启用 `Emitter State`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Particle State` 和 `Sprite Renderer`。
+>
+> 联动关系: 该图是烟雾发射器的第一版初始化参数，粒子寿命较长但 Sprite 尺寸仍较小，后续会增大尺寸并加入 SubUV、Shape Location 和速度扩散。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Smoke_01` 随机 Lifetime、位置和大尺寸烟雾
+> - 组成部分: Niagara Stack + Initialize Particle Details + Timeline + Preview
+> - 所属: `Exp_01 / Smoke_01 / Initialize Particle`
+> - 目的: 将烟雾粒子设置为随机寿命、带位置偏移和较大随机 Sprite 尺寸。
+>
+> Initialize Particle Details:
+> | 分组 | 字段 | 值 |
+> |---|---|---|
+> | Point Attributes | Lifetime Mode | `Random` |
+> | Point Attributes | Lifetime Min | `1.5` |
+> | Point Attributes | Lifetime Max | `2.0` |
+> | Point Attributes | Color Mode | `Unset` |
+> | Point Attributes | Position Mode | `Simulation Position` |
+> | Point Attributes | Position Offset | `0.0, 0.0, 20.0` |
+> | Point Attributes | Position Offset Coordinate Space | `Simulation` |
+> | Sprite Attributes | Sprite Size Mode | `Random Uniform` |
+> | Sprite Attributes | Uniform Sprite Size Min | `500.0` |
+> | Sprite Attributes | Uniform Sprite Size Max | `300.0` |
+> | Sprite Attributes | Sprite Rotation Mode | `Unset` |
+> | Sprite Attributes | Sprite UV Mode | `Unset` |
+>
+> Stack 状态:
+> - `Smoke_01` 已包含 `Shape Location` 和 `Add Velocity` 模块。
+> - `Particle Update` 中可见 `Sub UV Animation`、`Scale Velocity`、`Solve Forces and Velocity`。
+>
+> 联动关系: 随机 Lifetime 与大尺寸随机 Sprite 让烟雾粒子在生命周期和大小上产生差异；`Shape Location` 和 `Add Velocity` 后续负责分布与扩散。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Smoke_01` Shape Location 环形分布
+> - 组成部分: Preview + Niagara Stack + Shape Location Details + Timeline
+> - 所属: `Exp_01 / Smoke_01 / Shape Location`
+> - 目的: 用环/圆盘形状把烟雾粒子分布到爆炸中心周围。
+>
+> Shape Location Details:
+> | 分组 | 字段 | 值 |
+> |---|---|---|
+> | Shape | Shape Primitive | `Ring / Disc` |
+> | Shape | Ring / Disc Mode | `Circle` |
+> | Shape | Ring Radius | `100.0` |
+> | Shape | Apply To Particle Position | `Apply` |
+> | Distribution | Ring / Disc Distribution | `Random` |
+> | Distribution | Disc Coverage | `0.0` |
+> | Distribution | U Distribution | `0.0` |
+> | Distribution | Randomness Mode | `Deterministic` |
+> | Distribution | Random Seed | `8` |
+> | Transform | Transform Method | `Default` |
+> | Transform | Transform Order | `Scale / Rotate / Offset` |
+> | Transform | Non Uniform Scale | `1.0, 1.0, 1.0` |
+> | Transform | Rotation Coordinates | `Local` |
+> | Transform | Shape Origin | `STACKCONTEXT Position` |
+>
+> Preview:
+> - 左侧预览显示约 `20` 个烟雾 Sprite 围绕中心发光点形成环状分布。
+> - 烟雾颜色偏浅灰，中心仍有 Glow 发光。
+>
+> 联动关系: `Shape Location` 的 `Ring Radius=100.0` 与随机圆环分布对应 Preview 中围绕中心的烟雾；坐标系只按 `Shape Location` 字段记录，不额外断言外部空间基准。
+
+### 00:23:39-00:28:34 Velocity、Texture、生命周期
+
+- 本段定位：Velocity、Texture、生命周期。
+- 知识点：现在只需调整音调 使用规模颜色 总之就好先用一些微黄色的纸张 音调 然后给更高的透明度 0.1 0.8 因为一开始会和光一起闪烁 如果出现。
+- 知识点：在最初时保持稍高的亮度会比较好 以0.35左右的原质 原本较低了音调灰尘 原本的灰尘 这像接受光影 瞬间表达会更好 还有α 现在α就是一开始要用曲线。
+- 知识点：从0.3开始 烟雾适当淡出就会比较自然 形状感觉不太明显会比较好 α要快速淡出 不要太急着 这样淡出的值进入了 现在和地面也比较自然地结合了。
+- 知识点：这些可以跟着做 测试些更自然的构图 或者更自然的种子值这种也不错 我现在无论如何只是作为例子展示 更完整的尝验证效果会比较好 第一种灰尘可以这样放入。
+- 知识点：第二种灰尘也来一下 第二种灰尘 暂时会替换马材 因为会用其他的sequence texture。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Velocity`、`Texture`、`生命周期`、`颜色`、`透明度`、`曲线`、`烟雾`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Smoke_01` Scale Color 基础色调
+> - 组成部分: Niagara Stack + Scale Color Details + Curve Editor + Timeline
+> - 所属: `Exp_01 / Smoke_01 / Scale Color`
+> - 目的: 调整烟雾颜色基值，为灰尘使用偏微黄的纸张/烟尘色调。
+>
+> Scale Color Details:
+> | 字段 | 值 |
+> |---|---|
+> | Scale Mode | `RGB and Alpha Separately` |
+> | Scale RGB | `1.0, 1.0, 1.0` |
+> | Scale Alpha | `1.0` |
+>
+> Stack 状态:
+> - `Smoke_01` 中可见 `Shape Location`、`Add Velocity`、`Sub UV Animation`、`Scale Velocity`、`Solve Forces and Velocity` 和 `Scale Color`。
+> - 上方多个 Glow 发射器仍在同一 `Exp_01` System Overview 中。
+>
+> 联动关系: 当前图只记录 `Smoke_01.Scale Color` 的基础入口，后续会继续调 RGB/Alpha 曲线，让烟雾在爆炸开始时可见并自然淡出。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Smoke_01` Emitter 与 Spawn Burst 设置
+> - 组成部分: Preview + Niagara Stack + Emitter Details + Spawn Burst Details + Curve Editor + Timeline
+> - 所属: `Exp_01 / Smoke_01`
+> - 目的: 确认第一种烟雾的 Emitter 属性、一次性生成数量和预览结果。
+>
+> Emitter Properties:
+> | 字段 | 值 |
+> |---|---|
+> | Local Space | Enabled |
+> | Determinism | Disabled |
+> | Interpolated Spawning | Enabled |
+> | Sim Target | `CPUSim` |
+> | Calculate Bounds | `Dynamic` |
+> | Requires Persistent IDs | Disabled |
+>
+> Spawn Burst Instantaneous:
+> | 字段 | 值 |
+> |---|---|
+> | Spawn Count | `20` |
+> | Spawn Time | `0.0` |
+> | Spawn Probability | `1.0`，字段未启用 |
+> | Loop Count Limit | `1`，字段未启用 |
+>
+> Preview: 左侧显示一圈褐灰色烟雾块，中心区域留空，烟雾透明度较低，字幕说明第一种灰尘可以这样放入。
+>
+> 联动关系: `Spawn Count=20` 与 `Shape Location` 环形分布共同生成当前的烟雾环；Preview 用于验证烟雾密度和色调。
+> 图表转写（UE-GTXT v4）
+> - 类型: 第二种烟雾 `Smoke_01001` Spawn 设置
+> - 组成部分: Preview + Niagara System Overview + Spawn Burst Details + Timeline
+> - 所属: `Exp_01 / Smoke_01001 / Spawn Burst Instantaneous`
+> - 目的: 复制第一种烟雾作为第二种灰尘，并减少一次性生成数量。
+>
+> System Overview:
+> | 发射器 | 可见模块 |
+> |---|---|
+> | `Smoke_01` | `Emitter State`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Shape Location`、`Add Velocity`、`Particle State`、`Sub UV Animation`、`Scale Velocity`、`Solve Forces and Velocity`、`Scale Color`、`Sprite Renderer` |
+> | `Smoke_01001` | 模块结构与 `Smoke_01` 相近，当前选中 `Spawn Burst Instantaneous` |
+>
+> Spawn Burst Instantaneous:
+> | 字段 | 值 |
+> |---|---|
+> | Spawn Count | `7` |
+> | Spawn Time | `0.0` |
+> | Spawn Probability | `1.0`，字段未启用 |
+> | Loop Count Limit | `1`，字段未启用 |
+>
+> Preview: 左侧显示分散的褐灰色烟雾块，相比 `Smoke_01` 数量更少、更稀疏。
+>
+> 联动关系: `Smoke_01001` 通过复制第一种烟雾结构并把 Spawn Count 改为 `7`，为第二种烟雾/序列纹理留出单独调整空间。
+
+### 00:28:34-00:30:00 Velocity、Add
+
+- 本段定位：Velocity、Add。
+- 知识点：而是这个值很大 大约20 只有将其调整为0 add velocity的位置值 这种话 那么适当上面的particle会位于这里。
+- 知识点：front point origin of that是中心值 这里有20个值 因此适当向上看 但是现在散开了 XC方向的发力太紧 有图表也会降低到5。
+- 知识点：将这个xyz值调整为0.2 并将向上的力量调高 谢谢。
+- 核对对象：`Particle`、`Velocity`、`Add`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Smoke_01001` Add Velocity 设置
+> - 组成部分: Preview + Niagara Stack + Add Velocity Details + Timeline
+> - 所属: `Exp_01 / Smoke_01001 / Add Velocity`
+> - 目的: 用 From Point 模式让第二种烟雾从指定 Origin 向外扩散。
+>
+> Add Velocity Details:
+> | 分组 | 字段 | 值 |
+> |---|---|---|
+> | Velocity | Velocity Mode | `From Point` |
+> | Velocity | Velocity Speed | `100.0` |
+> | Velocity | Constraint To Plane | 未启用，值框显示 `0.0` |
+> | Offset | Velocity Origin | `ENGINE EMITTER SimulationPosition` |
+> | Offset | Origin Offset | `0.0, 0.0, 20.0` |
+> | Offset | Origin Offset Coordinate Space | `Local` |
+>
+> Stack 状态:
+> - `Smoke_01001` 中启用 `Shape Location (Ring / Disc)`、`Add Velocity (From Point)`、`Sub UV Animation (Linear)`、`Scale Velocity`、`Solve Forces and Velocity`、`Scale Color` 和 `Sprite Renderer`。
+> - Preview 中可见褐灰色烟雾块围绕中心区域扩散。
+>
+> 联动关系: `Add Velocity` 的 `From Point` 模式使用 `Velocity Origin` 和 `Origin Offset` 作为速度来源参考；具体方向由 Niagara 模块运行时从该 Origin 到粒子位置计算，本条不额外断言外部坐标轴。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Smoke_01001` Emitter 与 Spawn 复查
+> - 组成部分: Niagara Stack + Emitter Details + Spawn Burst Details + Timeline
+> - 所属: `Exp_01 / Smoke_01001`
+> - 目的: 在调整速度前后复查第二种烟雾的发射器属性和生成数量。
+>
+> Emitter Properties:
+> | 字段 | 值 |
+> |---|---|
+> | Local Space | Enabled |
+> | Determinism | Disabled |
+> | Interpolated Spawning | Enabled |
+> | Sim Target | `CPUSim` |
+> | Calculate Bounds | `Dynamic` |
+> | Requires Persistent IDs | Disabled |
+>
+> Spawn Burst Instantaneous:
+> | 字段 | 值 |
+> |---|---|
+> | Spawn Count | `7` |
+> | Spawn Time | `0.0` |
+> | Spawn Probability | `1.0`，字段未启用 |
+> | Loop Count Limit | `1`，字段未启用 |
+>
+> Stack 状态: `Smoke_01001` 的模块结构与 `Smoke_01` 相近，当前选中发射器卡片；Timeline 播放头约 `6.67`。
+>
+> 联动关系: 本图确认第二种烟雾仍保持 `Spawn Count=7`，速度调节发生在同一发射器的 `Add Velocity` / `Scale Velocity` 模块上。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Smoke_01001` Scale Velocity 曲线
+> - 组成部分: Niagara Stack + Scale Velocity Details + Curve Editor + Timeline
+> - 所属: `Exp_01 / Smoke_01001 / Scale Velocity`
+> - 目的: 用曲线逐步降低烟雾速度，让扩散在生命周期中减弱。
+>
+> Scale Velocity Details:
+> | 字段 | 值 |
+> |---|---|
+> | Coordinate Space | `Local` |
+> | Velocity Scale | `Multiply Vector by Float` |
+> | Vector | `1.0, 1.0, 1.0` |
+> | Float | `Float from Curve` |
+> | FloatCurve | `Curve for Floats` |
+> | CurveIndex | `PARTICLES NormalizedAge` |
+> | Scale Curve | `1.0` |
+>
+> 曲线:
+> - 曲线起始值约 `6`，随 `Particles.NormalizedAge` 增加逐步下降。
+> - 生命周期后段曲线接近 `0`，字幕说明该图表会降低到 `5`。
+>
+> 联动关系: `Add Velocity` 先给烟雾从点向外的速度，`Scale Velocity` 再用 `Particles.NormalizedAge` 曲线衰减速度，减少后段继续扩散的力度。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

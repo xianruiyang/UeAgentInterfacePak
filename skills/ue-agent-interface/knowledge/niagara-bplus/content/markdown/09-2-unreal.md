@@ -1,0 +1,558 @@
+# 09-2.Unreal场景破坏特效制作
+
+# 09-2.Unreal场景破坏特效制作
+
+## 关键术语
+
+- `Renderer`、`Sprite Renderer`、`Spawn`、`Velocity`、`Alpha`、`Multiply`、`Normal`、`材质`、`粒子`、`发射器`、`碰撞`、`速度`、`Niagara`、`Emitter`、`Spawn Rate`、`Lifetime`、`Niagara System`、`Particle`
+
+## 分段知识
+
+### 00:00:01-00:04:40 速度、颜色、透明度
+
+- 本段定位：速度、颜色、透明度。
+- 知识点：让其呈现线性效果 呈现出从侧面缓缓散开的烟尘效果 将起点的轴心点设在底部中心 把这个改成速度线性。
+- 知识点：不用旋转值控制 而是通过添加速度让其轻微向左移动 用这种手法让十项略做遮挡 增强层次感 就能更自然 烟尘稍加重力 更能自然呈现反正烟尘部分。
+- 知识点：合为一组 没必要把所有细节都表现出来 所以没关系 用曲线适当调一下动态感 现在来看一下颜色参数。
+- 知识点：透明度 这个参数挺关键的 透明度消失的时间点设为0.5在微调尺度介入 就这样先大致定下来 主动化的动作已大致定好 现在先处理基础动作 色调要跟背景有点融合。
+- 知识点：感看着才自然 而且现在只有单层看着 还是有点生硬 复制一份再加一层 我们就这样用吧 这个可以适当调一下变化 与其靠空间填充感来削减 不如把大小适当放大点。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`速度`、`颜色`、`透明度`、`曲线`。
+
+**关键画面：**
+
+这一步延续上一页的烟雾发射器 `Minimal001`，继续检查 `Sub UVAnimation` 与烟雾扩散方向的实际预览效果。右侧 `Details` 面板当前仍能明确确认：
+
+- `SubUV Animation Mode = Linear`
+- `Renderer Type = Sprite`
+- `Sprite Renderer = Sprite Renderer`
+- `Random Start Frame`：关闭
+- `Start Frame Offset = 0`
+- `SubUV Lookup Index = PARTICLES.NormalizedAge`
+- `SubUV Lookup Index Scale = 1.0`
+- `Start Frame Range = 0`
+- `End Frame Range = 63`
+
+中间 `System Overview` 中，`Minimal001` 的 `Particle Update` 区段保留了 `Sub UVAnimation Linear`，并与 `Sprite Renderer` 配合工作。左侧预览窗口显示：
+
+- 烟雾主要出现在碎裂雕像的左上侧
+- 雕像碎块仍向右侧散开
+- 烟团边缘较柔和，已经呈现出从侧面缓慢铺开的趋势
+
+结合正文“让其呈现线性效果，呈现出从侧面缓缓散开的烟尘效果”的说明，这张图的重点不是新增模块，而是确认 `Sub UVAnimation` 在当前时间点下已经把烟雾序列播放起来，并且烟雾主体朝雕像侧边扩散，而不是只在爆点中心原地闪现。
+这一步继续调整烟雾发射器 `Minimal001`，把 `Sub UVAnimation` 的播放方式从简单线性切换成曲线驱动，以便更细致控制烟雾序列帧的推进速度。右侧 `Details` 面板当前可明确确认：
+
+- `SubUV Animation Mode = Curve`
+- `Renderer Type = Sprite`
+- `Sprite Renderer = Sprite Renderer`
+- `Random Start Frame`：关闭
+- `Start Frame Offset = 0`
+- `SubUV Curve = Curve for Floats`
+- `SubUV Curve Index = PARTICLES.NormalizedAge`
+- `Start Frame Range = 0`
+- `End Frame Range = 63`
+
+图中的红色曲线大致表现为：
+
+- 起点接近 `0`
+- 前段缓慢抬升
+- 中后段逐步接近 `1`
+- 末端趋于平缓
+
+中间 `System Overview` 同时显示，`Minimal001` 的 `Particle Update` 区段在这一阶段已经包含：
+
+- `Add Velocity Linear`
+- `Camera Offset`
+- `Gravity Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Sub UVAnimation Curve`
+
+左侧预览窗口里，烟雾暂时不明显，主要能看到碎裂雕像本体和向右散开的碎块，这说明作者此时重点在调烟雾帧播放节奏，而不是只看烟团最终浓度。结合正文“用曲线适当调一下动态感”“不用旋转值控制，而是通过添加速度让其轻微向左移动”的说明，这张图对应的关键动作是：让 `SubUV` 翻帧不再匀速，而是跟随 `NormalizedAge` 曲线变化，从而使烟雾在起始、铺开、消散阶段的动画节奏更自然。
+这一步切回关卡场景视口，直接检查烟雾发射器叠加到雕像破碎特效后的实际效果。画面中可确认：
+
+- 雕像主体位于画面左下偏中位置
+- 雕像碎块主要向右上侧散开
+- 多团白灰色烟雾覆盖在雕像与碎块周围，尤其集中在中部和右下区域
+- 烟雾不是完全均匀铺开，而是形成了前后层次不同的几团体积块
+- 右侧 `Details` 面板为空，说明当前是纯效果观察而不是参数编辑状态
+
+结合前两张图中已经确认的 `Add Velocity`、`Gravity Force`、`Sub UVAnimation Curve` 和烟雾材质实例设置，这张图对应的是一次综合验收：检查烟雾是否真的沿雕像破碎方向展开、是否对碎块形成适度遮挡，以及透明度与体量是否和海岸场景背景融合。正文提到“透明度消失时间点设为 0.5”“色调要跟背景有点融合”“复制一份再加一层会更自然”，这张图正说明作者在通过场景预览判断单层烟雾是否仍然生硬，以及是否需要继续叠加第二层或放大体积来增强层次感。
+
+### 00:04:40-00:09:20 Velocity、材质、粒子
+
+- 本段定位：Velocity、材质、粒子。
+- 知识点：得改一改才行 Red Velocity这类参数可以直接沿用 没问题 挺合适的 重力强度稍减一下这个值 设置Rs 让效果延续得更久些布置时 留点余式再把整体明暗调低。
+- 知识点：让画面氛围更开阔 整体氛围再放开一点 接下来就在这些破损周围的区域 更细致的贴合形状安排些连贯的动态效果 我来试试复制一下 接下来就用来用。
+- 知识点：现在我们先对材质稍作调整 可能需要 所以先复制一份材质 复制一下 弄好之后这里换用别的贴图 所以请改成这样 然后把揉物强度调低一点颜色。
+- 知识点：就保持不变 没问题 这样设置好这里也照着做 接下来第一步我们用这个模型 因为要从上往下碎裂 所以 让碎片看起来像是从上 缓缓下落一样 生成的粒子数量可能会多一些。
+- 知识点：这次用Burst只建一个 但加上Rate 控制在约十个左右释放 生命周期则随机设置 以适应多种情况 调到这个程度就行 把偏移值全设为0 不要在这边控制。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Velocity`、`材质`、`贴图`、`粒子`、`生命周期`、`速度`、`颜色`、`曲线`。
+
+**关键画面：**
+
+这一步在原烟雾发射器 `Minimal001` 的基础上复制出第二个烟雾发射器 `Minimal002`，用于叠加第二层烟尘层次。中间 `System Overview` 可直接看到两个近似结构的烟雾发射器并列存在：
+
+- `Minimal001`
+- `Minimal002`
+
+两者当前都包含的主要模块为：
+
+- `Emitter State`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Add Velocity Linear`
+- `Camera Offset`
+- `Gravity Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Sub UVAnimation Curve`
+- `Scale Color`
+- `Sprite Renderer`
+
+右侧 `Details` 面板当前选中的是 `Minimal002 > Add Velocity`，可明确确认：
+
+- `Velocity Mode = Linear`
+- `Velocity = (-10.0, -50.0, 0.0)`
+- `Velocity Speed Scale = 1.0`
+- `Rotation Mode = Default`
+- `Rotation Coordinate Space = Local`
+
+左侧预览窗口中，烟雾层已经比前一段更厚，包裹在雕像碎块的中左区域。结合正文“复制一份再加一层，我们就这样用吧”“通过添加速度让其轻微向左移动”的说明，这张图的核心动作是：把第一层烟雾复制成第二层，并为第二层设置一个偏向左侧的线性速度，使它与第一层烟雾在移动方向或覆盖位置上形成差异，从而避免单层烟雾过于平面化。
+这一步继续复制烟雾层，系统里已经出现第三个烟雾发射器 `Minimal003`，并开始单独检查它的 `Sprite Renderer` 设置。右侧 `Details` 面板当前可明确确认：
+
+- 当前发射器：`Minimal003`
+- 当前模块：`Sprite Renderer`
+- `Material = M_Smoke_02_Ins_02`
+- `Material User Param... = None`
+- `Source Mode = Particles`
+- `Alignment = Velocity Aligned`
+- `Facing Mode = Automatic`
+- `Macro UVRadius = 0.0`
+- `Default Pivot in UV... = (0.5, 0.9)`
+- `Remove HMD Roll`：关闭
+- `Pixel Coverage Mode = Automatic`
+- `Pixel Coverage Blend = 1.0`
+- `Min Facing Camera... = 0.0`
+- `Max Facing Camera... = 0.0`
+- `Sort Mode = None`
+- `Renderer Visibility = 0`
+- `Sub UV Blending En...`：关闭
+- `Sub Image Size = (8.0, 8.0)`
+
+中间 `System Overview` 里，`Minimal003` 的结构与前两个烟雾发射器相似，也包含：
+
+- `Initialize Particle`
+- `Add Velocity Linear`
+- `Camera Offset`
+- `Gravity Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Sub UVAnimation Curve`
+- `Scale Color`
+- `Sprite Renderer`
+
+左侧预览窗口中当前主要可见雕像碎裂体，说明作者此刻重心转到渲染器配置本身。结合正文“在这些破损周围更细致地贴合形状安排动态效果”“把偏移值全设为 0，不要在这边控制”的说明，这张图的关键是确认烟雾 Sprite 使用 `Velocity Aligned` 对齐方式，并把序列贴图明确设为 `8 x 8` 的 `Sub Image Size`，这样 `SubUV` 才能按 64 帧正确切片播放。
+这一步继续完善第三个烟雾发射器 `Minimal003`，给它加入 `Shape Location`，让粒子不再都从单一点出生，而是在一个圆环/圆盘区域内分布。右侧 `Details` 面板当前可明确确认：
+
+- 模块名：`Shape Location`
+- `Shape Primitive = Ring / Disc`
+- `Ring / Disc Mode = Hexagon`
+- `Ring Radius = 20.0`
+
+`Distribution` 分组中：
+
+- `Ring / Disc Distribution = Random`
+- `Disc Coverage = 0.0`
+- `U Distribution = 0.0`
+
+`Transform` 分组中：
+
+- `Transform Order = Scale / Rotate / Offset`
+- `Scale Mode = Default`
+- `Non Uniform Scale = (1.0, 1.0, 1.0)`
+- `Rotation Mode = Default`
+- `Rotation Coordinate Space = Local`
+- `Offset Mode = None`
+- `Shape Origin = STACKCONTEXT Position`
+
+中间 `System Overview` 显示 `Minimal003` 现在的结构为：
+
+- `Spawn Rate`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Add Velocity Linear`
+- `Camera Offset`
+- `Shape Location Ring / Disc`
+- `Gravity Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Sub UVAnimation Curve`
+- `Scale Color`
+- `Sprite Renderer`
+
+结合正文“在这些破损周围的区域更细致地贴合形状安排动态效果”“把偏移值全设为 0，不要在这边控制”的说明，这张图的核心是把烟雾出生区域改成基于 `STACKCONTEXT Position` 的局部环形分布，再用随机分布让烟团围绕破损点出现。这样做比直接依赖固定偏移更灵活，也更容易让烟雾贴合雕像周边的破损轮廓。
+
+### 00:09:20-00:13:59 Alpha、Normal、粒子
+
+- 本段定位：Alpha、Normal、粒子。
+- 知识点：当前竖直围翼时这里从约225的位置开始 开始设置缩放 竖直从225降到0 就按这种方式做动画 就这样 只开这个看看 这里不能用Normalize。
+- 知识点：Edge 得换成Normalize Roof Edge 要配合持续时间调整 所以设为1秒 设为1秒 可以这样吗? 从上往下这样崩塌 同时被阉着。
+- 知识点：就能做出这种效果 这样就行重力值不用改 保留 Subweb动画也保留 可以保留 颜色的Alpha值可稍调高初始设为0这样处理。
+- 知识点：的Alpha加点随机 加点随机这样就能跟上方倒塌十项的速度 同步安排出合适的阉沉效果 实现 实现 这样也行 这样也行还能和侧向飞散的尘埃自然混合。
+- 知识点：混在一起看起来浑然一体 实现 也挺合适 从更高处炸开也行 没问题 挺合适的 头部分没完全遮住 有点可惜 确实有点遗憾 这样看起来可能更顺眼些 再试试调低摄像机的色质看看。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`粒子`、`速度`、`颜色`。
+
+**关键画面：**
+
+这一步继续编辑第三个烟雾发射器 `Minimal003` 的 `Shape Location Ring / Disc`，开始把出生区域的垂直偏移改成随生命周期下落的动画。右侧 `Details` 面板当前可明确确认：
+
+- `Shape Primitive = Ring / Disc`
+- `Ring / Disc Distribution = Random`
+- `Transform Order = Scale / Rotate / Offset`
+- `Scale Mode = Default`
+- `Non Uniform Scale = (1.0, 1.0, 1.0)`
+- `Rotation Mode = Default`
+- `Rotation Coordinate Space = Local`
+- `Shape Origin = STACKCONTEXT Position`
+
+`Offset` 分组中当前最关键的设置是：
+
+- `X = 0.0`
+- `Y = 0.0`
+- `Z = Float from Curve`
+- `FloatCurve = Curve for Floats`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 1.0`
+- `Offset Coordinate = Simulation`
+
+图中的红色曲线从左上角向右下角倾斜，表现为随 `NormalizedAge` 增长而逐步降低。结合正文“这里从约 225 的位置开始，垂直从 225 降到 0”“从上往下这样崩塌”的说明，这张图对应的核心动作是：不再用固定 `Z` 偏移，而是让烟雾出生高度随生命周期从高处逐渐下移，从而形成自上而下塌落、沉降的烟尘层。
+这一步切回关卡场景视口，直接观察调整后的地面烟雾在环境中的落点和覆盖范围。当前画面可确认：
+
+- 视口中心偏左的远处岩石附近可见一团明显的白灰色烟雾
+- 前景大面积岩地保持清空，说明作者在检查单个区域烟雾而不是整体全景同时爆发
+- 右侧 `Details` 面板为空，当前没有选中具体 Actor
+- 左侧内容浏览器仍停留在烟雾材质实例相关目录，能看到 `M_Smoke_02_Ins...`
+
+这张图属于效果验证帧，重点不在节点而在空间结果：前一张图里通过 `Shape Location` 和 `Offset.Z` 曲线设定的下落烟雾，现在被放到真实场景里检查其高度是否合适、是否会漂浮过高，以及与远处地形接触后是否看起来像顺着地表塌落。结合正文“从更高处炸开也行”“头部分没完全遮住有点可惜”“再试试调低摄像机的色质看看”的说明，这一步对应的判断标准是烟雾既要有一定抬升感，又不能脱离地面过多，否则就会破坏场景中的沉降感和遮挡层次。
+这一步继续在场景近景中检查雕像碎裂与多层烟雾叠加后的整体效果。画面中可确认：
+
+- 雕像主体仍站立在前景中央偏左
+- 大量碎块向右上方飞散
+- 雕像正前方和右侧形成了连续的白灰色烟尘团
+- 烟雾已经不只是一两团，而是覆盖了前景中部到右侧的较大区域
+- 右侧 `Details` 面板为空，当前仍是纯预览观察
+
+字幕中还能直接看到“加到了 15 个左右”的表述，这与正文“地面这边可以加到 20 个左右再分布下去”的趋势一致，说明作者正在通过增加粒子数量来让地面烟雾更丰富、更连续。结合上一张图的下落曲线和本段对 `Alpha`、随机值、同步倒塌速度的说明，这张图的关键结论是：当前烟雾层已经被加密到足以与上方碎裂体自然混合，不再只是单点爆发，而是形成一片伴随崩塌推进的沉降尘层。
+
+### 00:13:59-00:18:51 Multiply、Normal、粒子
+
+- 本段定位：Multiply、Normal、粒子。
+- 知识点：就按这种感觉来呈现 再把这部分复制一份 接着 现在在地面区域加一层烟雾 在浓密处再补上一些 您看这地面得呈现出一种连续倾泄 像爆裂般接连倒下的多米诺效果。
+- 知识点：地面这边可以加到20个左右再分布下去 差不多这里需要延迟后依次生成 设为6秒就行 适当调一下看看效果就好 可以适当拉长存活时间 让效果更绵长些。
+- 知识点：最好能带点余韵感偏移值 若调得太大粒子容易飘在半空 因此建议适当调低重力 也一样要调小些 重力强度也一样 要调低动画不用动α 值适当调低就行。
+- 知识点：适当调低后让形状位置的动画方向 稍作变化一开始区域的半径设得大些 先稍大些生成再看这里 越往外越分散 这里也一样那些微小的动作 不必表现得太散。
+- 知识点：也挺合适 剑刺收拢的感觉会更自然 看起来会更自然建议 改成Multiply Float 红约125的原始大小开始逐渐缩小 生成类似曲线最小值设为0.3左右。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`Multiply`、`粒子`、`曲线`、`烟雾`。
+
+**关键画面：**
+
+这一步开始下一轮烟雾扩展：在 `Minimal003` 的基础上再次复制出 `Minimal004`，用于在地面其它区域补一层新的烟雾。中间 `System Overview` 当前能清楚看到两个并列发射器：
+
+- `Minimal003`
+- `Minimal004`
+
+二者结构几乎一致，均包含：
+
+- `Emitter State`
+- `Spawn Rate`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Add Velocity Linear`
+- `Camera Offset`
+- `Shape Location Ring / Disc`
+- `Gravity Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Sub UVAnimation Curve`
+- `Scale Color`
+- `Sprite Renderer`
+
+左侧预览窗口此时处于 `Compiling...` 状态，右侧 `Details` 面板为空，说明作者当前动作重点不是查看某个具体数值，而是完成发射器复制后等待系统重新编译。结合正文“再把这部分复制一份”“在地面区域加一层烟雾，在浓密处再补上一些”的说明，这张图对应的关键动作是：把已经调好的地面烟雾发射器作为模板复制一份，以便在不破坏现有效果的前提下继续增加分布层次和覆盖范围。
+这一步开始细调复制出来的 `Minimal004`，重点仍是 `Shape Location` 的出生区域与垂直偏移曲线。右侧 `Details` 面板当前可明确确认：
+
+- `Shape Primitive = Ring / Disc`
+- `Ring / Disc Mode = Circle`
+- `Ring Radius = 20.0`
+- `Ring / Disc Distribution = Random`
+- `Disc Coverage = 0.0`
+- `U Distribution = 0.0`
+- `Transform Order = Scale / Rotate / Offset`
+- `Scale Mode = Default`
+- `Non Uniform Scale = (1.0, 1.0, 1.0)`
+- `Rotation Mode = Default`
+- `Rotation Coordinate Space = Local`
+- `Offset Mode = Default`
+- `Shape Origin = STACKCONTEXT Position`
+- `Offset.X = 0.0`
+- `Offset.Y = 0.0`
+- `Offset.Z = Float from Curve`
+- `FloatCurve = Curve for Floats`
+
+图中的红色曲线同样表现为从较高值逐步下降到接近 `0`，说明 `Minimal004` 也采用了“随生命周期下落”的垂直出生动画。左侧预览窗口里，烟雾与雕像主体叠在一起，形态比上一段更靠近主体并且有一种逐步收拢的趋势。结合正文“渐次收拢的感觉会更自然”“一开始区域的半径设得大些，越往外越分散”的说明，这张图的关键动作是：让复制出来的地面烟雾层继承同类下落曲线，再通过它自己的位置和后续参数形成另一种更贴近主体、逐步收束的烟雾节奏。
+这一步回到场景视口，对新补上的地面烟雾层做最终效果检查。画面中可确认：
+
+- 雕像主体位于前景中央偏左
+- 雕像中下部前方有一团明显的白灰色烟雾
+- 烟雾覆盖范围比前一阶段更集中在主体前侧，而不是大面积飘散到远处
+- 远处海岸与岩地背景保持清晰，说明作者在控制覆盖范围，避免整张画面被烟雾糊住
+- 右侧 `Details` 面板为空，当前依然是纯效果观察
+
+字幕里还能直接读到“覆盖范围再稍微扩大一点”，这与本段正文关于“地面区域加一层烟雾”“越往外越分散”“不要太散”的目标一致。综合前两张图里对 `Minimal004` 的复制、`Shape Location` 半径/偏移和下落曲线设置，这张图对应的关键结论是：作者正在把额外复制出的地面烟雾层调到一个更合适的覆盖宽度，使其既能补足雕像前景附近的空隙，又不会过度稀释整体爆裂中心的视觉焦点。
+
+### 00:18:51-00:22:28 材质、粒子
+
+- 本段定位：材质、粒子。
+- 知识点：把数值调到6左右就行 这样也行因为会成半球形扩散延迟时间稍长点也没关系 快物体率落地时再启动效果会更合适延迟时间再拉长一点 我来验证效果延长延迟数值先归零。
+- 知识点：缩短这段距离的加速时间 所以把Infatuation调到0.6让响应更快 我来演示一下数值是怎么改的 烟雾部分基本就完成了 差不多了再加些次要飞散的碎片粒子混着。
+- 知识点：用效果更佳 这样效果更好再加一个极简材质 我来建一个先保存资源 我来处理一下这个极简材质我们。
+- 知识点：把提前准备好的洛克材质加进来 这样调一下这里爆发次数 得设的多点就算原本就用这类VT 再加些碎片再多一点 多生成一些混在一起用 效果更丰富所以一般都这么处理。
+- 知识点：只生成了约20个不用再随机三次起点 设为撞击点关键点以这个点为准 让他们靠得更近些 得加个偏移值大小设成10到20之间的 随机分布旋转也设成随机。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`粒子`、`烟雾`。
+
+**关键画面：**
+
+这一步在场景视口中检查地面烟雾段调完后的整体静态观感。画面中可确认：
+
+- 雕像碎裂残骸位于前景中央偏左
+- 前景地面没有大块突出的近景烟雾，说明作者此时在控制烟雾量，避免遮挡主体
+- 远处左侧靠海岩石附近保留一团较淡的烟雾
+- 右侧 `Details` 面板为空，当前没有选中具体 Actor
+- 左侧内容浏览器仍停留在烟雾材质实例资源附近
+
+结合正文“把数值调到 6 左右就行”“会成半球形扩散”“延迟时间稍长点也没关系”的说明，这张图对应的是烟雾段收尾前的场景验收：作者在确认当前烟雾是否已经足够自然、是否保留了环境纵深，而不是继续把前景堆得过满。对复建来说，这张图说明烟雾段最终不应始终保持高密度遮挡，而要允许某些时间点只留下较弱的远处烟团和地面余韵。
+这一步仍然是场景视口中的烟雾效果观察，但相比上一张，画面中的烟团更淡、更收敛，说明作者在检查延迟和衰减后的余韵状态。当前可确认：
+
+- 左侧远处岩石附近仍有一团淡烟
+- 前景地面基本保持清爽，没有大面积残留烟幕
+- 右侧 `Details` 面板为空，未选中具体对象
+- 左侧内容浏览器仍停在烟雾材质实例资源附近
+
+结合正文“延迟时间再拉长一点”“落地时再启动效果会更合适”“烟雾部分基本就完成了”的说明，这张图反映的是烟雾效果完成前的后段状态检查：不仅要看爆发瞬间，也要看拖尾和余烟在几秒后是否还能自然融入场景。如果复建时发现烟雾在后段仍然过浓、遮挡过多，说明延迟、寿命或透明度衰减仍需继续压低。
+这一步新增了一个新的极简粒子发射器 `Minimal005`，明显是为后续补充“次要飞散碎片”或更轻量的附属粒子层做准备。中间 `System Overview` 当前可确认 `Minimal005` 的结构非常精简，仅包含：
+
+- `Emitter State`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Particle State`
+- `Sprite Renderer`
+
+右侧 `Details` 面板当前选中的是 `Minimal005 > Initialize Particle`，可直接确认：
+
+- `Lifetime Mode = Random`
+- `Lifetime Min = 3.0`
+- `Lifetime Max = 3.0`
+- `Color Mode = Unset`
+- `Position Mode = Simulation Position`
+- `Position Offset = (0.0, 0.0, 0.0)`
+- `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Size Mode = Unset`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+
+左侧预览窗口里，主要仍是雕像碎块本体，当前这层新发射器尚未形成明显独立效果，说明作者此时还在搭建基础骨架。结合正文“再加些次要飞散的碎片粒子混着”“再加一个极简材质”的说明，这张图的关键是：先用最少模块建立一个全新的 Sprite 粒子发射器，再逐步给它补材质、出生数量、偏移和随机旋转，用作主破碎体之外的辅助碎片层。
+
+### 00:22:36-00:27:31 Renderer、Sprite Renderer、Spawn
+
+- 本段定位：Renderer、Sprite Renderer、Spawn。
+- 知识点：X方向的数值也设成随机的 接下来在弹飞之前把这里的 改成4x4填进去就行 因为要用随机针所以开始时要把渲染方式 换成Sprite Renderer把这里原本的Linear改成随机。
+- 知识点：改成随机用SpawnLonely这边建个共享 区域大小设30左右用来做球形范围 用它来控制范围把下面的部分屏蔽掉 现在看不太清楚先这样跑一圈转到角落。
+- 知识点：把力度设成随机范围方向调成大约6.3 3 1这个方向差不多了刚才那一下 这个材质弄反了先 发现接这里这样这里用了没Alpha通道的材质。
+- 知识点：之前放这了得换成这两个对了就这样 这样设置的话看起来大概就不会出现了 这边的重力也得加一下还得一起装上才行 重力不是为了让重碎片下落更快。
+- 知识点：这还得用上碰撞体要更真实些的话 碰撞的反弹值设成0.15左右就行 差不多了摩擦值也设置一下总共反弹 十次左右就差不多了另外SpriteSize主要是。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Spawn`、`Alpha`、`Sprite Renderer`、`Renderer`、`材质`、`碰撞`。
+
+**关键画面：**
+
+这一步把 `Minimal005` 从空骨架继续推进到可渲染状态。中间 `System Overview` 中，`Minimal005` 当前仍是一个精简 Sprite 发射器，但预览窗口已经能看到它混入整体效果中。右侧 `Details` 面板当前选中的是 `Minimal005 > Sprite Renderer`，可明确确认：
+
+- 当前发射器：`Minimal005`
+- 当前粒子数：`20 Particles`
+- `Material = M_Rock_01`
+- `Material User Param... = None`
+- `Source Mode = Particles`
+- `Alignment = Automatic`
+- `Facing Mode = Automatic`
+- `Macro UVRadius = 0.0`
+- `Default Pivot in UV... = (0.5, 0.5)`
+- `Remove HMD Roll`：关闭
+- `Pixel Coverage Mode = Automatic`
+- `Pixel Coverage Blend = 1.0`
+- `Min Facing Camera... = 0.0`
+- `Max Facing Camera... = 0.0`
+- `Sort Mode = None`
+- `Renderer Visibility = 0`
+
+左侧预览窗口里，雕像碎裂体周围已经叠有白烟与碎块层，说明这个发射器开始作为次级细节层混入主效果。结合正文“把提前准备好的 Rock 材质加进来”“只生成了约 20 个”“多生成一些混在一起用，效果更丰富”的说明，这张图的关键是：这个新 Sprite 发射器不再使用烟雾材质，而是换成 `M_Rock_01`，并以大约 `20` 个粒子作为初始数量，专门承担轻量级碎片/尘屑的补充层。
+这一步继续细化 `Minimal005`，把它从最初的极简发射器推进成带随机翻帧、球形出生范围和锥形速度的次级碎片层。中间 `System Overview` 当前可直接确认，`Minimal005` 已经包含：
+
+- `Initialize Particle`
+- `Sub UVAnimation Random`
+- `Shape Location Sphere`
+- `Add Velocity In Cone`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Sprite Renderer`
+
+右侧 `Details` 面板仍选中 `Sprite Renderer`，当前可明确确认：
+
+- `Material = M_Rock_01`
+- `Source Mode = Particles`
+- `Alignment = Automatic`
+- `Facing Mode = Automatic`
+- `Default Pivot in UV... = (0.5, 0.5)`
+- `Sort Mode = None`
+- `Renderer Visibility = 0`
+- `Sub UV Blending En...`：关闭
+- `Sub Image Size = (4.0, 4.0)`
+
+左侧内容浏览器中还能看到与这一步相关的贴图资源，包括带透明格子的序列贴图、`Normal_Roc...`、`Tile_03` 等，说明作者此时正在把 Rock 材质与切片贴图对应起来。结合正文“改成 4x4 填进去就行”“因为要用随机帧，所以开始时要把这里原本的 Linear 改成随机”“用球形范围控制区域”的说明，这张图的关键是：`Minimal005` 不再沿用烟雾的 `8x8 Linear` 方案，而是切换到 `4x4` 的随机 `SubUV` 播放，并用球形出生范围和锥形速度来模拟更零散的小碎片/粉尘喷散。
+这一步继续完善 `Minimal005` 的后续运动行为：在加入 `Collision` 之后，再通过 `Sprite Rotation Rate` 控制碎片 Sprite 在落地静止后停止旋转。中间 `System Overview` 当前能确认，`Minimal005` 的 `Particle Update` 区段已经包含：
+
+- `Gravity Force`
+- `Collision`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Sprite Rotation Rate`
+- `Scale Sprite Size`
+
+右侧 `Details` 面板当前选中的是 `Sprite Rotation Rate`，可直接确认：
+
+- `Rotation Rate = Make Custom Float from Bool`
+- `Bool = TRANSIENT CollisionsResting`
+- `True Float = 0.0`
+- `False Float = Random Range Float`
+  - `Minimum = 0.0`
+  - `Maximum = 1.0`
+- `Evaluation Type = Spawn Only`
+- `Delta Time = ENGINE DeltaTime`
+
+这组设置的含义从图中可以直接推出：当粒子还未进入静止接触状态时，旋转速率来自一个随机范围；一旦 `CollisionsResting` 为真，就把旋转速率切回 `0.0`。结合正文“得用上碰撞体”“碰撞的反弹值设成 0.15 左右”“总共反弹十次左右就差不多了”以及字幕里“进入静止状态后就停了”的说明，这张图对应的关键动作是：让次要碎片在飞行和碰撞阶段保留随机旋转感，但在落地静止后停止旋转，避免 Sprite 碎片在地面上继续不自然地打转。
+
+### 00:27:31-00:30:00 Alpha、粒子、发射器
+
+- 本段定位：Alpha、粒子、发射器。
+- 知识点：旋转这样设置即可缩放颜色是否需要看 这种情况亮度适当提一下适当调高 可能需要Alpha通道不用加亮度适当调高 就行这样处理要是这里的石头颜色能接近一点效果。
+- 知识点：应该就不错了接着用这个碎片参数用它来设置 碎片粒子的名称为原在设为负极粒子接着勾选 ID把这部分复制并应用关闭这里的发射速率 接下来让灰尘跟随石头下落适当生成。
+- 知识点：同步生成一些尘埃效果此处用其他发射器进行生成 将其他发射器名称设为原每组生成约10个即可。
+- 知识点：需要关闭外壳位置这样摄像机偏移值 强度过高无需设置的过强大约5 然后别让大小太大这里调一下持续时间从2开始设为2.5左右的变化范围 调到150左右。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`粒子`、`发射器`、`颜色`。
+
+**关键画面：**
+
+这一步继续微调 `Minimal005` 的 `Sprite Rotation Rate`，仍然沿用“落地静止后停止旋转”的思路，但把飞行阶段的随机旋转强度大幅拉高。右侧 `Details` 面板当前可明确确认：
+
+- `Rotation Rate = Make Custom Float from Bool`
+- `Bool = TRANSIENT CollisionsResting`
+- `True Float = 0.0`
+- `False Float = Random Range Float`
+  - `Minimum = 700.0`
+  - `Maximum = 3000.0`
+- `Evaluation Type = Spawn Only`
+- `Delta Time = ENGINE DeltaTime`
+
+中间 `System Overview` 中，`Minimal005` 的 `Particle Update` 仍包含：
+
+- `Gravity Force`
+- `Collision`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Sprite Rotation Rate`
+- `Scale Sprite Size`
+
+结合正文“旋转这样设置即可”“亮度适当提一下”“如果这里的石头颜色能接近一点效果应该就不错了”的说明，这张图对应的关键动作是：在保证碰撞静止后停转的前提下，把碎片 Sprite 的出生旋转速率提高到很大的随机区间，让飞散阶段的细碎碎片更有活力和杂乱感，不会显得所有片都以相似速度机械旋转。
+这一步把前面已经调好的次级碎片方案整理成一个新的发射器模板 `Source`，并开始检查发射器级别的基础属性。中间 `System Overview` 中当前可见的 `Source` 发射器结构已经相当完整，包含：
+
+- `Emitter State`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Sub UVAnimation Random`
+- `Shape Location Sphere`
+- `Add Velocity In Cone`
+- `Gravity Force`
+- `Collision`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Sprite Rotation Rate`
+- `Scale Sprite Size`
+- `Scale Color`
+- `Sprite Renderer`
+
+右侧 `Details` 面板当前显示的是 `Source > Emitter Properties`，可明确确认：
+
+- `Local Space`：关闭
+- `Determinism`：关闭
+- `Interpolated Spawning`：开启
+- `Sim Target = CPUSim`
+- `Calculate Bounds... = Dynamic`
+- `Requires Persistent...`：开启
+- `Emitter Dependenci... = 0 Array element`
+
+左侧预览窗口处于 `Compiling...` 状态，说明作者正在把该发射器作为一个独立模板或复用单元整理出来。结合正文“用这个碎片参数来设置”“把这部分复制并应用”“用其他发射器进行生成”的说明，这张图的重点是：把已经验证过的碎片 Sprite 发射器抽出来作为公共来源模板，并明确使用 `CPUSim`、动态 Bounds 和插值生成，为后续复制成多个附属碎片/尘埃发射器做准备。
+这一步把 `Source` 与 `Minimal005` 组合起来使用，开始让一个发射器从另一个发射器取样或继承生成逻辑，同时细调次级碎片的生命周期和尺寸范围。中间 `System Overview` 当前可确认：
+
+- 左侧新发射器名为 `Source`
+  - 包含 `Initialize Particle`
+  - `Sub UVAnimation Random`
+  - `Shape Location Sphere`
+  - `Add Velocity In Cone`
+  - `Gravity Force`
+  - `Collision`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Sprite Rotation Rate`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sprite Renderer`
+
+- 右侧 `Minimal005` 在 `Particle Spawn` 区段新增了
+  - `Sample Particles from Other Emitter`
+
+右侧 `Details` 面板当前选中的是 `Minimal005 > Initialize Particle`，可直接确认：
+
+- `Lifetime Mode = Random`
+- `Lifetime Min = 1.85`
+- `Lifetime Max = 1.2`
+- `Color Mode = Unset`
+- `Position Mode = Simulation Position`
+- `Position Offset = (0.0, 0.0, 0.0)`
+- `Sprite Size Mode = Random Uniform`
+- `Uniform Sprite Size Max = 250.0`
+- `Uniform Sprite Size Min = 150.0`
+- `Sprite Rotation Mode = Random`
+- `Sprite UV Mode = Unset`
+
+结合正文“用这个碎片参数”“用其他发射器进行生成”“每组生成约 10 个即可”“持续时间从 2 开始设为 2.5 左右的变化范围，调到 150 左右”的说明，这张图的关键是：把 `Source` 作为一个上游碎片模板发射器，同时让 `Minimal005` 通过“从其他发射器取样”来继承或跟随其生成，再通过 `Initialize Particle` 把次级碎片的寿命和尺寸压到一个较小但有随机性的范围内，形成跟随石块下落的辅助尘屑层。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

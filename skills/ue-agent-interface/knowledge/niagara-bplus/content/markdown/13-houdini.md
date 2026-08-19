@@ -1,0 +1,1531 @@
+# 13.Houdini布料
+
+# 13.Houdini布料
+
+## 关键术语
+
+- `Houdini`、`RBD`、`PS`、`材质`、`粒子`、`网格`、`碰撞`、`速度`、`破碎`、`布料`、`缓存`、`Niagara`、`系统`、`蓝图`、`用户参数`、`流体`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:06-00:02:57 RBD、网格、布料
+
+- 本段定位：RBD、网格、布料。
+- 知识点：大家好 我是来自时长港工作室的 这次我们来学习一项全新的模拟技术 将会是一次学习新技能的机会 值得期待 Belfast模拟和之前学过的钢体模拟有明显区别。
+- 知识点：钢体模拟适用于混凝土、木材、玻璃这类固体物体的模拟 我们使用钢体求解器 钢体求解器曾用来模拟这些物体 而Belfast模拟则适用于那些钢体无法表现的特殊物体。
+- 知识点：例如布料、头发以及具有橡胶弹性的材料 例如布料、头发以及具有橡胶弹性的材料 可以模拟气球也能表现其他液体的效果 比如果冻、沙粒般的颗粒物或是粉末。
+- 知识点：珠子这类含有大量微小颗粒的物体 它能用来做复合模拟 您就当它是这样一种工具 大致如此 打开Belfast选项卡就能看到各种类型 它和RBD求解器的部分功能有些相似。
+- 知识点：我们简单带过就好 不妨一个一个来看一下 接下来我们看看 先快速看一下结构这个对象网络里 我们用的是分离求解器 得先建个网格 接下来可观察到。
+
+**关键画面：**
+
+这张图是 `p17` 开头在 Houdini 里切入 Vellum/布料主题的总览画面，作用是交代当前处在空白对象层级并准备新建模拟对象。当前图片中能可靠确认：
+
+- 当前软件是 Houdini，处于 `/obj` 层级
+- 顶部功能栏已经切到 `Vellum` 相关工具页，能辨认出一组典型入口：
+  - `Surface Collider`
+  - `Vellum Cloth`
+  - `Vellum Hair`
+  - `Vellum Softbody`
+  - `Vellum Tetrahedral...`
+  - `Vellum Balloon`
+  - `Vellum Grains`
+- 中央网络区是空白对象视图，屏幕提示可见：
+  - `I’m an empty network.`
+  - `Double-click to add nodes.`
+- 左侧视口当前是空场景地面网格，没有任何布料或刚体对象
+- 右侧参数面板显示：
+  - `No Operator Selected`
+- 底部时间轴停在开头位置，当前帧为 `1`
+
+输出/预览：
+
+- 这张图没有展示具体节点链，而是在说明本节和前面 RBD 课程不同：当前要从 Vellum 页面开始搭建新的模拟网络
+- 底部字幕语义为“Belém 模拟和之前学过的刚体模拟有明显区别”，与顶部已经切到 `Vellum` 工具页完全对应
+- 画面强调的是“从空白对象层级开始新建”，而不是复用已有 RBD 网络
+
+这张图可替换为：进入 Houdini 的 `/obj` 层级后，先切换到 `Vellum` 工具页，准备从空白对象网络开始建立新的布料/柔体模拟结构。与前面的 RBD 课程不同，这里没有直接沿用刚体求解链，而是明确以 `Vellum Cloth / Hair / Softbody / Grains` 这类 Vellum 工具作为本节的起点。
+这张图仍处于 Houdini 的 `/obj` 空白对象层，但比上一张更明确地强调“通过对象层添加节点”的入口。当前图片中能可靠确认：
+
+- 顶部工具页依旧是 `Vellum` 分类，可见：
+  - `Surface Collider`
+  - `Vellum Cloth`
+  - `Vellum Hair`
+  - `Vellum Softbody`
+  - `Vellum Balloon`
+  - `Vellum Grains`
+- 中央网络区的空白提示文字变为：
+  - `Empty Network`
+  - `Press Tab to Add Nodes`
+- 当前路径仍是 `/obj`
+- 左侧视口仍然没有任何模拟对象，只显示基础地面网格
+- 右侧参数面板依旧是空状态：
+  - `No Operator Selected`
+- 底部时间轴保持在起始帧 `1`
+
+输出/预览：
+
+- 这张图没有展示布料节点本身，而是在强调：本节不是先进入已有几何网络，而是要先在对象层用 `Tab` 或顶部 Vellum 工具创建新对象
+- 相比上一张“空网络”总览，这一张把操作入口收窄到“按 `Tab` 添加节点”这个动作
+- 结合正文“先快速看一下结构，这个对象网络里我们用的是分离求解器，得先建个网格”的语义，这里对应的是正式开始搭网络前的对象层起步动作
+
+这张图可替换为：在 `/obj` 空白对象网络中，通过 `Tab` 菜单或顶部 `Vellum` 工具条开始新建对象节点。教程此时还没有进入具体 SOP 结构，而是在明确本节的第一步是先从对象层建立布料/柔体模拟对象，再往下展开网格和求解器细节。
+这张图已经进入 `geo1` 的几何网络，开始搭建本节最基础的布料初始几何。当前图片中能可靠确认：
+
+节点定义集：
+
+- `sphere1`
+- `grid1`
+
+连线集：
+
+- 当前截图中两个节点都未连接
+
+设置/参数：
+
+- 当前选中节点：`grid1`
+- `grid1` 参数面板可直接确认：
+  - `Primitive Type = Polygon`
+  - `Connectivity = Quadrilaterals`
+  - `Orientation = ZX Plane`
+  - `Size = 10, 10`
+  - `Center = 0, 5, 0`
+  - `Rotate = 0, 0, 0`
+  - `Rows = 10`
+  - `Columns = 10`
+  - `End-point Interpolate in U`：已勾选
+  - `End-point Interpolate in V`：已勾选
+
+输出/预览：
+
+- 左侧视口显示的是一块平铺的四边形网格平面，对应 `grid1`
+- 视口底部可见提示：
+  - `Home Selected`
+- `sphere1` 虽然已经创建，但当前画面里没有显示它的几何结果，说明作者此时先在调整 `grid1` 这块平面
+- 结合正文“得先建个网格”的语义，这张图对应的正是布料模拟起步阶段的基础平面网格设置
+
+这张图可替换为：进入 `geo1` 后，先创建一个 `grid1` 作为布料初始面片，使用 `Polygon / Quadrilaterals`，方向设为 `ZX Plane`，尺寸约 `10x10`，中心抬到 `Y=5`，行列数先设为 `10x10`。此时 `sphere1` 也已存在，但从截图可见作者首先关注的是把布料平面本身搭出来，再继续后面的求解与碰撞结构。
+
+### 00:03:04-00:06:05 RBD、PS、网格
+
+- 本段定位：RBD、PS、网格。
+- 知识点：把行列数调高了些 在这个状态下选中贝尔姆集群 按回车网络就自动生成了 可查看输出的 先把能查看输出的FPS调好 这一步不用太较真跟下来。
+- 知识点：差不多就行 像当初我们靠眼睛感受RBD模拟那样 就这么看着就行 可以了 现在还没碰撞体 我先加个地面 看这里 地面 地面 刚加的 能看到生成的物体。
+- 知识点：能看到我关掉显示 先随便跑一次模拟物体 直接掉到地面看起来就挺单调的 因为没有碰撞 只有个平平的地面物体 自然就直接下落了 大致如此 些简单看看结构基础部分。
+- 知识点：包括几何体和约数 就这么回事 这样就能直观看出这些物质的约数结构 是怎么连在一起的 看到这处约数我们就可以 之前做可见体模拟时 那里也有约数。
+- 知识点：对结构上差不多 差不多属于类似吸附问题 可以这么理解 这里有个Grid 下方连接着Source和Object节点 这里能看到标有Close的几个选项。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`碰撞`。
+
+**关键画面：**
+
+这张图切到对象层的布料求解网络，开始把前面的 `geo1` 接入 Vellum 源与 DOP 网络。当前图片中能可靠确认：
+
+节点定义集：
+
+- `geo1`
+- `AutoDopNetwork`
+- `cloth_vellum`
+
+连线集：
+
+- 当前截图中对象层节点未直接拉线显示，但右侧参数可确认 `cloth_vellum` 正在引用 `geo1`
+
+设置/参数：
+
+- 当前选中节点：`cloth_vellum`
+- 节点类型：`Vellum Source`
+- 顶部参数：
+  - `Activation = 1`
+  - `Emission Type = Only Once`
+  - `Particle Density = 1`
+- `Source` 页签中可直接确认：
+  - `SOP Path = /obj/geo1/GEO`
+  - `Target Path`：空
+  - `Constraint SOP Path = /obj/geo1/CON`
+  - `Vellum Patch Name = $OS`
+
+输出/预览：
+
+- 左侧视口显示的是一块密度明显更高的布料平面网格，说明前面的基础 `grid1` 已经转入布料用网格状态
+- 视口左上当前可见标签：
+  - `Vellum Source`
+- 视口下方有 `Accept` 提示，说明这一步与 Vellum 源创建/确认动作直接相关
+- 中央对象层已经出现一套典型结构：
+  - 原始几何 `geo1`
+  - DOP 网络 `AutoDopNetwork`
+  - 布料几何对象 `cloth_vellum`
+
+这张图应替换为：在对象层新建 `cloth_vellum` 这类 `Vellum Source` 对象，并让它从 `/obj/geo1/GEO` 读取布料几何、从 `/obj/geo1/CON` 读取约束，同时把 `Emission Type` 设为 `Only Once`。这样前面做好的平面网格就被正式包装成可送入 Vellum 求解的布料源对象，为后面的 DOP 模拟和碰撞测试做准备。
+这张图回到 `geo1` 的 SOP 网络，重点是把布料几何和约束输出结构拆成 `GEO` 与 `CON` 两路。当前图片中能可靠确认：
+
+节点定义集：
+
+- `sphere1`
+- `grid1`
+- `cloth_constraints`
+- `GEO`
+- `CON`
+
+连线集：
+
+- `grid1 -> cloth_constraints`
+- `cloth_constraints` 左输出 -> `GEO`
+- `cloth_constraints` 右输出 -> `CON`
+- `sphere1` 当前未接入主链
+
+设置/参数：
+
+- 当前选中节点：`CON`
+- 右侧参数面板显示 `Null` 节点名为：
+  - `CON`
+- `Copy Input`：已勾选
+- `Cache Input`：未勾选
+- `cloth_constraints` 节点标签可直接读到类型：
+  - `Vellum Constraints`
+- 约束类型标签可见：
+  - `cloth`
+
+输出/预览：
+
+- 左侧视口显示的是极高密度的三角形布料网格，说明当前重点是观察约束细分后的结构
+- 底部字幕语义为“这样就能直观看出这些物质的约束结构是怎么连在一起的”，与 `cloth_constraints -> GEO/CON` 的双输出结构完全一致
+- `sphere1` 虽然已创建，但此图尚未进入碰撞链，仍在解释布料内部的几何与约束组织方式
+
+这张图可替换为：在 `geo1` 内使用 `cloth_constraints` 生成布料约束，并把它分成两路输出：一条经过 `GEO` 作为模拟几何，一条经过 `CON` 作为约束数据。这样对象层的 `cloth_vellum` 才能分别引用 `/obj/geo1/GEO` 与 `/obj/geo1/CON`，同时也便于直接在视口中检查三角化后的约束结构是否合理。
+这张图进入 `AutoDopNetwork`，把布料对象、地面碰撞和求解器链完整摆出来。当前图片中能可靠确认：
+
+节点定义集：
+
+- `vellumobject1`
+- `groundplane1`
+- `merge3`
+- `staticsolver1`
+- `geo1_vellum`
+- `merge2`
+- `vellumsolver1`
+- `merge1`
+- `gravity1`
+- `output`
+
+连线集：
+
+- `vellumobject1 -> vellumsolver1`
+- `geo1_vellum -> merge2 -> vellumsolver1`
+- `groundplane1 -> merge3 -> staticsolver1 -> merge1`
+- `vellumsolver1 -> merge1 -> gravity1 -> output`
+
+设置/参数：
+
+- 当前选中节点：`geo1_vellum`
+- 右侧参数面板显示 `Vellum Source`，并再次确认：
+  - `Activation = 1`
+  - `Emission Type = Only Once`
+  - `Particle Density = 1`
+  - `SOP Path = /obj/geo1/GEO`
+  - `Constraint SOP Path = /obj/geo1/CON`
+  - `Vellum Patch Name = $OS`
+
+输出/预览：
+
+- 左侧视口仍显示平面布料网格，说明此时主要工作是把 DOP 关系接完整，而不是看复杂变形结果
+- 中央 DOP 网络已经把三类角色分清：
+  - `vellumobject1` 作为布料对象
+  - `groundplane1 + staticsolver1` 作为静态碰撞地面
+  - `vellumsolver1` 作为布料求解器
+- 底部字幕语义为“带有特定结构”，对应这张图对整个求解结构的梳理
+
+这张图可替换为：在 `AutoDopNetwork` 中搭好完整的 Vellum 求解链，让 `geo1_vellum` 把 `/obj/geo1/GEO` 和 `/obj/geo1/CON` 送入 `vellumsolver1`，同时加入 `groundplane1`、`staticsolver1` 作为地面碰撞，再把结果汇总到 `gravity1 -> output`。这样布料不会只是在空中下落，而是已经具备与地面交互的基本求解结构。
+### 00:06:08-00:08:54 Houdini、材质、粒子
+
+- 本段定位：Houdini、材质、粒子。
+- 知识点：与基于体积计算的Pyrro或Flapp模拟不同 Belfame模拟的关键在于 采用粒子基础的方式处理点之间的运算。
+- 知识点：其核心在于 通过约束关系来控制粒子间的互动 通过反复迭代约束 与平滑分组的关系 实现点与点之间拉伸 弹性的动态表现 本质上是一种在点之间。
+- 知识点：反复执行计算的求解器 Belfame求解器大约在Houdini17版本左右推出 是功能极为强大的工具 现在从一开始 就用于实现这类特殊效果的模拟。
+- 知识点：若没有Belfame求解器 要表现这类特殊属性的元素 确实非常棘手 得益于这些特性不仅速度的大幅提升。
+- 知识点：实用性也显着增强 因此 可将它看作是能通过 未替资源实现的一类特殊案例 这样理解即可 大致如此 事实上在虚幻引擎中表现这类特殊材质。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Houdini`、`材质`、`粒子`、`速度`、`碰撞`。
+
+**关键画面：**
+
+这张图仍位于 `AutoDopNetwork`，但重点从整体 DOP 连线转到 `vellumobject1` 自身的创建与初始显示设置。当前图片中能可靠确认：
+
+节点定义集：
+
+- `vellumobject1`
+- `groundplane1`
+- `merge3`
+- `staticsolver1`
+- `geo1_vellum`
+- `merge2`
+- `vellumsolver1`
+- `merge1`
+- `gravity1`
+- `output`
+
+连线集：
+
+- `vellumobject1 -> vellumsolver1`
+- `geo1_vellum -> merge2 -> vellumsolver1`
+- `groundplane1 -> merge3 -> staticsolver1 -> merge1`
+- `vellumsolver1 -> merge1 -> gravity1 -> output`
+
+设置/参数：
+
+- 当前选中节点：`vellumobject1`
+- 右侧 `Vellum Object` 参数面板中可直接确认：
+  - `Creation Frame = 1`
+  - `Object Name = $OS`
+  - `Solve on Creation Frame`：已勾选
+  - `Allow Caching`：已勾选
+- `Initial Data` 页签中：
+  - `Display Geometry`：已勾选
+  - `Display Constraints`：未勾选
+
+输出/预览：
+
+- 左侧视口仍显示平整的布料网格，说明当前主要是在确认布料对象如何被送入求解器，而不是查看复杂变形
+- 底部字幕语义为“Belém 模拟的关键在于采用粒子基础的方式处理点之间的运算”，与 `Vellum Object` 的对象级设置讲解一致
+- 这张图补充说明：布料对象在进入 Vellum 求解前，需要先明确创建帧、缓存与初始显示方式
+
+这张图可替换为：在 `AutoDopNetwork` 中选中 `vellumobject1`，把布料对象的创建帧设为 `1`，开启 `Solve on Creation Frame` 与 `Allow Caching`，同时在初始数据显示里优先开启 `Display Geometry`、关闭 `Display Constraints`。这样进入求解时更便于直接观察布料表面表现，而不是一开始就被约束线覆盖视图。
+这张图退回到对象层级，重点是说明本节的布料求解并不是孤立的 DOP 技巧，而是由几个对象节点协同组成。当前图片中能可靠确认：
+
+节点定义集：
+
+- `geo1`
+- `AutoDopNetwork`
+- `cloth_vellum`
+- `groundplane1`
+
+连线集：
+
+- 当前对象层截图中这些对象节点未显示直接连线
+
+设置/参数：
+
+- 当前选中节点：`AutoDopNetwork`
+- 右侧 `DOP Network` 参数面板中可直接确认：
+  - `Timestep = 0.0333333`
+  - `Substeps = 1`
+  - `Offset Time = 0`
+  - `Start Frame = 1`
+  - `Scale Time = 1`
+  - `Max Feedback Loops = 2`
+  - `Enable Automatic Resimulation`：已勾选
+  - `Provide Data Hints`：已勾选
+  - `Interpolate Display Data`：已勾选
+
+输出/预览：
+
+- 左侧视口中显示的是一块平滑的浅色布料面片，没有显示约束线，说明在对象层预览时作者更关注整体布面形态
+- 中央对象层能直观看到四个关键对象已经齐全：
+  - 几何来源 `geo1`
+  - 求解网络 `AutoDopNetwork`
+  - 布料对象 `cloth_vellum`
+  - 地面对象 `groundplane1`
+- 底部字幕语义为“正因如此，只要能这样用上……”，和当前这种把几类对象组织起来的讲解方式一致
+
+这张图可替换为：在对象层保留 `geo1`、`cloth_vellum`、`groundplane1` 与 `AutoDopNetwork` 这几类对象，并把 DOP 网络时间步保持在 `0.0333333`（约 30fps）、`Substeps=1`、`Start Frame=1`。这样就形成了一个最基础但完整的布料测试场景：既有布料几何来源，也有碰撞地面和统一求解网络，便于后续围绕约束与材质特性继续调参。
+这张图进入 `cloth_vellum` 的几何后处理网络，重点是把 DOP 求解结果导回 SOP 并做布料后处理。当前图片中能可靠确认：
+
+节点定义集：
+
+- `import_geometry`
+- `remove_normals`
+- `set_cusp_angle`
+- `import_constraints`
+- `vellum_io`
+- `vellumpostprocess1`
+
+连线集：
+
+- 主干链：
+  - `import_geometry -> remove_normals -> set_cusp_angle -> vellum_io -> vellumpostprocess1`
+- 约束导入分支：
+  - `import_constraints -> vellum_io`
+
+设置/参数：
+
+- 当前选中节点：`vellumpostprocess1`
+- 节点类型：`Vellum Post-Process`
+- `Operations` 页签中可直接确认：
+  - `Apply Welds`：已勾选
+- `Smooth` 区域：
+  - `Blur Group`：空
+  - `Spatial Blur = 0`
+  - `Subdivision = None`
+- `Collision Correction` 区域：
+  - `Detangle`：未勾选
+  - `Self Collisions`：已勾选
+- `Shape Match Rigidity`：未勾选
+- `Thicken` 区域：
+  - `Extrude by Thickness`：未勾选
+
+输出/预览：
+
+- 左侧视口已经显示出一块明显下垂、被拉扯成尖角的布料结果，说明求解结果已被成功导回并能在 SOP 里观察
+- 当前帧在时间轴上约为 `32`
+- `vellum_io` 节点下方可见缓存文件命名预览：
+  - `$HIPNAME.$OS_v1.$F4.bgeo.sc`
+- 这张图说明流程已经从“搭 DOP 网络”进入“读取求解结果并做后处理”的阶段
+
+这张图可替换为：在 `cloth_vellum` 内使用 `import_geometry` 和 `import_constraints` 把 Vellum 求解结果与约束重新导回 SOP，再经过 `remove_normals`、`set_cusp_angle` 和 `vellum_io` 统一整理，最后用 `vellumpostprocess1` 做后处理。当前可见设置里启用了 `Apply Welds` 和 `Self Collisions`，但没有启用额外细分或厚度挤出，说明作者先以最基础的后处理方式检查布料求解后的真实形态。
+
+### 00:09:05-00:11:42 材质、碰撞、布料
+
+- 本段定位：材质、碰撞、布料。
+- 知识点：模拟时可能显得有点僵硬 不够自然 只要调好参数效果就能体现出来 可以试试贝勒姆模拟最典型的案例 布料材质。
+- 知识点：再做一个其他案例看看用皮叶螺多边形建模 先做一下分15段左右 细分一下这里提高到6段左右选中这部分 再选软体功能这里也会自动划分 这里又多加了一个体积源。
+- 知识点：多出来的部分也显现出来了 注意看特征这个Balance Constraint 节点下虽然标着Class 但还额外加了 Struct附加了拉伸属性这些参数。
+- 知识点：正是控制软体特性的关键 从而让软体呈现出相应特征 可以这么理解 我觉得是这样现在这个材质有点弹性。
+- 知识点：像气球一样 这里的竖直目前设在100左右 试试改成0.1把模拟快的惊人 调到0.1后原本的硬度消失了 变得像橡胶手套那样柔韧 也能实现这种质感。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`材质`、`碰撞`。
+
+**关键画面：**
+
+这张图继续停留在 `cloth_vellum` 的 SOP 后处理链，但视口中的布料已经回到接近平整的状态，说明此时讨论的是“基础后处理与参数基线”，而不是极端软体形变。当前图片中能可靠确认：
+
+节点定义集：
+
+- `import_geometry`
+- `remove_normals`
+- `set_cusp_angle`
+- `import_constraints`
+- `vellum_io`
+- `vellumpostprocess1`
+
+连线集：
+
+- `import_geometry -> remove_normals -> set_cusp_angle -> vellum_io -> vellumpostprocess1`
+- `import_constraints -> vellum_io`
+
+设置/参数：
+
+- 当前选中节点：`vellumpostprocess1`
+- `Vellum Post-Process` 的 `Operations` 页签中可直接确认：
+  - `Apply Welds`：已勾选
+- `Smooth` 区域：
+  - `Blur Group`：空
+  - `Spatial Blur = 0`
+  - `Subdivision = None`
+- `Collision Correction` 区域：
+  - `Detangle`：未勾选
+  - `Self Collisions`：已勾选
+- `Shape Match Rigidity`：未勾选
+- `Thicken` 区域：
+  - `Extrude by Thickness`：未勾选
+
+输出/预览：
+
+- 左侧视口中的布料是较规则的平面状态，没有出现明显鼓起、挤压或厚度外扩
+- 这表明在当前参数下，后处理节点主要起整理和碰撞修正作用，而没有额外施加厚度或细分强化
+- 中央网络下方仍可见缓存输出名：
+  - `$HIPNAME.$OS_v1.$F4.bgeo.sc`
+
+这张图适合替换为：在 `cloth_vellum` 的后处理链中，先保持 `vellumpostprocess1` 处于较保守的基线设置，例如仅启用 `Apply Welds` 与 `Self Collisions`，而不启用额外 `Subdivision`、`Extrude by Thickness` 或 `Shape Match Rigidity`。这样可以先观察布料在最基础后处理条件下的平整状态，再决定是否通过厚度、刚度或平滑参数把效果推向更软体化的方向。
+这张图切到新的 `geo2` 软体案例，重点是用球体几何叠加两层 Vellum 约束，让对象从单纯布面转向更接近气球/果冻的软体质感。当前图片中能可靠确认：
+
+节点定义集：
+
+- `sphere1`
+- `stretchcloth_constraints`
+- `strut_constraints`
+- `GEO`
+- `CON`
+
+连线集：
+
+- `sphere1 -> stretchcloth_constraints -> strut_constraints`
+- `strut_constraints` 左输出 -> `GEO`
+- `strut_constraints` 右输出 -> `CON`
+
+设置/参数：
+
+- 当前选中节点：`strut_constraints`
+- 节点类型：`Vellum Constraints`
+- `Constraint Type = Struts`
+- `Geometry` 区域：
+  - `Group Type = Primitives`
+  - `Mass = Unchanged`
+  - `Thickness = Unchanged`
+  - `Define Pieces = From Connectivity`
+  - `Show Guide Geometry`：已勾选
+- `Target Geometry` 区域：
+  - `Target Group Type = Primitives`
+- `Strut Search` 区域：
+  - `Max Strut Length = 100`
+  - `Test Normals`：已勾选
+  - `Direction Jitter = 0.1`
+  - `Constraints Per Point = 1`
+  - `Detach Point Chance = 0`
+  - `Seed = 0`
+  - `Ray Offset = 0.01`
+- `Stretch` 区域：
+  - `Stiffness = 1`
+  - 缩放乘数显示为 `100`
+  - `Damping Ratio = 0.001`
+  - `Rest Length Scale = 1`
+  - `Compress Stiff...`：未勾选
+  - `Enable Plasticity`：未勾选
+- `Attributes` 区域：
+  - `Promotion Method = Average`
+
+输出/预览：
+
+- 左侧视口显示的是一个由高密度点/三角面构成的球体，位于地面上方
+- 视口左上标签显示当前正在看：
+  - `Vellum Constraints`
+- `stretchcloth_constraints` 节点标签上可见约束类型为：
+  - `cloth`
+- `strut_constraints` 节点标签上可见约束类型为：
+  - `struts`
+
+这张图可替换为：在 `geo2` 中先以 `sphere1` 作为软体基础形体，先经过 `stretchcloth_constraints` 生成一层 `cloth` 约束，再叠加一层 `strut_constraints` 生成内部 `struts` 支撑结构，最后同样输出到 `GEO` 和 `CON` 两路。截图中 `Struts` 的关键搜索参数包括 `Max Strut Length=100`、`Constraints Per Point=1`、`Direction Jitter=0.1`，说明作者正在用内部支撑约束把球体从普通布面推进到更接近气球或果冻的软体形态。
+这张图回到对象层，展示软体球体案例是如何和前面的布料场景并列组织的。当前图片中能可靠确认：
+
+- 对象层当前可见节点包括：
+  - `geo1`
+  - `geo2`
+  - `AutoDopNetwork`
+  - `cloth_vellum`
+  - `groundplane1`
+- 当前选中对象是：
+  - `geo2`
+- 右侧 `Geometry geo2` 的 `Transform` 页签中可直接确认：
+  - `Transform Order = Scale Rot Trans`
+  - 旋转模式为 `Rx Ry Rz`
+  - `Translate = 0, 0, 0`
+  - `Rotate = 0, 0, 0`
+  - `Scale = 1, 1, 1`
+  - `Pivot Translate = 0, 0, 0`
+  - `Pivot Rotate = 0, 0, 0`
+  - `Uniform Scale = 1`
+  - `Keep Position When Parenting`：未勾选
+  - `Child Compensation`：未勾选
+  - `Enable Constraints`：未勾选
+- 左侧视口中可见：
+  - 上方悬浮着一个球体
+  - 下方是一块大面积平面
+  - 说明 `geo2` 软体球体已经被放进和布料/地面相同的测试空间中做结果观察
+- 底部时间轴当前在约 `23` 帧
+
+输出/预览：
+
+- 这张图没有展示 `geo2` 内部约束节点，而是强调：软体案例最终也是作为一个普通几何对象参与整个对象层场景组织
+- 视口中的球体与平面同时出现，说明作者在用实际场景来评估软体对象与碰撞环境的整体关系
+- 底部字幕语义为“这些预设值的取值范围也是根据数值设定好的”，与右侧 `geo2` 维持基线变换值的画面一致
+
+这张图可替换为：在对象层把 `geo2` 作为独立软体对象加入到与 `AutoDopNetwork`、`cloth_vellum`、`groundplane1` 并列的场景中，并先保持它的基础变换为零位姿、单位缩放。这样后续无论是测试球体的弹性、碰撞还是与布料的相互关系，都可以在同一个对象层框架里直接比较和调参。
+### 00:11:48-00:16:29 材质、网格、碰撞
+
+- 本段定位：材质、网格、碰撞。
+- 知识点：略微翘起 不过即便如此也相当 这个效果已经相当出色了 只要适当调节这些点位和厚度等参数 就能做出相当出色的动画效果 关键是只加了个简单设置效果。
+- 知识点：就这么出来了 物体之间能自然融合碰撞 这正是它的优势所在 尤其对于这类特殊模拟 计算起来特别费时 但这里再加一个试试这次也 效果会有点像软体这次。
+- 知识点：选的是闹钟形态模拟 选好之后 点一下iPhone就行 就差不多了 这个叫Belfame 越像气球那种质感 感觉还挺软乎乎的 有点像果冻似的。
+- 知识点：这种弹性的强弱 只要掉掉这里的竖直就能轻松做出不同效果 所以你看一个个 按力逐步建立再加入动态网络 整个结构就这样搭建起来 一目了然 这么看的话我们只要准备好物体。
+- 知识点：再用Belfame 越数设置参数 就能表现出这些特殊材质的效果 就这么理解就好 这样应该能行 这种结构能这样搭出来 能简单验证一下 要实现更真实的头发效果。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`材质`、`碰撞`。
+
+**关键画面：**
+
+这张图开始进入 `S05` 小节，重点是用已经形成明显褶皱的布料结果，说明通过点位、厚度等参数就能把基础布料推进到更自然的动画效果。当前图片中能可靠确认：
+
+- 对象层当前选中对象是：
+  - `geo1`
+- 可见对象层节点包括：
+  - `geo1`
+  - `geo2`
+  - `AutoDopNetwork`
+  - `cloth_vellum`
+  - `groundplane1`
+- 右侧 `Geometry geo1` 的 `Transform` 页签中可直接确认：
+  - `Translate = 0, 0, 0`
+  - `Rotate = 0, 0, 0`
+  - `Scale = 1, 1, 1`
+  - `Uniform Scale = 1`
+  - 其余 `Pivot` 与约束相关选项均保持默认未启用状态
+
+输出/预览：
+
+- 左侧视口显示的是一块已经发生明显下垂、褶皱并包裹住球体轮廓的布料
+- 画面中能看到：
+  - 明显的折痕线
+  - 布面被球体顶起形成的鼓包
+  - 下垂边缘与尖角拉伸
+- 当前帧大约在 `60`
+- 底部字幕语义为“只要适当调节点位和厚度等参数，就能做出相当出色的动画效果”，与画面里已经形成较自然布褶的结果一致
+
+这张图可替换为：在对象层保持 `geo1` 的基础变换不变，把注意力放在布料自身参数和求解结果上。当前视口已经显示出布料围绕碰撞体产生的明显折皱和包裹形态，说明即使不额外改动对象层 Transform，只要调整布料点位分布、厚度或相关约束参数，就足以把基础布面推进到较自然的动画状态。
+这张图继续在对象层讨论“这种结构能怎样搭出来”，并新增了第三个几何对象 `geo3` 作为后续特殊案例的入口。当前图片中能可靠确认：
+
+- 对象层当前选中对象是：
+  - `geo3`
+- 当前可见对象层节点包括：
+  - `geo1`
+  - `geo2`
+  - `geo3`
+  - `AutoDopNetwork`
+  - `cloth_vellum`
+  - `groundplane1`
+- 右侧 `Geometry geo3` 的 `Transform` 页签中可直接确认：
+  - `Translate = 0, 0, 0`
+  - `Rotate = 0, 0, 0`
+  - `Scale = 1, 1, 1`
+  - `Uniform Scale = 1`
+  - 其余 `Pivot` 与父子约束选项均保持默认未启用
+
+输出/预览：
+
+- 左侧视口仍然显示已经求解出的布料折皱与球体鼓包结果，说明对象层当前的新增操作并不会中断对已有布料结果的观察
+- 视口中能看到：
+  - 布面被球体顶出的圆形鼓起
+  - 边缘明显下坠的厚重褶皱
+  - 近景里布料已经非常接近“软布包覆障碍物”的状态
+- 当前帧约为 `70`
+- 底部字幕语义为“这种结构能这样搭出来”，与对象层中从 `geo1`、`geo2` 扩展到 `geo3` 的组织方式一致
+
+这张图可替换为：在对象层继续新增 `geo3` 作为下一个特殊材质/碰撞案例的几何入口，同时保留 `geo1`、`geo2`、`cloth_vellum`、`groundplane1` 与 `AutoDopNetwork` 的整体结构不变。这样可以在同一套求解框架中逐个扩展不同类型的软体或颗粒案例，而左侧视口则持续用已形成的布料结果验证这些结构搭法是可行的。
+这张图进入多对象同时并入 Vellum 求解器的阶段，重点是说明不同几何案例都可以通过各自的 `Vellum Source` 汇总进同一个 `merge2 -> vellumsolver1` 链路。当前图片中能可靠确认：
+
+节点定义集：
+
+- `geo1_vellum`
+- `geo2_vellum`
+- `geo3_vellum`
+- `geo4_vellum`
+- `merge2`
+- `vellumsolver1`
+- `merge1`
+
+连线集：
+
+- `geo1_vellum -> merge2`
+- `geo2_vellum -> merge2`
+- `geo3_vellum -> merge2`
+- `geo4_vellum -> merge2`
+- `merge2 -> vellumsolver1 -> merge1`
+
+设置/参数：
+
+- 当前选中节点：`geo4_vellum`
+- 节点类型：`Vellum Source`
+- `Source` 页签中可直接确认：
+  - `SOP Path = /obj/geo4/GEO`
+  - `Constraint SOP Path = /obj/geo4/CON`
+  - `Vellum Patch Name = $OS`
+- 顶部参数仍保持：
+  - `Activation = 1`
+  - `Emission Type = Only Once`
+  - `Particle Density = 1`
+
+输出/预览：
+
+- 左侧视口中能看到一块被严重拉长、包裹球体并出现尖锐折线边缘的布料结果
+- 同时视口里还出现几条白色曲线状元素，说明当前场景内已经不止一类布面对象在共同参与求解
+- 底部字幕语义为“目前只有约 20 个点，点数较少，难免会有些毛刺感”，与画面里边缘偏粗糙、折线感明显的结果一致
+
+这张图可替换为：当需要把多个不同结构的布料/软体案例一起送入同一个 Vellum 求解器时，可以为每个对象分别建立 `geo1_vellum`、`geo2_vellum`、`geo3_vellum`、`geo4_vellum` 这类 `Vellum Source`，再统一并入 `merge2 -> vellumsolver1`。当前截图还特别说明，如果单个对象的点数过少，例如只有二十点左右，就容易在最终结果上出现毛刺和折线感，因此结构接通后还需要继续检查网格细分密度是否足够。
+
+### 00:16:29-00:21:07 RBD、碰撞、速度
+
+- 本段定位：RBD、碰撞、速度。
+- 知识点：非常真实 做到这一步已经足够轻便 我们运行模拟时 通常都默认其用缓存 这些地方优势非常明显 这次我们来做个有点特别的项目 大概十个左右 放上去之后稳重。
+- 知识点：接下来是Buffin 我选颗粒 这样Buffin颗粒的特点就是由一个个小颗粒组成 大致就是这样 现在细分大小不太高 颗粒显得粗实分明 加了颗粒后速度明显慢了下来。
+- 知识点：这主要是因为加入了颗粒 这么多复杂元素能一次性模拟 尤其是这些颗粒 计算负担明显加重 但每一个都要单独处理 发生碰撞后一个个弹跳开来 彼此碰撞时产生的弹跳力也十分明显。
+- 知识点：感觉强度有点大 但效果非常自然 就像这样 一样的布料被众多角色反复撞击 不断弹开 看起来是被弹开了 但细看其他项目几乎没有穿膜 或碰撞失效的情况。
+- 知识点：确实是个很靠谱的求解器 因此表现怪物流口水 这类液态效果也特别顺手 效率很高这个 戴尔姆模拟介绍时Side effects 曾用一段宣传短片。
+- 知识点：但我们这次不走这条路 而是另起炉灶 直接搭建 戴尔姆求解器来用 本段先拿它简单试个碰撞效果看看 把Belfam求解器这么一连 模拟效果也出来了。
+- 知识点：就能看到这种效果 能看到这种效果碰撞也完全生效了 其实这个Belfam求解器 就是把之前在动态网络里用过的那些功能 整合在一起 全都打包成一个方便好用的求解器。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`速度`、`碰撞`。
+
+**关键画面：**
+
+这张图延续多对象并入同一 Vellum 求解器的结构，但左侧视口换成了两个球体与平面共同出现的测试场景，强调这套结构已经足够轻量并可继续叠加案例。当前图片中能可靠确认：
+
+节点定义集：
+
+- `geo1_vellum`
+- `geo2_vellum`
+- `geo3_vellum`
+- `geo4_vellum`
+- `merge2`
+- `vellumsolver1`
+- `merge1`
+
+连线集：
+
+- `geo1_vellum -> merge2`
+- `geo2_vellum -> merge2`
+- `geo3_vellum -> merge2`
+- `geo4_vellum -> merge2`
+- `merge2 -> vellumsolver1 -> merge1`
+
+设置/参数：
+
+- 当前选中节点：`geo4_vellum`
+- `Vellum Source` 的 `Source` 页签中可直接确认：
+  - `SOP Path = /obj/geo4/GEO`
+  - `Constraint SOP Path = /obj/geo4/CON`
+  - `Vellum Patch Name = $OS`
+- 顶部参数仍保持：
+  - `Activation = 1`
+  - `Emission Type = Only Once`
+  - `Particle Density = 1`
+
+输出/预览：
+
+- 左侧视口中可以直接看到：
+  - 一块平面布/网格
+  - 上下排列的两个球体
+  - 几条横向白色参考线
+- 这说明当前场景已不只是单一布料，而是在为更复杂的多碰撞体/多案例测试做准备
+- 底部字幕语义为“做到这一步已经足够轻便，我们运行模拟时通常都默认启用缓存”，与画面中已经建立好的多输入求解结构一致
+
+这张图可替换为：当同一个 Vellum 场景里要同时测试多种几何与碰撞体时，可以继续沿用 `geo1_vellum` 到 `geo4_vellum` 这类多源并入 `merge2 -> vellumsolver1` 的结构。截图说明此时作者已经把场景扩展到多个球体和布面共存的测试状态，并明确把“默认启用缓存”视为后续继续堆叠复杂案例的基础前提。
+这张图回到 `cloth_vellum` 的后处理链，但左侧视口已经显示出多块布料和额外曲线元素共同参与的结果，用来说明多对象碰撞求解已经真正跑起来。当前图片中能可靠确认：
+
+节点定义集：
+
+- `import_geometry`
+- `remove_normals`
+- `set_cusp_angle`
+- `import_constraints`
+- `vellum_io`
+- `vellumpostprocess1`
+
+连线集：
+
+- `import_geometry -> remove_normals -> set_cusp_angle -> vellum_io -> vellumpostprocess1`
+- `import_constraints -> vellum_io`
+
+设置/参数：
+
+- 当前选中节点：`vellumpostprocess1`
+- `Vellum Post-Process` 的 `Operations` 页签中仍可直接确认：
+  - `Apply Welds`：已勾选
+- `Smooth` 区域：
+  - `Spatial Blur = 0`
+  - `Subdivision = None`
+- `Collision Correction` 区域：
+  - `Detangle`：未勾选
+  - `Self Collisions`：已勾选
+- `Thicken` 区域：
+  - `Extrude by Thickness`：未勾选
+
+输出/预览：
+
+- 左侧视口中当前至少可见：
+  - 一块浅色、网格线明显的布面
+  - 一块更厚重、深色的布面
+  - 若干白色曲线/线条状元素贴近地面
+- 这些元素都聚集在地面附近，说明当前求解不再是单对象下落，而是在做多对象共同碰撞与相互影响测试
+- 时间轴当前约在 `49` 帧
+- `vellum_io` 依旧输出到：
+  - `$HIPNAME.$OS_v1.$F4.bgeo.sc`
+
+这张图可替换为：在 `cloth_vellum` 中导回并后处理 Vellum 结果时，要用实际视口去确认多对象同时求解后的碰撞效果。当前截图中已经同时出现浅色布面、深色布面和额外线状元素，说明多个案例被统一送进同一求解体系后，碰撞和堆叠关系已经在场景里实际成立。此时后处理仍保持较轻的基线设置，重点在于先验证“多对象并行求解是否稳定”。
+这张图切到 `geo1` 内部，开始把 RBD Bullet 求解器和 Vellum 求解器并列放进同一个几何网络里，用于测试混合碰撞效果。当前图片中能可靠确认：
+
+节点定义集：
+
+- `grid1`
+- `cloth_constraints`
+- `GEO`
+- `CON`
+- `rbdbulletsolver1`
+- `vellumsolver1`
+- `sphere1`
+
+连线集：
+
+- `grid1 -> cloth_constraints`
+- `cloth_constraints` 左输出 -> `GEO`
+- `cloth_constraints` 右输出 -> `CON`
+- `cloth_constraints` 两路输出还分别往下送入 `vellumsolver1`
+- `sphere1` 有一条虚线关系指向 `vellumsolver1`
+- `rbdbulletsolver1` 与 `vellumsolver1` 并列放置在同一网络中，表示两类求解逻辑被组合使用
+
+设置/参数：
+
+- 当前选中节点：`rbdbulletsolver1`
+- 右侧 `RBD Bullet Solver` 参数面板中可直接确认：
+  - `Start Frame = 1`
+  - `Time Scale = 1`
+  - `Global Substeps = 1`
+  - `Bullet Substeps = 10`
+  - `Constraint Iterations = 10`
+  - `Cache Memory (MB) = 5000`
+  - `Solve on Creation Frame`：未勾选
+  - `Emit RBDs`：未勾选
+  - `Replicate RBDs`：未勾选
+
+输出/预览：
+
+- 左侧视口当前只显示一块平整的布料网格，说明此时重点不是查看复杂运动结果，而是在搭混合求解结构
+- 中央网络里 `rbdbulletsolver1` 与 `vellumsolver1` 同时出现，这是本图最关键的信息
+- 这张图对应正文里“把 Belfam 求解器这么一连，模拟效果也出来了”“把之前动态网络里用过的功能整合在一起”的解释
+
+这张图可替换为：在 `geo1` 中保留布料用的 `grid1 -> cloth_constraints -> GEO/CON` 结构，同时引入 `rbdbulletsolver1` 与 `vellumsolver1` 进行混合测试。当前可见的 Bullet 求解设置采用 `Global Substeps=1`、`Bullet Substeps=10`、`Constraint Iterations=10`，说明作者是在用一套相对稳妥的 RBD 计算参数去配合 Vellum 布料，验证两类碰撞/动力学逻辑能否在同一案例中共同工作。
+
+### 00:21:07-00:26:07 材质、布料
+
+- 本段定位：材质、布料。
+- 知识点：这样就差不多了 先拿这个布料试力看看 它主要由哪些选项组成 与其一个个抠细节不如简单讲讲 大情况 讲点重点 毕竟贝尔姆的参数设置案例太多。
+- 知识点：也挺复杂的 所以我就挑几个典型例子演示一下 差不多就行了 感受一下就够了 在影视特效领域 这种参数比较有利于这类材质模拟的FX艺术家。
+- 知识点：哪怕只是初步运用这种模拟 也能表现特殊材质 这本身就是一项非常实用的技能 这本身就是一项非常实用的技能 不妨就当做是做了些初步尝试 不妨就当做是做了些初步尝试。
+- 知识点：基础参数有密度还有厚度 这里基础参数有密度还有厚度 这分别对应布料的厚度和重量感 大致如此,在视觉上厚度感也能呈现得更明显 这类效果可以呈现得更厚实一些。
+- 知识点：主要可分为拉伸和弯曲两部分 主要可分为拉伸和弯曲两部分 拉伸就是控制物体被拉长时的弹性响应 拉伸就是控制物体被拉长时的弹性响应 可视为对拉伸效果的调控参数。
+- 知识点：可视为对拉伸效果的调控参数 大致如此,弯曲则用于控制物体发生微弯时的刚度 大致如此,弯曲则用于控制物体发生微弯时的刚度 可据此进行调节。
+- 知识点：可理解为拉伸或 类似弯曲感的参数换用其他材质时 也大致呈现相似效果 可作如此理解 大致如此,尤其常使用刚度和阻尼这两个参数。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`。
+
+**关键画面：**
+
+这张图进入 `S07` 的参数讲解阶段，重点是把 `cloth_constraints` 节点中和布料基础质感相关的主要参数整体过一遍。当前图片中能可靠确认：
+
+节点定义集：
+
+- `grid1`
+- `cloth_constraints`
+- `GEO`
+- `CON`
+- `vellumsolver1`
+- `sphere1`
+
+连线集：
+
+- `grid1 -> cloth_constraints`
+- `cloth_constraints` 左输出 -> `GEO`
+- `cloth_constraints` 右输出 -> `CON`
+- `cloth_constraints` 两路输出继续往下送入 `vellumsolver1`
+- `sphere1` 保持与 `vellumsolver1` 的碰撞/关系连接
+
+设置/参数：
+
+- 当前选中节点：`cloth_constraints`
+- `Vellum Constraints` 参数面板中可直接确认：
+  - `Constraint Type = Cloth`
+  - `Stretch Type = Distance Along Edges`
+  - `Bend Type = Angle`
+- `Geometry` 区域：
+  - `Group Type = Primitives`
+  - `Triangulation = Alternating`
+  - `Mass = Calculate Varying`
+  - `Density = 0.1`
+  - `Thickness = Calculate Uniform`
+  - `Edge Length Scale = 0.25`
+  - `Visualize Thickness`：未勾选
+  - `Define Pieces = From Connectivity`
+  - `Show Guide Geometry`：已勾选
+- `Drag` 区域：
+  - `Normal Drag = 10`
+  - `Tangent Drag = 0.1`
+- `Pins to Animation` 区域：
+  - `Pin Points = 95-99 195-199 295-299 395-399 495-499`
+  - `Pin Type = Permanent`
+  - `Match Animation`：未勾选
+- `Stretch` 区域：
+  - `Stiffness = 1`
+  - 缩放乘数显示为 `1e+10`
+  - `Damping Ratio = 0.001`
+  - `Rest Length Scale = 1`
+  - `Compression Stiff... = 1`，缩放乘数显示为 `1000`
+  - `Stiffness Dropoff`：未启用
+  - `Enable Warp/Weft`：未启用
+  - `Enable Plasticity`：未启用
+  - `Output Group = stretch`
+  - `Keep Unique within Output Group`：已勾选
+
+输出/预览：
+
+- 左侧视口当前还是一块高细分平面布料，说明作者在这一张主要讲的是参数意义，而不是展示复杂形变
+- 底部字幕语义集中在“基础参数、厚度、拉伸、弯曲、刚度和阻尼”等概念上，与右侧参数布局完全一致
+- 这张图直接给出了布料最关键的一批基础手感参数，是本段最重要的结构化证据之一
+
+这张图可替换为：在 `cloth_constraints` 中，先把布料当作标准 `Cloth` 约束来处理，基础上用 `Density=0.1`、`Edge Length Scale=0.25`、`Normal Drag=10`、`Tangent Drag=0.1`，并通过 `Stretch` 区域重点调 `Stiffness`、`Compression Stiffness`、`Damping Ratio`。截图还显示了一组固定的 `Pin Points` 区间，说明教程不仅讲布料材质手感，也同时依赖固定点约束去控制整体运动形态。
+这张图仍然是 `cloth_constraints` 的参数讲解，但焦点已经下移到压缩与弯曲手感控制，是前一张“基础参数总览”的延续。当前图片中能可靠确认：
+
+节点定义集：
+
+- `grid1`
+- `cloth_constraints`
+- `GEO`
+- `CON`
+- `vellumsolver1`
+- `sphere1`
+
+连线集：
+
+- `grid1 -> cloth_constraints`
+- `cloth_constraints` 左输出 -> `GEO`
+- `cloth_constraints` 右输出 -> `CON`
+- `cloth_constraints` 两路继续送入 `vellumsolver1`
+- `sphere1` 仍与 `vellumsolver1` 保持连接关系
+
+设置/参数：
+
+- 当前选中节点：`cloth_constraints`
+- 右侧当前可直接确认的参数区包括：
+  - `Density = 0.1`
+  - `Thickness = Calculate Uniform`
+  - `Edge Length Scale = 0.25`
+  - `Show Guide Geometry`：已勾选
+  - `Normal Drag = 10`
+  - `Tangent Drag = 0.1`
+  - `Pin Points = 95-99 195-199 295-299 395-399 495-499`
+  - `Pin Type = Permanent`
+- `Stretch` 区域此时仍可见：
+  - `Stiffness = 1`
+  - 缩放乘数显示为 `1e+10`
+  - `Damping Ratio = 0.001`
+  - `Rest Length Scale = 1`
+  - `Compression Stiff... = 1`
+  - 缩放乘数显示为 `1000`
+  - `Output Group = stretch`
+  - `Keep Unique within Output Group`：已勾选
+- `Bend` 区域这张图新增可直接确认：
+  - `Stiffness = 1`
+  - 缩放乘数显示为 `0.0001`
+  - `Damping Ratio = 0.01`
+  - `Rest Angle Scale = 1`
+  - `Stiffness Dropoff`：未启用
+  - `Enable Plasticity`：未启用
+  - `Output Group = bend`
+  - `Keep Unique within Output Group`：已勾选
+- `Attributes` 区域：
+  - `Promotion Method = Average`
+
+输出/预览：
+
+- 左侧视口仍是平面布料，说明这一张继续属于纯参数讲解而非结果演示
+- 底部字幕语义为“这类具有弹性的运动在模拟中，关键在于其抗力大小”，与右侧 `Stretch / Bend / Damping` 等参数完全对应
+- 这一张补充了前一张没有覆盖的重点：除了拉伸，布料微弯时的刚度和阻尼同样是决定质感的核心
+
+这张图可替换为：在 `cloth_constraints` 中，除了拉伸参数外，还要重点调 `Compression` 和 `Bend`。当前可见设置表明作者把 `Compression` 保持在较高缩放级别，而 `Bend` 则用非常小的缩放乘数配合 `Damping Ratio=0.01` 来控制布料弯折时的柔软度。换言之，本图强调的是“布料像布还是像橡胶/果冻”，往往不只看拉伸，还要看压缩与弯曲阻力的配合。
+这张图是一个更广义的 Vellum 约束类型总览，作者把布料、软体、压力、头发、颗粒等多类结构并列摆开，说明不同材质本质上都是在同一套约束体系里切换。当前图片中能可靠确认：
+
+节点定义集：
+
+- `grid1`
+- `cloth_constraints`
+- `sphere2`
+- `stretchcloth_constraints`
+- `strut_constraints`
+- `sphere3`
+- `stretchcloth_constraints1`
+- `pressure_constraints`
+- `line1`
+- `copytopoints1`
+- `grid2`
+- `hair_constraints`
+- `testgeometry_pighead1`
+- `grain_constraints`
+- `sphere1`
+
+连线集：
+
+- 左侧链：
+  - `grid1 -> cloth_constraints`
+- 软体/气球链：
+  - `sphere2 -> stretchcloth_constraints -> strut_constraints`
+- 压力链：
+  - `sphere3 -> stretchcloth_constraints1 -> pressure_constraints`
+- 头发链：
+  - `line1 -> copytopoints1`
+  - `grid2 -> copytopoints1`
+  - `copytopoints1 -> hair_constraints`
+- 颗粒链：
+  - `testgeometry_pighead1 -> grain_constraints`
+- 各条链均以各自的约束节点作为终点，说明作者是在比较不同材质对应的约束类型
+
+设置/参数：
+
+- 当前选中节点：`strut_constraints`
+- 右侧 `Vellum Constraints` 参数面板中可直接确认：
+  - `Group Type = Primitives`
+  - `Mass = Unchanged`
+  - `Thickness = Unchanged`
+  - `Define Pieces = From Connectivity`
+  - `Show Guide Geometry`：已勾选
+- `Target Geometry` 区域：
+  - `Target Group Type = Primitives`
+- `Strut Search` 区域：
+  - `Max Strut Length = 100`
+  - `Test Normals`：已勾选
+  - `Direction Jitter = 0.1`
+  - `Constraints Per Point = 1`
+  - `Detach Point Chance = 0`
+  - `Seed = 0`
+  - `Ray Offset = 0.01`
+- `Stretch` 区域当前与前文相比显示为更柔软的一组值：
+  - `Stiffness = 1`
+  - 缩放乘数显示为 `0.1`
+  - `Damping Ratio = 0.001`
+  - `Rest Length Scale = 1`
+- `Attributes` 区域：
+  - `Promotion Method = Average`
+  - `Tag = $OS`
+
+输出/预览：
+
+- 左侧视口当前并不是单纯平面，而是一个较复杂的测试模型/布面结果，说明作者已经不再只讲“基础布面”，而是在把多种约束类型串起来看
+- 画面左下角还有 `Ctrl + V` 提示，说明这是一个在网络里复制节点、快速搭建对照案例的时刻
+- 这张图最关键的信息不是某一个参数，而是：`cloth`、`struts`、`pressure`、`hair`、`grain` 都可以看作同一套 Vellum 约束体系下的不同分支
+
+这张图可替换为：把 Vellum 常见案例按约束类型并列整理，可以形成一张很清楚的“材质类型对照表”：`grid1 -> cloth_constraints` 对应布料，`sphere2 -> stretchcloth_constraints -> strut_constraints` 对应软体/气球，`sphere3 -> ... -> pressure_constraints` 对应带内部压力的体，`line/grid -> copytopoints -> hair_constraints` 对应头发，`testgeometry_pighead1 -> grain_constraints` 对应颗粒。当前截图还显示 `strut_constraints` 的 `Stiffness` 被降到了 `0.1` 缩放档，正好印证正文里“同样的结构，只要换参数就能做出不同材质手感”的核心意思。
+
+### 00:26:07-00:30:39 RBD、速度、布料
+
+- 本段定位：RBD、速度、布料。
+- 知识点：多个物体一起模拟时,也得这么一条线连下去。
+- 知识点：要给每个原物体之间加个区分,一个个建好分组。
+- 知识点：这个叫Clath,这个是软体,这个是颗粒,这个是头发。
+- 知识点：这个节点没有分组选项,没法在这里设置分组。
+- 知识点：既然没有选项,就从下面用Merge节点合并吧。
+- 核对对象：`速度`、`流体`。
+
+**关键画面：**
+
+这张图承接前面的多约束类型总览，但重点明确转到“颗粒”案例，开始把 `grain_constraints` 纳入同一张 Vellum 结构对照图里。当前图片中能可靠确认：
+
+节点定义集：
+
+- `grid1`
+- `cloth_constraints`
+- `sphere2`
+- `stretchcloth_constraints`
+- `strut_constraints`
+- `sphere3`
+- `stretchcloth_constraints1`
+- `pressure_constraints`
+- `line1`
+- `copytopoints1`
+- `hair_constraints`
+- `testgeometry_pighead1`
+- `grain_constraints`
+
+连线集：
+
+- `grid1 -> cloth_constraints`
+- `sphere2 -> stretchcloth_constraints -> strut_constraints`
+- `sphere3 -> stretchcloth_constraints1 -> pressure_constraints`
+- `line1 -> copytopoints1 -> hair_constraints`
+- `testgeometry_pighead1 -> grain_constraints`
+
+设置/参数：
+
+- 当前选中节点：`strut_constraints`
+- 右侧 `Vellum Constraints` 面板中当前可直接确认：
+  - `Group Type = Primitives`
+  - `Mass = Unchanged`
+  - `Thickness = Unchanged`
+  - `Define Pieces = From Connectivity`
+  - `Show Guide Geometry`：已勾选
+- `Target Geometry` 区域：
+  - `Target Group Type = Primitives`
+- `Strut Search` 区域：
+  - `Max Strut Length = 100`
+  - `Test Normals`：已勾选
+  - `Direction Jitter = 0.1`
+  - `Constraints Per Point = 1`
+  - `Detach Point Chance = 0`
+  - `Seed = 0`
+  - `Ray Offset = 0.01`
+- `Stretch` 区域：
+  - `Stiffness = 1`
+  - 缩放乘数显示为 `0.1`
+  - `Damping Ratio = 0.001`
+  - `Rest Length Scale = 1`
+- `Attributes` 区域：
+  - `Promotion Method = Average`
+  - `Tag = $OS`
+
+输出/预览：
+
+- 中央网络这次比上一轮更完整地展示了多种 Vellum 分支：
+  - `cloth`
+  - `struts`
+  - `pressure`
+  - `hair`
+  - `grain`
+- `testgeometry_pighead1` 与 `grain_constraints` 的出现，正对应正文里“接下来是 Buffin / 颗粒”的内容
+- 左下角仍可见 `2 nodes pasted` 提示，说明作者在用复制粘贴方式快速扩展对照结构
+
+这张图可替换为：在同一套 Vellum 结构对照图中继续加入颗粒案例，把测试几何 `testgeometry_pighead1` 接到 `grain_constraints`，从而与 `cloth / struts / pressure / hair` 并列比较。这样就能直观看出 Vellum 并不是只做布料，而是通过更换约束类型和输入几何，就可以切换到颗粒、头发或带内部支撑/压力的软体材料。
+这张图把多种 Vellum 约束分支进一步整理成带组名的总结构，重点是让不同对象类型在同一个网络里更容易区分。当前图片中能可靠确认：
+
+节点定义集：
+
+- `grid1`
+- `sphere2`
+- `sphere3`
+- `line1`
+- `copytopoints1`
+- `group1`
+- `group2`
+- `group3`
+- `group4`
+- `merge1`
+- `cloth_constraints`
+- `stretchcloth_constraints`
+- `strut_constraints`
+- `stretchcloth_constraints1`
+- `pressure_constraints`
+- `hair_constraints`
+- `testgeometry_pighead1`
+- `grain_constraints`
+
+连线集：
+
+- 顶部对象链：
+  - `grid1 -> group1`
+  - `sphere2 -> group2`
+  - `sphere3 -> group3`
+  - `line1 + 另一输入 -> copytopoints1 -> group4`
+- 分组汇总：
+  - `group1 -> merge1`
+  - `group2 -> merge1`
+  - `group3 -> merge1`
+  - `group4 -> merge1`
+- 约束链：
+  - `merge1 -> cloth_constraints -> stretchcloth_constraints -> strut_constraints -> stretchcloth_constraints1 -> pressure_constraints`
+- 侧支链：
+  - `group4 -> hair_constraints`
+  - `testgeometry_pighead1 -> grain_constraints`
+
+设置/参数：
+
+- 当前选中节点：`pressure_constraints`
+- 右侧 `Vellum Constraints` 面板中可直接确认：
+  - `Constraint Type = Pressure`
+- `Geometry` 区域：
+  - `Group Type = Primitives`
+  - `Group = balloon`
+  - `Mass = Unchanged`
+  - `Thickness = Unchanged`
+  - `Define Pieces = From Connectivity`
+  - `Show Guide Geometry`：已勾选
+- `Stretch` 区域：
+  - `Stiffness = 6`
+  - 缩放乘数显示为 `100`
+  - `Damping Ratio = 0.001`
+  - `Rest Length Scale = 1`
+  - `Enable Plasticity`：未勾选
+  - `Keep Unique within Output Group`：已勾选
+- `Breaking` 区域：
+  - `Type = Stretch Stress`
+- `Attributes` 区域：
+  - `Promotion Method = Average`
+  - `Tag = $OS`
+
+输出/预览：
+
+- 中央网络上方的组标签可以直接辨认：
+  - `cloth`
+  - `softbody`
+  - `balloon`
+  - `hair`
+- 左侧视口中仍保留一个球体和布面作为实际观察对象，配合右侧分组结构说明“每部分的区分”这一讲解重点
+- 底部字幕语义为“能清楚看到每部分的区分，其实 RBD 模拟里的约束结构也是这么搭的”，和这张图的分组+汇总网络完全对应
+
+这张图可替换为：当一个场景里同时存在布料、软体、气球、头发等多种 Vellum 案例时，先用 `group1-4` 这类分组节点把不同原始对象标识清楚，再统一送进 `merge1`。随后可以在同一条约束链中按需要接入 `cloth`、`struts`、`pressure` 等不同约束节点。当前截图还表明 `pressure_constraints` 只作用于 `balloon` 组，这正是多对象并存时避免约束互相串组的关键做法。
+这张图把上一张的多对象分组进一步推进到“统一接入求解器”的完成态，尤其补充了颗粒配置节点本身的关键参数。当前图片中能可靠确认：
+
+节点定义集：
+
+- `grid1`
+- `group1`
+- `sphere2`
+- `group2`
+- `sphere3`
+- `group3`
+- `line1`
+- `grid2`
+- `copytopoints1`
+- `group4`
+- `merge1`
+- `cloth_constraints`
+- `stretchcloth_constraints`
+- `strut_constraints`
+- `stretchcloth_constraints1`
+- `pressure_constraints`
+- `hair_constraints`
+- `testgeometry_pighead1`
+- `grain_constraints`
+- `merge2`
+- `merge3`
+- `sphere1`
+- `vellumsolver1`
+
+连线集：
+
+- 对象分组链：
+  - `grid1 -> group1 -> merge1`
+  - `sphere2 -> group2 -> merge1`
+  - `sphere3 -> group3 -> merge1`
+  - `line1 + grid2 -> copytopoints1 -> group4 -> merge1`
+- 约束链：
+  - `merge1 -> cloth_constraints -> stretchcloth_constraints -> strut_constraints -> stretchcloth_constraints1 -> pressure_constraints -> hair_constraints`
+- 颗粒链：
+  - `testgeometry_pighead1 -> grain_constraints`
+- 求解汇总：
+  - `hair_constraints -> merge2`
+  - `grain_constraints -> merge3`
+  - `merge2 -> vellumsolver1`
+  - `merge3 -> vellumsolver1`
+  - `sphere1` 作为额外几何节点出现在求解汇总区域附近
+
+设置/参数：
+
+- 当前选中节点：`grain_constraints`
+- 节点类型：`Vellum Configure Grain`
+- 右侧参数面板中可直接确认：
+  - `Create Points from Volume`：已勾选
+  - `Use Convex Hull`：未勾选
+  - `Method = Regular Grid`
+  - `Type = Grain`
+  - `Particle Size = 0.1`
+  - `Packing Density = 1`
+  - `Jitter Scale = 0`
+  - `Dither Surface`：未勾选
+  - `Seed = 0`
+  - `Adjust Radius to Avoid Overlap`：未勾选
+- `Physical Attributes` 区域：
+  - `Define Pieces = From Connectivity`
+  - `Display as Spheres`：已勾选
+  - `Add Sprite Material`：已勾选
+  - `Show All Points`：未勾选
+
+输出/预览：
+
+- 左侧视口中可见一块平面、两个球体以及上方一团更细碎的点状/颗粒团
+- 这说明颗粒分支已经不只是停留在节点对照，而是开始具备自己的实际显示形态
+- 时间轴当前约在 `19` 帧
+- 这张图把“多个材质分支最终都要并回同一个求解器”这件事展示得最完整
+
+这张图可替换为：在多对象案例里，颗粒分支可以通过 `testgeometry_pighead1 -> grain_constraints` 单独配置，再和头发/布料/软体等分支一起汇入 `vellumsolver1`。当前可见的颗粒基线设置是 `Method=Regular Grid`、`Type=Grain`、`Particle Size=0.1`、`Packing Density=1`，并启用 `Display as Spheres`。这说明作者并不是把颗粒当成另一种布料，而是通过 `Vellum Configure Grain` 独立生成颗粒点集，再与其他约束类型统一进入求解。
+
+### 00:30:39-00:31:28 关键流程 09
+
+- 本段定位：关键流程 09。
+- 知识点：连内部凹陷处的细节都刻画得非常细腻。
+- 知识点：这次我们简单来看看颗粒模拟,一起聊聊,只要大概明白它是个什么工具就够了。
+- 知识点：就到这里,平时很少需要这么死板的调餐来达到表现效果。
+- 知识点：掌握这种同状模拟技巧,能发现的好处实在太多了。
+- 知识点：今天就先讲到这里。
+
+**关键画面：**
+
+这张图已经进入本页收尾的“关键流程”阶段，重点不再是单独解释某个约束节点，而是展示颗粒、布料和碰撞体在同一求解结果中的综合表现。当前图片中能可靠确认：
+
+节点定义集：
+
+- `grid1`
+- `group1`
+- `sphere2`
+- `group2`
+- `sphere3`
+- `group3`
+- `line1`
+- `grid2`
+- `copytopoints1`
+- `group4`
+- `merge1`
+- `cloth_constraints`
+- `stretchcloth_constraints`
+- `strut_constraints`
+- `stretchcloth_constraints1`
+- `pressure_constraints`
+- `hair_constraints`
+- `testgeometry_pighead1`
+- `grain_constraints`
+- `merge2`
+- `merge3`
+- `vellumsolver1`
+
+连线集：
+
+- `merge1` 汇总多类对象后接入一串约束链：
+  - `cloth_constraints -> stretchcloth_constraints -> strut_constraints -> stretchcloth_constraints1 -> pressure_constraints -> hair_constraints`
+- `testgeometry_pighead1 -> grain_constraints`
+- `hair_constraints -> merge2`
+- `grain_constraints -> merge3`
+- `merge2` 与 `merge3` 一起并入 `vellumsolver1`
+
+设置/参数：
+
+- 当前选中节点：`grain_constraints`
+- `Vellum Configure Grain` 参数中当前仍可直接确认：
+  - `Create Points from Volume`：已勾选
+  - `Method = Regular Grid`
+  - `Type = Grain`
+  - `Particle Size = 0.1`
+  - `Packing Density = 1`
+  - `Display as Spheres`：已勾选
+  - `Add Sprite Material`：已勾选
+
+输出/预览：
+
+- 左侧视口当前可见：
+  - 一块被明显拉扯、下垂的布料
+  - 一个球形碰撞体
+  - 一团由许多小球点构成的颗粒团
+- 颗粒团已经和布料、球体在同一画面里相互挤压/接触，说明它不再只是单独的点集配置，而是已经真正参与整体求解
+- 当前帧约为 `61`
+- 这张图和正文“连内部凹陷处的细节都刻画得非常细腻”“简单看看颗粒模拟是什么工具”完全一致
+
+这张图可替换为：在关键流程收尾阶段，把颗粒分支真正并入布料与碰撞体的统一求解场景，直接观察它们之间的相互作用。当前截图中颗粒团已经贴近布料折皱和球体碰撞体，说明 `grain_constraints` 生成的点集不只是用于单独展示，而是能和布料、软体案例一起形成统一的多材质动力学结果。
+这张图仍在最终的综合结构阶段，但左侧视口改成了球体压住布面的近景，说明作者在收尾时把注意力重新拉回到“最终形态够不够细腻”。当前图片中能可靠确认：
+
+节点定义集：
+
+- `grid1`
+- `group1`
+- `sphere2`
+- `group2`
+- `sphere3`
+- `group3`
+- `line1`
+- `grid2`
+- `copytopoints1`
+- `group4`
+- `merge1`
+- `cloth_constraints`
+- `stretchcloth_constraints`
+- `strut_constraints`
+- `stretchcloth_constraints1`
+- `pressure_constraints`
+- `hair_constraints`
+- `testgeometry_pighead1`
+- `grain_constraints`
+- `merge2`
+- `merge3`
+- `vellumsolver1`
+
+连线集：
+
+- `merge1` 继续驱动整条多约束链
+- `testgeometry_pighead1 -> grain_constraints`
+- `hair_constraints -> merge2`
+- `grain_constraints -> merge3`
+- `merge2` 与 `merge3` 并入 `vellumsolver1`
+
+设置/参数：
+
+- 当前选中节点：`grain_constraints`
+- 右侧 `Vellum Configure Grain` 参数中仍可直接确认：
+  - `Create Points from Volume`：已勾选
+  - `Method = Regular Grid`
+  - `Type = Grain`
+  - `Particle Size = 0.1`
+  - `Packing Density = 1`
+  - `Display as Spheres`：已勾选
+  - `Add Sprite Material`：已勾选
+
+输出/预览：
+
+- 左侧视口现在是一个非常近的局部观察视角：
+  - 一个球体压在细密布面上
+  - 布面边缘与球体接触位置的褶皱、接触压痕都能看清
+- 这张图与上一张相比，弱化了颗粒团的存在感，强化了“内部凹陷和碰撞细节”的可见度
+- 正文里“连内部凹陷处的细节都刻画得非常细腻”与这一近景完全对应
+
+这张图可替换为：在所有多约束结构都接好之后，最终仍要回到局部近景去看结果本身。当前截图通过球体压布的近景说明：即便网络里已经包含布料、软体、颗粒和头发等多种分支，最终是否成立仍取决于接触区域、凹陷边缘和褶皱细节是否自然。这也是作者在收尾时把镜头重新拉近的原因。
+这张图是 `p17` 主体内容的最终收尾图，重点不再是某个约束节点，而是对象层已经扩展出的完整案例集合。当前图片中能可靠确认：
+
+- 对象层当前可见节点包括：
+  - `geo1`
+  - `geo2`
+  - `geo3`
+  - `geo4`
+  - `geo5`
+  - `AutoDopNetwork`
+  - `cloth_vellum`
+  - `groundplane1`
+- 当前选中对象是：
+  - `geo1`
+- 右侧 `Geometry geo1` 的 `Transform` 页签中可直接确认：
+  - `Translate = 0, 0, 0`
+  - `Rotate = 0, 0, 0`
+  - `Scale = 1, 1, 1`
+  - `Uniform Scale = 1`
+  - `Keep Position When Parenting`：未勾选
+  - `Child Compensation`：未勾选
+  - `Enable Constraints`：未勾选
+
+输出/预览：
+
+- 左侧视口已经回到近乎空白的地面网格状态，没有继续播放复杂求解结果
+- 说明教程在最后并没有继续深挖某一条支线，而是回到对象层总结“这一页已经搭出了多少可复用的结构入口”
+- `geo1` 到 `geo5` 连同 `AutoDopNetwork`、`cloth_vellum`、`groundplane1` 一起出现，表明这一节最后留下的是一套可以继续扩展的工程骨架
+- 底部字幕语义为“能发现的好处实在太多了”，与这种对象层全局总结画面一致
+
+这张图可替换为：课程收尾时，回到对象层查看最终保留下来的工程组织结构。当前截图说明这一页已经从最初的单块布料，扩展成包含 `geo1` 到 `geo5` 多个案例入口、统一 `AutoDopNetwork` 求解网络、专门 `cloth_vellum` 后处理对象以及 `groundplane1` 碰撞地面的完整框架。对复建者来说，这个对象层总览比任何单一参数都更重要，因为它决定了后续新增软体、颗粒或头发案例时的扩展方式。
+## 补充视觉证据
+
+### S02 00:04:58
+
+这张补充图对应 `S02` 约束结构的参数补证，重点是把 `grid1` 的细分密度提高，并再次确认 `cloth_constraints -> GEO/CON` 的组织方式。当前图片中能可靠确认：
+
+节点定义集：
+
+- `sphere1`
+- `grid1`
+- `cloth_constraints`
+- `GEO`
+- `CON`
+
+连线集：
+
+- `grid1 -> cloth_constraints`
+- `cloth_constraints` 左输出 -> `GEO`
+- `cloth_constraints` 右输出 -> `CON`
+- `sphere1` 仍未接入主链
+
+设置/参数：
+
+- 当前选中节点：`grid1`
+- `grid1` 参数面板中可直接确认：
+  - `Primitive Type = Polygon`
+  - `Connectivity = Quadrilaterals`
+  - `Orientation = ZX Plane`
+  - `Size = 10, 10`
+  - `Center = 0, 5, 0`
+  - `Rotate = 0, 0, 0`
+  - `Rows = 100`
+  - `Columns = 100`
+  - `End-point Interpolate in U`：已勾选
+  - `End-point Interpolate in V`：已勾选
+
+输出/预览：
+
+- 左侧视口中布料平面已经比前面的基础版明显更细密，说明这张图补充的就是“行列数调高后的状态”
+- 底部字幕语义为“这里有个 Grid，下方连接着 Source 和 Object 节点”，和中央网络里 `grid1 -> cloth_constraints -> GEO/CON` 的结构完全对应
+- 这张图虽然和 `S02_2` 主题接近，但多提供了一个关键参数证据：网格不是停留在 `10x10`，而是进一步提升到了 `100x100`
+
+这张图可替换为：为了让布料约束和后续求解更细致，把 `grid1` 的行列数进一步提高到 `100 x 100`，同时保持 `ZX Plane`、`10x10` 尺寸和 `Y=5` 的中心位置不变。随后仍通过 `cloth_constraints` 把结果拆成 `GEO` 与 `CON` 两路输出。这个补充图说明教程中“约束结构能看得更直观”并不只是节点组织问题，还依赖于足够高的网格细分密度。
+
+### S03 00:06:25
+
+这张补充图单独把 DOP 网络层拿出来说明，重点不是继续新增某种 Vellum 约束类型，而是解释“这些粒子/布料/碰撞体最后如何在解算器里组织起来”。当前图片中能可靠确认：
+
+节点定义集：
+
+- `vellumobject1`
+- `groundplane1`
+- `merge3`
+- `staticsolver1`
+- `vellumsolver1`
+- `geo1_vellum`
+- `merge2`
+- `merge1`
+- `gravity1`
+- `output`
+
+连线集：
+
+- `vellumobject1 -> vellumsolver1`
+- `geo1_vellum -> merge2 -> vellumsolver1`
+- `groundplane1 -> merge3 -> staticsolver1`
+- `staticsolver1 -> merge1`
+- `vellumsolver1 -> merge1`
+- `merge1 -> gravity1 -> output`
+
+设置/参数：
+
+- 当前选中节点：`vellumsolver1`
+- 右侧 `Vellum Solver` 面板中可直接确认：
+  - `Enable Collisions`：已勾选
+  - `Self Collisions`：已勾选
+  - `Time Scale = 1`
+  - `Velocity Damping = 0`
+- `Iterations` 区域：
+  - `Substeps = 1`
+  - `Constraint Iterations = 100`
+  - `Smoothing Iterations = 10`
+- `Collisions` 区域：
+  - `Collision Passes = 10`
+  - `Post Collision Passes = 3`
+  - `Polish Passes = 10`
+  - `Layer Shock = 4`
+- `Friction` 区域：
+  - `Static Threshold = 0.5`
+  - `Dynamic Scale = 0.1`
+- 底部开关可见：
+  - `External Enable = 1`
+  - `Self Enable = 1`
+  - `Static SDF Enable = 1`
+  - `Dynamic SDF Enable = 1`
+
+输出/预览：
+
+- 左侧视口当前显示一块大面积斜放的布面网格，说明这里查看的是布料进入求解前后的整体状态，而不是某个局部碰撞特写
+- 中央网络明确分成两股：
+  - `vellumobject1` 与 `geo1_vellum` 一路并入 `vellumsolver1`
+  - `groundplane1` 先并入 `staticsolver1`
+- 两个 solver 的结果最终在 `merge1` 汇合，再经过 `gravity1` 输出
+- 画面底部字幕语义是“核心在于通过约束关系来控制粒子间的互动”，与当前这张“对象/静态碰撞/约束求解”的汇总网络完全对应
+
+这张图可替换为：补充说明 Vellum 在 DOP 网络中的组织方式。`vellumobject1` 负责承载进入 Vellum 的对象数据，`geo1_vellum` 作为来源几何并到 `merge2` 后送入 `vellumsolver1`；静态碰撞地面 `groundplane1` 则先进入 `staticsolver1`。随后 `vellumsolver1` 与 `staticsolver1` 的结果在 `merge1` 汇合，再经过 `gravity1` 输出。当前 `vellumsolver1` 的关键求解设置包括启用碰撞和自碰撞、`Constraint Iterations = 100`、`Collision Passes = 10`、`Static Threshold = 0.5`、`Dynamic Scale = 0.1`。这说明课程这里想强调的不是某个单独节点技巧，而是“通过约束和碰撞求解器的配合，控制粒子/布料之间如何互动”的整体求解骨架。
+
+### S02 00:04:58
+
+这张补充图对应 `S02` 约束结构的参数补证，重点是把 `grid1` 的细分密度提高，并再次确认 `cloth_constraints -> GEO/CON` 的组织方式。当前图片中能可靠确认：
+
+节点定义集：
+
+- `sphere1`
+- `grid1`
+- `cloth_constraints`
+- `GEO`
+- `CON`
+
+连线集：
+
+- `grid1 -> cloth_constraints`
+- `cloth_constraints` 左输出 -> `GEO`
+- `cloth_constraints` 右输出 -> `CON`
+- `sphere1` 仍未接入主链
+
+设置/参数：
+
+- 当前选中节点：`grid1`
+- `grid1` 参数面板中可直接确认：
+  - `Primitive Type = Polygon`
+  - `Connectivity = Quadrilaterals`
+  - `Orientation = ZX Plane`
+  - `Size = 10, 10`
+  - `Center = 0, 5, 0`
+  - `Rotate = 0, 0, 0`
+  - `Rows = 100`
+  - `Columns = 100`
+  - `End-point Interpolate in U`：已勾选
+  - `End-point Interpolate in V`：已勾选
+
+输出/预览：
+
+- 左侧视口中布料平面已经比前面的基础版明显更细密，说明这张图补充的就是“行列数调高后的状态”
+- 底部字幕语义为“这里有个 Grid，下方连接着 Source 和 Object 节点”，和中央网络里 `grid1 -> cloth_constraints -> GEO/CON` 的结构完全对应
+- 这张图虽然和 `S02_2` 主题接近，但多提供了一个关键参数证据：网格不是停留在 `10x10`，而是进一步提升到了 `100x100`
+
+这张图可替换为：为了让布料约束和后续求解更细致，把 `grid1` 的行列数进一步提高到 `100 x 100`，同时保持 `ZX Plane`、`10x10` 尺寸和 `Y=5` 的中心位置不变。随后仍通过 `cloth_constraints` 把结果拆成 `GEO` 与 `CON` 两路输出。这个补充图说明教程中“约束结构能看得更直观”并不只是节点组织问题，还依赖于足够高的网格细分密度。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

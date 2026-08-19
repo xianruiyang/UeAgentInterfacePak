@@ -1,0 +1,1045 @@
+# 17-Houdini火焰模拟设置
+
+# 17-Houdini火焰模拟设置
+
+## 关键术语
+
+- `Velocity`、`Color`、`Alpha`、`Texture`、`Houdini`、`Smoke`、`Fire`、`粒子`、`速度`、`Niagara`、`Material`、`颜色`、`火焰`、`Niagara System`、`Emitter`、`Particle`、`Spawn Rate`、`Spawn`
+
+## 分段知识
+
+### 00:00:05-00:05:04 粒子、速度、火焰
+
+- 本段定位：粒子、速度、火焰。
+- 知识点：和我们之前制作勾火之用的方法有點不同。
+- 知识点：從幾何开始生成,在圆圈中。
+- 知识点：,现在打算用虛幻粒子随机遞向多个粒子进行實粒化。
+- 知识点：这樣用随机粒子組成。
+- 知识点：雖然只有一种纹理,但能同时產生多种感覺。
+- 知识点：基於一面生成的粒子。
+- 知识点：感覺多撒點粒子制作。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`粒子`、`速度`、`颜色`、`火焰`。
+
+**关键画面：**
+
+这张图不是 Unreal 编辑器，而是 Houdini Indie 20.5.445 的初始界面，作为本页“粒子、速度、火焰”流程的资源制作起点。字幕也直接说明“我们要制作火焰的模拟资源”。
+
+当前图面可确认的信息有：
+
+- 软件标题：`untitled.hip - Houdini Indie Limited-Commercial 20.5.445 - Py3.11`
+- 当前上下文路径位于 `/obj`
+- 中央网络视图还是空白状态：
+  - `Empty Network`
+  - `Press Tab to add Nodes`
+- 左侧 3D 视窗为空场景网格地面，视角标签可见：
+  - `Persp`
+  - `No cam`
+- 顶部工具栏已切到对象级常用创建工具，可见 `Box`、`Sphere`、`Tube`、`Grid`、`Null` 等入口
+- 底部时间轴范围当前显示到 `240` 帧
+
+这张图的作用是交代接下来这一页的来源发生了切换：教程不再直接在 Niagara 里拼火焰，而是先去 Houdini 里制作火焰模拟资源，再回到 Unreal 里作为贴图/序列或其他资产使用。当前帧还没有任何节点、几何体或模拟网络，因此只能确认这是一个从空工程开始搭建火焰模拟的起始状态。
+这张图已经进入 Houdini 的 `geo1` 几何对象内部，开始建立火焰模拟的发射源。中央网络视图当前只有两级节点链：
+
+- `circle1`
+- `pyrosource1`
+
+即先用一个圆形几何作为基础，再通过 `pyrosource1` 把它转换成可用于 Pyro 的粒子/体积源。
+
+左侧 3D 视窗中能看到一个扁平的椭圆/圆盘状散点区域，说明当前源并不是单点，而是在一个平面圆形范围内均匀散布了大量点。这与正文里“从几何开始生成，在圆圈中”“用随机粒子组成”完全一致。
+
+右侧参数面板当前展开的是 `pyrosource1`，可确认设置如下：
+
+- 节点类型：`Pyro Source`
+- `Mode`：`Surface Scatter`
+- `Particle Separation`：`0.02`
+- `Particle Scale`：`2`
+- 属性输出区域当前包含 1 项：
+  - `Attribute`：`Density`
+  - `Name`：`density`
+  - `Default Value`：`1`
+  - `Scale`：`1`
+
+此外，属性写入目标列表里还能看到：
+
+- `Point Attributes`：`*`
+- `Vertex Attributes`：`*`
+- `Primitive Attributes`：`* shop_materialpath`
+
+这说明这一步的核心不是先建复杂火焰形状，而是先把一个圆形几何面散点化，生成带 `density` 属性的 Pyro 发射源。`Surface Scatter + Particle Separation 0.02` 也意味着作者希望一开始就撒出较密的基础粒子，为后续“虽然只有一种纹理，但能产生多种感觉”的火焰层次打底。
+这张图在上一张 `circle1 -> pyrosource1` 的基础上又追加了一个属性噪声节点，当前几何链已经变成：
+
+- `circle1`
+- `pyrosource1`
+- `attribnoise1`
+
+其中 `attribnoise1` 的目标属性直接显示为 `density`，说明这一步是在给火焰发射源的密度分布添加随机起伏，而不是继续改几何轮廓。左侧视窗也能看到原本较均匀的散点圆盘已经被拉成一条不规则横向带状区域，内部出现明暗疏密变化，表示不同位置的密度权重被噪声打散了。
+
+右侧参数面板当前打开的是 `Attribute Noise`，可确认设置包括：
+
+- `Attribute Names`：`density`
+- `Attribute Class`：`Point`
+- `Noise Value > Operation`：`Multiply`
+- `Range Values`：`Positive`
+- `Amplitude`：`1.5`
+- 已启用 `Enable Remap Ramp`
+- `Noise Type`：`Simplex`
+- `Location Attribute`：`P`
+- `Element Size`：`0.75`
+- `Offset`：`0`
+- `Animation > Pulse Duration`：`0.5`
+
+从这些参数可以推断，作者是在用乘法噪声直接调制粒子点上的 `density` 属性，并且只保留正值，避免把密度压成负数。`Element Size 0.75` 与开启的重映射曲线共同决定了大块区域的明暗分布，`Pulse Duration 0.5` 则说明噪声还带有时间上的跳动变化。对本教程语境来说，这一步的作用就是把“一个圆里均匀撒点”的静态火源，变成更接近真实火焰起伏节奏的非均匀发射源，为后续加入速度和 alpha 变化做准备。
+
+### 00:05:04-00:10:01 Velocity、Alpha、速度
+
+- 本段定位：Velocity、Alpha、速度。
+- 知识点：而且这个方向性会有一定程度的基本方向性。
+- 知识点：Blend模式設为Interpreter。
+- 知识点：以及当前存在的Initial Velocity值。
+- 知识点：在X值中作为Alpha值。
+- 知识点：初期產生的烟霧的方向和速度会被管理。
+- 知识点：在这里添加密度和速度。
+- 知识点：在velocity上加入一些模糊值。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Velocity`、`Alpha`、`速度`。
+
+**关键画面：**
+
+这张图仍然停留在 `circle1 -> pyrosource1 -> attribnoise1` 这一阶段，说明进入 `00:05:04-00:10:01 Velocity、Alpha、速度` 小节后，作者还在先确认基础 `density` 火源的动画效果，而不是立刻增加新节点。
+
+当前能从图中直接确认的信息包括：
+
+- 几何链没有变化，仍是：
+  - `circle1`
+  - `pyrosource1`
+  - `attribnoise1`
+- `attribnoise1` 依旧作用在 `density` 属性上
+- 右侧参数保持为 `Attribute Noise`
+  - `Operation=Multiply`
+  - `Range Values=Positive`
+  - `Amplitude=1.5`
+  - `Noise Type=Simplex`
+  - `Element Size=0.75`
+  - `Pulse Duration=0.5`
+- 左侧视窗里的散点火源已经表现出更明显的横向条带和块状疏密变化，说明这是在观察噪声动画后的发射分布状态
+- 底部时间轴游标已到约 `29` 帧，表明作者正在看噪声随时间播放后的动态结果
+
+因此，这一帧可以理解为“先把基础密度噪声做活”。在进入速度场或 alpha 控制之前，教程先确认火焰源本身已经不是静态圆盘，而是会随时间跳动、并具有不均匀密度分布的发射带。
+这张图开始真正给火焰源增加速度属性。中央节点链已经扩展为：
+
+- `circle1`
+- `pyrosource1`
+- `attribnoise1`
+- `attribadjustvector1`
+
+新加入的 `attribadjustvector1` 目标属性标注为 `v`，表示这里写入的是速度向量。左侧视窗中也不再只是黑白密度散点，而是出现了大量从发射带向上喷出的黄色向量线，说明当前视图正在显示每个点的速度方向和长度。
+
+右侧 `Attribute Adjust Vector` 参数面板可确认设置如下：
+
+- `Attribute Name`：`v`
+- `Attribute Class`：`Point`
+- `Component Scope`：`x y z`
+
+`Pre-Process`：
+
+- 已勾选 `Enable Pre-Process`
+- 已勾选 `Overwrite Initial Value`
+- `Initial Value From`：`Constant Value`
+- `Initial Vector`：`(1, 0, 0)`
+
+`Adjustment Value`：
+
+- 已勾选 `Adjust Value`
+- `Adjustment for`：`Direction Only`
+- `Operation`：`Interpolate`
+- `Adjust with`：`Noise`
+- `Range Values`：`Min/Max`
+- `Goal Direction`：`(1, 5, 0)`
+- `Bias Min`：`0`
+- `Bias Max`：`1`
+
+`Noise Pattern`：
+
+- `Noise Type`：`Simplex`
+- `Location Attribute`：`P`
+- `Element Size`：`1`
+- `Offset`：`0`
+
+`Animation`：
+
+- 已勾选 `Animate Noise`
+- `Pulse Duration`：`0.5`
+
+按这张图能确认的做法，作者先给所有点一个初始的水平向量 `(1,0,0)`，再用噪声把方向插值偏转到更强的上扬方向 `(1,5,0)`。因此左侧可见的速度线不是完全垂直，也不是完全随机，而是整体朝上喷发、局部再被噪声打散。这正对应正文提示的“添加密度和速度”“在 velocity 上加入一些模糊值”。
+这张图把前面的点属性源正式接入 Pyro 求解。中央网络视图已经扩展为：
+
+- `circle1`
+- `pyrosource1`
+- `attribnoise1`
+- `attribadjustvector1`
+- `volumerasterizeattributes1`
+- `pyrosolver1`
+
+也就是说，流程已经从“点云上准备 `density` 和 `v` 属性”，进入到“把这些属性栅格化成体积字段，再交给 Pyro Solver 求解”的阶段。左侧视窗当前只看到一个红色线框包围盒，说明作者此时关注的是求解容器/体积域设置，而不是最终火焰外观。
+
+右侧参数面板当前打开的是 `pyrosolver1` 的 `Sources` 页签，可直接确认该求解器接收了 3 组源字段：
+
+- `Source 1: density`
+  - `Operation=Add`
+  - 标量类型
+  - `Source Volume=density`
+  - `Target Field=density`
+  - `Source Scale=1`
+- `Source 2: temperature`
+  - `Operation=Pull`
+  - 标量类型
+  - `Source Volume=density`
+  - `Target Field=temperature`
+  - `Source Scale=1`
+  - `Acceleration Strength=50`
+  - `Deceleration Strength=0`
+- `Source 3: vel`
+  - `Operation=Add`
+  - 向量类型
+  - `Source Volume=v`
+  - `Target Field=vel`
+  - `Source Scale=1`
+
+从这张图可以明确看出，本教程并不是只把点密度喂给烟火求解器，而是同时建立了三类输入关系：
+
+- 用 `density -> density` 生成基础燃料/密度源
+- 用同一份 `density -> temperature` 拉出温度场
+- 用点速度 `v -> vel` 把前一步做好的方向噪声真正送入流体速度场
+
+因此，这一帧就是“把密度、温度、速度三种源映射进 Pyro Solver”的关键配置图，也是本小节里 `Velocity` 与 `Alpha/速度` 准备工作的收口步骤。
+
+### 00:10:01-00:13:12 Velocity、火焰
+
+- 本段定位：Velocity、火焰。
+- 知识点：velocity先設为0。
+- 知识点：基本就是这樣設置。
+- 知识点：邊烘焙邊慢慢调整形状就行。
+- 知识点：看到100幀左右。
+- 知识点：选择你想要的區间。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Velocity`、`颜色`、`火焰`。
+
+**关键画面：**
+
+这张图进入 `00:10:01-00:13:12 Velocity、火焰` 小节后，开始直接调 `pyrosolver1` 的形态相关参数。中央网络链与上一阶段一致，仍为：
+
+- `circle1`
+- `pyrosource1`
+- `attribnoise1`
+- `attribadjustvector1`
+- `volumerasterizeattributes1`
+- `pyrosolver1`
+
+左侧视窗里仍只显示红色线框求解包围盒，没有火焰体积结果，说明作者此时关注的是求解器参数基线，而不是立即观察烘焙外观。
+
+右侧参数面板当前打开 `pyrosolver1` 的形态/力学相关设置，可直接确认：
+
+- `Buoyancy Scale`：`0.15`
+- `Ambient Temp (K)`：`300`
+- `Reference Temp (K)`：`3000`
+- `Gravity Acceleration`：`9.8`
+- `Gravity Direction`：`(0, -1, 0)`
+
+同一页签下还能看到一组尚未展开的次级控制项：
+
+- `Density Influences Gravity`
+- `Wind`
+- `Disturbance`
+- `Turbulence`
+- `Shredding`
+- `Flame Expansion`
+- `Viscosity`
+
+字幕明确提到“然后 viscosity 先设为 0”，但从这一帧的截图中只能确认 `Viscosity` 这一项存在于当前面板列表中，无法直接读到它展开后的具体数值框。因此这张图能可靠转写的是：作者开始在 `pyrosolver1` 上设定基础浮力、环境温度、参考温度和重力方向，并准备继续向下调整火焰形态相关的扰动、撕裂、膨胀与黏滞度参数。
+这张图显示作者已经把 Pyro 求解结果接到缓存节点，开始正式烘焙模拟序列。中央网络链在 `pyrosolver1` 之后新增了：
+
+- `filecache1`
+
+当前完整链路变为：
+
+- `pyrosource1`
+- `attribnoise1`
+- `attribadjustvector1`
+- `volumerasterizeattributes1`
+- `pyrosolver1`
+- `filecache1`
+
+右侧参数面板当前打开的是 `File Cache filecache1`，可直接确认的缓存设置有：
+
+- 已启用 `Time Dependent Cache`
+- `Base Name`：`$HIPNAME.$OS`
+- `Base Folder`：`$HIP/geo`
+- `Version`：`1`
+
+`Sequence` 区域：
+
+- `Evaluate As`：`Frame Range`
+- `Start/End/inc`：`1` 到 `80`
+- `Substeps`：`1`
+
+界面中央还有一个独立的进度窗口，显示当前正在执行写盘：
+
+- `render frame 80 (80 of 80)`
+- `Save in Background: 3 queued writes...`
+
+结合本小节正文“边烘焙边慢慢调整形状就行”“看到 100 帧左右，选择你想要的区间”，这张图对应的操作可以明确表述为：先把当前满意的火焰模拟烘焙成缓存文件，再以固定帧段去观察形态。此帧里作者实际写盘的是 `1-80` 帧范围，说明这一版火焰结果先以 80 帧为一轮缓存输出。
+这张图已经把缓存后的 Pyro 结果接入显示/渲染节点，用于直接观察火焰外观。中央网络中在 `filecache1` 之后又接了一个蓝色显示节点和一个渲染节点：
+
+- `filecache1`
+- `Render_Fire`
+
+右侧参数面板当前打开的是 `Pyro Bake Volume Render_Fire`，而左侧视窗已经显示出一团完整的橙白色火焰体积，仍被红色求解包围盒框住。时间轴游标此时位于约 `70` 帧，说明作者正在缓存区间内挑选合适的火焰形态。
+
+从当前 `Fire` 页签可直接确认的渲染设置有：
+
+- `Assign Material`：`matnet/Pyro_Shader`
+- `Intensity Scale`：`20`
+- 第一组强度曲线已启用 `Use Ramp`
+  - `Source Range`：`0` 到 `1`
+  - 曲线形状从左低到右高，表示高值区域被赋予更强火焰亮度
+- `Color Mode`：`Color Ramp`
+- 第二组颜色映射也使用 `Source Range 0-1`
+- `Fire Color Ramp` 由深棕橙过渡到亮橙/浅黄，用于把火焰从低温暗部映射到高温亮部
+
+结合字幕“首先，这种高饱和色调不太推荐”，这张图表达的重点不是继续改模拟运动，而是开始检查烘焙结果在 `Pyro Shader` 下的着色效果，并准备把当前过于高饱和的橙白火焰调得更柔和。也就是说，这一帧是从“速度与形态”过渡到“火焰显示和色调评估”的收尾画面。
+
+### 00:13:20-00:18:15 Color、火焰
+
+- 本段定位：Color、火焰。
+- 知识点：选择稍顯柔和的色調 餘地就会大些。
+- 知识点：这次我们不使用 ColorLine,而是切換到 PhysicalBlackBody模式。
+- 知识点：这种方式,现在 Shading是通过TemperatureField 綁定到这个TemperatureField上的。
+- 知识点：我们之前制作的火 是基於PlantField进行Shading的。
+- 知识点：但如果我们改为 通过TemperatureField进行Shading。
+- 知识点：没有单独选择颜色的選項。
+- 知识点：而是看如何通过Field 来構建和獲取溫度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Color`、`序列`、`颜色`、`火焰`。
+
+**关键画面：**
+
+这张图进入 `00:13:20-00:18:15 Color、火焰` 小节后，仍然在 `Pyro Bake Volume` 的 `Render_Fire` 节点上调火焰显示，但与上一小节不同，这里开始把火焰颜色和亮度从“高饱和、高对比”往更柔和的方向收。
+
+中央网络当前保持为：
+
+- `pyrosource1`
+- `attribnoise1`
+- `attribadjustvector1`
+- `volumerasterizeattributes1`
+- `pyrosolver1`
+- `filecache1`
+- `Render_Fire`
+
+左侧视窗能看到被红色包围盒约束的整团火焰体积，时间轴游标约在 `63` 帧。火焰整体仍是橙棕到浅黄的体积外观，但相较前一批最后一张的高亮白芯，这一帧的亮部已经收敛了一些。
+
+右侧 `Pyro Bake Volume Render_Fire` 的 `Fire` 页签中，可直接确认：
+
+- `Assign Material`：`matnet/Pyro_Shader`
+- `Intensity Scale`：`20`
+- 第一组亮度映射启用 `Use Ramp`
+- `Source Range`：`0` 到 `1`
+- `Color Mode`：`Color Ramp`
+- `Fire Color Ramp` 仍是从深棕橙到亮橙的渐变，而不是彩色 `Color Line`
+
+字幕直接说明“我们把它定在 20 左右，保持恒定”。结合正文“选择稍显柔和的色调”“这次我们不使用 ColorLine，而是切换到 PhysicalBlackBody 模式”，这张图对应的操作可以明确表述为：先把 `Intensity Scale` 固定在约 `20` 的稳定值，避免火焰过曝，再基于温度驱动的着色方式继续往更自然的火焰色调调整。
+这张图展示了本段颜色方案的核心切换：不再使用普通颜色渐变，而改用 `Physical Blackbody` 让火焰颜色跟随温度场变化。中央网络仍然是缓存后的 `Render_Fire` 预览链，没有新增节点，变化集中在右侧着色参数。
+
+左侧视窗中，火焰已经明显变成更偏暗棕橙、亮部集中在底部和细长火舌上的效果，说明颜色分布不再是简单的整段橙色渐变，而是受温度阈值和色调映射共同控制。
+
+右侧 `Pyro Bake Volume Render_Fire` 的 `Fire` 页签可直接确认：
+
+- `Intensity Scale`：`20`
+- 亮度模式：`Constant`
+- `Color Mode`：`Physical Blackbody`
+- `Temperature Scale`：`1`
+- `Temperature at 0 (K)`：`300`
+- `Temperature at 1 (K)`：`3000`
+- 已启用 `Enable Tone Mapping`
+- `Adaptation`：`0.06`
+- `Burn`：`-0.14`
+
+结合正文“Shading 是通过 TemperatureField 绑定到这个 TemperatureField 上的”“没有单独选择颜色的选项，而是看如何通过 Field 来构建和获取温度”，这张图的可复建要点就是：
+
+- 火焰亮度先固定为常量 `20`
+- 颜色不再手工拉 `Color Ramp`
+- 改为用 `Physical Blackbody` 依据温度字段自动出色
+- 低温端按 `300K`、高温端按 `3000K` 做映射
+- 再通过 Tone Mapping 中的 `Adaptation` 与负值 `Burn` 把过于刺眼的高亮压下来，得到更柔和、层次更稳定的火焰色调
+这张图在颜色小节末尾又回到了 `pyrosolver1` 的 `Sources` 设置页，说明作者并不只在渲染节点上改颜色，而是同时回头检查温度场本身的输入是否足够支撑 `Physical Blackbody` 着色。
+
+中央网络没有新增节点，仍然是：
+
+- `pyrosource1`
+- `attribnoise1`
+- `attribadjustvector1`
+- `volumerasterizeattributes1`
+- `pyrosolver1`
+- `filecache1`
+- `Render_Fire`
+
+左侧视窗里火焰几乎只剩底部一层贴地亮带，说明作者当前停在一个温度较低、体积显示较弱的时刻，用来观察温度源是否需要继续增强。字幕也直接提示“还有温度值可以再调高一点”。
+
+右侧 `Pyro Solver pyrosolver1` 的 `Sources` 页签中，可再次确认 3 个源字段映射：
+
+- `Source 1: density`
+  - `Operation=Add`
+  - `Source Volume=density`
+  - `Target Field=density`
+  - `Source Scale=1`
+- `Source 2: temperature`
+  - `Operation=Pull`
+  - `Source Volume=density`
+  - `Target Field=temperature`
+  - `Source Scale=1`
+  - `Acceleration Strength=50`
+  - `Deceleration Strength=0`
+- `Source 3: vel`
+  - `Operation=Add`
+  - `Source Volume=v`
+  - `Target Field=vel`
+  - `Source Scale=1`
+
+这张图的关键含义是：当前火焰颜色已经切到由温度场驱动，因此如果画面显得偏暗、热量不够，不能只在 `Render_Fire` 上硬调色，而要回到 `pyrosolver1` 的 `temperature` 源映射检查温度输入强度。结合字幕，这里传达的是下一步应优先继续提高温度相关输入或其影响，而不是重新改回普通颜色渐变。
+
+### 00:18:15-00:23:14 速度、破碎
+
+- 本段定位：速度、破碎。
+- 知识点：又出现了KLH就是 比剛才是差別很大。
+- 知识点：现在不是陰影 而是密度有點破碎的感覺。
+- 知识点：感覺这里因为粘度值 现在感覺更像是 聚在一起。
+- 知识点：像烟草烟霧那樣的东西 就是表達时感覺就不錯。
+- 知识点：现在看下面 烟霧开始的部分 就和我们之前加入密度造點一樣。
+- 核对对象：`速度`。
+
+**关键画面：**
+
+这张图进入 `00:18:15-00:23:14 速度、破碎` 小节后，首先展示的是重新烘焙模拟的过程。中央网络仍然保持原有火焰求解链：
+
+- `pyrosource1`
+- `attribnoise1`
+- `attribadjustvector1`
+- `volumerasterizeattributes1`
+- `pyrosolver1`
+- `filecache1`
+- `Render_Fire`
+
+右侧参数面板当前打开的是 `File Cache filecache1`，可直接确认缓存设置：
+
+- 已启用 `Load from Disk`
+- 已启用 `Time Dependent Cache`
+- `Base Name`：`Ex_05_CarFire_01.filecache1`
+- `Base Folder`：`$HIP/geo`
+- `Version`：`1`
+- `Evaluate As`：`Frame Range`
+- `Start/End/inc`：`1` 到 `80`
+- `Substeps`：`1`
+
+画面中央还弹出了求解/写盘进度窗口，当前进度为：
+
+- `render frame 16 (16 of 80)`
+- 下方状态显示正在求解一个 `Gas_ProjectNonDivergent...` 相关阶段
+
+左侧视窗只在地面附近显示一条贴近底部的亮色火焰带，说明这一刻作者并不是在看最终完整火焰，而是在重新求解缓存过程中，准备观察速度和破碎感调完后的新版本。结合本段正文“现在不是阴影，而是密度有点破碎的感觉”“因为粘度值现在感觉更像是聚在一起”，这张图的作用是交代：进入这一段后，需要先重新烘焙一轮模拟，才能继续判断速度和黏滞度调整是否把烟火形态推向更碎、更像烟草烟雾的感觉。
+这张图是在重新缓存后的火焰结果上直接观察“速度、破碎”带来的视觉变化。中央网络没有新增结构，但可见 `filecache1` 的缓存版本已经切到：
+
+- `Version`：`2`
+
+右侧 `File Cache filecache1` 仍保持：
+
+- `Base Name`：`Ex_05_CarFire_01.filecache1`
+- `Base Folder`：`$HIP/geo`
+- `Evaluate As`：`Frame Range`
+- `Start/End/inc`：`1` 到 `80`
+- `Substeps`：`1`
+
+左侧视窗此时显示的是缓存后的完整火焰体积，时间轴游标约在 `43` 帧。和前几批更饱满、更连续的火焰柱相比，这一帧能直接观察到几个特征：
+
+- 火焰主柱被拉成更细长的竖向形态
+- 顶部和两侧出现更明显的断裂、卷曲和分叉
+- 底部高亮区仍然聚集，但向上的浅色部分更像被噪声撕碎后抬升的烟火舌
+- 上部暗色烟体与亮部火焰之间形成更强的疏密对比
+
+字幕提到“噪点在平移，可以看到白色部分只有烟雾升起”。结合正文“密度有点破碎的感觉”“像烟草烟雾那样的东西”，这张图对应的复现要点是：通过移动噪声或速度扰动，让高亮火焰区不再整块连成一体，而是在上升过程中只保留局部白亮核心，其余部分更多表现为被打散的烟雾感和卷曲破碎边缘。
+这张图直接展示了“速度、破碎”这一段落背后正在调整的求解器参数。中央网络没有变化，但右侧重新回到 `Pyro Solver pyrosolver1` 的形态细节设置页，并明确展开了 `Turbulence` 与 `Viscosity`。
+
+左侧视窗中当前火焰形态相较上一张更集中，底部白亮区被拉成两股向上翻卷的火舌，中上部则出现更多小尺度卷边和暗部破碎烟团。时间轴游标此时位于约 `80` 帧，说明作者在缓存区间末端观察细节。
+
+右侧可直接确认的参数包括：
+
+- `Buoyancy Scale`：`0.15`
+- `Ambient Temp (K)`：`300`
+- `Reference Temp (K)`：`3000`
+- `Gravity Acceleration`：`9.8`
+- `Gravity Direction`：`(0, -1, 0)`
+
+`Turbulence`：
+
+- `Noise Type`：`Analytic Fast Simplex Noise`
+- `Turbulence`：`0.75`
+- `Swirl Size`：`1`
+- `Roughness`：`0.5`
+- `Pulse Length`：`0.5`
+- `Max Octaves`：`2`
+- `Seed`：`0`
+- `Threshold Field`：`temperature`
+- `Threshold Range`：`0.01` 到 `0`
+- 已启用 `Use Control Field`
+- `Control Field`：`density`
+- `Control Range`：`0` 到 `1`
+
+`Viscosity`：
+
+- `Viscosity`：`0.1`
+
+这张图把本段正文里“不是阴影，而是密度有点破碎的感觉”“因为粘度值现在感觉更像是聚在一起”具体落到了参数上：作者不是单纯靠着色做假效果，而是在 `pyrosolver1` 内部通过温度阈值控制的湍流和较低但非零的黏滞度来平衡两件事：
+
+- 让火焰/烟雾边缘获得更多碎裂、卷动和细节
+- 同时保留底部火焰主体的聚拢感，不至于完全散掉
+
+字幕“尽寸可以再添加一些细节”也说明这一帧的核心目标就是继续增加细部扰动，让火焰上升段更有被撕碎的烟火感。
+
+### 00:23:14-00:27:57 火焰
+
+- 本段定位：火焰。
+- 知识点：基於密度場进行計算时 密度高的部分團流造生会更強一些。
+- 知识点：因为想要自然持续随机 升起的火焰画面 那种感覺中 覺得已经抓住了一些那种感覺。
+- 知识点：如果想簡化这种噪音的複雜性 擴散值或者參考順序 适当降低一下也可以。
+- 知识点：剛才那个有點亂的那种 噪音模式也变得更清晰了。
+- 知识点：这种火的纹理这种感覺 盡量保留比較好。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`火焰`。
+
+**关键画面：**
+
+这张图进入 `00:23:14-00:27:57 火焰` 小节后，继续在 `Pyro Solver` 内部细化火焰纹理，但这次强调的是“湍流受密度场控制”这一点。中央网络没有变化，仍是：
+
+- `circle1`
+- `pyrosource1`
+- `attribnoise1`
+- `attribadjustvector1`
+- `volumerasterizeattributes1`
+- `pyrosolver1`
+- `filecache1`
+- `Render_Fire`
+
+左侧视窗显示的是缓存末端附近的火焰结果，时间轴游标约在 `80` 帧。画面可见火焰底部两股亮白火舌向上卷起，中上部则形成较清晰的块状暗色烟团和卷边，说明细节并非均匀铺满，而是集中在高密度区域。
+
+右侧 `Pyro Solver pyrosolver1` 当前展开的是 `Turbulence` 与 `Viscosity`，可直接确认：
+
+- `Buoyancy Scale`：`0.15`
+- `Ambient Temp (K)`：`300`
+- `Reference Temp (K)`：`3000`
+- `Gravity Acceleration`：`9.8`
+- `Gravity Direction`：`(0, -1, 0)`
+
+`Turbulence`：
+
+- `Noise Type`：`Analytic Fast Simplex Noise`
+- `Turbulence`：`0.75`
+- `Swirl Size`：`0.5`
+- `Roughness`：`0.5`
+- `Pulse Length`：`0.2`
+- `Max Octaves`：`3`
+- `Seed`：`0`
+- `Threshold Field`：`temperature`
+- `Threshold Range`：`0.01` 到 `0`
+- 已启用 `Use Control Field`
+- `Control Field`：`density`
+- `Control Range`：`0` 到 `1`
+- 已启用 `Remap Control Field`
+
+`Viscosity`：
+
+- `Viscosity`：`0.1`
+
+这张图对应正文“基于密度场进行计算时，密度高的部分湍流产生会更强一些”。也就是说，作者不是让湍流对整个火焰体积平均生效，而是用 `density` 作为控制场，让高密度区域获得更强扰动、低密度区域保持相对干净。这样既能保留清晰火焰纹理，又不会让所有区域都被噪声搅得过乱。
+这张图是在同一套求解设置下直接观察缓存结果，用来判断火焰纹理是否已经从“有点乱的噪声模式”变得更清晰。中央网络结构不变，右侧仍停留在 `File Cache filecache1`：
+
+- `Base Name`：`Ex_05_CarFire_01.filecache1`
+- `Version`：`2`
+- `Evaluate As`：`Frame Range`
+- `Start/End/inc`：`1` 到 `80`
+
+左侧视窗当前是约 `40` 帧附近的火焰画面。与前一批强调破碎感的帧相比，这一张有几个很明确的视觉变化：
+
+- 底部两股白亮火舌仍然存在，但形态更稳定，不再显得过于散乱
+- 中段出现更连续、更清楚的细长火焰纹理，像被拉伸的丝状流动
+- 顶部暗色烟团依然有卷曲和分叉，但边界层次更容易辨认
+- 整体仍保持随机上升的自然感，没有被简化成单一的平滑柱体
+
+结合正文“想要自然持续随机升起的火焰画面”“刚才那个有点乱的噪音模式也变得更清晰了”“这种火的纹理感觉尽量保留比较好”，这张图对应的判断标准是：
+
+- 保留底部高亮和上部卷曲烟体之间的层次反差
+- 让中段火焰条纹清晰可读
+- 允许随机扰动存在，但不要把所有纹理搅成一片混浊块面
+
+也就是说，这一帧的目标不是继续增加更多噪声，而是确认当前参数已经抓住了“自然随机上升，同时纹理清楚可辨”的火焰状态。
+这张图不是单独看一条火焰链，而是把两套 Pyro 网络并排放在同一个 `geo1` 内进行对照。右侧仍是这一页主流程的链路，左侧则是另一套示例火焰网络，作者用它来边演示边说明不同参数组合带来的变化。
+
+当前图中可直接确认的右侧主流程节点为：
+
+- `circle1`
+- `pyrosource1`
+- `attribnoise1`
+- `attribadjustvector1`
+- `volumerasterizeattributes1`
+- `pyrosolver1`
+- `filecache1`
+- `Render_Fire`
+
+左侧并排示例链可直接读到的节点包括：
+
+- `bonfire_base1`
+- `pyrosource`
+- `attribadjustfloat1`
+  - 目标属性标注为 `pscale`
+- `attribnoise_density`
+  - 目标属性标注为 `density`
+- 两个 `attribadjustvector` 节点
+  - 目标属性都标注为 `v`
+- `volumerasterizeattributes`
+- `pyrosolver2`
+
+右侧仍打开 `File Cache filecache1`，可确认：
+
+- `Base Name`：`Ex_05_CarFire_01.filecache1`
+- `Version`：`2`
+- `Start/End/inc`：`1` 到 `80`
+
+中央弹出的进度窗口显示当前正在重新求解：
+
+- `render frame 46 (46 of 80)`
+- `Solving: GAS_FieldVex...`
+
+左侧视窗里当前只显示一条贴地亮火带，说明此刻更关注网络结构对比和重新烘焙过程，而不是最终完整火焰外观。
+
+这张图在本段里的作用，是把“当前这套车火焰主流程”和“另一套 bonfire 示例流程”同时摆出来，提示读者后面会继续通过对比参数差异来说明火焰纹理变化。就当前截图本身能可靠确认的结论是：作者正在用并排的两套点属性到 Pyro 的建链方式做示范，其中左侧示例额外加入了 `pscale` 与两级速度向量调整，而右侧保留当前页主流程作为对照基线。
+
+### 00:27:57-00:32:41 速度、火焰
+
+- 本段定位：速度、火焰。
+- 知识点：因此一定要好好補助那些部分 找到那个感覺。
+- 知识点：剛才打開夾子後 確實感覺減少了一截。
+- 知识点：也許因为場地縮小了一点 这个輪廓就变得更清晰了。
+- 知识点：关闭屏幕只打開烟霧 对烟霧的这个值 用15左右的中調进行简单的陰影處理。
+- 知识点：现在用一个相機 需要把这个火也渲染出来。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`速度`、`颜色`、`火焰`。
+
+**关键画面：**
+
+这张图进入 `00:27:57-00:32:41 速度、火焰` 小节后，仍然把两套火焰网络并排摆在同一个 `geo1` 里做对照，并且当前处于重新求解/烘焙的中途。画面中央可确认两组网络如下。
+
+右侧主流程链：
+
+- `circle1`
+- `pyrosource1`
+- `attribnoise1`
+- `attribadjustvector1`
+- `volumerasterizeattributes1`
+- `pyrosolver1`
+- `filecache1`
+- `Render_Fire`
+
+左侧示例链：
+
+- `bonfire_base1`
+- `pyrosource`
+- `attribadjustfloat1`
+  - 目标属性：`pscale`
+- `attribnoise_density`
+  - 目标属性：`density`
+- 两个 `attribadjustvector` 节点
+  - 目标属性：`v`
+- `volumerasterizeattributes`
+- `pyrosolver2`
+
+右侧参数面板当前仍是 `File Cache filecache1`，可确认：
+
+- `Base Name`：`Ex_05_CarFire_01.filecache1`
+- `Version`：`2`
+- `Start/End/inc`：`1` 到 `80`
+
+中间的进度窗口显示当前正在求解：
+
+- `render frame 50 (50 of 80)`
+- `Solving: GAS_ProjectNonDivergentMultigrid`
+
+左侧视窗此时只显示一条贴地的亮火带，说明作者此刻主要在比较求解过程和轮廓趋势，而不是停留在完整火焰外观上。结合正文“要好好捕捉那些部分，找到那个感觉”，这张图的核心信息是：本段开始后，作者通过双网络并排对照来反复观察主流程与示例流程在同一求解阶段的差别，用以寻找更清晰、更合适的火焰速度轮廓。
+这张图把显示重点从火焰切到了烟雾本身。中央网络在原有 `Render_Fire` 之外新增了一个单独的烟雾渲染节点：
+
+- `Render_Smoke`
+- `Render_Fire`
+
+画面左侧当前只显示一团灰白烟雾体积，说明作者此时按正文所说“关闭屏幕只打开烟雾”，单独检查烟雾的层次和阴影处理，而不是同时看火焰和烟雾混合结果。
+
+右侧参数面板当前打开的是 `Pyro Bake Volume Render_Smoke` 的 `Smoke` 页签，可直接确认：
+
+- `Assign Material`：`matnet/Pyro_Shader`
+- `Density Scale`：`15`
+- `Smoke Color`：约为中灰 `0.5, 0.5, 0.5`
+- `Shadow Color`：`1, 1, 1`
+- `Shadow Density`：`1`
+- `Ambient Shadow Scale`：`0.5`
+
+左侧视窗标签还能看到当前使用的是 `cam1` 相机视角，时间轴游标约在 `37` 帧。烟雾体在包围盒内形成较厚的顶部团块和下方翻卷上升的灰白体积，已经具备较明确的体积轮廓。
+
+这张图对应正文“对烟雾的这个值，用 15 左右的中调进行简单的阴影处理”。也就是说，这一步的核心不是做复杂的色彩设计，而是：
+
+- 单独打开烟雾渲染
+- 把烟雾整体密度定在 `15` 左右
+- 用中灰烟色和较简单的阴影参数先建立可读的体积层次
+- 确认在相机视角下，烟雾轮廓已经足够清晰，之后再把火焰一起渲染回来
+这张图已经不在 `geo1` 内部调体积参数，而是进入 `/out` 输出网络，开始配置火焰的翻页图/序列渲染节点。中央网络当前能直接看到两个 `Labs Flipbook Textures` 输出节点：
+
+- `Render_Fire`
+- `Render_Fire1`
+
+右侧参数面板当前打开的是 `Labs Flipbook Textures Render_Fire1`，位于 `Render` 页签，主要可确认以下输出设置：
+
+- `Start/End/Inc`：`1` 到 `80`
+- `Cam Path`：`/obj/cam1`
+- `Pyro Bake Volume Path`：`/obj/geo1/Render_Fire`
+- `Resolution Per Frame`：`512 x 512`
+- `Columns/Rows`：`8 x 8`
+- 由此总分辨率显示为：`4096 x 4096`
+- `Color Space`：`ACES-sRGB (Best for Pyro)`
+
+上方 `Render Pass Control` 区域还能看到这一节点支持的输出通道，包括：
+
+- `Render Final Color`
+- `Render Non-emissive Color`
+- `Render MDC / MDC Normal`
+- `Render Surface Normal`
+- `Render Motion Vector`
+- `Render Depth`
+
+左侧视窗仍处于 `cam1` 相机视图，但当前画面为空黑屏，说明这里的重点已经不是实时观察体积，而是准备把前面调整好的 `Render_Fire` 体积结果按相机视角烘成翻页贴图序列。结合正文“现在用一个相机，需要把这个火也渲染出来”，这张图的可复建含义就是：
+
+- 用 `cam1` 作为渲染相机
+- 以 `/obj/geo1/Render_Fire` 作为输入体积
+- 把 `1-80` 帧压成 `8x8` 布局的 `512` 分辨率单帧 flipbook
+- 同时保留颜色、法线、运动向量、深度等多种输出通道，为后续在 Unreal 中做材质/序列贴图使用
+
+### 00:32:41-00:36:36 Alpha、Texture、Smoke
+
+- 本段定位：Alpha、Texture、Smoke。
+- 知识点：我们现在只拿兩张路徑 跟合成来制作瘟疫。
+- 知识点：保持Display, Bluetone直接Bake。
+- 知识点：现在把Odemy Network拿走吧。
+- 知识点：再ComposeDeal確認一下。
+- 知识点：最後就拿FireTexture过来。
+- 知识点：Alpha在第一个输入中放入Alpha。
+- 知识点：这个Fire通道不輸出Alpha。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`Texture`、`颜色`。
+
+**关键画面：**
+
+这张图进入 `00:32:41-00:36:36 Alpha、Texture、Smoke` 小节后，已经把关注点放到火焰序列贴图的实际输出预览上。中央仍位于 `/out` 网络，右侧打开的是 `Labs Flipbook Textures Render_Fire`，中间弹出一个独立的 `sceneview` 预览窗口，用来直接查看当前火焰渲染结果。
+
+从右侧参数面板可直接确认当前 `Render_Fire` 的关键输出设置：
+
+- `Start/End/Inc`：`15` 到 `80`
+- `Camera`：`/obj/cam1`
+- `Pyro Bake Volume Path`：`/obj/geo1/Render_Fire`
+- `Resolution Per Frame`：`512 x 512`
+- `Columns/Rows`：`8 x 8`
+- 总分辨率：`4096 x 4096`
+- `Color Space`：`ACES-sRGB (Best for Pyro)`
+
+`Render Pass Control` 区域可见当前节点支持多种输出通道，包括：
+
+- `Render Final Color`
+- `Render Non-emissive Color`
+- `Render MDC / MDC Normal`
+- `Render Surface Normal`
+- `Render Motion Vector`
+- `Render Depth`
+
+中间弹出的预览窗口中，能直接看到当前火焰图像效果：
+
+- 黑底
+- 底部为亮白到浅橙的火焰主体
+- 上半部覆盖一层暗红色烟火/余焰区域
+- 整体已经是接近最终贴图的合成外观，而不是 Houdini 视窗里的包围盒体积预览
+
+这张图对应本段“最后就拿 FireTexture 过来”的起点状态。也就是说，作者已经把前面做好的 `Render_Fire` 体积拿到 flipbook 渲染节点里，先用 `cam1` 和 `15-80` 帧段确认火焰贴图的基础输出外观，再继续处理 alpha 和通道合成。
+这张图已经从 `/out` 切换到 `/img/img1` 合成网络，开始在 `Composite View` 里确认将要用于最终贴图合成的序列文件。中央网络当前只看到一个图像读取节点：
+
+- `File default_pic`
+
+右侧弹出的 `Choose Image` 文件选择窗口显示当前浏览目录为：
+
+- `$HIP/TexOUT/`
+
+该目录中当前可见的候选文件包括：
+
+- `CarFire_Fire_01.exr`
+- `CarFire_Smoke_01.exr`
+- `Explosion_01...`（文件名后半在截图中被截断）
+
+当前文件名输入框里已选中的是：
+
+- `CarFire_Smoke_01.exr`
+
+右下角还能确认几个读取设置：
+
+- `Frame Range`
+- `Linearize Non-Linear Images`
+- `Image Color Space`：`Autodetect from File`
+- `Depth`：`16 Bit Floating Point`
+- 已勾选 `Still Image`
+- `Missing Frames`：`Use Closest Frame`
+
+结合正文“我们现在只拿两张路径跟合成来制作”“再 Compose 里确认一下”，这张图对应的操作非常明确：
+
+- 进入 `/img` 合成网络
+- 用 `File` 节点读取从 `TexOUT` 导出的贴图结果
+- 当前先选入 `CarFire_Smoke_01.exr`
+- 后续再与火焰贴图一起做合成检查
+
+因此，这一帧的关键不是继续调体积，而是开始把已经烘好的火焰/烟雾输出序列按文件路径读回合成网络，为后面的 alpha 与 fire 通道组合做准备。
+这张图把本段“Alpha、Texture、Smoke”的合成关系完整展示出来了。中央 `/img/img1` 合成网络当前由 4 个节点构成：
+
+- `File CarFire_Smoke_01_exr`
+- `File CarFire_Fire_01_exr`
+- `channelcopy1`
+- `rop_comp1`
+
+两张 EXR 都接入 `channelcopy1`，再由 `channelcopy1` 输出到 `rop_comp1`。这正对应正文里“只拿两张路径跟合成来制作”“Alpha 在第一个输入中放入 Alpha”“这个 Fire 通道不输出 Alpha”。
+
+左侧 `Composite View` 当前显示的是 `channelcopy1` 的 4096x4096 结果预览。可见：
+
+- 画面是 flipbook 九宫格/多宫格切片预览
+- 上半部主要是红色烟雾区域
+- 下半部叠着青白色/浅蓝色的火焰区域
+- 说明当前正在直接检查通道合并后的贴图分布，而不是单独看 fire 或 smoke 的原始输出
+
+右侧参数面板当前打开的是 `ROP File Output rop_comp1`，可直接确认的输出设置包括：
+
+- `Valid Frame Range`：`Render Frame Range Only (Strict)`
+- `Start/End/Inc`：`1` 到 `240`
+- `Output Picture`：`$HIP/render/$HIPNAME.$OS.$F4.exr`
+- 已勾选 `Create Intermediate Directories`
+- `Plane Scope`：`C A`
+- `Output Colorspace`：`Autodetect from File`
+
+从这张图能可靠推断出的合成流程是：
+
+- 先分别读取 `CarFire_Smoke_01.exr` 与 `CarFire_Fire_01.exr`
+- 用 `channelcopy1` 在两个输入之间做通道拷贝/合并
+- 其中 alpha 以第一个输入为基准通道来源，fire 图本身不直接提供 alpha
+- 最终通过 `rop_comp1` 输出为新的 EXR 合成结果
+
+因此，这一帧就是本小节的收口步骤：把烟雾和火焰两张贴图在合成网络中按通道关系拼起来，并确认最终输出同时保留 `C` 与 `A` 平面，为后续带 alpha 的火焰序列资产做准备。
+
+### 00:36:41-00:38:05 关键流程 09
+
+- 本段定位：关键流程 09。
+- 知识点：第一次模拟资源制作一起进行了,然后和之前制作的方式不同,可能会更简单一些,这个形状的感觉本身也变了很多 然后这种火的感觉或者火的感觉也多种多样,每种情况不同,然后得找到合适的火的感觉来运用,应该不错吧。
+- 知识点：还有那种感觉就是自己的火的那种感觉,也可以更创意地一起打造 在视力中主要使用了一些基本的字段,然后关于验证字段其实现在我们制作自定义验证的方法。
+- 知识点：在之前的课程中也适当展示了一些,可以按照那种方式构建验证,然后尝试引入字段 我觉得我没事,这样直接尝试制作一下也是个不错的方法,那么这次就到这里结束吧,下次再见。
+
+**关键画面：**
+
+这张图处于本页最后的 `关键流程 09` 总结阶段，把“合成结果预览”“双网络示例”和“最终输出节点”同时摆在同一个界面里，作为整套火焰资源制作流程的收尾回顾。
+
+左侧 `Composite View` 当前显示的是 `channelcopy1` 的合成预览，分辨率标记为 `4096x4096`。画面可见：
+
+- 红色烟雾位于上方
+- 青白色/浅蓝火焰位于下方
+- 预览是多宫格 flipbook 形式
+
+中央网络当前同时展示了两套建链：
+
+左侧示例链：
+
+- `bonfire_base1`
+- `pyrosource`
+- `attribadjustfloat1`
+  - 目标属性：`pscale`
+- `attribnoise_density`
+  - 目标属性：`density`
+- 两个 `attribadjustvector` 节点
+  - 目标属性：`v`
+- `volumerasterizeattributes`
+- `pyrosolver2`
+
+右侧主流程链：
+
+- `circle1`
+- `pyrosource1`
+- `attribnoise1`
+- `attribadjustvector1`
+- `volumerasterizeattributes1`
+- `pyrosolver1`
+- `filecache1`
+- `Render_Smoke`
+- `Render_Fire`
+
+右侧参数面板当前打开的是 `ROP File Output rop_comp1`，可直接确认：
+
+- `Valid Frame Range`：`Render Current Frame`
+- `Output Picture`：`$HIP/TexOUT/CarFire_01.tga`
+- `Color Plane`：`C`
+- `Alpha Plane`：`A`
+- 已勾选 `Create Intermediate Directories`
+
+这张图能可靠说明的关键流程是：
+
+- 前面先分别完成烟雾与火焰体积
+- 再经过 `Render_Smoke`、`Render_Fire` 输出
+- 在 `/img` 中合成为带 `C/A` 的 flipbook 结果
+- 最终通过 `rop_comp1` 输出到 `CarFire_01.tga`
+
+结合正文“和之前制作的方式不同，可能会更简单一些”，这张图的总结含义就是：本次资源制作没有停在体积模拟，而是贯通到了贴图合成和最终序列输出，并把主流程与另一套 bonfire 示例同时保留在界面中做对照参考。
+这张图把镜头重新拉回到火焰体积本身，并同时展示主流程底层字段链。左侧视窗中已经能直接看到一团完成度较高的火焰结果：
+
+- 底部为两股白亮主火舌
+- 中段有清晰的橙色卷曲火纹
+- 上部覆盖暗红色烟火层
+- 外侧仍被红色求解包围盒框住
+
+中央网络主要展示的是右侧主流程链，当前完整可见为：
+
+- `circle1`
+- `pyrosource1`
+- `attribnoise1`
+  - 目标属性：`density`
+- `attribadjustvector1`
+  - 目标属性：`v`
+- `volumerasterizeattributes1`
+- `pyrosolver1`
+- `filecache1`
+- `Render_Smoke`
+- `Render_Fire`
+
+右侧参数面板当前打开的是 `Pyro Source pyrosource`，可直接确认的源设置包括：
+
+- `Group Type`：`Guess from Group`
+- `Mode`：`Surface Scatter`
+- `Particle Separation`：`0.02`
+- `Particle Scale`：`2`
+- 属性列表中当前只有 1 项：
+  - `Attribute`：`Density`
+  - `Name`：`density`
+  - `Default Value`：`1`
+  - `Scale`：`1`
+- 属性写入目标：
+  - `Point Attributes`：`*`
+  - `Vertex Attributes`：`*`
+  - `Primitive Attributes`：`* shop_materialpath`
+
+这张图的意义不是再引入新步骤，而是把最终火焰结果和最初的基础发射源设置并列给读者看，强调整套效果仍然是从很基础的字段构成出发搭起来的：先用 `Surface Scatter` 圆盘源生成 `density`，再逐步叠加噪声、速度、体积化、求解、缓存和渲染。结合正文“主要使用了一些基本的字段”，这张图就是对这一点的直接视觉总结。
+这张图把总结镜头进一步落在主流程里最关键的速度调整节点 `attribadjustvector1` 上，同时仍保留左侧示例链与最终火焰结果，作为本页结束前的最后一次“回到基础字段”的说明。
+
+左侧视窗当前仍显示相机视角下的最终火焰：
+
+- 底部两股白亮火舌清晰可见
+- 中段火焰卷曲上升
+- 顶部暗红烟层保持在包围盒内翻卷扩散
+
+中央网络中，右侧主流程节点当前高亮的是：
+
+- `attribadjustvector1`
+  - 目标属性：`v`
+
+该节点上下游关系可直接确认：
+
+- `circle1`
+- `pyrosource1`
+- `attribnoise1`
+- `attribadjustvector1`
+- `volumerasterizeattributes1`
+- `pyrosolver1`
+- `filecache1`
+- `Render_Smoke`
+- `Render_Fire`
+
+右侧 `Attribute Adjust Vector attribadjustvector1` 参数面板当前可读到：
+
+`Initial Value`
+
+- `Initial Value From`：`Constant Value`
+- `Initial Vector`：`(1, 0, 0)`
+
+`Adjustment Value`
+
+- 已启用 `Adjust Value`
+- `Adjustment for`：`Direction Only`
+- `Operation`：`Interpolate`
+- `Adjust with`：`Noise`
+- `Range Values`：`Min/Max`
+- `Goal Direction`：`(1, 5, 0)`
+- `Bias Min`：`0`
+- `Bias Max`：`1`
+
+`Noise Pattern`
+
+- `Noise Type`：`Simplex`
+- `Location Attribute`：`P`
+- `Element Size`：`1`
+- `Offset`：`0`
+
+`Animation`
+
+- 已启用 `Animate Noise`
+- `Pulse Duration`：`0.5`
+
+这张图的总结意义很直接：即使最终效果已经延伸到烟雾渲染、火焰渲染、flipbook 和合成输出，真正决定火焰“往哪里卷、怎么抬升、随机性怎么分布”的核心，仍然可以回溯到这种简单的速度向量调整节点。结合字幕“这样直接尝试制作一下也是个不错的方法”，这张图强调的是：用基础字段和少量关键节点直接试做、观察、迭代，就是这页教程想传达的主要方法。
+
+## 补充视觉证据
+
+### S08 00:35:36
+
+这是一张 `S08 00:35:36` 的材质/贴图补充截图，画面位于 Houdini 的 `img/img1` 合成网络。当前可见两个序列贴图文件节点被接入一个 `Channel Copy channelcopy1`，目的是把其中一个输入的 Alpha 或亮度信息复制到结果图像的指定通道中。
+
+节点定义集：
+- `File CarFire_Smoke_01_exr`
+  - 文件预览为黑底烟雾/火焰序列图
+- `File CarFire_Fire_01_exr`
+  - 文件预览为黑底火焰序列图
+- `Channel Copy channelcopy1`
+
+连线集：
+- `CarFire_Smoke_01_exr -> channelcopy1`
+- `CarFire_Fire_01_exr -> channelcopy1`
+
+`channelcopy1` 当前可确认的设置：
+- `Copy Controls = 4`
+
+通道复制规则当前可见为：
+1. `Target = Cr`
+   - `Source = Set to 0 (black)`
+2. `Target = Cg`
+   - `Source = Set to 0 (black)`
+3. `Target = Cb`
+   - `Source = Set to 0 (black)`
+4. `Target = A`
+   - `Source = Input 1: A`
+
+输出/预览：
+- 左侧预览窗口当前查看 `channelcopy1`
+- 分辨率显示为 `4096x4096`
+- 当前查看通道为 `C`
+- 预览结果几乎全黑，说明颜色通道被清空，只保留 Alpha 数据用于后续材质/纹理使用
+
+这张补充图的作用是补证火焰/烟雾序列在进入材质前的通道整理方式。当前可直接确认的是：`channelcopy1` 把 RGB 三个颜色通道都写成黑色，同时把 `Input 1` 的 Alpha 写入目标图像的 `A` 通道，从而生成一张“颜色清空、只保留 Alpha 蒙版”的输出。结合字幕“插入第一个输入比较好”可知，这里强调的是通道来源选择顺序，而不是再做颜色混合。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

@@ -21,8 +21,8 @@
 
 1. 先创建或复制最小资产，不直接手写完整 `.uasset` 行为。
 2. `control_rig_export_folder` 导出真实结构。
-3. 基于导出 JSON 修改 `variables/variables.json`、`hierarchy/*.json`、`shape_libraries/references.json`、`graphs/graphs.json`。
-4. 如果要替换整个求解图，在 `graphs/graphs.json` 使用 `replace_nodes=true`，并只保留目标图需要的 node/link/pin default。局部追加时保持 `replace_nodes=false`。
+3. 基于导出 HJSON 修改 `variables/variables.hjson`、`hierarchy/*.hjson`、`shape_libraries/references.hjson`、`graphs/graphs.hjson`。
+4. 如果要替换整个求解图，在 `graphs/graphs.hjson` 使用 `replace_nodes=true`，并只保留目标图需要的 node/link/pin default。局部追加时保持 `replace_nodes=false`。
 5. `control_rig_validate_folder` 做只读校验，确认 `json_issue_count=0`。
 6. `control_rig_apply_folder` 回写并编译，检查 `valid`、`error_count`、`warning_count`、`compile_report.error_count`、`readback`。
 7. 重新 export 或用 `control_rig_get_compile_log / control_rig_runtime_probe` 读回验证。
@@ -31,7 +31,7 @@
 
 ## RigVM Graph 规则
 
-- 不凭记忆写 unit、pin 名和默认值。先 export，再看 `validation/rigvm_unit_registry.json` 和导出的 pin 路径。
+- 不凭记忆写 unit、pin 名和默认值。先 export，再看 `validation/rigvm_unit_registry.hjson` 和导出的 pin 路径。
 - 不使用 UI 标记为 `OutDated` 的 unit。发现旧节点时优先替换成当前 UE 版本的 registry 中可用 unit。
 - Graph apply 后必须编译。HTTP 成功只代表命令执行完，不代表 Control Rig 有效。
 - 只修改逻辑所需字段。导出的只读或缓存字段，例如 transform cache、运行时 pin 临时值、readonly/raw profile，不要复制回写。

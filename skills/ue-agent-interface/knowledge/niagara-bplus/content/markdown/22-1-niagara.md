@@ -1,0 +1,709 @@
+# 22-1 制作爆炸Niagara粒子特效
+
+# 22-1 制作爆炸Niagara粒子特效
+
+## 关键术语
+
+- `AE`、`Mesh`、`粒子`、`生命周期`、`速度`、`透明度`、`不透明度`、`+Add`、`Niagara`、`Normalized Age`、`Add`、`材质`、`纹理`、`发射器`、`颜色`、`曲线`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:05-00:04:47 AE、粒子
+
+- 本段定位：AE、粒子。
+- 知识点：围绕当前效果继续调整 Niagara 系统，需结合关键画面确认实际节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: p32 开场关卡状态和 Sequencer 位置
+> - 组成部分: 关卡 Viewport + Content Browser + Outliner + Sequencer + 字幕
+> - 所属: Level `06_Water_Explosion`，Niagara Systems `Cast_01` / `Cast_02`。
+> - 目的: 确认上一阶段已完成角色周围粒子封装，并进入本页继续调整爆炸 Niagara。
+>
+> 关卡 Viewport:
+> - 视口处于 `Pilot Actor: Cine Camera Actor`。
+> - 角色站在棋盘地面中央附近，周围只有少量低亮度白色粒子点；未出现大面积水球或完整爆炸环。
+> - 地面棋盘纹理和角色阴影可见，说明当前帧用于观察粒子封装后的基础状态。
+>
+> Content Browser / Outliner:
+> - Content Browser 位于 `Particle/06`，可见 `Cast_01` 和 `Cast_02` Niagara System。
+> - Outliner 中可见 `06_Water_Explosion (Editor)`、`Cast 01`、`Cast 02`、`Cine Camera Ac`、`Floor`、`PlayerStart`、`PostProcessVo`，底部显示约 `10 actors`。
+>
+> Sequencer / 字幕:
+> - Sequencer 为 `06_Water_Explosion`，可见 `Camera Cuts` 轨道；播放头在约 `0221` 附近。
+> - 字幕文本为“上次时间已经完成了粒子到封装部分。”。
+>
+> 画面含义: 当前帧是 p32 开始时的关卡基准帧，说明前一轮已完成粒子封装，后续继续在同一爆炸效果上添加/调整新层。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Exp_01` Niagara System 编译与 Emitter 总览
+> - 组成部分: Niagara Preview + System Overview + Stack + Parameters/Curves + Timeline
+> - 所属: Niagara System `Exp_01`，可见 Emitter `Refraction_01`、`RadialBlur_01` 等。
+> - 目的: 打开爆炸系统并确认本页将处理的多层 Emitter。
+>
+> Niagara Preview:
+> - Preview 正在编译，中央显示 `Compiling...`。
+> - `Compiling Emitter` 列表包含 `Glow_01`、`Glow_02`、`Glow_03`、`Glow_04`、`Smoke_01`、`Smoke_02`、`Debris_01`、`Glow_05`、`Refraction_01`、`RadialBlur_01`。
+>
+> System Overview / Stack:
+> - 当前系统名为 `Exp_01`。
+> - 画面中可见 `Refraction_01` 和 `RadialBlur_01` 两个 CPU Emitter。
+> - `Refraction_01` Stack 可见 `Emitter State(Self/Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Initial Mesh Orientation(None)`、`Particle State`、`Dynamic Material Parameters`。
+> - `RadialBlur_01` Stack 可见 `Emitter State(Self/Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Initial Mesh Orientation(None)`、`Camera Offset`、`Particle State`、`Scale Sprite Size` 等条目。
+>
+> Parameters / Timeline:
+> - Parameters/Curves 面板左侧可见 `Glow_01`、`Glow_02`、`Glow_03`、`Glow_04` 等分组及 `Scale S`、`Scale C` 曲线项。
+> - Timeline 当前约 `0.70`，轨道区域可见 `Debris_01`、`Glow_01`、`Glow_02` 等。
+>
+> 画面含义: 当前帧用于打开 `Exp_01` 并确认爆炸系统由 Glow、Smoke、Debris、Refraction、RadialBlur 等多层 Emitter 组成；此帧处于编译中，不用于判断最终视觉质量。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Exp_01` 爆炸水效果关卡预览
+> - 组成部分: 关卡 Viewport + Content Browser + Outliner + Niagara Editor 底部局部
+> - 所属: Level `06_Water_Explosion`，Niagara System `Exp_01`。
+> - 目的: 检查进入 `Exp_01` 后完整爆炸层与角色封装层的组合结果。
+>
+> 关卡 Viewport:
+> - 角色位于半透明水球中心。
+> - 水球外侧有宽大的浅蓝白透明水面盘，盘面上叠有明亮旋涡/Ribbon 环。
+> - 角色和水球周围有大量白色 spark/水点粒子，外圈也有零散粒子点。
+> - 棋盘地面仍可透过透明水面辨认，整体以水蓝白高亮爆炸层为主。
+>
+> Content Browser / Outliner:
+> - Content Browser 位于 `Particle/06`，`Exp_01` Niagara System 处于选中状态，旁边可见 `Cast_01`、`Cast_02`。
+> - Outliner 中可见 `06_Water_Explosion (Editor)`、`Cast 01`、`Cast 02`、`Cine Camera Ac`、`Floor`、`PlayerStart`、`PostProcessVo`。
+>
+> Niagara Editor 局部:
+> - 底部 Niagara Editor 打开 `Exp_01`，右侧局部 Details 显示 `Glow_01`。
+>
+> 画面含义: 当前帧说明 `Exp_01` 已在关卡中叠加到角色封装效果上，完整效果包含中心水球、宽水面盘、明亮旋涡环和大量水点粒子。
+
+### 00:04:47-00:09:28 粒子、生命周期
+
+- 本段定位：粒子、生命周期。
+- 知识点：確認会花一点时间 效果很好 在底部再放一个發光的东西 这部分需要复制一个使用 自動針石也复制这个带到6號連接 简单點需要用这个纹理。
+- 知识点：而且樹脂应该不需要更改 而这个大概会去掉偏移 想着在Z轴上使用 让底部有一点發光 让循環时间适当长一点 畢竟是範圍适当寬的爆炸效果 所以需要把偏移改为Z轴为基準。
+- 知识点：这个是自動转换後 自動找到好的时候也有 但我每次更改是有时找不到 所以先准确做会更好 而且PL大小就是從一开始增大到3 这里现在的时间。
+- 知识点：大小给这个程度的圖形 颜色大致上用香色的颜色 适当靠近一点白色的感覺 这将是蜂蜜平板從杯子里 开始时亮 然后快速变暗 需要把規模增加到大約3。
+- 知识点：现在需要一个遠距離散發的颜色 同樣情况在我们使用了第四个粒子时 会用粒子来獲取 打開X 需要带来一个冲擊簿 然后暫时关闭 需要带来在任務一中用过的黑調。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`粒子`、`生命周期`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Glow_01.Initialize Particle` 底部发光层初始化
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Parameters/Curves + Timeline
+> - 所属: Niagara System `Exp_01`，Emitter `Glow_01`，模块 `Initialize Particle`。
+> - 目的: 复制/启用底部发光层，并设置短寿命、大尺寸的非均匀 Sprite。
+>
+> Niagara Preview:
+> - `Particle Counts` 中 `Glow_01`、`Glow_02` 为 Active；`Smoke_01`、`Smoke_02`、`Debris_01`、`Glow_05`、`Refraction_01`、`RadialBlur_01` 显示 Disabled。
+> - 当前 Preview 中未显示明显粒子效果，主要用于查看 Stack 和 Details。
+>
+> System Overview / Stack:
+> - `Glow_01` 与 `Glow_02` 均为 CPU Emitter，Stack 中可见 `Emitter State(Self/Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Camera Offset`、`Particle State`、`Scale Sprite Size`、`Scale Color`、`Sprite Renderer`。
+> - `Glow_01.Initialize Particle` 当前被选中。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Glow_01.Initialize Particle.Lifetime Mode` | `Direct Set` | enum | Details | 直接指定生命周期 |
+> | `Lifetime` | `0.35` | seconds | Details | 短寿命发光层 |
+> | `Color Mode` | `Unset` | enum | Details | 初始化时不设置颜色 |
+> | `Position Mode` | `Simulation Position` | enum | Details | 使用模拟位置 |
+> | `Position Offset` | `(0.0, 0.0, 10.0)` | vector | Details | 初始位置偏移；只按 Details 字段记录 |
+> | `Position Offset Coordinate Space` | `Simulation` | enum | Details | 偏移按 Simulation 空间解释 |
+> | `Mass Mode` | `Unset / (Mass of 1)` | enum | Details | 默认质量 |
+> | `Sprite Size Mode` | `Non-Uniform` | enum | Details | 非均匀 Sprite 尺寸 |
+> | `Sprite Size` | `(650.0, 300.0)` | vector2 | Details | 宽扁发光形状 |
+> | `Sprite Rotation Mode` | `Unset` | enum | Details | 不在 Initialize 中设旋转 |
+> | `Sprite UV Mode` | `Unset` | enum | Details | 不在 Initialize 中设 UV |
+>
+> Timeline:
+> - Timeline 当前约 `0.70`，`Glow_01` 轨道被选中。
+>
+> 画面含义: 当前帧把 `Glow_01` 设置成短生命周期、Z 字段偏移为 `10.0`、尺寸为 `650x300` 的宽扁 Sprite，用于底部发光基础层。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Glow_02001.Scale Sprite Size` 尺寸曲线
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline + 字幕
+> - 所属: Niagara System `Exp_01`，Emitter `Glow_02001`，模块 `Scale Sprite Size`。
+> - 目的: 让复制出的底部发光图形按生命周期从较小尺寸增大到约 `3` 倍。
+>
+> Niagara Preview:
+> - `Particle Counts` 中 `Glow_02001` 显示 `1 Current, 1 Max (est.)` 且 Active；`Glow_01`、`Glow_02` 也为 Active，`Smoke_01`、`Smoke_02`、`Debris_01`、`Glow_05`、`Refraction_01`、`RadialBlur_01` 为 Disabled。
+> - Preview 中出现大面积浅蓝白发光面，画面近处被发光图形覆盖。
+>
+> System Overview / Stack:
+> - 可见 `Glow_01`、`Glow_02`、`Glow_02001` 三个发光 Emitter。
+> - `Glow_02001.Scale Sprite Size` 当前被选中，Stack 中 `Sprite Renderer` 启用。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Glow_02001.Scale Sprite Size.Scale Sprite Size Mode` | `Uniform Curve` | enum | Details | 使用统一曲线缩放 Sprite 尺寸 |
+> | `Uniform Curve Sprite Size` | `Curve for Floats` | curve | Details | 尺寸缩放曲线 |
+> | `Uniform Curve Index` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取曲线 |
+> | `Uniform Curve Scale` | `1.0` | float | Details | 曲线缩放 |
+>
+> 曲线:
+> - 曲线从约 `1.0` 开始，前半段快速上升到约 `2.8`，末段接近 `3.0` 并趋于平缓。
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `0.70`，`Glow_02001` 轨道处于选中状态。
+> - 字幕文本为“大小给这个程度的图形”。
+>
+> 画面含义: 当前帧设置 `Glow_02001` 的 Sprite 尺寸随 `Particles.NormalizedAge` 从约 `1` 增大到约 `3`，用于扩大底部发光面。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Black_01.Initialize Particle` 黑调冲击层初始化
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Parameters/Curves + Timeline
+> - 所属: Niagara System `Exp_01`，Emitter `Black_01`，模块 `Initialize Particle`。
+> - 目的: 从早前任务中带入黑调/冲击层，作为远距离散发颜色或暗部冲击的粒子层。
+>
+> Niagara Preview:
+> - Preview 左侧可见大面积暗色/黑色圆形渐变，占据画面主体。
+> - `Particle Counts` 中 `Glow_02001` 与 `Black_01` 显示 Active；`Black_01002`、`Smoke_01`、`Smoke_02`、`Debris_01`、`Glow_05`、`Refraction_01`、`RadialBlur_01` 等显示 Disabled。
+>
+> System Overview / Stack:
+> - 可见 `Glow_02001`、`Black_01002`、`Black_01` 等 Emitter，其中 `Black_01002` 处于 Disabled 状态。
+> - `Black_01.Initialize Particle` 当前被选中，Stack 中可见 `Sprite Facing and Alignment`、`Particle State`、`Scale Sprite Size`、`Scale Color`、`Sprite Renderer`。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Black_01.Initialize Particle.Lifetime Mode` | `Direct Set` | enum | Details | 直接指定生命周期 |
+> | `Lifetime` | `1.0` | seconds | Details | 黑调层持续时间 |
+> | `Color Mode` | `Unset` | enum | Details | 初始化时不设置颜色 |
+> | `Position Mode` | `Simulation Position` | enum | Details | 使用模拟位置 |
+> | `Position Offset` | `(0.0, 0.0, 5.0)` | vector | Details | 初始位置偏移；只按 Details 字段记录 |
+> | `Position Offset Coordinate Space` | `Simulation` | enum | Details | 偏移按 Simulation 空间解释 |
+> | `Mass Mode` | `Unset / (Mass of 1)` | enum | Details | 默认质量 |
+> | `Sprite Size Mode` | `Uniform` | enum | Details | 使用统一 Sprite 尺寸 |
+> | `Uniform Sprite Size` | `600.0` | float | Details | 大面积黑调 Sprite |
+> | `Sprite Rotation Mode` | `Unset` | enum | Details | 不在 Initialize 中设旋转 |
+> | `Sprite UV Mode` | `Unset` | enum | Details | 不在 Initialize 中设 UV |
+>
+> Timeline:
+> - Timeline 当前约 `0.70`，`Black_01` 轨道被选中。
+>
+> 画面含义: 当前帧确认 `Black_01` 作为大尺寸黑调 Sprite 层启用，寿命 `1.0` 秒、Simulation 偏移字段为 `(0,0,5)`、统一尺寸 `600`，用于后续控制爆炸暗部/冲击感。
+
+### 00:09:28-00:14:14 关键流程 03
+
+- 本段定位：关键流程 03。
+- 知识点：原本的帧率 瞬间变成 消失 关于音調的部分将来可能 还有機会再看一次 我们看看冲擊波 0 USO Institute Edit feature 波浪大約在0.5秒时。
+- 知识点：本段围绕 `颜色` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：DingTong NGD Evd 綠色为0.8 紅色为0.5 这应该逐漸減少 时機大約從0.5秒开始減少 这樣突然出现和消失非常不自然 需要这樣做。
+- 知识点：先保存一次 微光的部分暫时已经完成 现在主要是爆炸的沙的流動 需要写下擴散的感覺。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Black_01.Scale Color` Alpha 淡入曲线
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Parameters/Curves + Timeline + 字幕
+> - 所属: Niagara System `Exp_01`，Emitter `Black_01`，模块 `Scale Color`。
+> - 目的: 调整黑调冲击层的透明度变化，避免瞬间出现/消失。
+>
+> Niagara Preview:
+> - Preview 中可见大面积黑色圆形渐变，中心和右侧较黑，边缘较柔和。
+> - `Particle Counts` 显示 `Glow_01`、`Glow_02`、`Glow_02001`、`Black_01` 为 Active；`Smoke_01`、`Smoke_02`、`Debris_01`、`Glow_05`、`Refraction_01`、`RadialBlur_01`、`Black_01002` 为 Disabled。
+>
+> System Overview / Stack:
+> - 可见 `Glow_02001`、`Black_01002`、`Black_01` 等 Emitter。
+> - `Black_01.Scale Color` 当前被选中，`Black_01` Stack 中可见 `Initialize Particle`、`Sprite Facing and Alignment`、`Particle State`、`Scale Sprite Size`、`Scale Color`、`Sprite Renderer`。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Black_01.Scale Color.Scale Mode` | `RGB and Alpha Separately` | enum | Details | RGB 和 Alpha 分开缩放 |
+> | `Scale RGB` | `(0.0, 0.0, 0.0)` | vector | Details | 保持黑色调 |
+> | `Scale Alpha` | `Float from Curve` | curve | Details | Alpha 由曲线驱动 |
+> | `Scale Alpha.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取 Alpha 曲线 |
+> | `Scale Alpha.Scale Curve` | `1.0` | float | Details | Alpha 曲线缩放 |
+>
+> 曲线:
+> - Alpha 曲线从接近 `0` 逐渐上升到接近 `1`，中后段趋于平缓。
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `0.70`，`Black_01` 轨道被选中。
+> - 字幕文本为“瞬间变成”。
+>
+> 画面含义: 当前帧把 `Black_01` 的 Alpha 改为随 `Particles.NormalizedAge` 渐进变化，用黑色 RGB 配合 Alpha 曲线控制冲击层出现方式。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Black_01002.Scale Color` RGB/Alpha 曲线
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline + 字幕
+> - 所属: Niagara System `Exp_01`，Emitter `Black_01002`，模块 `Scale Color`。
+> - 目的: 调整第二个黑调/冲击层的颜色向量、颜色强度和透明度时序。
+>
+> Niagara Preview:
+> - Preview 中仍可见大面积黑色圆形渐变。
+> - `Particle Counts` 显示 `Glow_01`、`Glow_02`、`Glow_02001`、`Black_01002`、`Black_01` 为 Active；Smoke、Debris、Refraction、RadialBlur 等多层为 Disabled。
+>
+> System Overview / Stack:
+> - 可见 `Glow_02`、`Glow_02001`、`Black_01002`、`Black_01`。
+> - `Black_01002.Scale Color` 当前被选中，`Black_01002` Stack 中可见 `Emitter State(Self/Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Camera Offset`、`Sprite Facing and Alignment`、`Particle State`、`Scale Sprite Size`、`Scale Color`、`Sprite Renderer`。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Black_01002.Scale Color.Scale Mode` | `RGB and Alpha Separately` | enum | Details | RGB 和 Alpha 分开缩放 |
+> | `Scale RGB.Vector` | `Vector from Curve` | curve | Details | RGB 分量由曲线驱动 |
+> | `Scale RGB.Vector.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取 RGB 向量曲线 |
+> | `Scale RGB.Vector.Scale Curve` | `(1.0, 1.0, 1.0)` | vector | Details | RGB 向量曲线缩放 |
+> | `Scale RGB.Float` | `Float from Curve` | curve | Details | 颜色强度由曲线驱动 |
+> | `Scale RGB.Float.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取强度曲线 |
+> | `Scale RGB.Float.Scale Curve` | `10.0` | float | Details | 颜色强度曲线缩放 |
+> | `Scale Alpha` | `Float from Curve` | curve | Details | Alpha 由曲线驱动 |
+> | `Scale Alpha.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取 Alpha 曲线 |
+> | `Scale Alpha.Scale Curve` | `1.2` | float | Details | Alpha 曲线缩放 |
+>
+> 曲线:
+> - RGB 向量曲线中红色分量约保持 `0.5`，绿色分量从约 `1.0` 下降到约 `0.8`，蓝色分量约保持 `1.0`。
+> - RGB Float 曲线从较高值逐渐下降到较低值，用于降低后段颜色强度。
+> - Alpha 曲线呈三角形：从 `0` 上升到中段接近 `1`，再回落到 `0`。
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `0.70`，`Black_01002` 轨道被选中。
+> - 字幕文本为“这个大小保持就可以”。
+>
+> 画面含义: 当前帧把第二个黑调层的颜色从偏蓝绿强度逐渐减弱，并用中段峰值的 Alpha 曲线控制显隐。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Black_01.Scale Sprite Size` 微光阶段收尾
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline + 编译弹窗 + 字幕
+> - 所属: Niagara System `Exp_01`，Emitter `Black_01`，模块 `Scale Sprite Size`。
+> - 目的: 保存/编译微光相关调整，并确认黑调层尺寸曲线。
+>
+> Niagara Preview:
+> - `Particle Counts` 中 `Glow_01`、`Glow_02`、`Glow_02001`、`Black_01002`、`Black_01` 为 Active；Smoke、Debris、Refraction、RadialBlur 等为 Disabled。
+> - Preview 区被编译等待弹窗部分遮挡，不作为最终视觉结果判断。
+>
+> System Overview / Stack:
+> - 可见 `Black_01002` 和 `Black_01`，二者均为 CPU Emitter。
+> - `Black_01.Scale Sprite Size` 当前被选中，Stack 中 `Scale Color` 与 `Sprite Renderer` 也处于启用状态。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Black_01.Scale Sprite Size.Scale Sprite Size Mode` | `Uniform Curve` | enum | Details | 使用统一曲线缩放 Sprite 尺寸 |
+> | `Uniform Curve Sprite Size` | `Curve for Floats` | curve | Details | 尺寸缩放曲线 |
+> | `Uniform Curve Index` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取曲线 |
+> | `Uniform Curve Scale` | `1.0` | float | Details | 曲线缩放 |
+>
+> 曲线:
+> - 尺寸曲线从约 `1.0` 逐渐上升到接近 `4.0`，中段平滑过渡。
+>
+> 编译 / Timeline / 字幕:
+> - 弹窗显示 `Waiting for compilation to complete`，进度 `0%`。
+> - Timeline 当前约 `1.03`，`Black_01` 轨道被选中。
+> - 字幕文本为“辉光的部分暂时已经完成。”。
+>
+> 画面含义: 当前帧记录微光/黑调层调整后的保存编译状态；`Black_01` 的尺寸按生命周期从约 `1` 扩大到约 `4`，微光部分暂时完成。
+
+### 00:14:14-00:19:13 Mesh、生命周期、透明度
+
+- 本段定位：Mesh、生命周期、透明度。
+- 知识点：我也会复制这个过来 在第四次爆炸中我们使用了一个消息发射器 需要复制这个过来 这可能会快一些 消息会用其他的 全部都是扁平的Mesh。
+- 知识点：circle做的圆形 需要使用这个 这樣擴散的感覺 但是也要复制材料带过来放進来 從材料对齊开始是最好的 先看看纹理。
+- 知识点：纹理是綠色的 这个放入颜色中 这里的慢反射部分会放入一点邊緣感的东西 髮線纹理和透明度应该不需要更改。
+- 知识点：從颜色的部分来看 白色的部分是想要呈现一种泡沫的感覺 还有颜色圖案应该没問題 是的要提升 飽和度好像要降低很多 原本綠色的部分比較強烈。
+- 知识点：适当降低一下圖案 邊緣力量保持不变 纹理设置为0 间变距離实际上是不必要的 接下来如果覺得有問題的話 檢查一下会有點腐爛 然后看到纹理设置。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`发射器`、`生命周期`、`颜色`、`透明度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 复制 Mesh 发射器前的关卡与资产语境
+> - 组成部分: 关卡 Viewport + Content Browser + Outliner + Sequencer + Niagara Editor 底部局部
+> - 所属: Level `06_Water_Explosion`，Content Browser 目录 `Particle/06`，Niagara System `Exp_01`。
+> - 目的: 在微光完成后切换到爆炸中 Mesh 水片/沙流动层的制作语境。
+>
+> 关卡 Viewport:
+> - 视口处于 `Pilot Actor: Cine Camera Actor`。
+> - 角色位于棋盘地面中央附近，画面中未显示完整水球或大范围爆炸环。
+> - 该帧主要用于确认当前场景、Sequencer 和资产选择，而不是最终粒子视觉验收。
+>
+> Content Browser / Outliner:
+> - Content Browser 位于 `Particle/06`，可见 `Cast_01`、`Cast_02`、`Exp_01` Niagara System；`Cast_01` 处于选中状态。
+> - Outliner 中可见 `06_Water_Explosion (Editor)`、`Cine Camera Ac`、`Floor`、`PlayerStart`、`PostProcessVo`、`Serath Future`、`SpotLight` 等，底部显示约 `8 actors`。
+>
+> Sequencer / Niagara Editor 局部:
+> - 底部 Sequencer 为 `06_Water_Explosion`，播放头在约 `0013` 附近。
+> - 底部还可见 `Exp_01` Niagara Editor 窗口标题和 `M_AdditiveDe_v01_Ins_02` 标签。
+>
+> 画面含义: 当前帧说明微光调整后回到关卡语境，准备复制/使用后续的 Mesh 发射器和材质来制作扩散水片。
+> 图表转写（UE-GTXT v4）
+> - 类型: `M_Mesh_v01_Ins_01` 材质实例参数与纹理
+> - 组成部分: 材质预览 + Details / Layer Parameters
+> - 所属: Material Instance `M_Mesh_v01_Ins_01`。
+> - 目的: 检查 Mesh 水片材质的颜色、纹理、透明度和边缘参数，用于爆炸扩散的泡沫/水片外观。
+>
+> 材质预览:
+> - 预览中显示多块不规则绿色亮纹，形态像碎裂水片/泡沫边缘。
+> - 左上角统计可见 `Base pass shader without light map: 208 instructions`、`Base pass vertex shader: 287 instructions`、`Texture samplers: 6/16`、`Texture Lookups (Est): VS(3), PS(7)`、`Num shaders added: 24`。
+>
+> Scalar 参数:
+> | 参数 | 值 | 作用 |
+> |---|---:|---|
+> | `Color_Tile_U` | `3.0` | 颜色纹理 U 平铺 |
+> | `Color_Tile_V` | `1.0` | 颜色纹理 V 平铺 |
+> | `ColorBias` | `2.0` | 颜色偏置/强度 |
+> | `Desaturation` | `0.0` | 去饱和度当前为 0 |
+> | `Diff_Tile_U` | `3.0` | Diff 纹理 U 平铺 |
+> | `Diff_Tile_V` | `1.0` | Diff 纹理 V 平铺 |
+> | `Edge_Pow` | `1.0` | 边缘强度幂 |
+> | `Fade_Dist` | `100.0` | 淡出距离 |
+> | `Normal_Tile_U` | `2.0` | 法线纹理 U 平铺 |
+> | `Normal_Tile_V` | `0.5` | 法线纹理 V 平铺 |
+> | `Opacity_Pow` | `1.0` | 透明度幂 |
+> | `Opacity_Str` | `50.0` | 透明度强度 |
+> | `RGB_Offset` | `0.005` | RGB 偏移 |
+> | `Tension` | `1.0` | 张力/形变相关强度 |
+>
+> Texture 参数:
+> | 参数 | 纹理 | 作用 |
+> |---|---|---|
+> | `Color_Tex` | `fx_liquid_diffuse_v02` | 绿色液体颜色纹理 |
+> | `Diff_Tex` | `line_v06` | 线状差异/边缘纹理 |
+> | `Normal_Tex` | `T_Voronoi_Cells_02_NRM` | Voronoi 单元法线 |
+> | `Opacity_Tex` | `T_Beam_Gradient_02` | 透明度渐变纹理 |
+>
+> Vector 参数:
+> - `BottomColor` 当前显示为白色，展开通道中 `R=1.0`、`G=1.0`、`B=1.0` 可见。
+>
+> 画面含义: 当前材质实例使用绿色液体纹理、线状 Diff、Voronoi 法线和 Beam Gradient 透明度来形成碎裂水片/泡沫边缘；后续可通过 `Desaturation`、`ColorBias`、`Opacity_Str` 等字段调整颜色和透明度。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Mesh_01.Initialize Particle` 扁平 Mesh 水片层初始化
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Parameters/Curves + Timeline + 字幕
+> - 所属: Niagara System `Exp_01`，Emitter `Mesh_01`，模块 `Initialize Particle`。
+> - 目的: 复制并启用 Mesh 发射器，用扁平 Mesh 表现爆炸扩散中的水片。
+>
+> Niagara Preview:
+> - `Particle Counts` 中 `Mesh_01` 显示 `1 Current, 1 Max (est.)` 且 Active；`Glow_01`、`Glow_02`、`Glow_02001`、`Black_01002`、`Black_01` 也为 Active，Smoke、Debris、Refraction、RadialBlur 等为 Disabled。
+> - Preview 中可见几片蓝白色半透明水片/碎片，分布在画面四周和下方。
+>
+> System Overview / Stack:
+> - `Mesh_01` 为 CPU Emitter。
+> - Stack 中可见 `Emitter State(Self/Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Initial Mesh Orientation(None)`、`Particle State`、`Scale Mesh Size`、`Dynamic Material Parameters`、`Scale Color`、`Mesh Renderer`。
+> - `Initialize Particle` 当前被选中，`Mesh Renderer` 启用。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Mesh_01.Initialize Particle.Lifetime Mode` | `Direct Set` | enum | Details | 直接指定生命周期 |
+> | `Lifetime` | `1.35` | seconds | Details | Mesh 水片持续时间 |
+> | `Color Mode` | `Unset` | enum | Details | 初始化时不设置颜色 |
+> | `Position Mode` | `Simulation Position` | enum | Details | 使用模拟位置 |
+> | `Position Offset` | `(0.0, 0.0, 0.0)` | vector | Details | 不额外偏移；只按 Details 字段记录 |
+> | `Mass Mode` | `Unset / (Mass of 1)` | enum | Details | 默认质量 |
+> | `Sprite Size Mode` | `Unset` | enum | Details | 不使用 Sprite Size 初始化 |
+> | `Mesh Scale Mode` | `Uniform` | enum | Details | 统一 Mesh 缩放 |
+> | `Mesh Uniform Scale` | `0.7` | float | Details | 初始 Mesh 缩放 |
+> | `Mesh Renderer Array Visibility` | `Unset` | enum | Details | 不额外设置 Renderer Array Visibility |
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `0.93`，可见 `Mesh_01` 相关片段与前面发光/黑调层叠加。
+> - 字幕文本为“这是主要的水在扩散时分散的水的感觉，略微保留液体的感觉。”。
+>
+> 画面含义: 当前帧新增 `Mesh_01` 扁平 Mesh 水片层，寿命 `1.35` 秒、统一缩放 `0.7`，用于在爆炸扩散时表现分散水片并保留液体感。
+
+### 00:19:13-00:23:48 生命周期
+
+- 本段定位：生命周期。
+- 知识点：減少生命周期适当抬高一下 邀請函可能不需要 網格大小变化太劇烈 反而不好 快速形成的感覺 大小迅速增大 调整成完成的心態 最重要的是现在的动态參數方面。
+- 知识点：感覺到泛光 從1.4开始到1.5 利益感覺不需要太極端快速 外國感覺 從0.1开始到0.3左右 完成 徽章变化 幅度可以小一点 比起完全圍領。
+- 知识点：这种方式 然后颜色強度这樣可以 停 放回 现在就有个點切式的問題 需要抓住这个 似乎是因为黑色調 像是有一些解決問題 现在被黑色調遮蓋了 这樣做一下色調 色調可能会接近白色。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`生命周期`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Mesh_01.Initial Mesh Orientation` 旋转设置
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Parameters/Curves + Timeline
+> - 所属: Niagara System `Exp_01`，Emitter `Mesh_01`，模块 `Initial Mesh Orientation`。
+> - 目的: 调整 Mesh 水片的初始朝向，并检查黑调层遮挡下的水片分布。
+>
+> Niagara Preview:
+> - Preview 中可见黑色圆形层遮挡中心区域，外圈有蓝白水片/泡沫碎片。
+> - `Particle Counts` 中 `Mesh_01`、`Black_01`、`Black_01002`、`Glow_02001`、`Glow_01`、`Glow_02` 为 Active；Smoke、Debris、Refraction、RadialBlur 等为 Disabled。
+>
+> System Overview / Stack:
+> - `Mesh_01` 为 CPU Emitter。
+> - Stack 中 `Initial Mesh Orientation` 当前被选中；`Initialize Particle`、`Scale Mesh Size`、`Dynamic Material Parameters`、`Scale Color` 和 `Mesh Renderer` 均可见。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Mesh_01.Initial Mesh Orientation.Mesh Orientation Mode` | `None` | enum | Details | 不使用预设朝向模式 |
+> | `Rotation` | `(0.0, 0.0, 0.2)` | vector | Details | 初始旋转字段；只按 Details 字段记录 |
+> | `Rotation Coordinate Space` | `Mesh` | enum | Details | 旋转按 Mesh 空间解释 |
+>
+> Timeline:
+> - Timeline 当前约 `0.65`，`Mesh_01` 与黑调层片段在起始区间叠加。
+>
+> 画面含义: 当前帧给 `Mesh_01` 设置 Mesh 空间旋转字段 `(0,0,0.2)`，同时显示黑调层仍会遮挡水片中心区域。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Mesh_01.Dynamic Material Parameters` 动态参数曲线
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline
+> - 所属: Niagara System `Exp_01`，Emitter `Mesh_01`，模块 `Dynamic Material Parameters`。
+> - 目的: 调整 Mesh 水片材质的动态参数，让扩散、边缘和颜色强度变化更平滑。
+>
+> Niagara Preview:
+> - Preview 中只有很弱的蓝白水片亮点，黑调遮挡仍明显。
+> - `Particle Counts` 中 `Mesh_01`、`Black_01`、`Black_01002` 等为 Active。
+>
+> Stack:
+> - `Mesh_01.Dynamic Material Parameters` 当前被选中。
+> - `Mesh_01` Stack 中 `Scale Mesh Size`、`Dynamic Material Parameters`、`Scale Color`、`Mesh Renderer` 均启用。
+>
+> Details / 曲线:
+> | 参数 | 值或曲线 | 曲线索引 | Scale Curve | 作用 |
+> |---|---|---|---:|---|
+> | 第一个可见 FloatCurve | 从约 `0.1` 上升并在末段接近 `0.3` | `Particles.NormalizedAge` | `1.0` | 让某个动态参数由弱到中等强度 |
+> | `EdgeAdd` | `Float from Curve`，从约 `1.0` 下降到约 `0.5` | `Particles.NormalizedAge` | `1.0` | 边缘附加强度逐渐降低 |
+> | `ColorPower` | `Float from Curve`，整体略微上升 | `Particles.NormalizedAge` | `1.0` | 颜色强度随生命周期略提升 |
+>
+> Timeline:
+> - Timeline 当前约 `1.02`，`Mesh_01` 与前面 Glow/Black 层重叠。
+>
+> 画面含义: 当前帧重点是 `Mesh_01` 动态材质参数的曲线调整：一个参数逐步升到约 `0.3`，边缘附加值逐渐降到约 `0.5`，颜色强度略升，用于降低突兀变化。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Mesh_01.Scale Color` 颜色强度与 Alpha 曲线
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline
+> - 所属: Niagara System `Exp_01`，Emitter `Mesh_01`，模块 `Scale Color`。
+> - 目的: 调整 Mesh 水片颜色强度和透明度，减少黑调遮挡后的割裂感。
+>
+> Niagara Preview:
+> - Preview 中出现明亮蓝白水片爆开形态，中心仍被黑调层部分覆盖。
+> - `Mesh_01`、`Black_01`、`Black_01002`、`Glow_02001` 等均为 Active。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Mesh_01.Scale Color.Scale Mode` | `RGB and Alpha Separately` | enum | Details | RGB 与 Alpha 分开缩放 |
+> | `Scale RGB` | `Multiply Vector by Float` | mode | Details | 颜色向量乘强度曲线 |
+> | `Scale RGB.Vector` | `(2.0, 3.0, 10.0)` | vector | Details | 偏蓝白的高强度颜色 |
+> | `Scale RGB.Float` | `Float from Curve` | curve | Details | RGB 强度由曲线控制 |
+> | `Scale RGB.Float.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取强度曲线 |
+> | `Scale RGB.Scale Curve` | `7.0` | float | Details | RGB 曲线缩放 |
+> | `Scale Alpha` | `Float from Curve` | curve | Details | Alpha 由曲线控制 |
+> | `Scale Alpha.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取 Alpha 曲线 |
+> | `Scale Alpha.Scale Curve` | `2.0` | float | Details | Alpha 曲线缩放 |
+>
+> 曲线:
+> - RGB Float 曲线从高值快速下降到接近 `0`。
+> - Alpha 曲线先快速上升到接近 `1`，然后逐渐下降到接近 `0`。
+>
+> 画面含义: 当前帧使用强蓝白 RGB 和快速衰减曲线让 Mesh 水片短时变亮，再通过 Alpha 曲线让水片逐渐消失。
+
+### 00:23:48-00:28:42 速度、透明度
+
+- 本段定位：速度、透明度。
+- 知识点：这部分請去掉 变为1的值 再添加一个從0.3秒开始減小 感覺变得更順滑 首先看这种感覺 就是这种邊緣的感覺 让人聯想到水的運動 我再看看 这个看起来是從中间开始的感覺。
+- 知识点：更大地爆发 感覺像白色的泡沫 從这里开始就是有什么需要釋放 看起来需要更遠地擴散 以核心元素为起點 向外擴散的感覺 开始吧 复制一下 把材质复制过来。
+- 知识点：也從材质开始 对準分區 这次分區的感覺更像水 剛才适当更密一些 反射值感覺适当少一点 而且这樣的泡沫感覺 应该更接近液体的感覺 常規的無論如何都要保持模式一致。
+- 知识点：看起来更同一脈絡的好 而且透明度和颜色質应该不需要 还有适当简单的颜色感 即使遠離 就是这个性感本身适当 这樣的閃亮效果有點雜亂 所以磁磚的高度不宜过高。
+- 知识点：擴散器保持了磁磚的某种程度相似 功率适当提升 常規磁磚也随着遠離 显得更皺皺巴巴 很好 那麼材质就在这程度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`速度`、`颜色`、`透明度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Mesh_01.Scale Color` 降低蓝色强度后的颜色设置
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline
+> - 所属: Niagara System `Exp_01`，Emitter `Mesh_01`，模块 `Scale Color`。
+> - 目的: 将 Mesh 水片颜色从过强蓝色改为更白、更接近泡沫的颜色。
+>
+> Niagara Preview:
+> - Preview 中水片整体更偏白，亮部集中在扩散水片边缘和中心泡沫区域。
+> - 黑调层仍在背景中，但水片可读性更强。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Mesh_01.Scale Color.Scale Mode` | `RGB and Alpha Separately` | enum | Details | RGB 与 Alpha 分开缩放 |
+> | `Scale RGB.Vector` | `(2.0, 2.5, 3.0)` | vector | Details | 降低蓝色分量，使颜色更接近白色 |
+> | `Scale RGB.Float` | `Float from Curve` | curve | Details | RGB 强度由曲线控制 |
+> | `Scale RGB.Float.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取曲线 |
+> | `Scale RGB.Scale Curve` | `7.0` | float | Details | RGB 曲线缩放 |
+> | `Scale Alpha` | `Float from Curve` | curve | Details | Alpha 由曲线控制 |
+> | `Scale Alpha.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取曲线 |
+> | `Scale Alpha.Scale Curve` | `2.0` | float | Details | Alpha 曲线缩放 |
+>
+> 曲线:
+> - RGB Float 曲线保持较高平台。
+> - Alpha 曲线仍为先快速上升、再逐步衰减。
+>
+> 画面含义: 当前帧把 `Mesh_01` 颜色向量从强蓝改为 `(2.0,2.5,3.0)`，使水片更像白色泡沫，并保留原有显隐节奏。
+> 图表转写（UE-GTXT v4）
+> - 类型: `M_Mesh_v01_Ins_02` 材质实例参数
+> - 组成部分: Content Browser + 材质预览 + Details / Layer Parameters + 纹理悬浮信息 + 字幕
+> - 所属: Material Instance `M_Mesh_v01_Ins_02`。
+> - 目的: 复制 Mesh 材质并调整纹理、去饱和、边缘、透明度和折射，使水片更接近泡沫/液体。
+>
+> 材质预览:
+> - 预览中显示灰白、低饱和的竖向碎裂纹理，整体比前一材质更接近泡沫。
+> - 左上角统计可见 `Texture samplers: 6/16`、`Texture Lookups (Est): VS(3), PS(7)`、`Num shaders added: 28`。
+>
+> Scalar 参数:
+> | 参数 | 值 | 作用 |
+> |---|---:|---|
+> | `Color_Tile_U` | `3.0` | 颜色纹理 U 平铺 |
+> | `Color_Tile_V` | `1.0` | 颜色纹理 V 平铺 |
+> | `ColorBias` | `2.0` | 颜色偏置/强度 |
+> | `Desaturation` | `0.8` | 大幅降低绿色饱和度 |
+> | `Diff_Tile_U` | `3.0` | Diff 纹理 U 平铺 |
+> | `Diff_Tile_V` | `0.5` | Diff 纹理 V 平铺 |
+> | `Edge_Pow` | `2.0` | 提升边缘力量 |
+> | `Fade_Dist` | `0.0` | 不使用距离淡出 |
+> | `Normal_Tile_U` | `3.0` | 法线纹理 U 平铺 |
+> | `Normal_Tile_V` | `0.5` | 法线纹理 V 平铺 |
+> | `Opacity_Pow` | `0.5` | 降低透明度幂 |
+> | `Opacity_Str` | `5.0` | 透明度强度 |
+> | `Refraction_Str` | `1.05` | 折射强度 |
+> | `RGB_Offset` | `0.005` | RGB 偏移 |
+> | `Tension` | `1.0` | 张力/形变相关强度 |
+>
+> Texture 参数:
+> | 参数 | 纹理 | 作用 |
+> |---|---|---|
+> | `Color_Tex` | `fx_liquid_diffuse_v01` | 灰白液体颜色纹理 |
+> | `Diff_Tex` | `line_v06` | 线状差异/边缘纹理 |
+> | `Normal_Tex` | `T_Voronoi_Cells_02_NRM` | Voronoi 单元法线 |
+> | `Opacity_Tex` | `T_Beam_Gradient_02` | 透明度渐变 |
+>
+> 纹理悬浮信息:
+> - `fx_liquid_diffuse_v01` 路径为 `/Game/Coloso_Second/Texture`。
+> - 格式 `DXT1`，尺寸 `256 x 256`，`sRGB: True`，`Has Alpha Channel: False`。
+>
+> 字幕:
+> - 字幕文本为“而且这样的泡沫感觉”。
+>
+> 画面含义: 当前帧把复制材质 `M_Mesh_v01_Ins_02` 调成低饱和、白灰泡沫方向，并保留液体纹理、线状边缘、Voronoi 法线和透明度渐变。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Mesh_01001.Dynamic Material Parameters` 扩散材质动态参数
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline + 字幕
+> - 所属: Niagara System `Exp_01`，Emitter `Mesh_01001`，模块 `Dynamic Material Parameters`。
+> - 目的: 复制第二个 Mesh 水片层，并通过动态材质参数制造更远、更连续的扩散。
+>
+> Niagara Preview:
+> - Preview 中可见两组蓝白水片形成更大的扩散面，中心到外缘有连续的水片纹理。
+> - `Particle Counts` 中 `Mesh_01` 和 `Mesh_01001` 均为 Active；Glow/Black 层也仍在列表中。
+>
+> System Overview / Stack:
+> - 可见 `Mesh_01` 与 `Mesh_01001` 两个 CPU Mesh Emitter。
+> - `Mesh_01001.Dynamic Material Parameters` 当前被选中，Stack 中 `Scale Mesh Size`、`Dynamic Material Parameters`、`Scale Color`、`Mesh Renderer` 均启用。
+>
+> Details / 曲线:
+> | 参数 | 值或曲线 | 曲线索引 | Scale Curve | 作用 |
+> |---|---|---|---:|---|
+> | `Panning_Opaci...` | `Float from Curve`，曲线从较高值下降到约 `-0.2` | `Particles.NormalizedAge` | `1.0` | 控制透明/平移相关动态参数 |
+> | `Distortion` | `Float from Curve`，曲线从 `0` 上升到约 `0.3` | `Particles.NormalizedAge` | `1.0` | 扩散过程中增强扭曲 |
+> | `EdgeAdd` | `Float from Curve`，下方可见曲线项 | `Particles.NormalizedAge` | 未完全显示 | 控制边缘附加强度 |
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `0.93`。
+> - 字幕文本为“作为连续性的元素会很好。”。
+>
+> 画面含义: 当前帧将 `Mesh_01001` 作为第二个 Mesh 水片层加入，动态参数让透明/平移相关值下降、扭曲升到约 `0.3`，增强连续扩散感。
+
+### 00:28:42-00:30:37 关键流程 07
+
+- 本段定位：关键流程 07。
+- 知识点：爆炸了 就是像那种完全展開的感覺 这樣做的感覺 不是太多波紋 感覺上濕真值似乎太強了 所以这樣 邊緣和弧度的邊緣 颜色強度就把这个刪掉。
+- 知识点：因为如果強度值提高 填充空间的颜色感覺会弱一点 網格大小可能不用 一臉没有吧 前面那个位置的时機不是 下一次只调整一下颜色。
+- 知识点：这个基準颜色只保持 亮度移动的感覺 调整一下就会好一点 謝謝。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Mesh_01001.Dynamic Material Parameters` 展开后段曲线
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline
+> - 所属: Niagara System `Exp_01`，Emitter `Mesh_01001`，模块 `Dynamic Material Parameters`。
+> - 目的: 检查完全展开阶段的水片动态参数，减少过多波纹和过强湿润感。
+>
+> Niagara Preview:
+> - Preview 中水片亮度较低，外圈只剩较暗的水片痕迹。
+> - `Particle Counts` 显示 `Glow_01`、`Glow_02`、`Glow_02001`、`Black_01002`、`Black_01` 为 Complete，`Mesh_01` 与 `Mesh_01001` 为 Inactive；Smoke、Debris 等为 Disabled。
+>
+> Details / 曲线:
+> | 参数 | 值或曲线 | 曲线索引 | Scale Curve | 作用 |
+> |---|---|---|---:|---|
+> | `Panning_Opaci...` | 从约 `0.7` 下降到约 `-0.2` | `Particles.NormalizedAge` | `1.0` | 后段降低透明/平移相关动态值 |
+> | `Distortion` | 从 `0` 上升到约 `0.3` | `Particles.NormalizedAge` | `1.0` | 后段保持一定扭曲 |
+> | `EdgeAdd` | 可见下方曲线项，末段趋低 | `Particles.NormalizedAge` | 未完全显示 | 控制边缘附加强度 |
+>
+> Timeline:
+> - Timeline 当前约 `1.09`，播放头已过主要爆发区间。
+>
+> 画面含义: 当前帧检查 `Mesh_01001` 在完全展开后的动态参数和衰减状态，水片不再保持强亮，边缘和扭曲保留较弱痕迹。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Mesh_01001.Dynamic Material Parameters` 边缘/扭曲/颜色强度复查
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline
+> - 所属: Niagara System `Exp_01`，Emitter `Mesh_01001`，模块 `Dynamic Material Parameters`。
+> - 目的: 在更亮的泡沫团预览下复查动态材质参数，控制边缘、扭曲和颜色强度。
+>
+> Niagara Preview:
+> - Preview 中水片形成较亮的白色泡沫团，外侧带柔和发光。
+> - `Mesh_01`、`Mesh_01001`、`Black_01`、`Black_01002`、`Glow_02001` 等均为 Active。
+>
+> Details / 曲线:
+> | 参数 | 值或曲线 | 曲线索引 | Scale Curve | 作用 |
+> |---|---|---|---:|---|
+> | `Distortion` | Float Curve 从低值上升到较高值，末段趋于平缓 | `Particles.NormalizedAge` | `1.0` | 控制水片扭曲 |
+> | `EdgeAdd` | Float Curve 从约 `1.0` 下降到约 `0.5` | `Particles.NormalizedAge` | `1.0` | 降低边缘附加强度 |
+> | `ColorPower` | Float Curve 从约 `0.5` 上升到接近 `1.0` | `Particles.NormalizedAge` | 可见曲线项 | 让颜色强度后段提高 |
+>
+> Timeline:
+> - Timeline 当前约 `0.40`，处于主要水片显示阶段。
+>
+> 画面含义: 当前帧在亮泡沫团预览下复查 `Mesh_01001` 的动态材质参数：扭曲增强、边缘附加强度下降、颜色强度提高，用于平衡泡沫亮度和边缘细节。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Mesh_01001.Scale Color` 最终颜色基准
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline
+> - 所属: Niagara System `Exp_01`，Emitter `Mesh_01001`，模块 `Scale Color`。
+> - 目的: 收尾调整 Mesh 水片的基础颜色和透明度曲线，使亮度移动更自然。
+>
+> Niagara Preview:
+> - Preview 中水片形成亮白泡沫团，边缘柔和，整体颜色比强蓝阶段更接近白色。
+> - `Mesh_01001` 与 `Mesh_01` 均为 Active，Glow/Black 层也为 Active。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Mesh_01001.Scale Color.Scale Mode` | `RGB and Alpha Separately` | enum | Details | RGB 与 Alpha 分开缩放 |
+> | `Scale RGB` | `Multiply Vector by Float` | mode | Details | 颜色向量乘强度曲线 |
+> | `Scale RGB.Vector` | `(2.0, 2.5, 3.0)` | vector | Details | 白蓝倾向的泡沫颜色 |
+> | `Scale RGB.Float` | `Float from Curve` | curve | Details | RGB 强度由曲线控制 |
+> | `Scale RGB.Float.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取强度曲线 |
+> | `Scale RGB.Scale Curve` | `1.0` | float | Details | RGB 曲线缩放 |
+> | `Scale Alpha` | `Float from Curve` | curve | Details | Alpha 由曲线控制 |
+> | `Scale Alpha.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取 Alpha 曲线 |
+> | `Scale Alpha.Scale Curve` | `2.0` | float | Details | Alpha 曲线缩放 |
+>
+> 曲线:
+> - RGB Float 曲线保持平直高位。
+> - Alpha 曲线从 0 快速上升到高位，中段保持后再逐步下降到 0。
+>
+> Timeline:
+> - Timeline 当前约 `0.29`，处于泡沫团亮度较高阶段。
+>
+> 画面含义: 当前帧将 `Mesh_01001` 的颜色基准保持为 `(2.0,2.5,3.0)`，用稳定 RGB 强度和先升后降的 Alpha 曲线完成最终白色泡沫亮度调整。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

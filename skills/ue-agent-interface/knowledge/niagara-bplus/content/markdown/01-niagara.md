@@ -1,0 +1,350 @@
+# [配音]01. 虚幻项目设置与Niagara简介
+
+# [配音]01. 虚幻项目设置与Niagara简介
+
+## 关键术语
+
+- `Material`、`Mesh`、`粒子`、`发射器`、`系统`、`精灵`、`网格`、`碰撞`、`生命周期`、`速度`、`Niagara`、`Emitter`、`Particle`、`Spawn Rate`、`Spawn`、`Particle Spawn`、`Niagara System`、`Particle Update`
+
+## 分段知识
+
+### 00:00:00-00:04:48 Niagara、Material、Mesh
+
+- 本段定位：Niagara、Material、Mesh。
+- 知识点：围绕当前效果继续调整 Niagara 系统，需结合关键画面确认实际节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Niagara`、`Material`、`发射器`、`系统`、`序列`、`颜色`、`烟雾`、`火焰`。
+
+**关键画面：**
+
+这一帧不是 Unreal 编辑器，而是课程开场用来展示学习目标的成品特效示例。画面说明后续课程会围绕一个由电弧、烟雾和火花组成的魔法门/能量通道效果展开
+
+- 当前画面
+  左侧主画面中央是一组蓝色发光电弧
+  顶部是一条横向电流边
+  两条斜向电弧从顶部左右两端向下汇聚，构成近似倒梯形或能量门轮廓
+  底部中央有一个较暗的装置或石柱作为电弧汇聚点
+  门体内部和底部区域漂浮大量橙黄色火花
+  背景被蓝色雾气和体积光填满，强化能量感
+- 教程含义
+  这张图的作用不是讲参数，而是先给出课程最终要接近的视觉目标
+  观众可以从中直接读出至少三层核心组成
+  蓝色主电弧轮廓
+  环境烟雾/能量雾
+  底部高亮火花与粒子散射
+- 复建要点
+  如果要复建这类效果，不能只做一条电弧
+  需要同时准备主轮廓、电弧内部细流、背景雾层和底部粒子层
+  这也解释了为什么课程一开始就同时提到 `Niagara`、`Material` 和 `Mesh`
+这一帧还没进入 Niagara 编辑，而是在 Unreal 项目初始场景中整理内容结构。重点是通过给文件夹设置颜色来提升项目可读性
+
+- 当前场景
+  视口中是默认天空、地平线和平面地板
+  关卡里只有基础环境对象
+  `DirectionalLight`
+  `ExponentialHeightFog`
+  `SkyAtmosphere`
+  `SkyLight`
+  `SM_SkySphere`
+  `VolumetricCloud`
+  `Floor`
+  `PlayerStart`
+- 内容浏览器
+  当前内容根目录下有大量项目文件夹
+  例如
+  `Advanced_Cathedral`
+  `AudioReactive`
+  `CitySample Vehicles`
+  `StarterContent`
+  `Megascans`
+  `MetaHumans`
+  `MotionCourse`
+  等
+  其中一个文件夹被选中并打开右键菜单
+- 右键菜单操作
+  当前高亮的是 `Set Color`
+  右侧展开多个颜色选项
+  可见这是在给内容浏览器里的文件夹分配标识色
+- 可确认的制作结论
+  这张图的重点不是特效参数，而是项目管理习惯
+  在课程早期先用文件夹颜色和分类整理资源，后面做 Niagara、材质和网格时更容易快速定位依赖内容
+这一帧正式进入 Niagara System 编辑器，讲解一个全新系统在默认状态下只有一个总览主节点
+
+- 当前系统
+  标签页显示系统名为 `NS_Intro`
+  中央 `System Overview` 画布中只有一个节点
+  节点标题同样是 `NS_Intro`
+- 当前可见层级
+  该节点下自带几个基础分组
+  `Properties`
+  `User Parameters`
+  `System Spawn`
+  `System Update`
+  `System State`
+- 其他界面区域
+  左侧预览窗口当前是空黑画面
+  右侧 `Details` 面板暂无具体条目
+  下方时间线游标位于 `0.00`
+  左下有 `Local Modules`、`User Parameters`、`Parameters` 页签
+- 教学含义
+  字幕明确说“by default, you have this Niagara Overview node”
+  这张图的目的就是让初学者先认识到
+  新建 Niagara System 后，最顶层并不是直接看到粒子模块
+  而是先看到系统级总览节点，后续发射器和粒子模块都会挂在这个结构下面
+
+### 00:04:48-00:09:30 粒子、发射器、系统
+
+- 本段定位：粒子、发射器、系统。
+- 知识点：现在我选中了整个发射器 右边细节面板里 能看到发射器里所有模块的参数 也可以单独选中某个分组 比如说发射器更新组。
+- 知识点：就能看到这个组里所有模块的参数 或者直接选中某个模块 就只看它的参数 接下来我们来生成一些例子 接下来在发射器更新组里。
+- 知识点：让它们往上飞起来 在例子生成处 我点下加号 搜一下添加速度 这些模块后面课程里都会讲到 来加个速度。
+- 知识点：现在是加在粒子更新组 不是粒子生成粒 Niagara发射器最关键的差异 就是这两大组区别 粒子生成指的是粒子刚诞生时的初始状态。
+- 知识点：粒子刚诞生时 我给它设定寿命 设置它的尺寸 我们这里给它施加一点初速度 只在生成时 粒子更新阶段会随时间动态调整粒子。
+- 知识点：它们在整个寿命期间会怎样 如果想让它们受重力影响 在整个生命周期里 如果想让粒子更新阶段 可以在粒子更新组里加上重力作用。
+- 知识点：我就点这里加号搜一下重力作用 默认重力太强了 所以得把初始速度调高 让粒子先往上飞再落下 速度设成600左右就行。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Niagara`、`粒子`、`发射器`、`系统`、`生命周期`、`速度`、`曲线`、`碰撞`。
+
+**关键画面：**
+
+这一帧开始讲一个最小发射器的基础结构，以及在总览里选中不同层级时，右侧 `Details` 会显示对应层级的参数
+
+- 当前系统结构
+  系统仍是 `NS_Intro`
+  除系统节点外，右侧已经有一个发射器
+  发射器名为 `Minimal`
+  发射器内部可见完整基础分组
+  `Properties`
+  `Emitter Summary`
+  `Emitter Spawn`
+  `Emitter Update`
+  `Particle Spawn`
+  `Particle Update`
+  `Render`
+  默认模块包括
+  `Emitter State`
+  `Initialize Particle`
+  `Particle State`
+  `Sprite Renderer`
+- 当前选中内容
+  中央高亮的是 `Emitter Update` 里的 `Emitter State`
+  右侧 `Details` 面板对应显示 `Minimal` 下该模块的设置
+  当前可见分类主要是
+  `Life Cycle`
+  `Scalability`
+  并提供 `System / Self` 两种模式按钮
+- 其他信息
+  左侧预览仍为空，粒子数显示 `0 Current`
+  时间线在 `1.50`
+  下方时间轨里已经出现 `Minimal` 发射器轨道
+- 教学含义
+  这张图要说明的是
+  Niagara 中可以先在总览里选中“整个发射器”“某个分组”或“某个模块”
+  右侧面板会自动切换到对应层级的参数
+  这样比在大图里盲找参数更高效，也是后续调试的基本操作方式
+这一帧在用一个简单发射器直接解释 `Particle Spawn` 的职责：粒子刚出生时要被赋予哪些初始属性
+
+- 当前发射器结构
+  发射器名为 `emitter_basic`
+  可见模块包括
+  `Emitter State`
+  `Spawn Rate`
+  `Particle Spawn`
+  `Initialize Particle`
+  `Add Velocity in Cone`
+  `Particle Update`
+  `Particle State`
+  `Solve Forces and Velocity`
+  `Sprite Renderer`
+- 左侧预览
+  预览里是一团向下收尖、向上扩散的白色粒子锥形体
+  说明粒子出生时就被赋予了一个锥形速度方向
+  当前粒子计数约 `446 Current`
+- 右侧 `Initialize Particle`
+  `Lifetime Mode = Direct Set`
+  `Lifetime = 5.0`
+  `Position Mode = Simulation Position`
+  `Sprite Size Mode = Uniform`
+  `Uniform Sprite Size = 10.0`
+  其余颜色和旋转相关项大多仍是 `Unset`
+- 右侧 `Add Velocity`
+  `Velocity Mode = In Cone`
+  `Velocity Speed = 1100.0`
+  `Distribution Along Cone Axis = 0.5`
+  `Speed Random Range From Cone Axis = 0.7`
+  `Cone Axis = (0.0, 0.0, 1.0)`
+  `Cone Angle = 45.0`
+  `Inner Cone Angle = 10.0`
+  `Cone Angle Mode = Degrees`
+  `Rotation Coordinate Space = Local`
+- 教学含义
+  字幕明确说 `Particle spawn is what happens ... when they're initially born`
+这张图要让读者理解
+  `Particle Spawn` 处理的是出生瞬间的一次性初始化
+  比如寿命、尺寸和初速度方向
+  而不是粒子存活期间持续变化的逻辑
+这一帧转到 `Particle Update`，用一个尺寸曲线解释粒子在存活期间会怎样连续变化
+
+- 当前发射器结构
+  发射器名为 `emitter_basic`
+  可见模块包括
+  `Emitter State`
+  `Spawn Rate`
+  `Particle Spawn`
+  `Initialize Particle`
+  `Add Velocity in Cone`
+  `Particle Update`
+  `Particle State`
+  `Scale Sprite Size`
+  `Gravity Force`
+  `Collision`
+  `Solve Forces and Velocity`
+  `Sprite Renderer`
+- 当前选中模块
+  中央高亮的是 `Particle Update` 下的 `Scale Sprite Size`
+  右侧 `Details` 面板显示的也是这个模块
+  `Scale Sprite Size Mode = Uniform Curve`
+  曲线类型为 `Curve for Floats`
+  `Uniform Curve Index = PARTICLES.NormalizedAge`
+  `Uniform Curve Scale = 1.0`
+- 曲线含义
+  横轴表示粒子归一化生命周期，从 `0` 到 `1`
+  纵轴表示尺寸缩放值
+  当前曲线从左下角接近 `0` 的位置起步
+  随生命周期推进近似线性上升
+  在接近寿命末端时升到约 `0.8`
+  说明粒子出生时很小，随后逐渐放大
+- 其他界面信息
+  左侧预览当前是黑底，粒子计数约 `45 Current, 996 Max (est.)`
+  下方时间线停在约 `0.47`
+  这与字幕“生命周期开始时，也就是 0%”相对应
+- 教学含义
+  这张图要和上一张 `Particle Spawn` 区分开
+  `Particle Spawn` 负责出生瞬间的初始值
+  `Particle Update` 负责粒子活着的时候逐帧更新
+  用 `NormalizedAge` 驱动尺寸曲线，是最基础的“随生命周期改变外观”的做法
+
+### 00:09:30-00:11:32 粒子、发射器、系统
+
+- 本段定位：粒子、发射器、系统。
+- 知识点：那就把它调回5秒 让粒子慢慢变大 再慢慢缩小 可以选一个现成的预设 不过我们还是自己动手做吧 让你看看这图表是怎么运作的 我右键点一下 加个关键帧。
+- 知识点：目标是粒子一出生就很快变大 设成0.2就行 再设成1 再加一个关键帧 把最后一个调0 这样就是1和0 然后按Ctrl加A 再按键盘上的2 让它们变成平滑的。
+- 知识点：粒子一开始是看不见的 接着快速膨胀到最大尺寸 随后慢慢收缩 直至消失 这张图就是用来控制粒子大小。
+- 知识点：随时间变化的 现在我只要拖动Niagara系统 就能随意移动了 注意到了吗 我只动了发射器 没动整个效果 要是想移动整个效果 得去属性面板。
+- 知识点：把空间模式设为局部空间 现在移动它 整个都跟着动了 这个在做火焰环特效和其他效果时 特别关键 就是做火焰环模拟和一些其他特效的时候 所以你要留意局部空间怎么运作。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Niagara`、`粒子`、`发射器`、`系统`、`速度`、`碰撞`、`局部空间`、`烟雾`。
+
+**关键画面：**
+
+这一帧仍在演示 `Scale Sprite Size`，但时间线已经推进到粒子生命周期后段，用来观察曲线在实际预览中的结果
+
+- 当前模块
+  发射器仍是 `emitter_basic`
+  选中模块仍是 `Particle Update` 下的 `Scale Sprite Size`
+  右侧参数保持
+  `Scale Sprite Size Mode = Uniform Curve`
+  `Uniform Curve Index = PARTICLES.NormalizedAge`
+  `Uniform Curve Scale = 1.0`
+- 曲线状态
+  曲线从生命周期起点的低值持续上升
+  到寿命末端附近接近 `0.8`
+  说明粒子会随着年龄增加逐渐放大，而不是一开始就保持固定大小
+- 预览结果
+  左侧黑底预览里能看到一团向外扩散的白色粒子
+  下半部和边缘处的粒子圆点明显更大、更亮
+  上半部远处则仍有较小粒子，形成大小混合的层次
+  当前粒子计数约 `500 Current, 996 Max (est.)`
+  时间线指针在约 `7.73`
+- 教学含义
+  这张图把“参数曲线”与“预览结果”对应起来
+  同一条 `NormalizedAge` 尺寸曲线会让粒子在后期看起来比前期更大
+  所以 `Particle Update` 不只是改数值面板，而是直接决定粒子在时间上的视觉演化
+这一帧回到 Unreal 关卡视口，演示 Niagara System 作为场景中的一个 Actor 实例，可以直接在场景里拖动和摆放
+
+- 当前场景
+  视口是默认棋盘地面测试场景
+  中央能看到一团白色粒子在地面上方扩散
+  粒子系统的变换轴 `gizmo` 位于效果中心
+  蓝色 `Z` 轴朝上，绿色 `Y` 轴沿地面指向右侧
+- 当前选中对象
+  右侧 `Outliner` 里选中的是 `NS_Intro`
+  `Details` 面板显示对象类型为 `NiagaraComponent`
+  其 `Niagara System Asset` 也指向 `NS_Intro`
+  说明当前关卡里放置的是这个系统资源的实例
+- 关卡资源位置
+  下方内容浏览器当前位于 `Content/WitcherCourse/VFX`
+  资源区里可见一个 `NS_Intro` Niagara System 资源缩略图
+- 教学含义
+  字幕说明“只要拖动 Niagara 系统，就能随意移动”
+  这张图要传达的是
+  Niagara 做完后不是只能留在编辑器预览里
+  它会作为关卡中的系统实例被摆放、移动和测试
+  后续调位置时，直接操作场景中的系统对象即可
+这一帧是本段基础入门总结时的关卡视图，继续展示 `NS_Intro` 被放进场景后的最终效果状态
+
+- 场景状态
+  默认棋盘地面上方悬浮着一团白色粒子
+  粒子分布比前一张更均匀地摊开在系统中心周围
+  变换轴仍位于效果中心，说明当前仍在直接选中并操作该系统实例
+- 当前对象
+  `Outliner` 中依然选中 `NS_Intro`
+  `Details` 面板显示它是 `NiagaraComponent`
+  下方 `Niagara System Asset` 仍然引用 `NS_Intro`
+  右侧变换区可见该实例的 `Location / Rotation / Scale`
+- 内容浏览器
+  下方 `Content/WitcherCourse/VFX` 中保留 `NS_Intro` 资源缩略图
+  表明关卡中的效果实例与内容浏览器中的系统资源是对应关系
+- 教学含义
+  字幕意思是“有了这些就已经足够开始上手”
+  这张图承担的是阶段性收束作用
+  前面已经认识了
+  系统总览
+  发射器结构
+  `Particle Spawn`
+  `Particle Update`
+  以及关卡中的摆放方式
+  到这里读者已经具备继续制作简单 Niagara 效果的最低起步知识
+
+## 补充视觉证据
+
+### S01 00:02:06
+
+这是一个默认测试关卡的补充截图，用来说明课程起步阶段所处的基础场景环境
+
+- 当前场景
+  画面是 Unreal 默认的棋盘地面与蓝天云层背景
+  场景中央从上到下能看到几个默认组件图标
+  顶部是云层或大气相关图标
+  中间是一个太阳形图标，对应场景主光源
+  地面上方还有 `PlayerStart` 图标
+- 右侧层级
+  `Outliner` 中列出了默认关卡常见对象
+  `DirectionalLight`
+  `ExponentialHeightFog`
+  `SkyAtmosphere`
+  `SkyLight`
+  `SM_SkySphere`
+  `VolumetricCloud`
+  `Floor`
+  `PlayerStart`
+  当前没有选中任何对象，所以 `Details` 面板为空
+- 补充用途
+  这张图不是在讲 Niagara 模块细节
+  而是在补充说明课程示例所依赖的基础关卡环境
+  读者至少要知道场景里已有光照、天空、雾和起始点这些默认元素
+  这样后面看到 Niagara 效果时，能区分哪些属于场景环境，哪些才是新增的特效内容
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+
+

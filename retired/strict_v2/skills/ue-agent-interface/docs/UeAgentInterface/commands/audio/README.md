@@ -1,0 +1,73 @@
+---
+category: audio
+title: Audio
+summary: Audio active commands.
+---
+
+# Audio
+
+- status_scope: active commands
+- command_count: 60
+
+## Commands
+
+- [`ambient_sound_validate_setup`](./ambient_sound_validate_setup.md)
+- [`audio_component_runtime_probe`](./audio_component_runtime_probe.md)
+- [`audio_component_runtime_snapshot`](./audio_component_runtime_snapshot.md)
+- [`audio_component_validate_setup`](./audio_component_validate_setup.md)
+- [`audio_effect_preset_apply_json`](./audio_effect_preset_apply_json.md)
+- [`audio_effect_preset_create`](./audio_effect_preset_create.md)
+- [`audio_effect_preset_export_json`](./audio_effect_preset_export_json.md)
+- [`audio_runtime_probe`](./audio_runtime_probe.md)
+- [`audio_runtime_snapshot`](./audio_runtime_snapshot.md)
+- [`audio_stop_all_preview_sounds`](./audio_stop_all_preview_sounds.md)
+- [`audio_submix_meter_probe`](./audio_submix_meter_probe.md)
+- [`audio_submix_record_cancel`](./audio_submix_record_cancel.md)
+- [`audio_submix_record_start`](./audio_submix_record_start.md)
+- [`audio_submix_record_stop`](./audio_submix_record_stop.md)
+- [`audio_volume_validate_setup`](./audio_volume_validate_setup.md)
+- [`metasound_apply_folder`](./metasound_apply_folder.md)
+- [`metasound_compile`](./metasound_compile.md)
+- [`metasound_create`](./metasound_create.md)
+- [`metasound_export_folder`](./metasound_export_folder.md)
+- [`metasound_get_info`](./metasound_get_info.md)
+- [`metasound_open_editor`](./metasound_open_editor.md)
+- [`metasound_preview`](./metasound_preview.md)
+- [`metasound_screenshot`](./metasound_screenshot.md)
+- [`metasound_validate_folder`](./metasound_validate_folder.md)
+- [`sound_attenuation_apply_json`](./sound_attenuation_apply_json.md)
+- [`sound_attenuation_create`](./sound_attenuation_create.md)
+- [`sound_attenuation_export_json`](./sound_attenuation_export_json.md)
+- [`sound_attenuation_get_info`](./sound_attenuation_get_info.md)
+- [`sound_attenuation_validate_json`](./sound_attenuation_validate_json.md)
+- [`sound_class_apply_json`](./sound_class_apply_json.md)
+- [`sound_class_create`](./sound_class_create.md)
+- [`sound_class_export_json`](./sound_class_export_json.md)
+- [`sound_class_get_info`](./sound_class_get_info.md)
+- [`sound_class_validate_json`](./sound_class_validate_json.md)
+- [`sound_concurrency_apply_json`](./sound_concurrency_apply_json.md)
+- [`sound_concurrency_create`](./sound_concurrency_create.md)
+- [`sound_concurrency_export_json`](./sound_concurrency_export_json.md)
+- [`sound_concurrency_get_info`](./sound_concurrency_get_info.md)
+- [`sound_concurrency_validate_json`](./sound_concurrency_validate_json.md)
+- [`sound_cue_apply_folder`](./sound_cue_apply_folder.md)
+- [`sound_cue_create`](./sound_cue_create.md)
+- [`sound_cue_export_folder`](./sound_cue_export_folder.md)
+- [`sound_cue_get_info`](./sound_cue_get_info.md)
+- [`sound_cue_open_editor`](./sound_cue_open_editor.md)
+- [`sound_cue_preview`](./sound_cue_preview.md)
+- [`sound_cue_screenshot`](./sound_cue_screenshot.md)
+- [`sound_cue_validate_folder`](./sound_cue_validate_folder.md)
+- [`sound_mix_apply_json`](./sound_mix_apply_json.md)
+- [`sound_mix_create`](./sound_mix_create.md)
+- [`sound_mix_export_json`](./sound_mix_export_json.md)
+- [`sound_submix_apply_folder`](./sound_submix_apply_folder.md)
+- [`sound_submix_create`](./sound_submix_create.md)
+- [`sound_submix_export_folder`](./sound_submix_export_folder.md)
+- [`sound_submix_get_info`](./sound_submix_get_info.md)
+- [`sound_submix_validate_folder`](./sound_submix_validate_folder.md)
+- [`sound_wave_get_info`](./sound_wave_get_info.md)
+- [`sound_wave_import`](./sound_wave_import.md)
+- [`sound_wave_preview`](./sound_wave_preview.md)
+- [`sound_wave_reimport`](./sound_wave_reimport.md)
+- [`sound_wave_validate_setup`](./sound_wave_validate_setup.md)

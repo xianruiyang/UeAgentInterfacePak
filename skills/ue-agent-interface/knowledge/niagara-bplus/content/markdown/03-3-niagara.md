@@ -1,0 +1,1066 @@
+# 03 - 3使用Niagara丝带渲染器
+
+# 03 - 3使用Niagara丝带渲染器
+
+## 关键术语
+
+- `Alpha`、`Ribbon`、`UV`、`Sequencer`、`PS`、`粒子`、`渲染器`、`拖尾`、`生命周期`、`速度`、`Niagara`、`Particle`、`Spawn`、`Particle Spawn`、`Normalized Age`、`Renderer`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:00-00:02:54 渲染器、拖尾
+
+- 本段定位：渲染器、拖尾。
+- 知识点：大家好,我在上漲向大家問好 上次我们主要看了一下四代渲染器的一些简单選項 这次后续会正式探討 四代渲染器可以在什么情况下使用。
+- 知识点：通过幾个简单的案例来进行構建 使用起来会更好 在这之前我覺得在動作中附加一些东西也是不錯的 雖然这是以後在視力中会用到的資源 但在市場上也可以搜索到一些免費的内容。
+- 知识点：所以如果你搜索揮食的話 就会出现一个叫PyLagom揮食的角色 因为我已经免費添加了这个角色 所以会出现添加到这个項目的按鈕。
+- 知识点：应该会出现一个免費的按鈕 所以在添加之后呢 如果出现这个項目添加的選項 比如說我们现在正在使用的 这里添加一下就好了 我打算用这个角色在第五个部分再試試。
+- 知识点：能够利用这些免費内容 真的是一个很好的優點 然后 在PyLagom中有很多角色 这樣添加到購物車中 可能就会出现这樣的提示 这樣添加到購物車後添加到項目中。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 核对对象：`渲染器`、`拖尾`。
+
+**关键画面：**
+
+本图是 Unreal 编辑器中的素材准备界面，用来说明本节丝带渲染器示例所在的测试目录和已有资源。当前打开的是内容浏览器 `Content/Signature/Test` 路径，目录树位于 `Signature -> Course_01 / Course_02 / Test` 这一套课程内容下。
+
+内容浏览器缩略图区当前能看到 3 个资源：
+
+- 一个球形预览的材质资源 `New`，类型为 `Material`
+- 两个预览图呈细长白色拖尾的 Niagara 资源，名称都显示为 `New`，类型为 `Niagara Sys...`
+
+右侧主视口是空的测试场景，只保留基础地面；Outliner 中可见 `DirectionalLight`、`ExponentialHeightFog`、`SkyAtmosphere`、`SkyLight`、`SM_SkySphere`、`VolumetricCloud`、`Floor`、`PlayerStart` 等基础关卡对象。  
+这张图的作用是建立课程测试工程的最初状态：先在 `Test` 目录中准备材质和 Niagara 系统资源，再进入后续 Ribbon Renderer 的具体设置与拖尾示例。
+本图显示的是 Epic Games Launcher 的 Marketplace 资源详情页，用来说明本节演示里将借用的免费角色资源来源。当前打开的资源条目是 `Paragon: Greystone`。
+
+界面中可确认的信息有：
+
+- 顶部当前页签位于 `Marketplace`
+- 搜索框中输入的是 `Paragon: Greysto...`
+- 资源标题：`Paragon: Greystone`
+- 发布方：`Epic Games`
+- 日期：`2018/09/05`
+- 右侧状态图标显示该资源已拥有/可加入项目
+- 下方黄色进度条所在按钮区域文字为“添加到项目”语义
+
+左侧主预览图展示的是 Greystone 角色全身立绘，底部还有多张预览缩略图。  
+这张图的作用不是讲 Ribbon 参数，而是交代课程里用于测试拖尾效果的角色资产可以直接从 Epic Marketplace 免费添加到项目中，方便后续把丝带特效挂到角色动作或武器运动上做演示。
+本图回到 Unreal 编辑器，显示免费角色资源已经被加入当前课程工程后的目录状态。内容浏览器当前路径位于 `Content/ParagonGreystone/Characters/Heroes`，目录中可见一个 `Greystone` 文件夹，说明角色资源已经导入到项目内容树中。
+
+左侧目录树当前可确认的关键层级包括：
+
+- `ParagonGreystone`
+  - `Audio`
+  - `Characters`
+  - `Global`
+  - `Maps`
+  - `FX`
+- 原有课程目录 `Signature -> Course_01 / Course_02 / Test` 仍保留
+
+右侧主视口仍是基础测试关卡，Outliner 中是 `DirectionalLight`、`ExponentialHeightFog`、`SkyAtmosphere`、`SkyLight`、`SM_SkySphere`、`VolumetricCloud`、`Floor`、`PlayerStart` 这套默认场景元素。当前选中对象是 `Floor`，Details 面板中能直接看到：
+
+- `Location`：`0 / 0 / -0.5`
+- `Rotation`：`0 / 0 / 0`
+- `Scale`：`8 / 8 / 8`
+- `Static Mesh` 指向地面网格资源
+
+右下角还有一条恢复资产编辑器的提示弹窗，但它不属于本节设置本体。  
+这张图的重点是说明角色资源已成功进入工程内容树，接下来课程会在这个测试场景里，用导入的角色或其动作来演示丝带拖尾的基础使用方式。
+
+### 00:02:59-00:05:57 粒子、渲染器、速度
+
+- 本段定位：粒子、渲染器、速度。
+- 知识点：在新文件夾中創建一个名为Party Code 我覺得不放在Party Code文件夾 而是直接放在测试文件夾里 更好 因为这不是試力 我们来試試MP。
+- 知识点：这次测试 这樣 我先把它拿出来看看 首先我们提到过使用四代渲染时 需要一些能够移动的主体 比如說 现在要畫出轨迹 我曾說过需要一个媒介 这可以是例子動作或者特定的演員。
+- 知识点：大約可以看这三种情况 畢竟有兩种動作和特定演員移动时 可能会採用相同的方式 創建一个四代渲染 然后就完成了 然后 自我設置就無限制 接下来把爆发設置为桌面速率。
+- 知识点：测试时設为50左右 然后将四代寬度直接設置为 大約50 现在什么也没出现吧 这樣移动的話 就会出现一些东西 现在移动演員的皮膚时这樣就会出现。
+- 知识点：如果有一个演員在某个地方被攻擊 并这樣移动的話 那就意味着他在那个位置留下了这樣的轨迹 因为我现在是強制用鼠標拖動这个 然后 最中间的某些轉折可能就。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 核对对象：`粒子`、`发射器`、`渲染器`、`速度`。
+
+**关键画面：**
+
+本图回到 Unreal 编辑器中的 `Content/Signature/Test` 目录，说明本节测试用的材质和 Niagara 资源会直接放在 `Test` 文件夹中，而不是再额外分流到课程里的 `Particle` 子目录。内容浏览器缩略图区当前仍能看到：
+
+- `New` 材质资源 1 个
+- `New` Niagara 系统资源 2 个
+
+左侧目录树可以同时看到课程目录 `Signature -> Course_01 / Course_02 / Test`，其中 `Course_01` 下还包含 `Level / Material / Particle` 等子目录，但当前高亮选中的仍是 `Test`。这和字幕里“不要放在 Particle 文件夹，直接放在测试文件夹里更好”对应。
+
+右侧主视口仍是基础测试场景，当前选中 `Floor`，Details 面板可确认：
+
+- `Location`：`0 / 0 / -0.5`
+- `Rotation`：`0 / 0 / 0`
+- `Scale`：`8 / 8 / 8`
+
+这张图的核心信息是目录组织策略：本节做的是临时测试与演示，所以把 Ribbon 示例资源直接放在 `Test` 目录中，便于快速迭代，而不是先做正式的分类整理。
+本图显示的是 Unreal 的 Niagara System 编辑器，当前打开的系统名为 `Ribbon_Test`。中央 `System Overview` 中只有一个发射器，名称为 `Empty`，说明这是从空模板开始搭建 Ribbon 示例。
+
+当前发射器栈中可直接确认的模块结构为：
+
+- `Emitter Summary`
+- `Emitter Spawn`
+- `Emitter Update`
+- `Emitter State`
+- `Particle Spawn`
+  - `Initialize Particle`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+  - `Ribbon Renderer`
+
+左侧预览窗当前显示：
+
+- `Particle Counts`
+- `0 Current, 0 Max (est.) - [Empty] [Active]`
+
+右侧 Details 当前选中的是 `Initialize Particle`，显示的关键参数有：
+
+- `Lifetime Mode`：`Direct Set`
+- `Lifetime`：`5.0`
+- `Color Mode`：`Unset`
+- `Position Mode`：`Simulation Position`
+- `Position Offset`：`0 / 0 / 0`
+- `Mass Mode`：`Unset / (Mass of 1)`
+- `Sprite Size Mode`：`Unset`
+- `Sprite Rotation Mode`：`Unset`
+- `Sprite UV Mode`：`Unset`
+- `Mesh Scale Mode`：`Unset`
+- `Mesh Renderer Attributes` 相关项均未设
+- `Ribbon Width Mode`：`Unset`
+- `Ribbon Facing Mode`：`Unset`
+- `Ribbon Twist Mode`：`Unset`
+
+时间轴左下区域可以看到当前只有一个发射器轨道 `Empty`，并且 `Emitter State` 的标签直接显示为 `Self Infinite`。  
+结合字幕“自我设置就无限制”，这张图的重点是先搭出一个最简 Ribbon 发射器骨架，并把发射器状态设为无限循环，再从 `Initialize Particle` 开始逐步补充粒子寿命、宽度、速度和渲染表现。
+本图继续在 `Ribbon_Test` Niagara System 编辑器中工作，但发射器 `Empty` 已经从空骨架推进到可以实际出条带的状态。左侧预览窗口中已经出现一条向上收尖的白色丝带形体，顶部更宽、底部更窄，说明粒子已经开始生成并沿某个方向累计出 Ribbon。
+
+中央发射器栈相较上一张新增并可确认的模块结构为：
+
+- `Emitter Update`
+  - `Emitter State`：标签仍显示 `Self Infinite`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Add Velocity Linear`
+- `Particle Update`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+  - `Ribbon Renderer`
+
+左侧预览信息当前显示：
+
+- `156 Current, 156 Max (est.) - [Empty] [Active]`
+
+右侧 Details 当前选中的是 `Solve Forces and Velocity`，图中可确认：
+
+- `Speed Limit`：`1000.0`
+- `Acceleration`：`9999.0`
+- `Manually Enable R...` 选项存在，但当前未启用
+
+结合字幕中“因此产生了向上的速度”，这一步的关键是：在发射器持续生成粒子后，再通过 `Add Velocity Linear` 和 `Solve Forces and Velocity` 让粒子带着明显的上升速度运动，从而使 `Ribbon Renderer` 能拉出一条可见的拖尾轨迹。当前这条单一白色条带，就是最初级 Ribbon 拖尾的可见结果。
+
+### 00:06:03-00:08:56 Sequencer、PS、粒子
+
+- 本段定位：Sequencer、PS、粒子。
+- 知识点：位置也是一樣 不过呢 有一点需要注意的是 后续会多个粒子放置在陰影位置 之前也有过类似的情况 但是如果是像四代这樣的使用方式的話 这里的粒子是定位在这个区域的。
+- 知识点：但是这个線條的連結順序是 他們现在也非常随机 定擁有某种位置 所以只能看作是亂七八糟糾纏的線 这樣就会出现 因为是以随机位置生成的 这并不是一个很好的視力应用。
+- 知识点：雖然有时候也会用到这樣的情况 需要关闭陰影位置 剛才說过就是特定的角色 会被附加并移动的情况 然后如果将来您在实际工作中 您会在游戏中看到很多像发射体。
+- 知识点：这樣的东西 在FPS中呢 有时也会用发射体来解決子彈的問題 然后所以舉个例子 有时候是用機种掃描来判定的 有时候則稱之为投射体 投射体就是指发射体。
+- 知识点：因此发射体是我们創建的那种 看不見的发射体 然后在上面添加特效 这个应该是第一种方式吧 现在我们是用手来移动角色 然后这只是给您一个示例。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`粒子`、`序列`。
+
+**关键画面：**
+
+本图继续在 Niagara System `Ribbon_Test` 中编辑单发射器 `Empty`。左侧预览里仍是一条简化的白色丝带条带，说明当前讨论重点不在渲染外观本身，而在粒子如何被赋予运动方向与速度。
+
+中央发射器栈当前可确认结构为：
+
+- `Emitter Update`
+  - `Emitter State`：`Self Infinite`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Add Velocity Linear`
+- `Particle Update`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+  - `Ribbon Renderer`
+
+左侧预览统计当前显示：
+
+- `85 Current, 256 Max (est.) - [Empty] [Active]`
+
+右侧 Details 当前选中 `Add Velocity` 模块，图中可确认：
+
+- `Velocity Mode`：`Linear`
+- `Velocity`：`0.0 / 0.0 / 50.0`
+- `Velocity Speed Scale`：`1.0`
+- `Rotation Mode`：`Default`
+- `Rotation Coordinate Space`：`Local`
+
+这一步的含义是：在 `Particle Spawn` 阶段直接给每个粒子一个本地空间的线性初速度，沿 Z 轴正方向向上发射。对于 Ribbon 来说，这决定了丝带最初延伸的方向，也为后面说明“如果粒子位置或局部空间处理不对，线条会纠缠或不留在世界里”打下基础。
+本图回到关卡视口，`Ribbon_Test` 已作为一个 Niagara Actor 被放入测试场景中。右侧 Outliner 当前选中对象就是 `Ribbon_Test`，类型为 `NiagaraActor`；Details 面板中当前能确认：
+
+- `Location`：`123.7 / 552.2 / 190.1`
+- `Rotation`：`0 / 0 / 0`
+- `Scale`：`1.0 / 1.0 / 1.0`
+- `Niagara System Asset` 指向 `Ribbon_Test`
+- `Niagara Tick Behavior`：`Use Prereqs`
+
+左侧内容浏览器仍在 `Content/Signature/Test`，当前目录里可见 4 个资源：
+
+- `New` 材质
+- `New` Niagara 资源 2 个
+- 新生成的 `Ribbon_Test` Niagara 系统
+
+主视口中央可见一条细长的金黄色/白色丝带，从放置点沿竖直方向向上拉起，底部带有变换 gizmo，说明当前效果是由场景中的单个 NiagaraActor 在固定世界位置持续生成。  
+这张图的意义是把前一张编辑器内的 Ribbon 设置真正落到关卡里验证：当一个发射体或挂点在世界中留下粒子时，Ribbon 就会在该位置开始积累轨迹。
+本图仍在测试关卡中选中 `Ribbon_Test` NiagaraActor，但视口里的丝带结果已经从单一竖条变成多圈缠绕的闭环/乱线轨迹。金黄色 Ribbon 在空中和地面附近连续绕成数层不规则环带，中间多次自交，明显不是整洁的“拖尾”效果。
+
+右侧 Details 当前仍能确认：
+
+- 选中对象：`Ribbon_Test`
+- 类型：`NiagaraActor`
+- `Location`：`216.8 / 507.4 / 121.9`
+- `Rotation`：`0 / 0 / 0`
+- `Scale`：`1.0 / 1.0 / 1.0`
+- `Niagara System Asset`：`Ribbon_Test`
+- `Niagara Tick Behavior`：`Use Prereqs`
+
+左侧内容浏览器依旧停在 `Content/Signature/Test`，说明这里讨论的是同一个测试资源在不同运动方式下的表现，而不是切换了另一套系统。
+
+这张图对应正文里“线条连接顺序很随机，只能看作乱七八糟纠缠的线”的问题描述：如果发射位置本身在场景中被随意拖动，或者粒子生成位置/连接顺序不能稳定代表一条连续路径，Ribbon Renderer 就会把这些离散点连接成缠绕乱线，而不是干净的角色拖尾或发射体尾迹。  
+它的作用是反向说明：Ribbon 更适合绑定到具有明确运动路径的主体，例如角色附着点、武器轨迹或真正的发射体，而不适合把随机散点直接拿来连线。
+
+### 00:09:00-00:11:54 关键流程 04
+
+- 本段定位：关键流程 04。
+- 知识点：因此在使用时 一定要確保取消勾选这里的本地空间 如果勾选後使用的話 将不会留在这个世界中 而是会持续附着在这个演員的本地位置上进行移动。
+- 知识点：这可以被視为非常重要的事項 嗯 需要把这个稱为案例一 然后我再提出一个要求 这次我们简单地拿出一个動作来看一下 嗯 在这里我们保護着灰石的英雄。
+- 知识点：嗯 在这里有很多在沙拉共游戏中使用的动画 稍後这里标记为紫色的攻擊主動化 这个演員看起来是这樣的 这个演員看起来是这樣的啊 这个演員看起来是这樣的。
+- 知识点：主動化 因为是第一次拿出来 所以正在編譯着着色器 现在有兩个了 然后我就会删除一个就是 呃 打開这个看看吧 嗯 可观察到这樣打開的样子 因为有这樣的動作。
+- 知识点：有一些是綠色的 有一些是紫色的 綠色的表示是动画剪輯 紫色的表示是动画猛太奇 猛太奇可以看作是 将多个动画剪輯組合起来使用的工具 进行这种通知工作的动画剪輯也是可以的。
+
+**关键画面：**
+
+本图继续在 Niagara System `Ribbon_Test` 中编辑发射器 `Empty`。左侧预览里仍只有一条细长竖直白色丝带，说明当前重点不是改变粒子形状，而是发射器坐标空间设置。
+
+中央发射器栈当前可确认模块为：
+
+- `Emitter Update`
+  - `Emitter State`：`Self Infinite`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Add Velocity Linear`
+  - `Shape Location`
+- `Particle Update`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+  - `Ribbon Renderer`
+
+左侧预览统计显示：
+
+- `156 Current, 156 Max (est.) - [Empty] [Active]`
+
+右侧 Details 当前选中的是 `Emitter Properties`，图中可确认：
+
+- `Local Space` 已勾选
+- `Determinism` 未勾选
+- `Interpolated Sp...` 未勾选
+- `Sim Target`：`CPUSim`
+- `Calculate Bound...`：`Dynamic`
+- `Requires Persis...` 未勾选
+
+这张图对应正文里“如果勾选后使用的话，将不会留在这个世界中，而是会持续附着在这个演员的本地位置上进行移动”的提醒。也就是：当 `Local Space` 打开时，Ribbon 粒子会跟随发射器局部坐标一起移动，更适合附着型效果；如果想让拖尾留在世界空间，就需要关闭它。
+本图已经从单纯的 Niagara 测试，切到“把效果挂到角色动作上”的准备阶段。左侧内容浏览器当前路径位于 `ParagonGreystone/Characters/Heroes/Greystone/Animations`，缩略图区中可见大量攻击、待机、移动、受击等动画资源。
+
+当前能明确识别到的资源类型和状态包括：
+
+- 多个以 `Attack_` 开头的动画资源
+- 紫色边框/紫色语义的蒙太奇资源与普通绿色动画剪辑混在同一目录中
+- 当前高亮选择的是一个 `Attack_...` 资源
+- 底部统计显示 `145 items (1 selected)`
+
+右侧关卡视口中已经放入一个 Greystone 角色实例。Outliner 当前选中对象名为：
+
+- `Attack_PrimaryA_Montage`
+
+Details 面板中可确认：
+
+- `Location`：`50.0 / 550.0 / 0.0`
+- `Rotation`：`0 / 0 / 0`
+- `Scale`：`1.0 / 1.0 / 1.0`
+- `Animation Mode`：`Use Animation Asset`
+- `Anim to Play`：一个 `Attack_...` 动画资源
+- `Looping` 已勾选
+- `Playing` 已勾选
+
+视口中的角色站在地面上，旁边仍保留一条竖直的白色 Ribbon 参考效果；右下角状态条显示 `Preparing Shaders (0) 100%`，说明这是第一次把该角色/动画拿出来时的正常编译阶段。  
+这张图的作用是建立后续案例一的测试主体：不再手动拖动物体，而是改用真实角色的攻击动画或蒙太奇来驱动附着型 Ribbon 效果。
+本图打开的是角色攻击蒙太奇 `Attack_PrimaryA_Montage` 的编辑器，而不是普通动画序列。中央预览视口中可以看到 Greystone 持剑进入攻击动作姿态，说明课程已经从“挑选动画资源”进一步进入到具体检查蒙太奇内容与通知轨道的阶段。
+
+当前界面中可直接确认的信息有：
+
+- 顶部当前资产标签：`Attack_PrimaryA_Monta...`
+- 预览区域文字：`Previewing Montage Attack_PrimaryA_Montage`
+- 模型统计：
+  - `Triangles`：`87,116`
+  - `Vertices`：`59,357`
+  - `UV Channels`：`2`
+  - `Approx Size`：`152x173x208`
+
+左侧 `Asset Details` 面板中可确认：
+
+- `Blend Mode In`：`Standard`
+- `Blend Mode Out`：`Standard`
+- `Blend Out Trigger...`：`-1.0`
+- `Enable Auto Blend...` 已勾选
+- `Rate Scale`：`1.0`
+- `Skeleton`：`Greystone_...`
+- `Sync Group`：`None`
+- `Sync Slot Index`：`0`
+
+下方时间轴与蒙太奇轨道中可确认：
+
+- 绿色主段名：`Attack_PrimaryA`
+- 默认段名：`Default`
+- `Notifies` 轨道上至少有两个通知标记：`SaveAttack`、`ResetCombo`
+
+这张图对应正文里“绿色的是动画剪辑，紫色的是动画蒙太奇；蒙太奇可以看作把多个动画剪辑组合起来使用的工具”的说明。  
+它的作用是让读者明确：后续如果要把 Ribbon 特效精确挂到角色攻击流程里，实际工作中往往不是只看单个动画片段，而是要在蒙太奇编辑器中结合通知轨道来决定触发时机。
+### 00:11:59-00:15:07 粒子、生命周期
+
+- 本段定位：粒子、生命周期。
+- 知识点：兩个角色看起来相似 但其實有點不同 嗯 可能在劇幻影型中提供的角色特效工具 是建議使用猛太奇 僅憑这里的功能可能会感到不足 所以在实际工作中。
+- 知识点：其實 通过與制作人的結商 添加一些內部功能的情况会比較普遍 然后 不过在我们进行个人項目时 使用这些功能应该没有太大問題 比如說 那麼关于这一部分我稍後会再给你解釋。
+- 知识点：嗯 不会深入讨论太多 嗯 就简单提一下这是一个工具的角色 在这里一次 我们来試着添加一下这个納亞加拉粒子特效。
+- 知识点：我们使用的这个納亞加拉粒子特效 要放在这里 然后 还有这里也要 添加插槽或本体名稱 在附加时 现在可观察到这里有一个附加 然后 不过要放在右邊。
+- 知识点：而不是左邊生命周期太长了 这个也要去掉 那就設置成大約5把 就 这樣看起来会比較好 那这樣一来 在設置为無線的状态下 这里也附加了就是那邊也附加了。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`生命周期`。
+
+**关键画面：**
+
+本图继续停在 `Attack_PrimaryA_Montage` 的蒙太奇编辑器中，当前目的是观察角色攻击流程与通知轨道，为后续把 Niagara 粒子特效挂到角色动作上做准备。中央预览视口里的 Greystone 角色处于持剑待攻姿态，时间轴播放头已经接近动作后半段。
+
+图中仍可直接确认的蒙太奇信息有：
+
+- 当前资产：`Attack_PrimaryA_Montage`
+- 预览标题：`Previewing Montage Attack_PrimaryA_Montage`
+- 左侧 `Asset Details` 维持：
+  - `Blend Mode In`：`Standard`
+  - `Blend Mode Out`：`Standard`
+  - `Blend Out Trigger...`：`-1.0`
+  - `Enable Auto Blend...` 已勾选
+  - `Rate Scale`：`1.0`
+  - `Skeleton`：`Greystone_...`
+- 时间轴主段：
+  - `Default`
+  - `Attack_PrimaryA`
+- `Notifies` 轨道可见两个关键通知：
+  - `SaveAttack`
+  - `ResetCombo`
+
+与上一段相比，这张图更强调“角色特效工具建议配合蒙太奇”的语义：如果要把拖尾或附着型 Niagara 挂到角色攻击动作上，蒙太奇的通知轨道比单纯的动画剪辑更适合控制生成时机、附着时机和结束时机。
+本图仍在 `Attack_PrimaryA_Montage` 编辑器，但现在已经把 Niagara 特效真正挂到了蒙太奇通知轨道上。角色预览视口中，Greystone 身后出现一条明显的白色 Ribbon 轨迹，说明通知已经成功触发并在角色身上生成了 `Ribbon_TEst`。
+
+时间轴下方 `Notifies` 轨道当前能明确看到一个新增的蓝色通知片段：
+
+- `Ribbon_TEst`（界面中显示的大小写以截图为准）
+
+同一轨道上仍能看到原有通知：
+
+- `SaveAttack`
+- `ResetCombo`
+
+右侧 Details 当前显示的是这个 `Anim Notify` 的参数，图中可确认：
+
+- `Notify` 使用的 `Niagara System`：`Ribbon_TEst`
+- `Location Offset`：`0.0 / 0.0 / 0.0`
+- `Rotation Offset`：`0.0 / 0.0 / 0.0`
+- `Scale`：`1.0 / 1.0 / 1.0`
+- `Attached` 已勾选
+- `Socket Name`：`hand_l`
+- `Notify Color`：亮绿色
+- `Notify Trigger Chance`：`1.0`
+- `Trigger on Dedicated Server` 已勾选
+- `Trigger on Follower` 未勾选
+
+这张图把“把 Niagara 粒子特效放在这里，并添加插槽或本体名称”具体落实成了可执行设置：在蒙太奇通知轨道上插入一个 Niagara Notify，指定系统 `Ribbon_TEst`，勾选附着，并把插槽名设为 `hand_l`，这样效果就会跟随角色左手一起运动。
+本图仍在 `Attack_PrimaryA_Montage` 编辑器中，但当前预览效果已经更接近“附着在动作上使用”的目标结果。角色左侧身体前方可以看到一条宽白 Ribbon 形成的弧形扫痕，它不再只是远离角色的一条单独竖线，而是明显跟随角色动作路径出现在武器/手部附近。
+
+时间轴下方可见的关键轨道仍然包括：
+
+- 蒙太奇主段 `Attack_PrimaryA`
+- `Notifies` 轨道上的 `Ribbon_TEst`
+- `SaveAttack`
+- `ResetCombo`
+
+左侧 `Asset Details` 中当前仍能确认：
+
+- `Rate Scale`：`1.0`
+- `Loop` 未勾选
+- `Skeleton`：`Greystone_Sh...`
+- `Sync Group`：`None`
+- `Sync Slot Index`：`0`
+
+中央预览视口顶部文字仍表明当前在预览 `Attack_PrimaryA_Montage`，而底部播放头已经靠近时间轴后段，因此这一帧展示的是通知触发后、角色动作进行中的实际挂接结果。  
+结合字幕“这是第二种用途，将其附加到动作上使用”，这张图的意义是：Ribbon 不只是留在世界中的轨迹，也可以作为附着型动作特效，跟随角色攻击动作在身体或武器附近扫出一段可读的白色弧形拖尾。
+
+### 00:15:13-00:18:26 拖尾
+
+- 本段定位：拖尾。
+- 知识点：这种情况的案例 通常我们可能会在这个角色的魔法師手上 施展魔法或施法師使用 如果这樣把它附加到武器上就会畫出拖尾 然后 可以作为轨迹本身的擺動轨迹使用。
+- 知识点：这樣的演出方式非常多用途 或者可以附加在主体上留下經过的轨迹 迅速留下类似於死侍的電光效果 也可以以这樣的方式使用 利用和流的方式这是無窮無盡啊。
+- 知识点：嗯 我们现在只是大致分開来展示 嗯 只是展示这樣的用法而已 在某种意義上这个概念與第一个案例是相同的 只是附加在什么地方使用而已 现在的速率設置为50。
+- 知识点：这个现在要 也可以作为噴射單元使用 使用海綿器單元可以更平滑地表達 如果想比海綿器單元更平滑地表達 那也可以使用海綿框架 因为这个可能会被畫的非常重。
+- 知识点：如果可能的話最好在海綿器單元內解決这个速率或在兩者之间解決 这就是使用在動作中的第二种方法 在将其附加到動作进行测试时 需要将其转换为模拟。
+- 核对对象：`蒙太奇`、`拖尾`。
+
+**关键画面：**
+
+本图仍在 `Attack_PrimaryA_Montage` 编辑器中预览角色攻击动作，但这里展示的重点已经从“怎么挂上 Niagara”转为“挂上之后 Ribbon 能形成什么样的拖尾”。角色挥剑动作过程中，白色 Ribbon 在身体前方和侧面绕出一条大幅度弧形轨迹，形成类似法术挥扫或武器斩击的宽带拖尾。
+
+当前仍能从界面中确认：
+
+- 预览资产：`Attack_PrimaryA_Montage`
+- 时间轴主段：`Attack_PrimaryA`
+- `Notifies` 轨道里仍有 `Ribbon_TEst`、`SaveAttack`、`ResetCombo`
+- 左侧 `Asset Details` 保持：
+  - `Rate Scale`：`1.0`
+  - `Loop` 未勾选
+  - `Skeleton`：`Greystone_Sh...`
+
+与上一段“附着在动作上”相比，这张图更强调用途本身：  
+Ribbon 可以附着在角色手部、武器或施法手上，用来画出动作路径本身。图中这一条宽大的白色弧线，就是把同一个 `Ribbon_TEst` 作为角色动作特效使用后的典型拖尾结果。
+本图回到 Niagara System 编辑器，当前系统名仍是 `Ribbon_TEst`，但发射器结构已经扩展成两个案例发射器：时间轴左下能看到 `Case_01` 与 `Case_02` 两条发射器轨道。左侧预览窗此时还在编译中，直接显示：
+
+- `Compiling Emitter - Case_01`
+- `Compiling Emitter - Case_02`
+- 中央提示：`Compiling...`
+
+中央当前选中的是发射器 `Case_02`。其可见模块结构为：
+
+- `Emitter Update`
+  - `Emitter State`：`Self Once`
+  - `Spawn Per Frame`
+  - `Spawn Per Unit`
+  - `Spawn Rate`（当前灰化）
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Add Velocity Linear`
+- `Particle Update`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+- `Render`
+  - `Ribbon Renderer`
+
+右侧 Details 当前选中模块是 `Spawn Per Frame`，图中可确认：
+
+- 模块被标记为 `Experimental module`
+- `Spawn Count`：`1`
+- `Spawn Probab...`：`1.0`（当前灰化）
+- `Spawn` 已勾选
+
+这张图对应正文里“也可以作为 Spawn Per Unit 使用，如果想比前一种更平滑，也可以用别的生成方式”的说明。  
+也就是：在附着型拖尾场景里，单纯的固定 `Spawn Rate` 可能不够平滑，于是开始改用按帧或按移动距离生成的方式来控制 Ribbon 点的生成节奏。
+本图仍在 Niagara System 编辑器 `Ribbon_TEst` 中，但当前画面更像是在整理多个案例发射器的职责分工。左侧时间轴里可以明确看到 3 个发射器轨道：
+
+- `Case_01`
+- `Case_02`
+- `Empty`
+
+预览统计当前显示：
+
+- `0 Current, 257 Max (est.) - [Case_01] [Disabled]`
+- `0 Current, 55 Max (est.) - [Case_02] [Disabled]`
+- `0 Current, 0 Max (est.) - [Empty] [Active]`
+
+这说明此刻 `Case_01` 和 `Case_02` 都被禁用，当前只保留 `Empty` 作为活动发射器来做说明。
+
+中央当前选中的是 `Empty` 发射器，可见的模块结构为：
+
+- `Emitter Update`
+  - `Emitter State`
+- `Particle Spawn`
+  - `Initialize Particle`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 Details 当前选中的模块是 `Emitter State`，图中可确认：
+
+- 页签停在 `Life Cycle`
+- `Life Cycle Mode`：`System`
+- 右侧可切换到 `Self`
+- `Scalability Mode`：`System`
+- 右侧可切换到 `Self`
+
+结合字幕里“可以使用海绵框架/框架”这一句的语义，这张图的作用是把前面的多个拖尾生成方案重新归到系统级生命周期控制上：  
+不同案例发射器可以分别负责不同的生成方式，但是否跟随系统一起启停，还是各自独立控制寿命，需要在 `Emitter State` 里通过 `Life Cycle Mode` 与 `Scalability Mode` 明确设定。
+
+### 00:18:29-00:22:32 粒子
+
+- 本段定位：粒子。
+- 知识点：这个大約会有十个的均勻大小 然后 用縮放颜色 我们来看看地板嘛 这樣 还有二的貝拉斯提 從这个點 一次膠囊 选择 某种自由自在地擴散 这次只要看这个。
+- 知识点：用粒子作为主体 想要尝试粘貼 做这个需要注意的是 一定要在这里創建粒子ID 也就是要生成粒子ID。
+- 知识点：还有这个局部空间 相關的 这里作为主体的发射器或 層數的发射器 如果作为主体的发射器的局部空间被解除。
+- 知识点：層數的发射器当然也应该解除 这里必须是相同情况的主權 把这个复制过来 我最开始给您展示的粒子。
+- 知识点：这里现在只显示了发射器 这里好像没有 用那个系统最开始 这里制作的 这个方向優先 制作这个石 通过生成位置事件 有點这种感覺 通过生成位置事件。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`粒子`、`发射器`、`系统`、`颜色`、`局部空间`。
+
+**关键画面：**
+
+本图显示的是 `Ribbon_TEst` Niagara System 中，开始转入“以粒子为主体”的另一种做法。左侧预览里不再是连续 Ribbon 条带，而是约 10 个左右均匀分布的白色小粒子点，说明当前讨论的重点变成了离散粒子本身的生成与后续连接逻辑。
+
+时间轴左下仍能看到 3 个发射器轨道：
+
+- `Case_01`：`Disabled`
+- `Case_02`：`Disabled`
+- `Empty`：当前活动轨道
+
+左侧预览统计显示：
+
+- `0 Current, 257 Max (est.) - [Case_01] [Disabled]`
+- `0 Current, 55 Max (est.) - [Case_02] [Disabled]`
+- `10 Current, 10 Max (est.) - [Empty] [Inactive]`
+
+中央当前选中 `Empty` 发射器，可确认的模块结构为：
+
+- `Emitter Update`
+  - `Emitter State`：`Self Once`
+  - `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Shape Location`：`Sphere`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 Details 当前选中的是 `Particle State`，图中只露出一项可辨识设置：
+
+- `Kill Particles When L...` 已勾选
+
+结合字幕“大约会有 10 个的均匀大小”，这一步是在把拖尾思路拆成“先生成一批均匀粒子点”，为后面用粒子 ID、局部空间一致性和位置事件来控制更稳定的线条连接做准备。
+本图显示的是在 `Ribbon_TEst` 系统中打开“Add Emitter to your System”窗口，准备把额外发射器模板或功能模块加进当前系统。左侧预览窗中仍能看到红色发光粒子点，说明当前系统已经从单一 Ribbon 条带转向粒子主体实验。
+
+左下时间轴当前可见 4 条发射器轨道：
+
+- `Case_01`
+- `Case_02`
+- `Empty`
+- 新增的 `Empty001`
+
+中央弹出的发射器选择窗口标题为：
+
+- `Add Emitter to your System`
+
+窗口左侧分类树当前可见：
+
+- `Recent`
+- `All`
+  - `Template`
+  - `Learning Content`
+
+可见的发射器模板缩略项中，能明确辨认出：
+
+- `Fountain`
+- `GridLocation`
+- `Hanging Particulates`
+- `InfiniteParticle Lifetime`
+- `InterpolateValue Over Time`
+- `KillParticles`
+- `LocationBased Ribbon`
+- `MeshArrays`
+- `MeshOrientation`
+- `MeshRotation Force`
+- `Normalized Execution Index`
+- `Omnidirectional Burst`
+- `ParticlesUniqueID`
+- `Pendulum Constraint`
+- `PlayAudio`
+- `RecycleParticlesin View`
+- `RenderBinding Overrides`
+- `RenderersWithNo Particles`
+
+底部统计显示当前列表共有 `42 items`。  
+这张图对应正文里“如果想用粒子作为主体，一定要在这里创建粒子 ID”的提醒：系统作者正在模板列表中寻找或添加和粒子唯一 ID、执行顺序、位置事件相关的发射器/模块，为后面把多个粒子稳定地组织成可控的线条结构做准备。
+本图展示的是“用一个粒子发射器作为主体，再让另一个发射器读取它的粒子来生成线”的做法。左侧预览中已经能看到红色发光粒子和细小发光线段组成的不规则闭环结构，说明当前系统里不再是简单单发射器，而是两个发射器协同工作。
+
+左侧预览统计当前显示：
+
+- `0 Current, 257 Max (est.) - [Case_01] [Disabled]`
+- `0 Current, 55 Max (est.) - [Case_02] [Disabled]`
+- `10 Current, 10 Max (est.) - [Empty] [Active]`
+- `40 Current, 190 Max (est.) - [Empty001] [Active]`
+
+中央当前可见两个活动发射器：
+
+`Empty`
+- `Emitter State`：`Self Once`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Shape Location`：`Sphere`
+- `Add Velocity From Point`
+- `Curl Noise Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Color`
+- `Sprite Renderer`
+
+`Empty001`
+- `Emitter State`：`Self Once`
+- `Spawn Particles from Other Emitter`
+- `Initialize Particle`
+- `Shape Location`：`Sphere`
+- `Add Velocity From Point`
+- `Sample Particles from Other Emitter`
+- `Curl Noise Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Color`
+- `Ribbon Renderer`
+
+右侧 Details 当前选中的是 `Empty001` 中的 `Spawn Particles from Other Emitter`，图中可确认：
+
+- `Attribute Reader`：`Particle Attribute Reader`
+- `Emitter Binding`：`Other`，目标为 `Empty`
+- `Spawn Rate`：`10.0`
+- `Calculate Spawn Rat...` 已勾选
+- `Spawn Rate Per Part...`：`100.0`
+- `Spawning Enabled` 已勾选
+- `Minimum Age S...`：`0.3333`
+- `Maximum Age S...`：`1.0`
+
+这张图正对应正文里“如果没有粒子 ID，不知道它们应该生成并结合在哪里”的问题：  
+当第二个发射器要从第一个粒子发射器读取数据并生成 Ribbon 时，粒子之间的对应关系必须足够稳定，否则线会乱连。这里通过 `Spawn Particles from Other Emitter` 和 `Sample Particles from Other Emitter` 建立跨发射器读取关系，后续就需要借助粒子 ID 或一致的局部空间条件，保证每个线段能跟对正确的粒子。
+
+### 00:22:35-00:25:49 Alpha、粒子、渲染器
+
+- 本段定位：Alpha、粒子、渲染器。
+- 知识点：这是我们設置的其他发射器 可以接收这个選項 正在这里使用的邊緣粒子 是要带到这里来 在最底部可观察到粒子ID。
+- 知识点：现在是禁用这个状态 如果应用的話 现在每个粒子的線條 会獨立地出现 可观察到比如說 这种方式的 以次控制多个粒子的。
+- 知识点：運動并且在此基礎上 使用理工員渲染器的方式 这樣常見 这三种方式都非常常用 这三种情况都一樣 那麼那个位置生成位置这个事件 是有點类似的概念。
+- 知识点：不过位置事件 是控制粒子生成的 可以說是 在这方面自由度更高的 方法 我把这个导入使用了 然后适当调整一下紅色的斷大 是的这樣会更清晰地生成。
+- 知识点：如果这樣的話其實 就会这樣滴滴答答地消失 现在因为Alpha只是没有結束 需要把这个的縮放颜色。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`粒子`、`发射器`、`渲染器`、`颜色`。
+
+**关键画面：**
+
+本图继续在 `Ribbon_TEst` 中使用双发射器结构，但重点切到 `Empty001` 发射器如何从主发射器 `Empty` 读取粒子属性。左侧预览里已经能看到大量红色发光曲线和点列，这说明第二个发射器正在根据第一批粒子的位置关系生成更复杂的线性结构。
+
+左侧预览统计当前显示：
+
+- `0 Current, 257 Max (est.) - [Case_01] [Disabled]`
+- `0 Current, 55 Max (est.) - [Case_02] [Disabled]`
+- `0 Current, 10 Max (est.) - [Empty] [Complete]`
+- `123 Current, 190 Max (est.) - [Empty001] [Inactive]`
+
+中央当前可见的两个核心发射器为：
+
+`Empty`
+- `Emitter State`：`Self Once`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Shape Location`：`Sphere`
+- `Add Velocity From Point`
+- `Curl Noise Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Color`
+- `Sprite Renderer`
+
+`Empty001`
+- `Emitter State`：`Self Once`
+- `Spawn Particles from Other Emitter`
+- `Initialize Particle`
+- `Sample Particles from Other Emitter`
+- `Curl Noise Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Color`
+- `Ribbon Renderer`
+
+右侧 Details 当前选中的模块是 `Sample Particles from Other Emitter`，图中可确认：
+
+- 顶部页签停在 `Sampling`
+- `Emitter Sampling M...`：`Sequential`
+- `Reject Particle If S...` 已勾选
+- `Position Sampling`：`Apply to Attribute`
+- `Applied Position`：`0.0 / 0.0 / 0.0`
+- `Velocity Sampling`：`Disabled`
+- `Color Sampling`：`Disabled`
+- `Age Sampling`：`Disabled`
+- `Lifetime Sampling`：`Disabled`
+- `Mass Sampling`：`Disabled`
+- `Material Random S...`：`Disabled`
+- `Sprite Size Sampl...`：`Disabled`
+
+这张图的重点是：第二个发射器并不是凭空生成 Ribbon，而是按顺序去采样另一个发射器里的粒子位置，再把这些位置应用到自己身上。这样一来，后面的可视结果就取决于采样顺序、粒子 ID 和位置一致性。
+本图继续使用双发射器结构，但现在重点落到 `Empty001` 自己的 `Initialize Particle` 参数上。左侧预览中的红色发光结果已经不再是大范围缠绕曲线，而是若干更短、更清晰的弯曲线段，说明粒子初始化和可见尺寸已经被单独压缩到更便于观察的状态。
+
+左侧预览统计当前显示：
+
+- `0 Current, 257 Max (est.) - [Case_01] [Disabled]`
+- `0 Current, 55 Max (est.) - [Case_02] [Disabled]`
+- `0 Current, 10 Max (est.) - [Empty] [Complete]`
+- `90 Current, 190 Max (est.) - [Empty001] [Inactive]`
+
+中央可见的 `Empty001` 发射器结构仍为：
+
+- `Emitter State`：`Self Once`
+- `Spawn Particles from Other Emitter`
+- `Initialize Particle`
+- `Sample Particles from Other Emitter`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Color`
+- `Ribbon Renderer`
+
+右侧 Details 当前选中的是 `Empty001` 的 `Initialize Particle`，图中可确认：
+
+- `Lifetime Mode`：`Direct Set`
+- `Lifetime`：`2.0`
+- `Color Mode`：`Unset`
+- `Position Mode`：`Simulation Position`
+- `Position Offset`：`0.0 / 0.0 / 0.0`
+- `Mass Mode`：`Unset / (Mass of 1)`
+- `Sprite Size Mode`：`Uniform`
+- `Uniform Sprite Size`：`10.0`
+- `Sprite Rotation Mode`：`Unset`
+- `Sprite UV Mode`：`Unset`
+- `Mesh Scale Mode`：`Unset`
+- `Ribbon Width Mode`：`Direct Set`
+- `Ribbon Width`：`5.0`
+- `Ribbon Facing Mode`：`Unset`
+- `Ribbon Twist Mode`：`Unset`
+
+这张图对应正文里“现在因为 Alpha 还没有结束，需要把这个的缩放颜色”之前的基础准备阶段：  
+先把派生发射器自己的寿命、粒子尺寸和 Ribbon 宽度压到一个更清楚的范围内，这样后面再调 Alpha、颜色衰减和渲染器输出时，变化会更容易观察。
+本图继续在 `Empty001` 的 `Sample Particles from Other Emitter` 模块中工作，但这次已经开始把采样结果不只用于位置，还进一步作用到速度与颜色。左侧预览中的红色线条比前一张更长、更明显，并且有多条向外飞散的轨迹，说明被采样的粒子运动信息已经开始推动派生发射器自身的线段外扩。
+
+左侧预览统计当前显示：
+
+- `0 Current, 257 Max (est.) - [Case_01] [Disabled]`
+- `0 Current, 55 Max (est.) - [Case_02] [Disabled]`
+- `0 Current, 10 Max (est.) - [Empty] [Complete]`
+- `186 Current, 190 Max (est.) - [Empty001] [Inactive]`
+
+中央结构仍是 `Empty` 主体发射器加 `Empty001` 派生发射器，其中 `Empty001` 当前选中的模块仍为 `Sample Particles from Other Emitter`。
+
+右侧 Details 当前可直接确认：
+
+- `Emitter Sampling M...`：`Sequential`
+- `Reject Particle If S...` 已勾选
+- `Position Sampling`：`Apply to Attribute`
+- `Applied Position`：`0.0 / 0.0 / 0.0`
+- `Velocity Sampling`：`Apply to Attribute`
+- `Velocity Application`：`Add`
+- `Applied Velocity`：`20.0`
+- `Color Sampling`：`Apply to Attribute`
+- `Apply Sampled F...` 已勾选
+- `Applied RGB Sc...`：`1.0 / 1.0 / 1.0`
+- `Apply Sampled A...` 已勾选
+- `Applied Alpha Sc...`：`1.0`
+- `Age Sampling`：`Disabled`
+- `Lifetime Sampling`：`Disabled`
+- `Mass Sampling`：`Disabled`
+
+这张图对应正文里“红色会更清晰地生成”“会飞出去”的部分：  
+当派生发射器不仅复制主粒子的位置，还把主粒子的速度与颜色一并采样并应用时，线段会随着速度继续被推出去，同时继承主粒子的颜色与 Alpha 表现。这样就能做出更明显的多粒子线束、飞散轨迹或由粒子主体驱动的红色拖痕效果。
+
+### 00:25:56-00:29:07 粒子、渲染器、速度
+
+- 本段定位：粒子、渲染器、速度。
+- 知识点：在这里使用的动态參數的 所以也可以再獲取 然后 然后我们现在 这种情况下 大約20顆 这樣設置成20嗎 现在是 这种漸变只是材质而已。
+- 知识点：什么是磁磚方式 其實并没有太大意義 这个是在进行試力时 继续看一下吧 那麼 我简单给大家展示一下这里的選項 现在的發光灯是10个 这里有一个選中的選項。
+- 知识点：8kw發光灯 是按粒子来計算的 然后 就是說每个粒子都有發光灯 所以如果关闭这个 这个是除了四代渲染器以外的。
+- 知识点：就用精靈渲染器 来看一下 反正是紅色 然后就有點 让人困惑呢 我先試試綠色 然后把速度也去掉 然后 要停下来才能一目了然 感覺就要結束了 也去掉外殼。
+- 知识点：從这种擴散的運動来看 这里生成的生成光源 现在受10个粒子的 影响而產生 10个粒子 一次性生成光源 可以这樣理解 当勾选关闭时 如果有大約100个的話。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`粒子`、`渲染器`、`速度`。
+
+**关键画面：**
+
+本图继续在双发射器结构下调试 `Empty001`，左侧预览中的红色线段已经不再是密集弧网，而是分离成多条独立的短曲线，说明 Ribbon 的分组逻辑正在被重新约束。
+
+左侧预览统计当前显示：
+
+- `0 Current, 257 Max (est.) - [Case_01] [Disabled]`
+- `0 Current, 55 Max (est.) - [Case_02] [Disabled]`
+- `0 Current, 10 Max (est.) - [Empty] [Complete]`
+- `153 Current, 190 Max (est.) - [Empty001] [Inactive]`
+
+中央结构仍是：
+
+`Empty`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Shape Location`：`Sphere`
+- `Add Velocity From Point`
+- `Curl Noise Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Color`
+- `Sprite Renderer`
+
+`Empty001`
+- `Spawn Particles from Other Emitter`
+- `Initialize Particle`
+- `Sample Particles from Other Emitter`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Color`
+- `Ribbon Renderer`
+
+右侧 Details 当前停在 `Empty001` 的渲染器/绑定相关区域，图中可直接确认：
+
+- `Age Sampling`：`Disabled`
+- `Lifetime Sampling`：`Disabled`
+- `Mass Sampling`：`Disabled`
+- `Material Random Sampling`：`Disabled`
+- `Sprite Size Sampling`：`Disabled`
+- `Sprite Rotation Sampling`：`Disabled`
+- `Sprite Facing Sampling`：`Disabled`
+- `Sprite Alignment Sampling`：`Disabled`
+- `Mesh Scale Sampling`：`Disabled`
+- `Mesh Orientation Sampling`：`Disabled`
+- 多个 `Dynamic Material Paramet...` 项均为 `Disabled`
+- `Particle ID (Ribbon ID)`：
+  - `Particle ID Sampling`：`Apply Sampled ID as Ribbon ID`
+- `Ribbon UV Distance`：`Disabled`
+
+这张图对应正文里“最底部可观察到粒子 ID；如果应用的话，现在每个粒子的线条会独立地出现”的说明。  
+也就是：在 `Ribbon Renderer` 中把采样到的粒子 ID 直接当作 `Ribbon ID` 使用后，系统会按每个粒子的唯一标识去分组连线，而不是把所有采样点强行连成一整条乱线，因此左侧预览会变成多条彼此独立的红色短线段。
+这一张图把视角切回 `Empty001` 的 `Initialize Particle`，目的是进一步压缩 Ribbon 粒子的存活时间与显示宽度，让左侧预览里的红色线段更容易单独观察。当前预览里红色线条数量明显减少，每条线都更短、更清晰，便于确认前一步 `Ribbon ID` 分组是否生效。
+
+左侧统计在图中可见为：
+
+- `0 Current, 257 Max (est.) - [Case_01] [Disabled]`
+- `0 Current, 55 Max (est.) - [Case_02] [Disabled]`
+- `0 Current, 10 Max (est.) - [Empty] [Complete]`
+- `90 Current, 190 Max (est.) - [Empty001] [Inactive]`
+
+右侧 `Initialize Particle` 面板能直接确认的设置如下：
+
+- `Lifetime Mode`：`Direct Set`
+- `Lifetime`：`2.0`
+- `Color Mode`：`Unset`
+- `Position Mode`：`Simulation Position`
+- `Position Offset`：`0, 0, 0`
+- `Mass Mode`：`Unset (Mass of 1)`
+- `Sprite Size Mode`：`Uniform`
+- `Uniform Sprite Size`：`10.0`
+- `Ribbon Width Mode`：`Direct Set`
+- `Ribbon Width`：`5.0`
+- `Ribbon Facing Mode`：`Unset`
+- `Ribbon Twist Mode`：`Unset`
+
+结合本段正文“再用线框来看一下，大约会生存多少个；如果设置为 5 个的话，阶段会适当减少；如果设置为 2 个的话……”可知，这一步是在通过降低粒子寿命并明确 Ribbon 宽度，先把结果收紧成较少的红色短线段，再继续观察后续 Alpha、材质和渲染器设置对最终拖尾形态的影响。
+这张图继续在 `Empty001` 上调整 `Spawn Particles from Other Emitter`，重点是控制“每个被采样源粒子最多还能再派生多少个跟随粒子”。左侧预览可以看到几组沿径向散开的短 Ribbon，每一组由一串发光点组成，说明当前连线已经按组分离，同时派生数量被压到了可观察范围。
+
+左侧统计在图中可直接读到：
+
+- `0 Current, 257 Max (est.) - [Case_01] [Disabled]`
+- `0 Current, 55 Max (est.) - [Case_02] [Disabled]`
+- `10 Current, 10 Max (est.) - [Empty] [Active]`
+- `100 Current, 100 Max (est.) - [Empty001] [Active]`
+
+中央结构仍保持双发射器：
+
+`Empty`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Shape Location`
+- `Add Velocity From Point`
+- `Curl Noise Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Color`
+- `Sprite Renderer`
+
+`Empty001`
+- `Spawn Particles from Other Emitter`
+- `Initialize Particle`
+- `Sample Particles from Other Emitter`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Color`
+- `Ribbon Renderer`
+
+右侧 `Spawn Particles from Other Emitter` 面板能确认的参数为：
+
+- `Emitter Binding`：`Other -> Empty`
+- `Spawn Rate`：`10.0`
+- `Calculate Spawn Rate Per Particle`：已启用
+- `Spawn Rate Per Particle Cap`：`100.0`
+- `Spawning Enabled`：已启用
+- `Minimum Age Spawn Threshold`：`0.3333`
+- `Maximum Age Spawn Threshold`：`1.0`
+
+按图中结果可直接理解为：`Empty` 先生成 10 个源粒子，`Empty001` 再从这些源粒子上持续派生跟随粒子，并把总派生量限制在 100 左右。这样既能保留每组 Ribbon 的拖尾形态，又不会因为单个源粒子派生过多而把画面重新堆成一团，便于后续继续检查 UV、Alpha 和粒子数量上限的关系。
+
+### 00:29:12-00:32:11 Ribbon、UV、粒子
+
+- 本段定位：Ribbon、UV、粒子。
+- 知识点：再查看4代渲染室 可观察到这樣显示的情况 再用線框来看一下 大約会生存多少个 然后我们来看一下 如果設置为5个的話 階段会适当減少 然后 如果设置为2个当然。
+- 知识点：就会变成这樣 順利地準備20个左右 这里还有一个叫做光源粒子貼圖的選項 就是这是針对每个最大粒子。
+- 知识点：設置小型生成可能数量的最大值 所以当这里的數值过高时 为了避免过於無視的生成 然后 这是與性能相關的選項 所以这里雖然設置为20 如果这里設置为5的話。
+- 知识点：那麼最大只会生成5个 最多生成5个 可以認为是存在的嗯 就这樣嗯 剛才在2號看到的噴光灯 会產生非常相似的結果 这樣程度的選項 应该了解一下吧。
+- 知识点：在这里想要接收的選項 可以認为是設置好的 像时间或數值这些都会直接接收 而且在这里使用tile itism 情况下 在这里要確保 id 和 ribbon。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+这一张图把预览切到 `Wireframe`，目的是只看 Ribbon 的几何数量，不再受材质发光和透明效果干扰。左侧画面里每一组 Ribbon 都显示成带三角斜撑的白色条带，能直接看出当前不是一整条连续长带，而是多组独立的短 Ribbon。
+
+左侧统计为：
+
+- `0 Current, 257 Max (est.) - [Case_01] [Disabled]`
+- `0 Current, 55 Max (est.) - [Case_02] [Disabled]`
+- `10 Current, 10 Max (est.) - [Empty] [Active]`
+- `170 Current, 190 Max (est.) - [Empty001] [Active]`
+
+中央发射器结构仍是：
+
+`Empty`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Shape Location`
+- `Add Velocity From Point`
+- `Curl Noise Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Color`
+- `Sprite Renderer`
+
+`Empty001`
+- `Spawn Particles from Other Emitter`
+- `Initialize Particle`
+- `Sample Particles from Other Emitter`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Color`
+- `Ribbon Renderer`
+
+右侧当前选中的是 `Empty001 -> Spawn Particles from Other Emitter`，可见参数如下：
+
+- `Emitter Binding`：`Other -> Empty`
+- `Spawn Rate`：`10.0`
+- `Calculate Spawn Rate Per Particle`：已启用
+- `Spawn Rate Per Particle Cap`：`100.0`
+- `Spawning Enabled`：已启用
+- `Minimum Age Spawn Threshold`：`0.3333`
+- `Maximum Age Spawn Threshold`：`1.0`
+
+结合本段正文“再用线框来看一下大约会生成多少个”可知，这一步是在用线框模式核对 `Spawn Rate Per Particle Cap` 对派生数量的限制效果。当前 10 个源粒子一共派生出约 170 个 `Empty001` 粒子，因此每组 Ribbon 已经被限制在可控范围内，没有重新堆成过密的面状结果。
+这一张图继续在 `Wireframe` 下检查 `Empty001` 的采样结果。左侧预览中已经看不到成片的 Ribbon 条带，只剩下零散分布的小方块采样点，说明当前显示重点从“拖尾形态”转回“粒子采样与 ID 传递”本身，用来确认哪些属性真的从源发射器传到了跟随粒子。
+
+左侧统计可见为：
+
+- `0 Current, 257 Max (est.) - [Case_01] [Disabled]`
+- `0 Current, 55 Max (est.) - [Case_02] [Disabled]`
+- `10 Current, 10 Max (est.) - [Empty] [Active]`
+- `10 Current, 390 Max (est.) - [Empty001] [Active]`
+
+中央堆栈里当前高亮的是 `Empty001 -> Sample Particles from Other Emitter`。右侧可直接确认的采样开关为：
+
+- `Age Sampling`：`Disabled`
+- `Lifetime Sampling`：`Disabled`
+- `Mass Sampling`：`Disabled`
+- `Material Random Sampling`：`Disabled`
+- `Sprite Size Sampling`：`Disabled`
+- `Sprite Rotation Sampling`：`Disabled`
+- `Sprite Facing Sampling`：`Disabled`
+- `Sprite Alignment Sampling`：`Disabled`
+- `Mesh Scale Sampling`：`Disabled`
+- `Mesh Orientation Sampling`：`Disabled`
+- `Dynamic Material Parameter Sampling`：`Disabled`
+- `Dynamic Material Parameter 1 Sampling`：`Disabled`
+- `Dynamic Material Parameter 2 Sampling`：`Disabled`
+- `Dynamic Material Parameter 3 Sampling`：`Disabled`
+- `Particle ID (Ribbon ID)`：
+  - `Particle ID Sampling`：`Apply Sampled ID as Ribbon ID`
+- `Ribbon UV Distance`：`Disabled`
+
+这一步对应正文里“这里想要接收的选项可以认为是设置好的，像时间或数值这些都会直接接收，而且在这里要确保 id 和 ribbon”的说明。也就是：在 `Sample Particles from Other Emitter` 中，把大多数与 Sprite、Mesh、材质参数相关的采样都关掉，只保留 Ribbon 分组真正需要的粒子 ID 传递，这样跟随粒子就不会因为无关属性被一起拷贝而增加混乱度。
+这一张图再次回到 `Spawn Particles from Other Emitter`，继续用 `Wireframe` 观察 Ribbon 数量控制，但这次把“总体生成速率”和“每源粒子的单独上限”明确拆开。左侧可以看到几条独立的白色条带围绕中心散开，说明虽然派生总量仍然不低，但每个源粒子的 Ribbon 组已经被压在较短、较少的范围内。
+
+左侧统计为：
+
+- `0 Current, 257 Max (est.) - [Case_01] [Disabled]`
+- `0 Current, 55 Max (est.) - [Case_02] [Disabled]`
+- `0 Current, 10 Max (est.) - [Empty] [Complete]`
+- `170 Current, 390 Max (est.) - [Empty001] [Inactive]`
+
+右侧 `Spawn Particles from Other Emitter` 面板这次能确认的关键参数是：
+
+- `Emitter Binding`：`Other -> Empty`
+- `Spawn Rate`：`20.0`
+- `Calculate Spawn Rate Per Particle`：已启用
+- `Spawn Rate Per Particle Cap`：`10.0`
+- `Spawning Enabled`：已启用
+- `Minimum Age Spawn Threshold`：`0.3333`
+- `Maximum Age Spawn Threshold`：`1.0`
+
+这一组设置对应正文里“如果这里虽然设为 20，如果这里设为 5 的话，那么最大只会生成 5 个；最多生成 5 个”的讲解思路。图中虽然当前示例把单粒子上限显示为 `10.0`，但核心逻辑已经清楚：`Spawn Rate` 决定理论上的派生速度，`Spawn Rate Per Particle Cap` 决定每个被采样源粒子允许产出的最大跟随粒子数。只要这个上限收紧，Ribbon 就不会因为局部派生过多而重新变成过密的拖尾团块。
+
+## 补充视觉证据
+
+### S05 00:13:11
+
+这张补充图用于说明 `S05` 段里“把 Niagara 粒子特效挂到角色动作或插槽上”的实际工作界面。画面左侧打开的是 Unreal 的 `Content Browser`，路径位于：
+
+- `stone`
+- `characters`
+- `Heroes`
+- `Greystone`
+- `Animations`
+
+当前浏览的是角色 `Greystone` 的动作资源列表，窗口中能看到大量 `Attack_*`、`Cast*`、`Death`、`HitReact`、`Jog_*` 等动画缩略图；其中一个 `Attack_Primary...` 动画资源被高亮选中，表示正在以角色攻击动作作为挂特效或测试拖尾的动作基础。
+
+画面右侧同时打开 `Ribbon_TEst` Niagara System 的系统总览，当前可见的是 `Case_01` 发射器，堆栈结构为：
+
+`Case_01`
+- `Emitter State`
+- `Spawn Rate`
+- `Initialize Particle`
+- `Add Velocity`：`Linear`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Ribbon Renderer`
+
+这张图没有展开参数细节，而是强调“资源放置位置”和“特效本体”之间的对应关系：  
+先在角色动画目录中找到要测试的攻击或动作资源，再把右侧这个 Ribbon 型 Niagara 发射器作为要附加的特效对象，挂到对应角色动作使用的插槽、本体或武器位置上。它对应正文中“我们使用的这个 Niagara 粒子特效要放在这里，然后这里也要添加插槽或本体名称；附加时要放在右边而不是左边”的说明，用来证明该案例不是孤立调参数，而是要真正落到角色动作资源的挂点上做生命周期与拖尾测试。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+

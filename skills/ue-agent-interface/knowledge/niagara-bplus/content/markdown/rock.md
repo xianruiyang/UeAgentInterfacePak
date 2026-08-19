@@ -1,0 +1,792 @@
+# 写实物理 Rock 碎块
+
+# 写实物理 Rock 碎块
+
+## 关键术语
+
+- `Emitter`、`Module`、`Spawn`、`Update`、`Particle Spawn`、`Lifetime`、`Velocity`、`Collision`、`GPU`、`UV`、`Normal`、`Niagara`、`Particle`、`Spawn Rate`、`Normalized Age`、`Material`、`Niagara System`、`Initialize Particle`
+
+## 分段知识
+
+### 00:00:00-00:02:55 Emitter、Curve、Noise
+
+- 本段定位：Emitter、Curve、Noise。
+- 知识点：我们上节课添加了烟雾 那么这节课我们就来添加比较重要的石块 我们这个雷神之锤也终于要进入尾声了 虽然现在看起来还有一点怪 但是我们等全部的发射器添加完。
+- 知识点：我们再来细细的调 然后同时我们也会把它配置在我们的动画蓝图动作上 然后我们到时候再一起去看效果 现在只是一个预览版 好的,我们找到我们的石块材质。
+- 知识点：这个石块材质我就不带着大家一起去连了 因为整个材质是比较复杂的 在市场中就不去连了 可以带大家先来看一下我这些节点是怎么操作的。
+- 知识点：去混合做了一个发线自发光 然后再跟这边的自发光用一个curve atlas采用一根曲线 最后把它俩混合在一起 然后做了一个随机方向的遮罩增强。
+- 知识点：这边就是普通的一个石块的PBR材质 然后这个石块的贴图 我已经给大家放在了我们这个贴图文件夹里 这个文件夹的格式我也整理了 我把大家这次视角需要用到的贴图文件。
+- 知识点：都已经整理好放在这边了 大家可以在我的初始工程中拿到 这个石块和模型也都在这边 它是一个mega scan里面的素材 可以看一下 把这个材质先给到我们这个石块上去。
+- 知识点：它就是一个mega scan里面的一个比较写实的石块 你也可以自己去下 你也可以在我这边 直接拿我初始工程里的都可以 或者你也可以去里面逛一逛。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Emitter`、`Curve`、`Noise`、`材质`、`贴图`、`发射器`、`蓝图`、`曲线`。
+
+**关键画面：**
+
+这一帧是进入“Rock 碎块”章节前的系统总览。左侧预览显示的是当前版本的雷神之锤落地效果，中间 `System Overview` 则列出了已经搭好的发射器，为后续新增石块发射器提供上下文。
+
+- 当前系统：`NS_Lightning_HammerHit`
+- 预览窗口中可见的已有效果
+  - 纵向主闪电
+  - 地面冲击环
+  - 地面烟雾团
+  - 向外飞散的细小火花/碎闪
+  - 中心高亮落点
+
+- `System Overview` 中当前可见发射器
+  - `NE_ElectricalExp`
+  - `NE_Sparks_Burst`
+  - `NE_Flare`
+  - `NE_Shockwave_Air`
+  - `NE_Shockwave_Chromatic`
+  - `NE_Sparks_Ground`
+  - `NE_Lightning_Strike`
+  - `NE_Smoke_Ground`
+  - `NE_Light`
+
+- 时间线状态
+  - 底部轨道列表与系统总览中的发射器名称一一对应
+  - 当前播放头停在约 `0.15s`
+  - 说明截图处于命中特效爆发早期，用来观察各发射器叠加后的即时观感
+
+这张图的作用是建立新增石块前的“现有效果基线”：当前系统已经有闪电、烟雾、光和冲击波，但还缺少更有重量感的实体碎块层。后续石块发射器需要在不破坏这套现有效果平衡的前提下补进来。
+这一帧打开的是石块材质 `M_FX_Rock_Advanced`。教程明确说这部分材质不会从零带做，而是先展示已经整理好的“进阶版材质”和对应贴图资产，供后续石块发射器直接使用。
+
+- 当前材质：`M_FX_Rock_Advanced`
+- 预览窗口
+  - 左侧预览几何体表面呈灰白色岩石纹理
+  - 说明材质已经具备基础岩石外观，而不是空白占位材质
+
+- 可确认的资源/贴图集合
+  - 内容浏览器当前定位在 `Content > VFX > Texture`
+  - 本页可见并与石块相关的贴图包括：
+    - `T_Rock_Albedo`
+    - `T_Rock_Normal`
+    - `T_Rock_ORS`
+  - 同页还能看到本套特效其他贴图：
+    - `T_Flare_001`
+    - `T_Lightnings_001`
+    - `T_Lightnings_003`
+    - `T_Lightnings_Impact_03`
+    - `T_Masks_004`
+    - `T_Noise_004`
+    - `T_RefNormal_001`
+    - `T_ShockWave`
+    - `T_Smoke_05`
+
+- 材质图中可确认的结构方向
+  - 多张石块贴图分别输入到材质网络
+  - 右侧材质根节点至少接入了常见的 PBR 输入：
+    - `Base Color`
+    - `Metallic`
+    - `Specular`
+    - `Roughness`
+    - `Normal`
+    - `Emissive Color`
+    - `Ambient Occlusion`
+    - `World Position Offset`
+  - 截图中央有一个标注为 `Base` 的分组区域，表明这是一套经过整理的正式材质图，而非临时拼接节点
+
+这张图的可用结论不是去逐个抄写所有模糊节点，而是确认石块材质的生产方式：它基于一套完整的岩石 PBR 贴图集构建，并额外保留了发光/偏移等 FX 向输入，后续石块发射器只需要直接套用这个材质，而不是现场重新搭一套岩石材质。
+这一帧把新的石块发射器 `NE_Rock` 插入到了 `NS_Lightning_HammerHit` 中，并切到它的 `Mesh Renderer` 设置页。说明石块层不会沿用 sprite 渲染，而是独立作为 mesh 粒子系统来做。
+
+- 当前系统：`NS_Lightning_HammerHit`
+- 新增发射器：`NE_Rock`
+- 系统/时间线状态
+  - 底部时间线已出现 `NE_Rock` 轨道
+  - 左侧粒子计数列表中可见：
+    - `0 Current, 0 Max (est.) - [NE_Rock] [Active]`
+  - 说明该发射器已加入系统但此刻还没有生成可见粒子
+
+- `NE_Rock` 栈结构
+  - `Emitter State System`
+  - `Initialize Particle`
+  - `Particle State`
+  - `Mesh Renderer`
+
+- `Mesh Renderer` 当前可见设置
+  - `Meshes`：`1 Array element`
+  - `Enable Material Overrides`：未勾选
+  - `Override Materials`：`0 Array element`
+  - `Source Mode`：`Particles`
+  - `Locked Axis Enable`：未勾选
+  - `Enable Mesh Flipbook`：未勾选
+  - `Facing Mode`：`Default`
+  - `Sort Mode`：`None`
+  - `Enable Frustum Culling`：未勾选
+  - `Enable Camera Distance Culling`：未勾选
+  - `Renderer Visibility`：`0`
+
+这张图的关键信息是结构选择：石块不再是平面贴片，而是用单独的 `Mesh Renderer` 发射实体网格粒子。后续需要在这个发射器里补上 GPU、Burst、Lifetime、碰撞和速度逻辑，才能得到有重量感的写实碎块飞散效果。
+
+### 00:02:57-00:06:30 Module、Lifetime、GPU
+
+- 本段定位：Module、Lifetime、GPU。
+- 知识点：换上我这个已经做好的材质 在我们这个scale-02里 我已经给大家放入对应输入来了 当然了这个是我的进阶版材质。
+- 知识点：我们给它先改成GPU粒子 因为这个石块我们之后会用到碰撞 所以说我们用GPU的这个距离场 去给它做碰撞检测 这边一定要改成GPU 前面的你改不改。
+- 知识点：其实都不影响你制作 但是这边你一定要改成GPU OK我们给它burst 给它burst个先25个 这个整个石块发射器其实也比较难。
+- 知识点：还好我这个石块发射器并没有用到 自己写的module 引擎提供给你的节点已经足够实现了 这个在5.3.2这个版本是比较完善的 如果你是用用UE4。
+- 知识点：4.264.27 那么你可能自己需要手动写一些module 或者做一些设置 才能让它更符合物理和现实 OK我们这个石块的生命 就给它一个random随机。
+- 知识点：因为它会有一个pro size的概念 就是如果你的粒子生命 超过了它那个pro size值的话 那么它可能会给你报错 也就是说可以理解为所有的Niagara。
+- 知识点：说这边的这个lifetime 你平时做练习 可以不用管 你想怎么做就怎么做 但是在实际的项目中 你最好还是要跟程序去沟通一下 这也算是一个项目的小经验小技巧。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Niagara`、`Lifetime`、`GPU`、`材质`、`粒子`、`发射器`、`曲线`、`碰撞`。
+
+**关键画面：**
+
+这一帧继续停留在 `NE_Rock > Mesh Renderer`，但比上一批多展开了 mesh 资源和材质覆盖信息。现在已经可以明确石块粒子具体使用哪一个网格和哪一个实例材质。
+
+- 当前对象：`NE_Rock > Mesh Renderer`
+- `Meshes`
+  - `1 Array element`
+  - `Index [0]`：`SM_FX_Rock_001`
+- `Enable Material Overrides`
+  - 已勾选
+- `Override Materials`
+  - `1 Array element`
+  - `Index [0]`
+    - `Explicit Mat`：`MI_A_Lightning_DebrisRock_001`
+    - `User Param Binding`：`None`
+
+- 其余可见渲染器设置
+  - `Source Mode`：`Particles`
+  - `Locked Axis Enable`：未勾选
+  - `Enable Mesh Flipbook`：未勾选
+  - `Facing Mode`：`Default`
+  - `Sort Mode`：`None`
+  - `Enable Frustum Culling`：未勾选
+  - `Enable Camera Distance Culling`：未勾选
+  - `Renderer Visibility`：`0`
+
+这张图给出了石块层最关键的资源绑定：
+
+- 网格：`SM_FX_Rock_001`
+- 材质实例：`MI_A_Lightning_DebrisRock_001`
+
+也就是说，后续石块发射器的工作重点不再是找资源，而是围绕这个固定的 mesh+材质组合去配置 GPU、Burst、Lifetime、受力和碰撞，让它表现成真实碎块飞散。
+这一帧切到 `NE_Rock > Initialize Particle`。左侧预览中已经出现了单个石块粒子，说明发射器开始实际出粒；右侧重点是在给碎块设置更适合项目使用的随机寿命范围。
+
+- 当前对象：`NE_Rock > Initialize Particle`
+- `Point Attributes`
+  - `Lifetime Mode`：`Random`
+  - `Lifetime Min`：`4.0`
+  - `Lifetime Max`：`6.0`
+  - `Color Mode`：`Unset`
+  - `Position Mode`：`Simulation Position`
+  - `Position Offset`：`(0.0, 0.0, 0.0)`
+  - `Mass Mode`：`Unset / (Mass of 1)`
+
+- 其他属性状态
+  - `Sprite Attributes`：全部 `Unset`
+  - `Mesh Attributes`
+    - `Mesh Scale Mode`：`Unset`
+    - `Mesh Renderer Array Visibility Mode`：`Unset`
+  - `Ribbon Attributes`：全部 `Unset`
+
+- 预览/计数
+  - 左侧预览出现单个碎块实例
+  - 左上粒子计数中可见：
+    - `25 Current, 25 Max (est.) - [NE_Rock] [Active]`
+  - 说明此时 `Burst` 已经按 25 个粒子开始工作，只是截图时只看到其中一个石块处于视野中
+
+这张图的重点是项目化寿命策略：石块不使用单一固定生命周期，而是落在 `4.0-6.0` 秒随机区间内。这样既能避免所有碎块同时消失，又能控制上限，不至于让粒子活得过久而触发项目中的池化/容量问题。
+这一帧继续完善 `NE_Rock` 的物理基础。左侧预览已经能看到石块 mesh 以真实体块形式显示，右侧展开的是“按体积计算质量和转动惯量”的模块，说明教程开始让碎块具备更接近真实物体的质量语义。
+
+- 当前对象：`NE_Rock`
+- 发射器栈新增/可见模块
+  - `Shape Location Cylinder`
+  - `Initial Mesh Orientation Random`
+  - `Calculate Mass and Rotational Inertia by Volume`
+  - `Particle State`
+  - `Mesh Renderer`
+
+- `Calculate Mass and Rotational Inertia by Volume`
+  - `Renderer Type`：`Mesh`
+  - `Mesh Bounds`：`(1.0, 1.0, 1.0)`
+  - `Density by Material Type`：`Rock`
+  - `Mass Modulation`：`1.0`
+  - 界面中还能看到“手动输入密度”的字段存在，但当前并未采用手填密度路径
+
+- 预览/效果
+  - 左侧预览中的单个石块带有岩石材质反光与体积感
+  - 与前一张相比，这一帧的重点已不是 mesh 资源绑定，而是为后续受力、旋转和碰撞做物理参数准备
+
+这张图的核心作用是把“碎块只是一个会飞的网格”推进成“带有质量语义的粒子刚体近似体”：
+
+- 用 `Shape Location Cylinder` 决定碎块初始生成区域
+- 用 `Initial Mesh Orientation Random` 打散初始朝向
+- 用 `Calculate Mass and Rotational Inertia by Volume` 让后续速度、旋转、碰撞反馈更接近真实石块，而不是轻飘飘的装饰 mesh
+
+### 00:06:33-00:09:30 Spawn、Velocity、Normal
+
+- 本段定位：Spawn、Velocity、Normal。
+- 知识点：24乘17乘9 OK 正好对应它的xyz 我们再确认一遍 24乘17乘9 没问题 好 save一下 剩下的就不用改了 我们继续把它做 我们给它增加一个力。
+- 知识点：hide velocity 然后fix一下 然后在这边我们是一个 从角度去发射力 我们这边去给它一个curl 用curl去采样 让它每一个10块会受到一个T度的渐变力。
+- 知识点：别忘了把这边改成random 我们curl index不是它的normalize age 而是一个random 0到1 从0到1去采样 OK。
+- 知识点：我直接把这边scale curve给它改成600 然后在这根曲线上去采样 把磁力关掉 我们可能要把这个曲线整体的往上平移 这块听不懂也没关系。
+- 知识点：你就先跟着我做 你先看一下最后的效果是什么样子 因为我们一下子会讲到很多 比较难度比较高的节点 OK 再给它往上提一点 好 差不多 然后我们接下来改一下这个角度。
+- 知识点：110 50 可观察到它现在都是往这个X字路方向去飞了 我们这边要给它改成Z柔 我们还是放到传递中去 在这个预览界面大家看着也不是很方便。
+- 知识点：OK 放到传递中去 放到传递中去就是我不是很方便 因为这个界面太小了 没关系 有困难我就克服一下 OK 我们给它加入一个力之后 我们再给它一个chronoids。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`Spawn`、`Velocity`、`Curve`、`粒子`、`曲线`。
+
+**关键画面：**
+
+这一帧继续校准 `NE_Rock` 的体积质量参数。与上一段相比，关键变化是把 `Calculate Mass and Rotational Inertia by Volume` 中的 `Mesh Bounds` 改成与石块模型实际尺寸一致的数值，而不是默认的 `1,1,1`。
+
+- 当前对象：`NE_Rock > Calculate Mass and Rotational Inertia by Volume`
+- 模块设置
+  - `Renderer Type`：`Mesh`
+  - `Mesh Bounds`：`X = 24.0`、`Y = 17.0`、`Z = 9.0`
+  - `Density by Material Type`：`Rock`
+  - `Mass Modulation`：`1.0`
+
+- 预览/上下文
+  - 左侧预览中的石块仍显示为 `SM_FX_Rock_001`
+  - 系统内 `NE_Rock` 依旧保持 `25 Current, 25 Max (est.)`
+  - 说明这一步是对物理语义做精确校准，而不是改变生成数量
+
+这组 `24 × 17 × 9` 的尺寸就是正文里提到“正好对应它的 XYZ”的那组值。其作用是让后续基于体积的质量、惯量和碰撞反馈更贴近石块网格本身，而不是按照默认单位立方体去估算，避免碎块表现得过轻或转动失真。
+这一帧开始给 `NE_Rock` 加主要的抛射力。右侧展开的是 `Add Velocity in Cone`，它不是固定单值发射，而是通过一条曲线和圆锥方向控制，让石块从指定方向范围内被甩出去。
+
+- 当前对象：`NE_Rock > Add Velocity in Cone`
+- 模块设置
+  - `Velocity Mode`：`In Cone`
+  - `Velocity Speed`：`Float from Curve`
+  - 曲线类型：`Curve for Floats`
+  - `CurveIndex`：`Random(0,1)`
+  - `Scale Curve`：`600.0`
+  - 曲线形态：
+    - 起点约 `2.2`
+    - 很快降到约 `1.4`
+    - 中段长时间维持在约 `1.4`
+    - 尾段再下降到约 `0.5`
+  - `Distribution Along Cone Axis`：`0.5`
+  - `Speed Falloff From Cone Axis`：`0.7`
+
+- `Cone`
+  - `Cone Axis`：`(1.0, 0.0, 0.0)`
+  - `Cone Angle`：`145.0`
+  - `Inner Cone Angle`：`0.0`
+  - `Cone Angle Mode`：`Degrees`
+
+- `Rotation`
+  - `Rotation Mode`：`Default`
+  - `Rotation Coordinate Space`：`Local`
+
+这一步的作用可以直接理解为：石块先以 `X` 方向为主轴，在一个很宽的锥形扇面里被发射出去；每个粒子的速度倍率又不是固定值，而是从曲线上按 `Random(0,1)` 随机采样，再整体乘 `600`，从而得到一批速度大小不同、方向也有扩散范围的碎块。
+这一帧继续给 `NE_Rock` 增加受力扰动，新增的是 `Curl Noise Force`。它的作用不是决定主抛射方向，而是在已有 `Add Velocity in Cone` 的基础上，为每块石头叠加带噪声的偏转力，避免所有碎块沿同一扇面机械飞行。
+
+- 当前对象：`NE_Rock > Curl Noise Force`
+- 当前可见参数
+  - `Noise Strength`：`10.0`
+  - `Noise Frequency`：`50.0`
+
+- 发射器栈可见结构
+  - `Shape Location Cylinder`
+  - `Initial Mesh Orientation Random`
+  - `Calculate Mass and Rotational Inertia by Volume`
+  - `Add Velocity in Cone`
+  - `Curl Noise Force`
+  - `Apply Initial Forces`
+  - `Particle State`
+  - `Solve Forces and Velocity`
+  - `Mesh Renderer`
+
+- 画面辅助信息
+  - 右侧白色帮助浮层在说明 `Curl Noise` 的质量档位与成本差异，但当前截图没有展示具体选择的质量枚举值
+  - 左侧预览暂未直接出现明显飞散轨迹，说明此刻主要是在模块级别补力，而不是展示最终动态结果
+
+这一步的意义是让石块飞行轨迹带有非均匀扰动：
+
+- `Add Velocity in Cone` 负责“整体往外炸开”
+- `Curl Noise Force` 负责“每块石头受一点不同方向的扰动”
+
+两者叠加后，碎块的运动会更接近真实爆裂，而不是所有石头都像复制体一样平行飞出。
+
+### 00:09:33-00:12:32 Collision、GPU、粒子
+
+- 本段定位：Collision、GPU、粒子。
+- 知识点：当然了这肯定不是我们想要的 我们紧接着继续往下做 然后现在这个石块 可观察到它在飞的过程中 它是自身不旋转的 这个肯定是不符合我们现实的。
+- 知识点：我们给它再加一个旋转的力 这个旋转的力 我们就不需要给它加得很大了 我们就直接给它 一个multiplan 然后把它变成一个float。
+- 知识点：再给它做一个random 然后这边是16 然后这边直接给它一个random 上面这个A主要是做一个力的大小 然后下面这个主要是做一个随机的方向。
+- 知识点：可观察到它现在就会受到重力的影响 不过它现在是直接掉到这个地面以下去了 是因为它没有加clayron碰撞节点 没事我们待会再加 我们先给它加一个阻力。
+- 知识点：同样的我们下面这个rotational drag 我们也要给上 就是它旋转也会有一个阻力 我们之前的这个粒子都是不给的。
+- 知识点：因为粒子它其实并不符合物理 它只是一个比较好看的效果 我们也开始也是让它 一开始受到的这个旋转的阻力比较小 然后慢慢的 会受到一个比较大的阻力。
+- 知识点：到最后慢慢停下 让它不再旋转 我们给它再适当k一下曲线 让它一开始是完全不受到这个粒子影响的。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Drag`、`Collision`、`GPU`、`粒子`、`曲线`、`碰撞`。
+
+**关键画面：**
+
+这一帧继续调 `NE_Rock` 的飞行扰动力，并准备补上自转。右侧当前仍停留在 `Curl Noise Force`，但数值已经比上一段明显加大，同时模块搜索框里已经在查找 `Rotational Velocity`。
+
+- 当前对象：`NE_Rock > Curl Noise Force`
+- 当前可见参数
+  - `Noise Strength`：`50.0`
+  - `Noise Frequency`：`100.0`
+  - `Noise Quality / Cost`：`Baked (Medium)`
+  - `Pan Noise Field`：`(0.0, 0.0, 0.0)`
+  - `Mask Curl Noise`：未勾选
+
+- 当前操作上下文
+  - 下方 “Add new Module” 搜索框中输入了 `add`
+  - 搜索结果里可见：
+    - `Add Velocity`
+    - `Rotational Velocity`
+    - `Velocity`
+  - 说明教程接下来准备继续给石块补“旋转方向/角速度”相关模块
+
+这张图说明石块运动调校开始从“只会飞”转向“飞行轨迹更乱、并且要开始自转”：
+
+- `Curl Noise Force` 的强度从前一段的 `10 / 50` 提高到了 `50 / 100`
+- 同时开始准备插入 `Rotational Velocity`
+
+这样后续石块就不会只是被抛出去，而会带着更强的路径扰动和旋转感，更接近真实碎裂抛飞。
+这一帧开始给 `NE_Rock` 加阻力，让石块不至于一直保持同样速度和转速飞下去。左侧预览里已经能看到石块散落在地面上，说明受力和下落过程开始接近最终物理观感。
+
+- 当前对象：`NE_Rock > Drag`
+- 线性阻力 `Drag`
+  - 输入类型：`Random Range Float`
+  - `Minimum`：`0.8`
+  - `Maximum`：`1.0`
+  - `Evaluation Type`：`Spawn Only`
+  - 含义：每块石头出生时随机拿到一个线性阻力系数，之后保持不变
+
+- `Rotational Drag`
+  - 输入类型：`Float from Curve`
+  - 曲线类型：`Curve for Floats`
+  - `CurveIndex`：`Particles.NormalizedAge`
+  - `Scale Curve`：`1.0`
+  - 曲线形态：
+    - 前段接近 `0.9`
+    - 中段平滑下降
+    - 末端接近 `0.1`
+  - 含义：旋转阻力不是恒定值，而是随生命周期逐渐减弱/收敛，使石块自转最终慢下来
+
+- 发射器栈可见模块
+  - `Add Rotational Velocity`
+  - `Gravity Force`
+  - `Drag`
+  - `Solve Forces and Velocity`
+  - `Mesh Renderer`
+
+- 输出/预览
+  - 左侧预览中石块已散开并贴近地面
+  - 说明当前的重力、线性阻力和旋转阻力已经共同参与了碎块的落地过程
+
+这一步的目的很明确：给石块飞行和自转都加“刹车”。如果没有这组阻力，石块会一直高速乱转，视觉上更像特效碎片而不是有重量的真实岩石。
+这一帧打开的是石块静态网格 `SM_FX_Rock_001` 本体，目的是核对它是否具备后续 GPU 距离场碰撞所需的基础网格信息。截图不是在调 Niagara 参数，而是在确认网格资源本身的尺寸、距离场和材质槽状态。
+
+- 当前资源：`SM_FX_Rock_001`
+- 网格信息面板可见数据
+  - `Triangles`：`304`
+  - `Vertices`：`252`
+  - `Distance Field`：`7x7x7`
+  - `Approx Size`：`24 x 17 x 9`
+  - `Num Collision Primitives`：`0`
+
+- 材质槽
+  - `Material Slots`：`1 Material Slots`
+  - `Element 0` 绑定材质：`M_FX_Rock_Advanced`
+
+- 其他可见构建/资源状态
+  - `Nanite Settings` 区域可见，但当前截图重点不是 Nanite 开关
+  - `Distance Field Resolution Scale`：`1.0`
+
+这张图的可确认结论有两点：
+
+- 石块网格的真实近似尺寸就是 `24 × 17 × 9`，与前面 Niagara 中手工填入的 `Mesh Bounds` 一致
+- 网格已经有可用的距离场体素信息（`7x7x7`），这正是后续用 GPU 距离场碰撞时要依赖的前置条件
+
+也就是说，石块碰撞之所以能继续往下做，并不只是 Niagara 模块配好了，还因为底层 mesh 资源本身已经具备合适的尺寸和距离场数据。
+
+### 00:12:35-00:16:02 Spawn、Update、Particle Spawn
+
+- 本段定位：Spawn、Update、Particle Spawn。
+- 知识点：因为这个数值太大的话 它会跟地面产生碰撞 也就是被卡在地里面出不来了 所以说我们这边的radio scale 要给它小一点 要不然它就发射不出来都挤了一堆了。
+- 知识点：这个bounce我们给它0.65 同时我们把它下面开开 给它一个0.15 先给它看一下 把这个勾也开开 OK 这边bounce我们就设置好了。
+- 知识点：这个主要是做一个随机的碰撞的normal 让它朝着不同的方向 好 我们这个fraction 我们就先把simple fraction勾掉。
+- 知识点：我们给它调一下下面的参数 OK 2.3 剩下的就没有什么好改的了 OK 我们可观察到 它基本上就成型了 最后我们再给它加一个update。
+- 知识点：我们要更新一下 它这个10块旋转的状态 OK 我们给它选到最后一个选项 把我们这个match random人填进去 可观察到它碰到地面以后。
+- 知识点：还是会有一定的旋转 但是它并不会永远的自转下去 而是在一定程度下就停止了 这个是Ue已经帮我们写好的节点 可以直接拿来用 它其实非常的强大。
+- 知识点：我们让它缩小 现在非常突兀 死得非常突兀 我们给它一个float 把三个柔一起缩放 这个曲线就比较好K 它每次都会卡一下 因为我们加的节点太多了。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Particle`、`Spawn`、`Particle Spawn`、`Dynamic Parameter`、`Curve`、`材质`、`曲线`、`碰撞`。
+
+**关键画面：**
+
+这是 `NS_Lightning_HammerHit` 中发射器 `NE_Rock` 的 `Particle Update > Collision` 模块参数面板，展示岩石碎片碰撞的 GPU Distance Fields 配置：
+
+- `Collision Mode`：`GPU Distance Fields`
+- `Collision Enabled`：已开启
+- `Collision Radius`
+  - `Radius Calculation Type`：`Mesh`
+  - `Method for Calculating Particle Radius`：`Bounds`
+  - `Mesh Dimensions`：`24.0, 17.0, 9.0`
+  - `Particle Radius Scale`：`0.35`
+- `Bounce`
+  - `Restitution`：`0.6`
+  - `Randomize Collision Normal`：未开启，旁侧随机值框显示 `0.1`
+  - `Control Roll On Collision`：未开启
+- `Friction`
+  - `Simple Friction`：已开启
+  - `Friction`：`0.25`
+  - `Friction During a Bounce`：`0.0`
+- `Age Colliding Particles`
+  - `Advanced Aging Rate`：`0.0`
+- `Rest`
+  - `Enable Rest State`：已开启
+  - `Manually Enter Rest`：未开启
+  - `Max Number Of Collisions`：`1`
+  - `Maximum Penetration Correction Distance`：`0.5`
+  - `Percentage of Penetration Before Rest`：`1.0`
+  - `Rest State Time Range`：`0.5`
+  - `Valid Collision Plane Normal For Rest`：`(0.0, 0.0, 1.0)`
+  - `Minimum Collision Normal To Rest Normal`：`0.5`
+
+该图同时说明当前时间线里选中的仍是 `NE_Rock`，其 `Particle Update` 下已经串联了 `Particle State`、`Gravity Force`、`Drag`、`Collision`、`Solve Forces and Velocity`，碰撞后的求解依赖后续 `Solve Forces and Velocity` 执行。
+这是 `NS_Lightning_HammerHit` 发射器 `NE_Rock` 的模块顺序调整图，作者在 `Particle Update` 中新增并选中了 `Scale Mesh Size` 模块：
+
+- 模块位置：插在 `Particle State` 之后、`Gravity Force` 之前。
+- 当前模块列表可见顺序为：
+  - `Particle State`
+  - `Scale Mesh Size`
+  - `Gravity Force`
+  - `Drag`
+  - `Collision`
+  - `Solve Forces and Velocity`
+  - `Update Mesh Orientation`
+- 右侧 `Scale Mesh Size` 参数面板只有一项：
+  - `Scale Factor`：`(1.0, 1.0, 1.0)`
+- 底部提示文字 `Move this module here` 说明此时正在拖放模块，以便把缩放控制放进更新阶段，而不是保留在生成阶段。
+
+结合前后文，这一步的作用不是立即改变尺寸数值，而是先把网格缩放控制迁移到 `Particle Update`，为后续用曲线或年龄驱动碎石缩放做准备。
+这是 `NS_Lightning_HammerHit` 发射器 `NE_Rock` 的 `Particle Update > Dynamic Material Parameters 001` 配置，用来把碎石材质的发光强度随生命周期快速衰减：
+
+- 模块位置：位于 `Update Mesh Orientation` 之后、`Render` 之前。
+- 当前查看页签：`All`
+- `Dynamic Parameter Index 0`
+  - `Write Parameter Index 0`：已开启
+  - 参数名：`EmessiveTem_Multiply`
+  - 赋值方式：`Float from Curve`
+- `FloatCurve`
+  - 曲线输入：`Particles.NormalizedAge`
+  - 曲线形态：在年龄 `0` 时接近 `0.9`，随后持续下滑；到大约 `0.5` 时降到约 `0.2`，到年龄 `1` 时衰减到 `0`
+- `Scale Curve`
+  - 类型：`Random Range Float`
+  - `Minimum`：`3.0`
+  - `Maximum`：`6.0`
+  - `Evaluation Type`：`Spawn Only`
+- 可见但未用于当前材质的附加输入：
+  - `Random.UV`：`0.0`
+  - `NormalizedAge`：`0.0`
+  - `Param3-0 (Parameter not used in materials)`：`0.0`
+- `Dynamic Parameter Index 1/2/3`
+  - `Write Parameter Index 1/2/3`：均未开启
+
+左侧预览里碎石表面出现明显的蓝白发光点，结合本段后续正文“从 `0.2` 开始到 `0.35` 达到 `1`，然后迅速衰减”的意图，可以确认这里是在用生命周期曲线乘以出生随机倍数，为每块石头制造先亮后灭的闪光表现。
+
+### 00:16:06-00:19:01 关键流程 06
+
+- 本段定位：关键流程 06。
+- 知识点：可观察到已经初步有点感觉了 我们再去详细的K一下这根曲线 从0.2开始到0.35就达到1 让它在一开始的时候非常的闪亮 然后后面迅速的衰减下来。
+- 知识点：上来的太快了 再给它加一个点 去精确的控制它一下 一根曲线调一天 这是很正常的 OK 我们再把这个亮度衰减更快一点 它现在这个亮度是有点慢了。
+- 知识点：0.85左右 然后在这边同样的 也给它再打一根曲线 然后让它快速的把它降下来 多打几个点方便控制 差不多 好 我们再回到match size。
+- 知识点：我们也给它做一根曲线 去调节一下它这个大小 它现在大小都有点太过一致了 同样的我们这边改成random 这个动态调好之后 我们再去改这个size就会方便很多。
+- 知识点：给它一个进行T度的渐变 每一个区间都要均匀的分布一下 整体给它往上移一点 这个石块它最好是有大有小 0.85 再给它整体缩放一下 现在这个大小就区分的比较开了。
+- 核对对象：`曲线`。
+
+**关键画面：**
+
+这是 `NS_Lightning_HammerHit` 发射器 `NE_Rock` 的 `Particle Update > Dynamic Material Parameters 001` 模块下半部分配置，重点是补充动态材质参数里的尺寸与随机分布控制：
+
+- 当前仍在 `Dynamic Parameter Index 0` 页签，模块位于 `Update Mesh Orientation` 之后、`Render` 之前。
+- 上半部分可见的发光强度控制保持不变：
+  - 参数 `EmessiveTem_Multiply`
+  - 输入 `Particles.NormalizedAge`
+  - 发光曲线从出生时约 `0.9` 逐步衰减到生命周期末端 `0`
+- `Scale Curve`
+  - 类型：`Random Range Float`
+  - `Minimum`：`3.0`
+  - `Maximum`：`6.0`
+  - `Evaluation Type`：`Spawn Only`
+- `Random_UV`
+  - 类型：`Random Range Float`
+  - `Minimum`：`0.0`
+  - `Maximum`：`1.0`
+  - `Evaluation Type`：`Spawn Only`
+- `NormalizedAge`
+  - 输入方式：`Float from Curve`
+  - 曲线输入：`Particles.NormalizedAge`
+  - 当前显示的曲线为一条上升斜线：年龄 `0` 时约为 `0.2`，到年龄 `1` 时升到 `1.0`
+- `Param3-0 (Parameter not used in materials)`：`0.0`
+- `Dynamic Parameter Index 1/2/3`
+  - `Write Parameter Index 1/2/3` 均未开启
+
+结合本段正文“再回到 mesh size”“改成 random”“石块最好有大有小”，这里可以确认作者正在把动态材质参数扩成多路控制：一条曲线继续驱动亮度衰减，另一条上升曲线与 `3-6` 的出生随机值一起，为后续碎石大小和差异化分布提供基础数据。
+这是 `NE_Rock > Particle Update > Dynamic Material Parameters 001` 的曲线细调画面，作者同时在修正亮度衰减和年龄驱动曲线：
+
+- `Dynamic Parameter Index 0` 仍然开启，参数名保持为 `EmessiveTem_Multiply`。
+- 上方发光曲线：
+  - 输入仍为 `Particles.NormalizedAge`
+  - 曲线起点约为 `0.95`
+  - 在前段新增一个中间控制点，把曲线从原先较均匀的下降改成“前半段更快跌落、后半段更平缓收尾”
+  - 新增点大致位于年龄 `0.1-0.2` 附近，对应值约 `0.4-0.45`
+  - 生命周期末端仍衰减到 `0`
+- `Scale Curve`
+  - `Random Range Float`
+  - `Minimum`=`3.0`，`Maximum`=`6.0`
+  - `Spawn Only`
+- `Random_UV`
+  - `Random Range Float`
+  - `Minimum`=`0.0`，`Maximum`=`1.0`
+  - `Spawn Only`
+- 下方 `NormalizedAge` 曲线：
+  - 输入仍为 `Particles.NormalizedAge`
+  - 起始阶段几乎贴近 `0.2`
+  - 到中段前出现明显抬升，先升到约 `0.7`
+  - 后半段继续爬升，到末端稳定在 `1.0`
+
+左侧预览里碎石整体亮度已经明显降低，只保留局部蓝色高光。结合正文“上来的太快了，再给它加一个点”“亮度衰减更快一点”，可确认这一步是在压缩发光爆发时长，同时把另一根年龄曲线改成更可控的分段渐变，为后续 mesh size 的大小差异调整服务。
+这是 `NS_Lightning_HammerHit` 发射器 `NE_Rock` 的 `Particle Spawn > Initialize Particle` 面板，作者在 `Mesh Attributes` 中正式调整碎石出生尺寸与生命周期缩放：
+
+- 基础粒子属性
+  - `Lifetime Max`：`6.0`
+  - `Color Mode`：`Direct Set`
+  - `Color`：`(R=1.0, G=1.0, B=1.0, A=1.0)`
+  - `Position Mode`：`Simulation Position`
+  - `Position Offset`：`(0.0, 0.0, 0.0)`
+  - `Mass Mode`：`Unset / (Mass of 1)`
+- `Mesh Attributes`
+  - `Mesh Scale Mode`：`Non-Uniform`
+  - `Mesh Scale`：`Multiply Vector by Float`
+- `Mesh Scale > Vector`
+  - 类型：`Random Range Vector`
+  - `Minimum`：`(0.85, 0.85, 0.8)`
+  - `Maximum`：`(1.25, 1.25, 1.25)`
+- `Mesh Scale > Float`
+  - 类型：`Float from Curve`
+  - 曲线输入：`Random(0,1)`
+  - 曲线形态：
+    - 左端起点约 `1.6`
+    - 很快下降到约 `1.18`
+    - 中段基本保持在 `1.15` 左右
+    - 尾段再降到约 `0.72`
+  - `Scale Curve`：`0.85`
+
+这表示每个石块先得到一组非均匀随机基础缩放，再乘上一条按随机值采样的尺寸曲线，并整体再乘 `0.85`。结合正文“每一个区间都要均匀分布一下”“整体给它往上移一点”“石块最好有大有小”“0.85 再整体缩放一下”，可以确认作者是在拉开碎石大小层次，同时把整体尺寸稍微收小。
+
+### 00:19:22-00:22:27 Niagara
+
+- 本段定位：Niagara。
+- 知识点：整体再缩小一点 OK 我们整体看一下 感觉一开始它这个亮度 有点太低了 我这边可能给曲线给的太猛了 它也更快的升上来一点 我们正常制作过程中。
+- 知识点：这样反复来回的去调 去改自己之前的参数是很正常的 你一定要搭配整体的大感觉去做 尤其是有些时候它这个场景灯光 它都会比你变 然后你的所有特效可能也要跟着去改一步。
+- 知识点：OK 我们再单独显示一下 我们就先调到这里 之后我们再去慢慢的调 等整个技能成型之后 我们现在把它关掉 我们先把它放到动画上去 这个放动画其实很快。
+- 知识点：在这一帧 大约在这一帧 我们给它添加一个notify 是在Play Niagara Particle。
+- 知识点：Effects 然后我们把我们特效给过来 把这个attached给我选掉 然后在这边要新建一个插槽 因为我在第一节课就说过 我们尽量不要把特效挂在谷歌上。
+- 核对对象：`Niagara`、`Particle`、`蒙太奇`、`曲线`。
+
+**关键画面：**
+
+这是 `NS_Lightning_HammerHit` 发射器 `NE_Rock` 的 `Particle Spawn > Initialize Particle` 继续调小碎石整体尺寸的画面，仍在 `Mesh Attributes > Mesh Scale` 区域：
+
+- 基础参数保持不变：
+  - `Lifetime Max`：`6.0`
+  - `Color Mode`：`Direct Set`
+  - `Color`：`(1.0, 1.0, 1.0, 1.0)`
+  - `Position Mode`：`Simulation Position`
+  - `Mass Mode`：`Unset / (Mass of 1)`
+- `Mesh Scale Mode`：`Non-Uniform`
+- `Mesh Scale`：`Multiply Vector by Float`
+- `Vector`
+  - 类型：`Random Range Vector`
+  - `Minimum`：`(0.85, 0.85, 0.8)`
+  - `Maximum`：`(1.25, 1.25, 1.25)`
+- `Float`
+  - 类型：`Float from Curve`
+  - 曲线输入：`Random(0,1)`
+  - 曲线轮廓与上一批相同：左端高、前段快速下降、中段缓降、尾段再次下降
+  - 当前下方 `Scale Curve` 全局系数已改为 `0.75`
+
+左侧预览同时能看到地面烟尘和蓝色碎石，说明作者已经开始从“单独看参数”切换到“搭配整体效果回看”。结合正文“整体再缩小一点”“搭配整体的大感觉去做”，这里可以确认这一帧的关键动作就是把碎石整体尺寸再缩一档，从上一批的 `0.85` 收到 `0.75`。
+这是把 Niagara 特效接入动画资源的蒙太奇编辑界面，当前打开的是 `AM_FX_Skill_02`：
+
+- 左侧 `Skeleton Tree`
+  - 角色骨架中可见武器挂点相关层级
+  - 在右手链路下能看到 `SM_FX_Hammer_A [Preview Only]`，说明当前预览里已经挂着锤子模型
+- 中央预览
+  - 正在预览 `AM_FX_Skill_02`
+  - 顶部信息可见：
+    - `LOD: 0`
+    - `Current Screen Size: 0.591`
+    - `Triangles: 41,052`
+    - `Vertices: 123,156`
+    - `Approx Size: 277x154x283`
+- 底部时间线
+  - 资源轨道显示 `AN_FX_Skill02_Attack`
+  - 使用的蒙太奇组/插槽：`DefaultGroup.DefaultSlot`
+  - `Notifies` 轨道上至少有两个事件：
+    - 一个绿色 `PlayNiagaraEffect`
+    - 一个紫色 `TimedNiagaraEffectAdvanc...`（名称在截图中被截断）
+  - 当前播放头位于约 `57` 帧，顶部浮窗显示约 `69.61%`
+- 右侧 `Asset Browser`
+  - 可见同目录资源：`AN_FX_Skill02_Attack`、`AN_FX_Skill02_Idle`、`AM_FX_Skill_02`
+
+结合正文“在这一帧添加一个 notify，是在 Play Niagara Particle”，这一步的核心是把 Niagara 播放时机嵌入攻击蒙太奇时间线，而不是继续在 Niagara 系统内部调参数。
+这是在蒙太奇 `AM_FX_Skill_02` 中为落地点特效准备专用挂点，并把 Niagara 资源明确绑定到通知上的画面：
+
+- 左侧 `Skeleton Tree`
+  - 新建并选中了插槽/Socket：`soc_fx_groundhit`
+  - 该挂点位于骨架根层级附近
+  - 右手武器链路下仍可见 `SM_FX_Hammer_A [Preview Only]`
+- 右侧 `Details > Socket Parameters`
+  - `Socket Name`：`soc_fx_groundhit`
+  - `Bone Name`：`root`
+  - `Relative Location`：`(0.0, 0.0, 0.0)`
+  - `Relative Rotation`：`(0.0, 0.0, 0.0)`
+  - `Relative Scale`：`(1.0, 1.0, 1.0)`
+  - `Force Always Animated`：已开启
+- 中央预览
+  - 角色处于落锤动作姿态
+  - 场景中可见 `soc_fx_groundhit` 的变换 gizmo，位置落在锤头接地附近，说明这个插槽是为了地面命中特效而建
+- 底部时间线
+  - 当前播放头约在 `54` 帧，浮窗显示约 `65.28%`
+  - `Notifies` 轨道上蓝色 Niagara 通知块名称已明确显示为 `NS_Lightning_HammerHit`
+
+结合正文“attached 选掉”“新建一个插槽”“尽量不要把特效挂在骨骼上”，可以确认这一步的做法是：在根骨上新建一个独立地面命中插槽 `soc_fx_groundhit`，再让蒙太奇通知播放 `NS_Lightning_HammerHit`，避免直接把特效绑在会随肢体大幅摆动的武器/手部骨骼上。
+
+### 00:22:33-00:23:57 关键流程 08
+
+- 本段定位：关键流程 08。
+- 知识点：可观察到它就已经开始播放了 我们给它全部显示一下 我们需要给它适当往前移一点 它现在是在root点上发射的 这肯定是不对的 我们给它的Y轴平移十个单位。
+- 知识点：把它Z轴也适当上提一点 同时它锤子它其实也不是完全在人物的中心轴上 可观察到它还是有一定的距离的 等我们root点在x轴的方向 它是在副x轴。
+- 知识点：说我们把副x轴也适当往这边移一点 我们再看一下 我觉得可能还要再往前移一些 再往前移一些 再往前160个单位 这个差不多了 同时这边我们也要给它再往前移一些。
+- 知识点：30个单位 大家这个仔细的我们还会去超级能去调 我们这边只是暂时先挂一下 暂时先看一下它能不能够正常运行 好的没什么问题 那么我们本节课就到这里了。
+
+**关键画面：**
+
+这是在蒙太奇 `AM_FX_Skill_02` 中选中 Niagara 通知后的 `Anim Notify` 详情面板，开始修正落地点特效的挂点偏移：
+
+- 左侧 `Skeleton Tree`
+  - 当前仍选中插槽 `soc_fx_groundhit`
+- 中央预览
+  - 角色处于挥锤动作中段
+  - `soc_fx_groundhit` 的 gizmo 出现在角色脚下接近根骨位置，而不是锤头实际砸地位置
+  - 这正对应正文所说“它现在是在 root 点上发射，这肯定是不对的”
+- 右侧 `Details > Anim Notify`
+  - `Niagara System`：`NS_Lightning_HammerHit`
+  - `Location Offset`：`(0.0, 0.0, 0.0)`
+  - `Rotation Offset`：`(0.0, 0.0, 0.0)`
+  - `Scale`：`(1.0, 1.0, 1.0)`
+  - `Attached`：未开启
+  - `Socket Name`：`soc_fx_groundhit`
+  - `Notify Color`：亮绿色
+- `Trigger Settings`
+  - `Notify Trigger Chance`：`1.0`
+  - `Trigger on Dedicated Server`：已开启
+- 底部时间线
+  - 蓝色 Niagara 通知块名称：`NS_Lightning_HammerHit`
+  - 当前播放头约在 `25` 帧，浮窗显示约 `30.42%`
+
+这一步的意义是先确认通知已经正确引用 `NS_Lightning_HammerHit` 且走 `soc_fx_groundhit` 插槽，但偏移值还是初始零值，所以特效出生点暂时仍停在根骨附近，接下来需要通过 `Location Offset` 手动把发射点推到锤头落地位置。
+这是同一个蒙太奇通知 `NS_Lightning_HammerHit` 的偏移调位过程，作者已经开始把 `soc_fx_groundhit` 从 `root` 附近往锤头落点方向推：
+
+- 右侧 `Anim Notify`
+  - `Niagara System`：`NS_Lightning_HammerHit`
+  - `Socket Name`：`soc_fx_groundhit`
+  - `Location Offset`
+    - 第 2 列可确认为 `10.0`
+    - 第 3 列可确认为 `5.0`
+    - 第 1 列为一个负值，但精确数值被输入光标遮挡，截图中无法可靠辨认
+  - `Rotation Offset`：仍为 `0.0, 0.0, 0.0`
+  - `Scale`：仍为 `1.0, 1.0, 1.0`
+  - `Attached`：未开启
+- 预览窗口
+  - `soc_fx_groundhit` 的 gizmo 已不再完全贴在根骨中心，开始向角色前下方、接近锤头落点的位置移动
+- 底部时间线
+  - 当前播放头约在 `54` 帧，浮窗约 `65.58%`
+  - 蓝色通知块仍为 `NS_Lightning_HammerHit`
+
+已确认的信息与正文“Y 轴平移十个单位”“Z 轴也适当上提一点”一致。当前帧未确认点：`Location Offset` 第 1 列的精确数值在本图中看不清，不能据此可靠抄写。
+这是 `AM_FX_Skill_02` 中 `NS_Lightning_HammerHit` 通知的最终临时挂点修正结果，`soc_fx_groundhit` 已被推到锤头落地点附近：
+
+- `Anim Notify`
+  - `Niagara System`：`NS_Lightning_HammerHit`
+  - `Socket Name`：`soc_fx_groundhit`
+  - `Location Offset`：`(-30.0, 160.0, 5.0)`
+  - `Rotation Offset`：`(0.0, 0.0, 0.0)`
+  - `Scale`：`(1.0, 1.0, 1.0)`
+  - `Attached`：未开启
+- `Trigger Settings`
+  - `Notify Trigger Chance`：`1.0`
+  - `Trigger on Dedicated Server`：已开启
+- 预览窗口
+  - `soc_fx_groundhit` 的 gizmo 已移动到锤头前下方的接地位置，明显不再停留在角色根骨中心
+  - 角色姿势与锤头落地时机基本对齐，说明这一组偏移已能用于临时验证特效是否正常触发
+- 底部时间线
+  - 蓝色通知块仍为 `NS_Lightning_HammerHit`
+  - 当前播放头约在 `54` 帧，浮窗约 `65.34%`
+
+结合正文“再往前 160 个单位”“这边也要再往前移一些，30 个单位”“只是暂时先挂一下”，可以确认这一帧给出的可复现结果就是：在 `soc_fx_groundhit` 上使用 `(-30, 160, 5)` 的位置偏移，先把地面命中特效大致对到锤头接地点，后续仍可继续细调。
+
+## 补充视觉证据
+
+### S01 00:01:07
+
+这是材质 `M_FX_Rock_Advanced` 的 `Material Graph` 补充截图，展示岩石网格材质的主图结构、材质设置和预览结果。
+
+- 节点定义集
+  - 材质输出节点：`M_FX_Rock_Advanced`
+  - 多个绿色参数节点与若干数学节点，组成岩石表面颜色、粗糙度、金属度和法线分支
+  - 1 个蓝色法线纹理采样节点，可确认用于法线相关输入
+  - 至少 1 个紫色参数节点，接入法线分支附近
+  - 下半区还有一组独立子图，继续汇入材质输出
+  - 具体节点名在当前截图缩放 `Zoom -5` 下无法可靠辨认
+- 连线集
+  - 可确认主图有多条白线直接连入材质输出节点
+  - 已能确认有连线接到以下输出槽位：
+    - `Base Color`
+    - `Metallic`
+    - `Specular`
+    - `Roughness`
+    - `Normal`
+  - 另有一条从下半区子图拉出的长连线接入输出节点下部输入，但具体目标槽位在截图中不够清晰，无法可靠点名
+- 设置/参数
+  - 左下 `Details > Material`
+    - `Material Domain`：`Surface`
+    - `Blend Mode`：`Opaque`
+    - `Shading Model`：`Default Lit`
+    - `Two Sided`：未开启
+    - `Use Material Attributes`：未开启
+    - `Cast Ray Traced Shadows`：已开启
+  - 底部 `Stats`
+    - `Base pass shader`：`240 instructions`
+    - `Base pass vertex shader`：`137 instructions`
+    - `Texture samplers`：`5/16`
+    - `Texture Lookups (Est.)`：`VS(3), PS(4)`
+    - `User interpolators`：`2/4 Scalars (1/4 Vectors) (TexCoords: 2, Custom: 0)`
+    - `Shader Count`：`4`
+- 输出/预览
+  - 左侧球体/平面预览显示的是一块灰色岩石材质，表面有明显的裂隙与凿刻状高低起伏
+  - 从可见连线判断，这个材质至少完整驱动了基础色、金属度、高光、粗糙度和法线
+
+当前帧未确认点：
+- 图中多数节点名称、参数默认值和下半区子图的具体功能在当前截图里无法清晰辨认。
+- 材质输出节点下部那条长连线接入的确切输出槽位无法可靠确认。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

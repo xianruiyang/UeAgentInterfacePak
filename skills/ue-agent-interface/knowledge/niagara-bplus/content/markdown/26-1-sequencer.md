@@ -1,0 +1,766 @@
+# 26-1 Sequencer设置和模板缓冲区表现制作
+
+# 26-1 Sequencer设置和模板缓冲区表现制作
+
+## 关键术语
+
+- `Material`、`Sequencer`、`Mesh`、`粒子`、`生命周期`、`透明度`、`不透明度`、`+Add`、`Niagara`、`Normalized Age`、`Add`、`材质`、`发射器`、`颜色`、`曲线`、`Niagara System`、`Emitter`、`Particle`
+
+## 分段知识
+
+### 00:00:05-00:04:11 Sequencer、粒子
+
+- 本段定位：Sequencer、粒子。
+- 知识点：你好,在26講中問候大家 從这次开始,后续会制作最後一个視力 也是第八个視力 第八个視力可能看起来像技能演出 但比起技能演出,我们制作的資源也会有些使用。
+- 知识点：在游戏中制作用於电影效果的視頻时 我覺得这是一个實用的功能 我们还会了解一下什么叫做模板緩冲的功能 我覺得这会是一个适合事件演出的好功能。
+- 知识点：在游戏中并不是不能使用 但是如何解決还是看个人 總共会进行四次完成 第一次时间将设置試列器 并簡要確認模板緩冲功能的使用方法 然后正式进行我们視力形式的。
+- 知识点：與粒子連接的设置部分 我现在打開的關卡 不是第七个視力,而是第六个視力 制作了水屬性爆炸的關卡 我覺得这里继续开始比較好 所以我打開了这个。
+- 知识点：請保存当前关卡 在8號需要命名为Constellation 由於这个表達涉及宇宙相關的感覺 所以我就这樣命名 Sequencer也一樣附着一个。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`粒子`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Level Viewport + Outliner + Details 初始关卡截图
+> - 组成部分: Content Browser + Level Viewport + Outliner + Details
+> - 所属: 关卡 `06_Water_Explosion`
+> - 目的: 确认从第六个水属性爆炸关卡开始制作第八个 `Constellation` 演出，并以当前地面、灯光、Sequence Actor 和后处理体积作为初始场景。
+>
+> 可见对象:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Content Browser | 当前目录 | `Content/Coloso_.../Tutorial/Level` |
+> | Content Browser | 可见关卡资源 | `01_Sword_Trail`、`02_Earth...`、`03_Ice...`、`04_Thunder...`、`05_Death...`、`06_Water_Explosion`、`07_Fire...` |
+> | Level Viewport | 视图模式 | `Perspective / Lit / Show` |
+> | Level Viewport | 场景 | 灰色棋盘格地面，场景中可见灯光/Sequence Actor 图标和选中物体 gizmo |
+> | Outliner | 根节点 | `06_Water_Explosion (Editor)` |
+> | Outliner | 可见对象 | `Lighting`、`DirectionalLight`、`01_Swing_Trail`、`Floor`、`PlayerStart`、`PostProcessVolume` |
+> | Outliner | 选中对象 | `Floor` |
+> | Details | 对象 | `Floor (Instance)`，`StaticMeshComponent` |
+> | Details > Transform | Location | `0.0 / 0.0 / -0.5` |
+> | Details > Transform | Rotation | `0.0 / 0.0 / 0.0` |
+> | Details > Transform | Scale | `8.0 / 8.0 / 8.0` |
+> | Details > Static Mesh | Static Mesh | `SM_Template_Map_...` 可见 |
+> | Details > Materials | Element 0 | `MI_ProcGrid` |
+> | 状态栏 | 保存状态 | `All Saved` |
+>
+> 联动关系: 该图不是粒子参数图，而是说明后续 `Constellation` 演出从 `06_Water_Explosion` 关卡复制/另存；`Floor`、`01_Swing_Trail` 和 `PostProcessVolume` 是后续 Sequencer 和模板缓冲演示的场景基础。
+> 验证方式: 打开 `06_Water_Explosion` 关卡，确认 Outliner 中有 `Floor`、`01_Swing_Trail` 和 `PostProcessVolume`，选中 `Floor` 时 Transform 与材质字段一致。
+> 图表转写（UE-GTXT v4）
+> - 类型: Level Viewport + Level Sequence Actor Details 截图
+> - 组成部分: Content Browser + Level Viewport + Outliner + Details
+> - 所属: 关卡 `08_Constellation`
+> - 目的: 确认关卡已另存为 `08_Constellation`，并检查现有 `01_Swing_Trail` Level Sequence Actor 仍绑定旧的水爆炸序列资产。
+>
+> 可见对象:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Content Browser | 可见关卡资源 | `01_Sword_Trail`、`02_Earth...`、`03_Ice...`、`04_Thunder...`、`05_Death...`、`06_Water_Explosion`、`07_Fire...`、`08_Constellation` |
+> | Level Viewport | 场景 | 灰色棋盘格地面，灯光图标、Sequence Actor 图标和地面 gizmo 可见 |
+> | Outliner | 根节点 | `08_Constellation (Editor)` |
+> | Outliner | 选中对象 | `01_Swing_Trail` |
+> | Outliner | 对象类型 | `LevelSequenceActor` |
+> | Outliner | 可见对象 | `Lighting`、`DirectionalLight`、`Floor`、`PlayerStart`、`PostProcessVolume` |
+> | Details | 对象 | `01_Swing_Trail (Instance)`，`RootComponent (SceneComp)` |
+> | Details > Transform | Location | `0.0 / 0.0 / 0.0` |
+> | Details > Transform | Rotation | `0.0 / 0.0 / 0.0` |
+> | Details > Transform | Scale | `1.0 / 1.0 / 1.0` |
+> | Details > General | 按钮 | `Open Level Sequence` |
+> | Details > Level Sequence Asset | 资源 | `06_Water_Explosion` |
+> | Details > Playback | Loop | `Don't Loop` |
+> | Details > Playback | Play Rate | `1.0x` |
+> | Details > Playback | Start Offset | `0.0s` |
+> | 状态栏 | 保存状态 | `All Saved` |
+>
+> 联动关系: 关卡名称已经变为 `08_Constellation`，但 `01_Swing_Trail` 的 Level Sequence Asset 仍显示 `06_Water_Explosion`，因此后续需要为新演出创建/替换对应 Sequencer 资产。
+> 验证方式: 打开 `08_Constellation`，选中 `01_Swing_Trail`，核对 `Level Sequence Asset=06_Water_Explosion` 和 Playback 设置。
+> 图表转写（UE-GTXT v4）
+> - 类型: Level Viewport + Sequencer + Skeletal Mesh Details 截图
+> - 组成部分: Content Browser + Level Viewport + Outliner + Details + Sequencer
+> - 所属: 关卡/序列 `08_Constellation`
+> - 目的: 将 `Serath Future` 角色加入 `08_Constellation` 演出，并在 Sequencer 中确认相机轨道和当前时间位置。
+>
+> 可见对象:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Content Browser | 资源 | `Serath_Future`，类型 `Skeletal Mesh` |
+> | Level Viewport | 角色 | `Serath Future` 站在灰色棋盘格地面上，身后/周围可见黄色轮廓线形状 |
+> | Outliner | 根节点 | `08_Constellation (Editor)` |
+> | Outliner | 选中对象 | `Serath Future`，类型 `SkeletalMesh...` |
+> | Outliner | 可见对象 | `Cine Camera Ac...`、`Floor`、`PlayerStart`、`PostProcessVo...`、`SpotLight` |
+> | Details | 对象 | `Serath Future (Instance)`，`SkeletalMeshComponent` |
+> | Details > Transform | Location | `0.0 / 0.0 / 0.0` |
+> | Details > Transform | Rotation | `0.0 / 0.0 / 0.0` |
+> | Details > Transform | Scale | `1.0 / 1.0 / 1.0` |
+> | Details > Animation | Animation Mode | `Use Animation Blueprint` |
+> | Details > Animation | Anim Class | `None` |
+> | Sequencer | 序列 | `08_Constellation` |
+> | Sequencer | 帧率 | `30 fps` |
+> | Sequencer | 当前帧 | 约 `0192`，显示 `193 of 220` |
+> | Sequencer | 可见轨道 | `Camera Cuts`、`Cine Camera Actor` |
+>
+> 联动关系: `Serath Future` 已作为主角进入新序列，Sequencer 处于接近末段的 192 帧附近；后续动画片段和透明材质角色都将基于这个角色/相机演出继续设置。
+> 验证方式: 在 `08_Constellation` 打开 Sequencer，确认 `Serath Future` 在 Outliner 中存在，Sequencer 可见 `Camera Cuts` 与 `Cine Camera Actor` 轨道。
+
+### 00:04:15-00:09:15 材质、纹理与透明度控制
+
+- 本段定位：材质、纹理与透明度控制。
+- 知识点：Yaw Kick能力 Intro Wheel動作会过来 这樣坐着 展開的動作出现 这复制一段 第二个动画 斷了 其實就 要对齊这里 这里修改也是可以的。
+- 知识点：对電能力过循環 用这个引入 这樣写应该可以 只是速率适当长一点 这樣展開时連貫的動作出现 这个状态现在在空中懸浮 想着着陸的画面 所以最後只需加入着陸的動作。
+- 知识点：在177幀左右 在这里添加一个動作 能力 这樣添加 到这里不必特别使用这个動作 所以需要把这个抬起来 这樣懸空的抓起方式会出现 需要用兩个名为Seras的角色模型。
+- 知识点：一个是Seras这个角色会在此消失 雖然会有相同的動作 但会使用不同的透明感材质 就像在天空中漂浮的星座般的角色 能够展示那种感覺的。
+- 知识点：動作相同 但角色材质不同 还会多复制一个角色模型 那个角色模型的动画 也会設置更高的上升和下降的关键針 那麼添加的角色在下次时 和角色消失的演出一起設置会比較好。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`透明度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 动画轨道截图
+> - 组成部分: Sequencer + Content Browser 背景
+> - 所属: 序列 `08_Constellation`，角色 `Serath Future`
+> - 目的: 在 Sequencer 中给角色添加 Intro 动画片段，并确认相机组件参数轨道。
+>
+> Sequencer 内容:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Sequencer | 序列 | `08_Constellation` |
+> | Sequencer | 帧率 | `30 fps` |
+> | Sequencer | 当前帧 | `0000`，显示 `1 of 220` |
+> | Sequencer | 时间范围 | 标尺可见约 `0000` 到 `0240` |
+> | 轨道 | `Camera Cuts` | 上方有连续相机切片缩略图 |
+> | 轨道 | `Cine Camera Actor > CameraComponent` | 已展开 |
+> | CameraComponent | `Current Aperture` | `2.8` |
+> | CameraComponent | `Current Focal Length` | `20.0` |
+> | CameraComponent | `Manual Focus Distance (Focus Settings)` | `100000.0` |
+> | CameraComponent | `Spawned` | 勾选 |
+> | 轨道 | `Serath Future > Animation` | 已展开 |
+> | Animation | 片段 | `Q_Ability_Intro`，紫色片段从序列开头附近开始 |
+> | Serath Future | `Spawned` | 勾选 |
+>
+> 联动关系: `Q_Ability_Intro` 是角色演出的第一个动作片段；相机组件参数轨道已在同一序列中展开，说明当前同时在调角色动作和镜头播放。
+> 验证方式: 打开 `08_Constellation` Sequencer，确认 `Serath Future > Animation` 下存在 `Q_Ability_Intro`，相机组件参数和 Spawned 轨道可见。
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer Animation 选择器截图
+> - 组成部分: Sequencer + Animation 下拉选择器
+> - 所属: 序列 `08_Constellation`，角色 `Serath Future`
+> - 目的: 在角色动画轨道中选择/替换悬浮循环动作，使 Intro 后接一段悬空动作。
+>
+> Sequencer 内容:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Sequencer | 当前帧 | 约 `0177`，显示 `178 of 220` |
+> | Sequencer | 帧率 | `30 fps` |
+> | Camera Cuts | 缩略图轨道 | 持续覆盖当前片段区域 |
+> | `Cine Camera Actor > CameraComponent` | 参数 | `Current Aperture=2.8`、`Current Focal Length=20.0`、`Manual Focus Distance=100000.0`、`Spawned` 勾选 |
+> | `Serath Future > Animation` | 当前片段 | `Q_Ability_Hover_Loop` |
+> | `Serath Future > Animation > Weight` | 值 | `1.0` |
+> | `Serath Future > Spawned` | 状态 | 勾选 |
+> | Animation 选择器 | 搜索/候选 | 可见 `Q_Ability_Attack_A`、`Q_Ability_Attack_A_120fps`、`Q_Ability_Attack_A_Alt`、`Q_Ability_Attack_A_Alt_120fps` |
+> | Animation 选择器 | 条目类型 | `Animation Sequence` |
+>
+> 联动关系: `Q_Ability_Hover_Loop` 位于 Intro 之后，用来让角色在空中悬浮；当前打开的动画选择器说明正在替换或追加后续动作片段。
+> 验证方式: 在 `Serath Future > Animation` 轨道确认 `Q_Ability_Hover_Loop` 片段存在，并能打开动画选择器看到候选 Animation Sequence。
+> 图表转写（UE-GTXT v4）
+> - 类型: Level Viewport + Sequencer 后段预览截图
+> - 组成部分: Content Browser + Level Viewport + Outliner + Details + Sequencer
+> - 所属: 关卡/序列 `08_Constellation`
+> - 目的: 在关卡中检查角色动画后段和 Stencil Buffer 讲解前的场景状态。
+>
+> 可见对象:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Content Browser | 当前资源 | `Serath_Future`，类型 `Skeletal Mesh` |
+> | Level Viewport | 场景 | 角色站在灰色棋盘格地面上，地面被选中并显示边框/变换 gizmo |
+> | Outliner | 根节点 | `08_Constellation (Editor)` |
+> | Outliner | 选中对象 | `Floor`，类型 `StaticMesh...` |
+> | Outliner | 可见对象 | `Cine Camera Ac...`、`PlayerStart`、`PostProcessVo...`、`Serath Future`、`SpotLight` |
+> | Details | 对象 | `Floor (Instance)`，`StaticMeshComponent` |
+> | Details > Transform | Location | `0.0 / 0.0 / -0.5` |
+> | Details > Transform | Rotation | `0.0 / 0.0 / 0.0` |
+> | Details > Transform | Scale | `8.0 / 8.0 / 8.0` |
+> | Details > Static Mesh | Static Mesh | `SM_Template_M...` 可见 |
+> | Details > Materials | Element 0 | `MI_ProcGrid` |
+> | Sequencer | 序列 | `08_Constellation` |
+> | Sequencer | 当前帧 | 约 `0201`，标尺位于后段 |
+> | 字幕 | 文本 | “我们使用的 Stencil Buffer 的情况是,” |
+>
+> 联动关系: 该图把 Sequencer 后段预览与 Stencil Buffer 讲解衔接起来；角色、地面、后处理体积和后续模板缓冲设置属于同一 `08_Constellation` 场景。
+> 验证方式: 在 `08_Constellation` 后段帧检查角色仍在场景中，选中 `Floor` 时 Transform 与材质仍保持基准设置。
+
+### 00:09:18-00:12:53 透明度、不透明度
+
+- 本段定位：透明度、不透明度。
+- 知识点：目前只有我们看到的原始原件的 那种感覺的路徑在中间显示 可以認为这里是所有渲染路徑的合成結果 中间的圖是 然后这里有基礎颜色鏡面反射表面颜色。
+- 知识点：世界發现世界順態不透明度 还有很多其他的 羽毛、複雜度視圖和深度視圖 也显示出来了 線框圖也出现了 幾乎有很多路徑显示出来 这些被稱为路徑。
+- 知识点：就像在材质中的角色所看到的 有基礎颜色和鏡面反射 这些部分都合成在一起 给出这樣的最後結果 視頻中的工作也是如此 因此当我们看到时。
+- 知识点：其實可以控制單个路徑 后续会使用稱为Stancil Buffer的路徑 这里现在是Custom Stencil的緩冲區 但现在什么也看不見。
+- 知识点：看基礎颜色或按基礎考慮可观察到 这个就算过光照渲染結果 这里搜索一下Depth 那麼正在进行後處理的深度模板通道 现在只是啟用状态 需要它改为用模板啟用。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`颜色`、`透明度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Level Viewport Buffer Visualization / Overview 截图
+> - 组成部分: Content Browser + Buffer Overview + Outliner + Details + Sequencer 边缘
+> - 所属: 关卡 `08_Constellation`
+> - 目的: 展示 Unreal 渲染结果由多个缓冲/路径合成，并引出后续 `Custom Stencil` 缓冲通道。
+>
+> 可见缓冲区:
+> | 区域 | 缓冲/路径 | 可见结果 |
+> |---|---|---|
+> | Buffer Overview | `Base Color` | 棋盘格地面和角色的基础颜色画面 |
+> | Buffer Overview | `Specular` | 灰色镜面/高光相关画面，角色呈浅灰 |
+> | Buffer Overview | `Subsurface Color` | 黑底中角色呈绿色 |
+> | Buffer Overview | `World Normal` | 紫蓝色法线底色中角色呈绿色/黄色 |
+> | Buffer Overview | `Separate Translucency RGB` | 黑色画面 |
+> | Buffer Overview | `Separate Translucency Alpha` | 白色画面 |
+> | Buffer Overview | `World Tangent` | 灰色块 |
+> | Buffer Overview | `Opacity` | 黑底中少量白色点 |
+> | 中央主视图 | 场景 | `Serath Future` 位于棋盘格地面上，作为渲染路径合成结果的普通视图 |
+> | Outliner | 选中对象 | `Floor` |
+> | Details | `Floor` Transform | `Location 0.0/0.0/-0.5`、`Scale 8.0/8.0/8.0` 可见 |
+> | 字幕 | 文本 | “可以认为这里是所有渲染路径的合成结果。” |
+>
+> 联动关系: 主视图是合成后的最终画面；周围小格展示基础颜色、镜面、法线、透明、Opacity 等单独路径，为后续用 `Custom Stencil` 单独控制物体通道做铺垫。
+> 验证方式: 在 Viewport 的 Buffer Visualization 里切到 `Overview`，应看到 Base Color、Specular、World Normal、Opacity 等路径的分格预览。
+> 图表转写（UE-GTXT v4）
+> - 类型: Project Settings / Rendering 设置截图
+> - 组成部分: Project Settings 左侧分类 + 搜索框 + Engine - Rendering 设置结果
+> - 所属: Project Settings
+> - 目的: 启用 Custom Depth-Stencil Pass，使后处理材质能读取自定义深度/模板通道。
+>
+> 设置项:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Project Settings | 搜索框 | `depth` |
+> | 左侧分类 | Project | `Description`、`Encryption`、`GameplayTags`、`Maps & Modes`、`Movies`、`Packaging`、`Supported Platforms`、`Target Hardware` 可见 |
+> | 左侧分类 | Engine | `AI System`、`Animation`、`Audio`、`Cinematic Camera`、`Collision` 等可见 |
+> | 搜索结果 | `Engine - Crowd Manager` | `Adaptive Depth` 多个数组项可见，非当前目标 |
+> | 搜索结果 | `Engine - Rendering` | 展开 |
+> | Engine - Rendering > Postprocessing | `Custom Depth-Stencil Pass` | `Enabled` |
+> | Engine - Rendering > Postprocessing | `Custom Depth with TemporalAA Jitter` | 字段可见 |
+> | Engine - Rendering > Optimizations | `Velocity Pass` | `Write during depth pass` |
+> | Engine - Rendering > Optimizations | `Support depth-only index buffers` | 勾选 |
+> | Tooltip | 文本含义 | 说明 custom depth pass 可用于给 primitives 打标签供 postprocessing pass 使用 |
+>
+> 联动关系: 只有 Project Settings 中 `Custom Depth-Stencil Pass=Enabled` 后，关卡物体的 `Render CustomDepth Pass` 和 `Custom Depth Stencil Value` 才能被后处理材质读取。
+> 验证方式: 打开 Project Settings，搜索 `depth`，在 `Engine - Rendering > Postprocessing` 核对 `Custom Depth-Stencil Pass=Enabled`。
+> 图表转写（UE-GTXT v4）
+> - 类型: Level Viewport + Cube Custom Depth/Stencil Details 截图
+> - 组成部分: Content Browser + Level Viewport + Outliner + Details
+> - 所属: 关卡 `08_Constellation`，对象 `Cube2`
+> - 目的: 给测试立方体启用 Custom Depth 并指定 Stencil 通道值，用三个立方体验证模板通道。
+>
+> 可见对象:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Level Viewport | 场景 | `Serath Future` 站在三个白色 Cube 后方/旁边，地面为灰色棋盘格 |
+> | Level Viewport | 测试物体 | 三个白色立方体横向排列，中间立方体被选中并显示黄色边框/gizmo |
+> | Outliner | 根节点 | `08_Constellation (Editor)` |
+> | Outliner | 选中对象 | `Cube2` |
+> | Outliner | 可见对象 | `Cine Camera Ac...`、`Cube`、`Cube2`、`Cube3`、`Floor`、`PlayerStart` |
+> | Details | 对象 | `Cube2 (Instance)`，`StaticMeshComponent` |
+> | Details 搜索 | 搜索词 | `depth` |
+> | Rendering > Advanced | `Render in Depth Pass` | 勾选 |
+> | Rendering > Advanced | `Render CustomDepth Pass` | 勾选 |
+> | Rendering > Advanced | `Custom Depth Stencil Value` | `2` |
+> | Rendering > Advanced | `Custom Depth Stencil Write Mask` | `Default` |
+>
+> 联动关系: 中间 `Cube2` 的 `Custom Depth Stencil Value=2`，用于后续在 `Custom Stencil` 视图或后处理材质中区分第二个测试通道。
+> 验证方式: 选中 `Cube2`，搜索 `depth`，核对 `Render CustomDepth Pass` 勾选且 `Custom Depth Stencil Value=2`。
+
+### 00:12:58-00:15:48 关键流程 04
+
+- 本段定位：关键流程 04。
+- 知识点：看看它是如何分離和应用的使用緩冲 查看模板緩冲 这里分类为編號的頻道 但是这个真的只是为了视觉目的这樣出现的 这个颜色本身并不是說網格擁有这个颜色。
+- 知识点：只是因为是單一通道 所以这个模板通道现在只能选择一个 因此这里会赋予編號 但就这樣 所以需要作为测试材料制作一次 给您展示後處理效果 取名为潛在测试。
+- 知识点：后续会其換成後處理来查看 在語法處理器中我们使用後處理输入 这张圖像 我们现在在視口中看到的画面 是獲取渲染画面的节点 渲染已经完成後。
+- 知识点：可以認为将这个場景轉移到这里 所以連接到圖像部分 之所以能够这樣出现 是因为正在實施渲染不斷变化的場景 将後處理的圖像显示在这里 然后复制一个。
+- 知识点：在这里适当往下看有个自定義模板 如果連接这个会是什么样子 但是这里的水效果没有应用在後体積上 我们现在这里使用一个关于銳度的材料。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Level Viewport / Custom Stencil 可视化截图
+> - 组成部分: Content Browser + Custom Stencil Viewport + Outliner + Details + Sequencer 边缘
+> - 所属: 关卡 `08_Constellation`
+> - 目的: 验证三个测试 Cube 被分配到不同 Custom Stencil 通道，并显示通道编号可视化。
+>
+> 可见对象:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Viewport | 视图模式 | `Custom Stencil` |
+> | Viewport | 左侧 Cube | 黄色，表面重复显示 `001` |
+> | Viewport | 中间 Cube | 青色，表面重复显示 `002` |
+> | Viewport | 右侧 Cube | 绿色，表面重复显示 `003` |
+> | Viewport | 背景 | 黑底，地面网格只隐约可见 |
+> | Outliner | 选中对象 | `Cube` |
+> | Outliner | 可见对象 | `Cube`、`Cube2`、`Cube3`、`Floor`、`PlayerStart` |
+> | Details | 对象 | `Cube (Instance)`，`StaticMeshComponent` |
+> | Details 搜索 | 搜索词 | `depth` |
+> | Rendering > Advanced | `Render CustomDepth Pass` | 勾选 |
+> | Rendering > Advanced | `Custom Depth Stencil Value` | `1` |
+> | Rendering > Advanced | `Custom Depth Stencil Write Mask` | `Default` |
+> | 字幕 | 文本 | “查看模板缓冲，这里分类为编号的频道。” |
+>
+> 联动关系: `Cube=1`、`Cube2=2`、`Cube3=3` 的模板值在 `Custom Stencil` 视图中分别以编号 `001/002/003` 和不同颜色显示；颜色只是可视化，不等于物体自身材质颜色。
+> 验证方式: 将 Viewport 切到 `Custom Stencil`，确认三个测试 Cube 分别显示 `001`、`002`、`003` 编号。
+> 图表转写（UE-GTXT v4）
+> - 类型: Material Graph `Stencil_Test` 后处理材质截图
+> - 组成部分: 材质预览 + Details + Material Graph
+> - 所属: Material `Stencil_Test`
+> - 目的: 创建一个 Post Process 材质，用 `SceneTexture:PostProcessInput0` 读取当前已渲染场景图像并输出到材质主节点。
+>
+> 材质设置:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Material | Material Domain | `Post Process` |
+> | Material | Blend Mode | `Opaque` |
+> | Material | Shading Model | `Default Lit` |
+> | Material | Two Sided | 未勾选 |
+> | Material | Use Material Attributes | 未勾选 |
+> | Material | Cast Ray Traced Shadows | 勾选 |
+> | Preview | 状态 | 左侧预览为黑色 |
+>
+> 节点清单:
+> | ID | 节点 | 可见 Pin/字段 | 角色 |
+> |---|---|---|---|
+> | N01 | `SceneTexture:PostProcessInput0` | 输入 `UVs`；输出 `Color`、`Size`、`InvSize` | 读取后处理输入场景图像 |
+> | N02 | `Stencil_Test` 主材质节点 | 可见输入 `Emissive Color`、`Opacity`、`World Position Offset`、`PixelDepthOffset` 等 | Post Process 材质输出 |
+>
+> 连线覆盖检查:
+> | From | To | 状态 |
+> |---|---|---|
+> | `N01.Color` | `N02.Emissive Color` | 光标正在拖线/准备连接，端点靠近 `Emissive Color`，截图中尚未形成稳定已接线 |
+> | `N01.Size` | 未连接 | 可见未接 |
+> | `N01.InvSize` | 未连接 | 可见未接 |
+> | `N01.UVs` | 未连接 | 使用默认 UV |
+>
+> 联动关系: `SceneTexture:PostProcessInput0` 表示获取后处理输入图像；连接到 `Emissive Color` 后，材质可把当前场景图像原样输出，作为后续接入 Custom Stencil 遮罩的基础。
+> 验证方式: 打开 `Stencil_Test`，确认 `Material Domain=Post Process`，添加 `SceneTexture:PostProcessInput0`，并将其 `Color` 输出连接到主材质的 `Emissive Color`。
+> 图表转写（UE-GTXT v4）
+> - 类型: Level Viewport + PostProcessVolume Materials 截图
+> - 组成部分: Content Browser + Level Viewport + Outliner + Details + 下方 Material Graph 边缘
+> - 所属: 关卡 `08_Constellation`，对象 `PostProcessVolume`
+> - 目的: 将 `Stencil_Test` 后处理材质加入 Post Process Materials 数组，用于测试模板缓冲遮罩效果。
+>
+> 可见对象:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Content Browser | 搜索/目录 | `Test` |
+> | Content Browser | 可见资源 | `Decal_Test` Material、`Sample` Niagara System、`SSS` Material、`Stencil_Test` Material、`Trail_Test_01` Niagara System |
+> | Level Viewport | 场景 | `Serath Future` 和三个白色 Cube 位于棋盘格地面上 |
+> | Outliner | 选中对象 | `PostProcessVo...`，类型 `PostPro...` |
+> | Outliner | 可见对象 | `Cube3`、`Floor`、`PlayerStart`、`PostProcessVo...`、`Serath Future`、`SpotLight` |
+> | Details | 对象 | `PostProcessVolume (Instance)`，`BrushComponent` |
+> | Details | 当前分类 | `All` |
+> | Rendering Features | `Post Process Materials` | 展开 |
+> | Post Process Materials | Array | `2 Array elements` |
+> | Array 元素 | 第 1 项 | 权重/值 `1.0`，资源名开头 `PP_...` 可见 |
+> | Array 元素 | 第 2 项 | 权重/值 `0.0`，资源名开头 `Ste...`，对应 `Stencil_Test` |
+> | 下方窗口 | 打开资产 | `Stencil_Test > Material Graph` 可见 |
+> | 字幕 | 文本 | “所以可以用01进行应用和不应用的确认。” |
+>
+> 联动关系: `Stencil_Test` 被加入 `PostProcessVolume` 的 Post Process Materials 数组后，场景渲染会经过该后处理材质；数组项数和值用于开启/关闭或混合不同后处理材质的测试。
+> 验证方式: 选中 `PostProcessVolume`，在 `Rendering Features > Post Process Materials` 中确认数组有 2 个元素，并包含 `Stencil_Test` 材质项。
+
+### 00:15:56-00:19:35 关键流程 05
+
+- 本段定位：关键流程 05。
+- 知识点：我们给物体分配了渲染深度的模板通道 这樣出来的結果都是同樣的颜色 所以后续会其按物体分開 来看看 而且其他部分如果能显示原来的渲染画面。
+- 知识点：那就好了 所以在第一个盒子放紅色 第二个盒子放綠色 第三个盒子放藍色 試一下 用GBYT将255进行分割 有一个叫比特眼碼的函數 这是一个內置的函數連接到这个比特眼碼上。
+- 知识点：后续会使用1號頻道 将1號这樣带过来連接到α 那麼当作了結束时 原本应该出现紅色 现在從第一處接收的Syntaxure这个颜色。
+- 知识点：是4个圖塊 现在一直到α 我们这里其他部分是3个圖塊頻道因此 似乎計算没有正確进行 所以可能就表现了白色 这樣構成的話 紅色只有在1號頻道的部分会出现。
+- 知识点：那麼2號頻道和3號頻道 可以加入其他颜色 那麼让我们看看这个位顏碼里面的功能是怎樣的 原本这个位顏碼 從遠接收这个值 然后進入这个位值的標量值。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Level Viewport + 后处理结果预览截图
+> - 组成部分: Content Browser + Level Viewport + Outliner + Details + 下方 `Stencil_Test` 材质窗口边缘
+> - 所属: 关卡 `08_Constellation`
+> - 目的: 验证当前后处理材质尚未按 Stencil 通道分色，三个测试 Cube 输出为同样的白色。
+>
+> 可见对象:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Content Browser | 可见资源 | `Decal_Test`、`Sample`、`SSS`、`Stencil_Test`、`Trail_Test_01` |
+> | Level Viewport | 结果 | 三个 Cube 都显示为高亮白色，背景为黑色/暗色地面网格 |
+> | Outliner | 选中对象 | `Cube2` |
+> | Outliner | 可见对象 | `01_Swing_Trail`、`Cine Camera Ac`、`Cube`、`Cube2`、`Cube3` |
+> | Details | 对象 | `Cube2 (Instance)`，`StaticMeshComponent` |
+> | Details | 可见分类 | `Rendering`、`Streaming`、`All`，下方有 `Virtual Texture`、`Tags`、`Cooking` 等组 |
+> | 字幕 | 文本 | “这样出来的结果都是同样的颜色。” |
+>
+> 联动关系: 三个 Cube 已有不同 Stencil 通道，但当前后处理输出没有按通道区分，所以测试结果统一为白色；这说明后续需要在 `Stencil_Test` 中用 `BitMask` 和不同颜色分支分别处理通道。
+> 验证方式: 应用当前 `Stencil_Test` 后处理材质后观察三个测试 Cube，若均为白色，说明还未完成分通道颜色混合。
+> 图表转写（UE-GTXT v4）
+> - 类型: Material Graph `Stencil_Test` 通道 1 分色节点截图
+> - 组成部分: 材质预览 + Material Graph
+> - 所属: Material `Stencil_Test`
+> - 目的: 用 `CustomStencil` 经过 `BitMask` 得到通道 1 遮罩，并在 `Lerp` 中把通道 1 区域替换为红色。
+>
+> 节点清单:
+> | ID | 节点 | 关键 Pin/值 | 角色 |
+> |---|---|---|---|
+> | N01 | `SceneTexture:PostProcessInput0` | 输出 `Color`、`Size`、`InvSize` | 读取当前后处理输入图像 |
+> | N02 | `Mask(RGB)` | 输入来自 N01 `Color` | 提取场景 RGB |
+> | N03 | Constant3Vector | `X=1.0, Y=0.0, Z=0.0`，红色 | 通道 1 的替换颜色 |
+> | N04 | `SceneTexture:CustomStencil` | 输出 `Color`、`Size`、`InvSize` | 读取 Custom Stencil 缓冲 |
+> | N05 | `Mask(RGB)` | 输入来自 N04 `Color` | 提取模板值 |
+> | N06 | Constant | `255.0` | 模板值归一化除数 |
+> | N07 | `Divide(255)` | `A` 来自 N05，`B=255.0` | 将模板值除以 255 |
+> | N08 | Constant | `1.0` | 目标通道号 |
+> | N09 | `BitMask` | `Bit(S)` 来自 N08；`BitMask(S)` 来自 N07 | 判断通道 1 是否命中 |
+> | N10 | `Lerp` | `A`、`B`、`Alpha` | 在原图和红色之间混合 |
+> | N11 | `Stencil_Test` 主材质节点 | `Emissive Color` | 输出后处理结果 |
+>
+> 连线覆盖检查:
+> | From | To |
+> |---|---|
+> | `N01.Color` -> `N02.Input` |
+> | `N02.Output` -> `N10.A` |
+> | `N03.RGB` -> `N10.B` |
+> | `N04.Color` -> `N05.Input` |
+> | `N05.Output` -> `N07.A` |
+> | `N06.Value` -> `N07.B` |
+> | `N08.Value` -> `N09.Bit(S)` |
+> | `N07.Output` -> `N09.BitMask(S)` |
+> | `N09.Result` -> `N10.Alpha` |
+> | `N10.Output` -> `N11.Emissive Color` |
+>
+> 联动关系: 原场景 RGB 作为 `Lerp A`，红色作为 `Lerp B`，`BitMask` 结果作为 `Alpha`；因此只有 Custom Stencil 通道 1 命中的区域会被替换为红色，其余区域保留原场景颜色。
+> 验证方式: 在 `Stencil_Test` 中核对 `CustomStencil / 255 -> BitMask(Bit=1) -> Lerp Alpha`，并确认 `Lerp` 输出接入 `Emissive Color`。
+> 图表转写（UE-GTXT v4）
+> - 类型: Material Function `BitMask` 内部节点截图
+> - 组成部分: 函数预览 + Material Function Graph + Details
+> - 所属: Material Function `BitMask`
+> - 目的: 展示内置 `BitMask` 函数如何把模板值和目标 bit 做比较，输出 1 或 0 的遮罩。
+>
+> 节点清单:
+> | ID | 节点 | 关键 Pin/值 | 角色 |
+> |---|---|---|---|
+> | F01 | `Input BitMask (Scalar)` | 输出到 `If.A` | 输入模板值 |
+> | F02 | `Input Bit (Scalar)` | 输出到 `Divide.A` | 输入目标 bit |
+> | F03 | Constant | `255.0` | bit 归一化除数 |
+> | F04 | `Divide` | `A` 来自 F02，`B=255.0` | 计算目标 bit 比较值 |
+> | F05 | Constant | `1.0` | 命中时输出 |
+> | F06 | Constant | `0.0` | 未命中时输出 |
+> | F07 | `If` | `A`、`B`、`A>B`、`A==B`、`A<B` | 比较模板值和目标 bit |
+> | F08 | `Output Result` | `Previewing` | 输出函数结果 |
+>
+> 连线覆盖检查:
+> | From | To |
+> |---|---|
+> | `F01.Output` -> `F07.A` |
+> | `F02.Output` -> `F04.A` |
+> | `F03.Value` -> `F04.B` |
+> | `F04.Output` -> `F07.B` |
+> | `F05.Value` -> `F07.A==B` |
+> | `F06.Value` -> `F07.A>B` |
+> | `F06.Value` -> `F07.A<B` |
+> | `F07.Output` -> `F08.Result` |
+>
+> 联动关系: 当输入模板值等于目标 bit 归一化结果时，`If` 输出 `1.0`；大于或小于时输出 `0.0`。外层 `Stencil_Test` 用该结果作为 `Lerp Alpha`。
+> 验证方式: 打开 `BitMask` 函数，核对 `Input Bit / 255` 与 `Input BitMask` 进入 `If`，且 `A==B` 输出 1、其他比较输出 0。
+
+### 00:19:39-00:24:35 Material
+
+- 本段定位：Material。
+- 知识点：这意味着原本现在是白色進入 如果这个模板这个颜色的 除以25050 当分成255份时 会得到0 这个數值 在这里将一直再除以25050比較。
+- 知识点：如果您这樣認为的話会產生相同通道 和總共255个通道 这樣與1號颜色比較少 会返回相同颜色值的區间。
+- 知识点：因此这里只出现这一部分 那麼需要复制 这四个复制後粘貼 需要接着写这里 那麼2號頻道 然后再复制一个 3號頻道 最終在最後 现在 作为統一的模板出现。
+- 知识点：放進去 就可观察到这樣的結果 畢竟这是时时不斷接收的緩冲 所以感覺有些抖動 并不是很乾淨流暢的感覺 这意味着可以作为遮罩頻道进行分类使用。
+- 知识点：基本的使用方式似乎是这樣 那麼我们现在可以使用的方式 我们不需要把頻道分得这麼細 一个頻道只能做遮罩 根據角色的某些動作 與手伸展的動作相对应。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Material`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Material Graph `Stencil_Test` 通道 1 局部放大截图
+> - 组成部分: 材质预览 + Material Graph + Details + Stats
+> - 所属: Material `Stencil_Test`
+> - 目的: 放大核对 `CustomStencil / 255 -> BitMask(Bit=1)` 作为 `Lerp Alpha` 的通道 1 遮罩分支。
+>
+> 节点与连线:
+> | 节点/字段 | 值/连接 | 作用 |
+> |---|---|---|
+> | `SceneTexture:CustomStencil.Color` | -> `Mask(RGB)` | 读取模板缓冲颜色值 |
+> | `Mask(RGB).Output` | -> `Divide(255).A` | 提取模板值 |
+> | `Divide(255).B` | `255.0` | 将模板值归一化 |
+> | Constant | `1.0` -> `BitMask.Bit(S)` | 指定目标通道 1 |
+> | `Divide(255).Output` | -> `BitMask.BitMask(S)` | 输入模板值 |
+> | `BitMask.Result` | -> `Lerp.Alpha` | 作为遮罩 |
+> | Constant3Vector | `1.0 / 0.0 / 0.0` -> `Lerp.A` | 红色输入 |
+> | 上方原图像分支 | 连接到 `Lerp` 另一输入 | 保留非遮罩区域 |
+> | `Lerp.Output` | 继续向右输出 | 接主材质输出链 |
+> | Details | `Material Expression Divide`，`Const A=1.0`、`Const B=255.0` | 当前选中 Divide 节点 |
+> | Stats | Base pass shader without light map | `66 instructions` 可见 |
+>
+> 联动关系: 该图重点确认 `Divide(255)` 的 B 值确为 `255.0`，并且通道 1 的 `BitMask.Result` 驱动 `Lerp Alpha`，用于把通道 1 对象替换为红色。
+> 验证方式: 选中 Divide 节点，核对 `Const B=255.0`，并沿连线确认其输出进入 `BitMask(S)`。
+> 图表转写（UE-GTXT v4）
+> - 类型: Material Graph `Stencil_Test` 多通道 Lerp 链截图
+> - 组成部分: 材质预览 + Material Graph + Details
+> - 所属: Material `Stencil_Test`
+> - 目的: 在通道 1 红色分支后复制第二个分支，用通道 2 遮罩把对象替换为绿色，并把结果继续输出到主材质。
+>
+> 节点清单:
+> | ID | 节点 | 关键值/连接 | 作用 |
+> |---|---|---|---|
+> | N01 | `SceneTexture:PostProcessInput0` + `Mask(RGB)` | 原场景图像分支 | 提供未遮罩区域颜色 |
+> | N02 | `Lerp` 通道 1 | 红色 `1,0,0` + `BitMask(Bit=1)` | 得到第一层混合结果 |
+> | N03 | Constant3Vector | `0.0 / 1.0 / 0.0`，绿色 | 通道 2 替换颜色 |
+> | N04 | Constant | `2.0` | 目标通道 2 |
+> | N05 | `BitMask` 通道 2 | `Bit(S)=2.0`；`BitMask(S)` 来自模板值分支 | 输出通道 2 遮罩 |
+> | N06 | `Lerp` 通道 2 | 上一个 Lerp 结果、绿色、通道 2 遮罩 | 在通道 1 结果基础上叠加通道 2 颜色 |
+> | N07 | `Stencil_Test` 主材质节点 | `Emissive Color` | 输出后处理结果 |
+>
+> 连线覆盖检查:
+> | From | To |
+> |---|---|
+> | `SceneTexture:PostProcessInput0.Color` -> `Mask(RGB)` -> `N02.A` |
+> | 红色向量 `1,0,0` -> `N02.B` |
+> | `BitMask(Bit=1).Result` -> `N02.Alpha` |
+> | `N02.Output` -> `N06.A` |
+> | 绿色向量 `0,1,0` -> `N06.B` |
+> | Constant `2.0` -> `N05.Bit(S)` |
+> | 模板值分支 -> `N05.BitMask(S)` |
+> | `N05.Result` -> `N06.Alpha` |
+> | `N06.Output` -> `N07.Emissive Color` |
+>
+> 联动关系: 多通道处理采用串联 `Lerp`：先用通道 1 遮罩混合红色，再用通道 2 遮罩在结果上混合绿色；后续可继续复制同样结构处理通道 3。
+> 验证方式: 在 `Stencil_Test` 中核对第二个 `BitMask` 的 `Bit(S)=2.0`，并确认第二个 `Lerp` 输出接到主材质 `Emissive Color`。
+> 图表转写（UE-GTXT v4）
+> - 类型: Level Viewport + Plane Details 过渡截图
+> - 组成部分: Content Browser + Level Viewport + Outliner + Details + Sequencer 边缘
+> - 所属: 关卡 `08_Constellation`，对象 `Plane`
+> - 目的: 结束模板通道测试后，准备一个平面网格作为后续 `space1`/宇宙背景效果的载体。
+>
+> 可见对象:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Content Browser | 搜索/目录 | `08` |
+> | Content Browser | 状态 | 当前目录为空，显示 `Drop files here or right click to create content.` |
+> | Level Viewport | 场景 | `Serath Future` 在后方，前方选中一个白色矩形平面 |
+> | Level Viewport | 选中对象 | `Plane`，有黄色边框；表面可见旋转 gizmo 的彩色弧线 |
+> | Outliner | 根节点 | `08_Constellation (Editor)` |
+> | Outliner | 选中对象 | `Plane` |
+> | Outliner | 可见对象 | `Cine Camera Ac...`、`Floor`、`Plane`、`PlayerStart`、`PostProcessVo...`、`Serath Future` |
+> | Details | 对象 | `Plane (Instance)`，`StaticMeshComponent` |
+> | Transform | Location | `0.0 / 130.0 / 20.0` |
+> | Transform | Rotation | `89.999 / 0.0 / 0.0` |
+> | Transform | Scale | `1.0 / 1.0 / 1.0` |
+> | Static Mesh | Static Mesh | `Plane` |
+> | Materials | Element 0 | `BasicShapeMate...` 可见 |
+> | Sequencer | 当前帧 | 约 `0021`，显示 `22 of 220` |
+> | 字幕 | 文本 | “只通过这个消息才能看见” |
+>
+> 联动关系: 本图从模板缓冲测试转到后续空间/星座效果制作；`Plane` 作为可写 Custom Depth 或承载材质的平面对象，后续会用于背景/遮罩类表现。
+> 验证方式: 在 `08_Constellation` 中选中 `Plane`，核对 Transform、Static Mesh 和材质槽，确认它位于角色前方的场景中。
+
+### 00:24:35-00:29:24 Mesh、粒子、生命周期
+
+- 本段定位：Mesh、粒子、生命周期。
+- 知识点：1號頻道 霍斯特我们测试用的水材料去掉 这需要删除 并且提前制作一个例子 後面雖然不是宇宙感覺的 黃油真實 區分的黃油材料 放好一个 通过这里確認是否能够渲染会很好。
+- 知识点：需要把它命名为space1 然后 然后打開它就放在这里 需要通过添加发射器来創建一个MT 你的空间實在是很简单 粒子結構将会形成。
+- 知识点：用的是2米 大約2个 宇宙空间本身是这种平面感覺的 我打算在後面背景上鋪上用 现在在前面有一些深度感的东西 需要把它命名为space1。
+- 知识点：现在在前面有一些深度感的东西 撒下許多像閃亮星星一樣的粒子 移动的感覺 这让人感覺確實有深度感 需要試一次組成 这樣的話现在區分一下会很好吧。
+- 知识点：首先感覺必须做一个文章 用burst 然后呢这个尺寸本身感覺就需要非常大 因为这个会持续存在 設置尾不在生命周期內消失。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`发射器`、`生命周期`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Level Viewport + Plane Custom Depth Details 截图
+> - 组成部分: Content Browser + Level Viewport + Outliner + Details + Sequencer
+> - 所属: 关卡 `08_Constellation`，对象 `Plane`
+> - 目的: 让平面参与 Custom Depth 写入，作为后续遮罩/路径效果的基础对象。
+>
+> 可见设置:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Level Viewport | 选中对象 | 白色 `Plane`，黄色选择边框，角色 `Serath Future` 位于其后方 |
+> | Outliner | 选中对象 | `Plane` |
+> | Outliner | 可见对象 | `Cine Camera Ac`、`Floor`、`Plane`、`PlayerStart`、`PostProcessVo`、`Serath Future` |
+> | Details | 搜索词 | `depth` |
+> | Rendering | `Render in Depth Pass` | 勾选状态可见 |
+> | Rendering | `Render CustomDepth Pass` | 已勾选 |
+> | Rendering | `CustomDepth Stencil Value` | `0` |
+> | Rendering | `Custom Depth Stencil Write Mask` | `Default` |
+> | Sequencer | 当前帧 | 约 `0021`，显示 `22 of 220` |
+>
+> 联动关系: 平面对象启用 `Render CustomDepth Pass` 后，材质或后处理可以通过 Custom Depth/Stencil 通道读取该对象；当前 Stencil 值为 `0`，本图只建立写入通道，不记录额外通道分配。
+> 验证方式: 选中 `Plane`，在 Details 中搜索 `depth`，核对 `Render CustomDepth Pass` 已勾选且 Stencil 字段仍为 `0 / Default`。
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara System 初始结构截图
+> - 组成部分: Content Browser + Niagara Preview + System Overview + Timeline + Details
+> - 所属: Niagara System `Space_01`
+> - 目的: 建立用于空间背景/遮罩效果的基础 Niagara System，并保留一个默认 `Empty` 发射器。
+>
+> Niagara 结构:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Content Browser | 选中资源 | `Space_01`，类型 `Niagara System` |
+> | Niagara 标签 | 打开资产 | `Space_01*` |
+> | Preview | 视口 | 深灰预览区，当前未见明显粒子效果 |
+> | System Overview | System | `Space_01`，含 `Properties`、`User Parameters`、`System Spawn`、`System Update`、`System State` |
+> | System Overview | Emitter | `Empty`，启用状态 |
+> | Empty | 分组 | `Emitter Summary`、`Emitter Spawn`、`Emitter Update`、`Particle Spawn`、`Particle Update`、`Render` |
+> | Empty | 模块 | `Emitter State`、`Initialize Particle`、`Particle State`、`Sprite Renderer` |
+> | Details | 当前选择 | `Search the stack` 输入框可见，未展开具体模块参数 |
+> | Timeline | 帧率 | `240 fps`，时间轴约 `0.00-9.00`，当前时间约 `8.79` |
+>
+> 联动关系: `Space_01` 先用默认 `Empty` 发射器搭出 Niagara 结构，后续再围绕 Spawn、Lifetime、Renderer 和材质逐步补参数；此图不包含具体粒子数或寿命数值。
+> 验证方式: 打开 `Space_01`，确认 System Overview 中只有一个 `Empty` 发射器，且 `Sprite Renderer` 位于 Render 分组。
+> 图表转写（UE-GTXT v4）
+> - 类型: Level Viewport + Plane Transform + Niagara 窗口叠加截图
+> - 组成部分: Content Browser + Level Viewport + Outliner + Details + Sequencer + Niagara `Space_01`
+> - 所属: 关卡 `08_Constellation`，对象 `Plane`，Niagara System `Space_01`
+> - 目的: 将平面放大并加入 `Space_01`，同时准备进入 Material `08` 目录制作遮罩材质。
+>
+> 可见设置:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Content Browser | 当前目录 | `Tutorial/Material/08` |
+> | Content Browser | 可见子目录 | `01`、`02`、`03`、`04`、`05`、`06`、`07`、`08` |
+> | Content Browser | 可见资源 | `Ex_05_Death...`、`Ex_07_Morph...`、`M_Decal_01`、`M_SpiralUV...`、`M_Sword...` 等 |
+> | Level Viewport | 选中对象 | 大尺寸灰白 `Plane`，黄色选择边框，前景有旋转 gizmo |
+> | Outliner | 可见新增对象 | `Space 01`，类型 Niagara，可见于 `Serath Future` 下方 |
+> | Details | 对象 | `Plane (Instance)` |
+> | Transform | Location | `0.0 / 130.0 / 20.0` |
+> | Transform | Rotation | `89.999 / 0.0 / 0.0` |
+> | Transform | Scale | `3.0 / 3.0 / 3.0` |
+> | Sequencer | 当前帧 | 约 `0021`，显示 `22 of 220` |
+> | Niagara 窗口 | `Space_01` | `Empty` 选中，显示 `1 Particles` |
+> | 字幕 | 文本 | “然后这里我会新建一个文件夹。” |
+>
+> 联动关系: 本图把 `Plane` 缩放到覆盖角色前方的大面积区域，同时 `Space_01` 已出现在关卡 Outliner，后续材质和 Niagara 参数会围绕这个空间背景/遮罩对象继续配置。
+> 验证方式: 在关卡中选中 `Plane`，核对 Transform 的 Scale 为 `3.0/3.0/3.0`，并确认 Outliner 中已有 `Space 01`。
+
+### 00:29:24-00:30:24 材质、纹理与透明度控制
+
+- 本段定位：材质、纹理与透明度控制。
+- 知识点：这是为了在平面上使用的材料 需要应用在这里 这里不会特别連結颜色之类的东西 不是用作渲染的材质 并且在这个網格上利用自定義深度作为路徑 允許自定義深度写入这里 畫自定義深度 这樣發展着 由於網格不需要渲染也没關係 謝謝。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`颜色`、`透明度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Material 资源创建后关卡截图
+> - 组成部分: Content Browser + Level Viewport + Outliner + Plane Details + Niagara 窗口
+> - 所属: Material `M_Stencil_01`，对象 `Plane`
+> - 目的: 新建后续应用在平面上的透明/Custom Depth 材质资源。
+>
+> 可见设置:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Content Browser | 选中资源 | `M_Stencil`，类型 `Material` |
+> | Content Browser | 当前目录 | `Tutorial/Material/08` |
+> | Level Viewport | 选中对象 | 放大的灰白 `Plane`，黄色边框 |
+> | Outliner | 可见对象 | `Plane`、`PlayerStart`、`PostProcessVo`、`Serath Future`、`Space 01`、`SpotLight` |
+> | Details | 对象 | `Plane (Instance)` |
+> | Transform | Location | `0.0 / 130.0 / 20.0` |
+> | Transform | Rotation | `89.999 / 0.0 / 0.0` |
+> | Transform | Scale | `3.0 / 3.0 / 3.0` |
+> | Niagara 窗口 | `Space_01` | `Empty` 选中，显示 `1 Particles` |
+>
+> 联动关系: `M_Stencil` 材质资源准备应用到平面，下一步需要在材质编辑器内设置透明混合和 Custom Depth 写入，使平面可作为深度/遮罩路径而不是普通可见表面。
+> 验证方式: 在 `Tutorial/Material/08` 中确认 `M_Stencil` 材质存在，并保持 `Plane` 的 Scale 为 `3.0/3.0/3.0`。
+> 图表转写（UE-GTXT v4）
+> - 类型: Material Graph `M_Stencil_01` 基础材质属性截图
+> - 组成部分: Material Preview + Details + Material Graph 主节点 + Stats
+> - 所属: Material `M_Stencil_01`
+> - 目的: 将平面材质设置为透明 Surface 材质，并准备通过 Custom Depth 参与路径/遮罩。
+>
+> 可见设置:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Material 标签 | 打开资产 | `M_Stencil_01*` |
+> | Material Graph | 主节点 | `M_Stencil_01`，可见输入包括 `Base Color`、`Emissive Color`、`Opacity`、`World Position Offset`、`Ambient Occlusion` 等 |
+> | Graph | 节点状态 | 尚未见额外节点或连线 |
+> | Details | 搜索/位置 | 材质基础属性区域 |
+> | Material | `Material Domain` | `Surface` |
+> | Material | `Blend Mode` | `Translucent` |
+> | Material | `Shading Model` | `Default Lit` |
+> | Preview | 状态 | 深灰材质预览区，正在准备 Shader |
+> | 顶部状态 | 文本 | `Preparing Shaders (2)` |
+> | 字幕 | 文本 | “并且在这个网格上利用自定义深度作为路径” |
+>
+> 联动关系: 材质仍是 Surface，但 Blend Mode 改为 `Translucent`；这使后续可以设置透明相关选项，并在不依赖普通可见颜色输出的情况下通过 Custom Depth 写入服务遮罩路径。
+> 验证方式: 打开 `M_Stencil_01`，在 Details 中核对 `Material Domain=Surface`、`Blend Mode=Translucent`，且主节点仍未接入额外材质节点。
+> 图表转写（UE-GTXT v4）
+> - 类型: Material `M_Stencil_01` Translucency / Custom Depth Writes 截图
+> - 组成部分: Material Preview + Details + Apply 进度弹窗 + Material Graph 主节点
+> - 所属: Material `M_Stencil_01`
+> - 目的: 在透明材质中启用 Custom Depth 写入，让平面可写入深度通道但不需要作为普通渲染材质表现。
+>
+> 可见设置:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Details | 搜索词 | `depth` |
+> | Translucency | `Output Depth and Velocity` | 未勾选 |
+> | Advanced | `Disable Depth Test` | 未勾选 |
+> | Advanced | `Allow Custom Depth Writes` | 已勾选 |
+> | Refraction | `Refraction Depth Bias` | `0.0` |
+> | Preview | 结果 | 预览平面呈黑色矩形 |
+> | Apply 弹窗 | 文本 | `Apply changes to original material and its use in the world.` |
+> | Apply 弹窗 | 进度 | `100%` |
+> | Material Graph | 主节点 | `M_Stencil_01`，仍可见 `Emissive Color`、`Opacity`、`World Position Offset` 等输入 |
+> | 字幕 | 文本 | “这样发展着” |
+>
+> 联动关系: `Allow Custom Depth Writes` 是本图的核心开关；它让 `M_Stencil_01` 作为透明材质时仍允许写入 Custom Depth，从而配合前面 `Plane` 的 `Render CustomDepth Pass` 完成遮罩路径基础。
+> 验证方式: 在 `M_Stencil_01` Details 中搜索 `depth`，确认 `Allow Custom Depth Writes` 勾选，并观察 Apply 进度完成到 100%。
+
+## 补充视觉证据
+
+### S01 00:02:40
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 时间线补充证据截图
+> - 组成部分: Sequencer + Outliner 边缘 + Details/Materials 边缘
+> - 所属: Level Sequence `08_Constellation`
+> - 目的: 记录清理/精简序列时保留的角色动画、相机和效果轨道布局。
+>
+> 时间线与轨道:
+> | 区域 | 字段 | 值/状态 |
+> |---|---|---|
+> | Sequencer | 序列名 | `08_Constellation` |
+> | Sequencer | 帧率 | `30 fps` |
+> | Sequencer | 当前帧 | `0000`，显示 `1 of 241` |
+> | Cine Camera Actor | CameraComponent | 展开 |
+> | CameraComponent | `Current Aperture` | `2.8` |
+> | CameraComponent | `Current Focal Length` | `35.0` |
+> | CameraComponent | `Manual Focus Distance` | `100000.0` |
+> | CameraComponent | `Spawned` | 勾选 |
+> | Serath Future | Animation | `Q_Ability_Intro`、`Q_Ability_Hover_Loop`、`Q_Ability_Land` 可见 |
+> | Serath Future | Transform > Location | X/Y/Z 字段显示为 `0.0 / 0.0 / 0.0` |
+> | Effect Tracks | 轨道 | `Cast 01`、`Cast 02`、`Exp 01` |
+> | Effect Tracks | Spawned | `Cast 01`、`Cast 02`、`Exp 01` 的 Spawned 轨道可见 |
+> | 时间轴 | 关键区域 | 动画片段从起始段进入 Hover Loop，末段接 Land；多条 Transform/Spawned 轨道含关键帧点 |
+> | 字幕 | 文本 | “尝试删除其他角色和粒子。” |
+>
+> 联动关系: 该补充图说明当前序列保留了相机、`Serath Future` 动画和三条效果轨道，清理其他角色/粒子后仍以这些轨道控制后续 `08_Constellation` 展示节奏。
+> 验证方式: 打开 `08_Constellation` Sequencer，核对 `Serath Future` 的三段动画片段、`Cast 01/Cast 02/Exp 01` Spawned 轨道和当前帧 `0000`。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+

@@ -22,7 +22,7 @@
 
 `UeAgentInterfacePak` 是 `UeAgentInterface` 的本地分发包仓库。它把 UE Editor 插件、配套 CLI 开发仓库、Codex skills、UE 本地知识库和发布材料放在同一个可追踪入口中，用于在新 UE 项目或新 Codex 环境中恢复同一套自动化工作流。
 
-普通使用者需要安装 UE 插件和相关 skill。若希望 Agent 优先走 Python 直连流程，还应让 Agent 能定位 `UeAgentInterfaceCMD/` 仓库；该仓库通常在目标项目根目录下，但也可以安装在其他位置。`UeAgentInterfaceCMD/` 仍同时承担维护、构建、发布验证、`uai_core` Python API 和刷新 skill 内置 `uai-cli.exe` 的职责。
+普通使用者需要安装 UE 插件和相关 skill。若希望 Agent 使用 Python SDK，还应让 Agent 能定位 `UeAgentInterfaceCMD/` 仓库；该仓库通常在目标项目根目录下，但也可以安装在其他位置。`UeAgentInterfaceCMD/` 负责公开 `uai` Python SDK、薄 CLI、binding 生成、测试和刷新 skill 内置 `uai-cli.exe`。
 
 ## 当前边界
 
@@ -39,7 +39,7 @@
 | `skills/ue-kb/`                  | UE 本地知识库 skill，携带`kb-manifest.json`、source、chunks、FTS 索引和知识库使用规则。                                                                                                        | 需要                                              |
 | `skills/ue-essential-knowledge/` | UE 重要知识分类阅读 skill，用中文索引核心概念、资产、Blueprint、Material、Niagara、动画、渲染、调试、C++/插件和 UAI authoring 等知识目录。                                                     | 推荐                                              |
 | `skills/kbcli-knowledge-base/`   | kbCli runtime skill submodule，提供`kb.exe` 和 vector service；是 `ue-kb` 正常查询的重要配套。                                                                                                 | 需要                                              |
-| `UeAgentInterfaceCMD/`           | `uai_core` Python API 与 CLI 开发/测试/发布验证仓库。日常 Agent 自动化优先定位该仓库并直接使用 `cli/uai_core`；同时用于构建 `uai-cli.exe`、执行 `release ci`、生成 report 和维护命令覆盖矩阵。 | 推荐可定位；无可用 UAICMD 时才回退 skill 内置 CLI |
+| `UeAgentInterfaceCMD/`           | 公开 `uai` Python SDK、薄 CLI、静态 binding 与开发测试仓库。日常 Agent 自动化优先定位该仓库并使用 `cli/uai`；无可用开发入口时才回退 skill 内置 CLI。 | 推荐可定位；无可用 UAICMD 时才回退 skill 内置 CLI |
 | `docs/images/`                   | README 使用的安装和菜单截图。                                                                                                                                                                  | 随包                                              |
 | `releases/`                      | 本地发布 manifest 和发布材料归档。                                                                                                                                                             | 维护者使用                                        |
 
@@ -87,10 +87,10 @@ git clone https://github.com/xianruiyang/UeAgentInterface.git .\Plugins\UeAgentI
 
 把需要的 skill 复制到 Codex skills 目录。`ue-agent-interface`、`ue-kb` 和 `kbcli-knowledge-base` 都是必装项：前者负责 UE 自动化工作流，后两者负责本地 UE 知识检索和查询运行时。`ue-essential-knowledge` 是推荐安装项，用于把 UE 重要知识按主题组织成轻量阅读入口。
 
-`ue-agent-interface` skill 内置 `<SkillDir>/tools/uai-cli.exe`，但它现在只是回退入口。日常 UAI 自动化优先使用已定位 `UeAgentInterfaceCMD` 仓库中的 Python `uai_core`：
+`ue-agent-interface` skill 内置 `<SkillDir>/tools/uai-cli.exe`，但它只是回退入口。日常 UAI 自动化优先使用已定位 `UeAgentInterfaceCMD` 仓库中的公开 Python SDK：
 
 ```text
-<UaiCmdRoot>/cli/uai_core
+<UaiCmdRoot>/cli/uai
 ```
 
 `UaiCmdRoot` 通常是目标项目根目录下的 `UeAgentInterfaceCMD/`，但不保证如此。Agent 自动候选找不到 UAICMD 时，应先询问用户是否已安装 UAICMD 以及安装路径；只有确认没有可用 UAICMD，或用户明确要求回退时，才使用 skill 内置 CLI：
@@ -114,15 +114,18 @@ git clone https://github.com/xianruiyang/UeAgentInterface.git .\Plugins\UeAgentI
 同一菜单还提供：
 
 - `Stop UeAgentInterface Server`：停止编辑器内服务。
-- `Copy Connection Info`：复制当前连接信息，便于 `uai_core` 或 skill CLI 回退检查连接。
+- `Copy Connection Info`：复制当前连接信息，便于公开 SDK 或 skill CLI 检查连接。
 
-启动后优先用 `uai_core` 做连接检查。下面示例只使用相对当前工作目录的候选路径；如果找不到 UAICMD，应向用户确认安装路径，不要直接改用项目 `dist` CLI：
+启动后通过一份 Connection TOML 连接。Python 调用只需要导入 `uai` 并加载该文件：
 
-```powershell
-$UserWorkDir = Get-Location
-$ProjectRoot = $UserWorkDir
-$UaiCmdRoot = Join-Path $ProjectRoot "UeAgentInterfaceCMD"
-python -c "import sys; from pathlib import Path; root=Path(r'$UaiCmdRoot'); sys.path.insert(0, str(root/'cli')); from uai_core import UaiCore; print(UaiCore.from_config(require_token=True).doctor())"
+```python
+import uai
+
+with uai.connect("connection.toml") as ue:
+    result = ue.query.command_search(
+        "inspect the current editor runtime",
+        limit=3,
+    )
 ```
 
 确认没有可用 UAICMD 或用户明确要求回退时，才使用 skill 内置 CLI。report 应写到当前用户工作区，不写回 skill 或 Pak 目录：
@@ -134,11 +137,11 @@ $RuntimeLogs = Join-Path $UserWorkDir "runtimeLogs"
 New-Item -ItemType Directory -Force -Path $RuntimeLogs | Out-Null
 
 & (Join-Path $SkillDir "tools\uai-cli.exe") `
-  --report-file (Join-Path $RuntimeLogs "uai_doctor.json") `
-  doctor --json-output
+  --connection .\connection.toml `
+  connection probe
 ```
 
-实际自动化工作应通过 `ue-agent-interface` skill：优先用已定位 UAICMD 的 `uai_core`，确认没有可用 UAICMD 后再回退到 skill 内置 `uai-cli.exe`；不要直接调用 HTTP 接口。
+实际自动化工作应通过 `ue-agent-interface` skill：优先用已定位 UAICMD 的公开 `uai` SDK，确认没有可用 UAICMD 后再回退到 skill 内置 `uai-cli.exe`；两者都只调用正式 manifest 中的真实 command，不直接调用 HTTP。
 
 ## 推荐工作流
 
@@ -146,8 +149,8 @@ New-Item -ItemType Directory -Force -Path $RuntimeLogs | Out-Null
 2. 在 Codex 中使用 `$ue-agent-interface`。
 3. 先定位 `UaiCmdRoot`：优先使用用户给出的 UAICMD 路径；其次检查 `<ProjectRoot>/UeAgentInterfaceCMD` 和当前工作区常见候选。
 4. 如果找不到 UAICMD，先询问用户是否已安装以及安装路径；确认没有可用 UAICMD 或用户明确要求回退后，才使用 `<SkillDir>/tools/uai-cli.exe`。
-5. Python 直连时，把 `<UaiCmdRoot>/cli` 加入 `sys.path`，使用 `UaiCore`、`uai_core.commands.*` wrapper 或 `ue.batch(..., stop_on_error=True)`。
-6. 临时 `plan`、`vars`、`batch`、params JSON 和 Python 任务脚本放在用户工作目录的 `tmp/uai_params/` 或用户指定的项目目录。
+5. Python 调用只导入 `uai`，通过 `uai.connect(<connection.toml>)` 获得 Client；每个命名方法只转发一条同名真实 command。
+6. 临时 params JSON、Connection TOML 和 Python 任务脚本放在用户工作目录的 `tmp/uai_params/` 或用户指定的项目目录。
 7. response、report、crash capture、runtime index 和运行日志放在用户工作目录的 `runtimeLogs/`。
 8. 创建或修改资产时优先走 JSON 或 folder 结构化 JSON 工作流。
 9. 应用后检查 response/report、错误、warning、编译结果、Niagara Stack issue、dirty resource、截图或 runtime probe。
@@ -194,6 +197,7 @@ UeAgentInterfacePak/
 - `skills/ue-agent-interface/`、`skills/ue-kb/` 与 `skills/ue-essential-knowledge/` 是 Pak 直接分发内容。更新后需要同步到真实 Codex skills 目录再验证。
 - `ue-agent-interface` skill 内的 `docs/` 是插件/CLI 正式文档的同步副本；同步时不得复制 `commands/deprecatedCommand/**` 或 generated 覆盖矩阵。
 - 更新 `UeAgentInterfaceCMD` 后，如该 CLI 变更应进入 skill，需要重新构建并刷新 `skills/ue-agent-interface/tools/uai-cli.exe` 与默认配置，再同步 installed skill。
+- one-file CLI 只包含公开 `uai` SDK 与薄 CLI，不嵌入旧业务合同、命令索引或第二套领域实现；发布前执行 packaged source/executable smoke，并验证其与 C++ 正式 manifest 生成的 binding 一致。
 - Pak 目录不得残留 `runtimeLogs/`、`logs/`、report payload、`tmp/`、`.pytest_cache/`、`__pycache__/`、`Binaries/`、`Intermediate/`、`Saved/`、`DerivedDataCache/` 等运行产物。
 - `release dev-mirror` 只用于本地临时镜像和问题定位，不代表正式发布；写入 Pak submodule 内容必须显式传 `--allow-submodule-content-write`。
 - 正式发布前使用外层项目的单入口门禁：
@@ -202,7 +206,7 @@ UeAgentInterfacePak/
 python UeAgentInterfaceCMD/run_uai_cli.py release ci --json-output --ci-output runtimeLogs/uai_release_ci.json
 ```
 
-`release ci` 会检查 coverage、sync-check、Pak layout、发布包 hygiene、Dev/Pak CLI 单测和质量门禁。`--allow-dirty` 只用于本地诊断，正式发布提交前应回到干净且范围明确的状态。
+`release ci` 会检查 coverage、sync-check、Pak layout、authoring contract closure、发布包 hygiene、Dev CLI 测试、Pak CLI 静态质量和 Pak→installed skill 完整文件集 parity。Git 状态或 clean-filter/hash authority 不可用、dirty、commit/tree mismatch、contract 缺失或 parity missing/different/extra 均会阻断正式准入；Git 权威不可用时不得回退到裸文件字节 hash。测试与清理完成后会重跑最终门禁，允许的 CI artifact 写出后还会再次复核同步状态。`--ci-output` 只能写到所有发布仓库之外，或所在最深 Git worktree 已明确 ignore 的位置；否则拒绝且不写文件。CLI 仅在 `success=true` 且 `formal_release_allowed=true` 时返回成功退出码。`--allow-dirty` 和 `--skip-tests` 只用于诊断并返回非零，不能被 CI 当作正式通过。Pak→installed 与正式 sync 共用完整 file-set comparator：UTF-8 文本规范化换行，二进制逐字节比较；正式发布必须回到干净、已实际运行测试且全部最终门禁通过的状态。
 
 GitHub 远端发布、`git push`、创建 GitHub Release 和更新远端 tag 是人工边界；Agent 只准备本地提交、manifest、release notes、gate report 和待执行命令清单。
 

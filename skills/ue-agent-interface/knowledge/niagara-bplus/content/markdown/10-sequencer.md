@@ -1,0 +1,605 @@
+# 10 Sequencer设置和纹理样本模块说明
+
+# 10 Sequencer设置和纹理样本模块说明
+
+## 关键术语
+
+- `Color`、`Alpha`、`GPU`、`UV`、`Texture`、`Sequencer`、`Curve`、`粒子`、`网格`、`速度`、`Niagara`、`Particle`、`Spawn`、`Particle Spawn`、`Normalized Age`、`纹理`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:05-00:05:00 Sequencer、粒子、网格
+
+- 本段定位：Sequencer、粒子、网格。
+- 知识点：你好,在第十刻,再次问候大家 上次我们完成了第二个例子的制作 这是第三个例子的开始 简单设置一下序列器和角色设置 然后在例子中呢,需要简单说明。
+- 知识点：在本例中适当新颖的模块 先不太是模块如何使用并结束 后续会继续上次制作的第二个棺铲 这是我测试制作的棺铲,现在删除它 那么这是第二次爆炸时制作的棺铲。
+- 知识点：打开后,另存位,将变成3 我创建了新的棺卡,Ice Explosion 然后复制一个序列器 DomdenBokeh,然后级别的话就是这个。
+- 知识点：这个这个这个集名,然后命名为3 命名为Ice Explosion 连接到这里,然后再次保存当前棺铲 打开序列器,需要删除已有的内容 摇动效果也删除,那么就要引入新角色了。
+- 知识点：本例中使用的角色是Paragon Aurora 这里的角色英雄Aurora,网格,需要拖入材质或模块输入 往下拉,就是这种角色 这种角色原本在ParaGom那里。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`材质`、`粒子`、`序列`、`速度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 第三个例子开始时的关卡与资源状态
+> - 组成部分: Level Viewport + Content Browser + Outliner + Details + 弹窗
+> - 所属: `Coloso_Tutorial / Particle / 03`，当前关卡标题为 `Untitled`
+> - 目的: 从第二个例子切换到第三个例子前，确认基础场景和粒子目录状态。
+>
+> Viewport:
+> - 视口模式为 `Perspective / Lit / Show`。
+> - 中央是沙色地形块，地形上有不规则凹凸，背景为天空和远处雾化地平线。
+> - 该画面用于确认新例子开始时的基础关卡环境，不包含当前教程的新粒子参数。
+>
+> Content Browser:
+> - 路径位于 `Content/Coloso_Tutorial/Particle/03`。
+> - 文件区为空，提示 `Drop files here or right click to create content.`。
+>
+> Outliner:
+> - 当前为 `Untitled (Editor)` 世界。
+> - 可见基础环境对象：`HLOD`、`Lighting`、`DirectionalLight`、`ExponentialHeightFog`、`SkyAtmosphere`、`SkyLight`。
+> - 状态行显示约 `123 actors (74 loaded)`。
+>
+> 弹窗:
+> - 右下角提示 `1 asset editor was open when the editor quit unexpectedly. Would you like to re-open it?`
+> - 可选按钮为 `Yes` / `No`。
+>
+> 联动关系: 此图对应第三个例子开头的项目状态检查；当前 `Particle/03` 目录为空，后续将创建或复制 `03_Ice_Explosion` 相关 Sequencer、角色和 Niagara 资源。
+> 图表转写（UE-GTXT v4）
+> - 类型: `03_Ice_Explosion` Sequencer 初始轨道
+> - 组成部分: Sequencer + Content Browser + Outliner
+> - 所属: `03_Ice_Explosion`
+> - 目的: 复制并整理新例子的序列，加入 Aurora 角色和摄像机轨道。
+>
+> Sequencer:
+> | 字段 | 值 |
+> |---|---|
+> | 序列 | `03_Ice_Explosion` |
+> | 帧率 | `30 fps` |
+> | 当前帧 | 约 `0016` |
+> | 帧状态 | 约 `17 of 121` |
+> | Camera Cuts | 顶部镜头切片贯穿序列 |
+> | Cine Camera Actor | 展开 `CameraComponent`，可见 `Current Aperture=2.8`、`Current Focal Length=25.0`、`Manual Focus Distance=100000.0`、`Spawned`、`Transform` |
+> | Aurora | 有 `Animation`、`Spawned`、`Transform` 轨道 |
+>
+> Content Browser:
+> - 路径位于 `ParagonAurora/Characters/Heroes/Aurora/Meshes`。
+> - `Aurora` Skeletal Mesh 被选中，旁边可见 `Aurora_Phys...` 和 `Orion_Proto...` 资源缩略图。
+>
+> Outliner:
+> - 可见 `03_Ice_Explosion` 世界/序列语境。
+> - 右侧列表里有与 `03_Ice_Explosion` 关联的角色、摄像机和地面类对象。
+>
+> 联动关系: 该图把 `Aurora` Skeletal Mesh 资源与 `03_Ice_Explosion` Sequencer 角色轨道对应起来，说明第三个例子使用 Paragon Aurora 作为角色主体。
+> 图表转写（UE-GTXT v4）
+> - 类型: 复制来的 `Exp_01` Niagara System 编译状态
+> - 组成部分: Niagara Preview + System Overview + Parameters + Timeline
+> - 所属: `Exp_01`
+> - 目的: 打开上一例复制来的爆炸系统，准备删除或保留发射器并调整为冰爆效果。
+>
+> Preview:
+> - 中央显示 `Compiling...`。
+> - 左侧编译列表依次出现 `Compiling Emitter - Decal`、`Glow_01`、`Glow_02`、`Glow_03`、`Glow_04`、`Smoke_01`、`Smoke_02`、`Debris_01`、`Debris_01001`、`Glow_05`、`Debris_01002`、`Debris_01003`、`Light_01`、`Refraction_01`、`RadialBlur_01`。
+>
+> System Overview:
+> - 可见 `Light_01`、`Refraction_01`、`RadialBlur_01` 和右侧部分 `Debris_...` 发射器。
+> - `Refraction_01`、`RadialBlur_01` 的 `Emitter State` 均显示 `Self / Once`。
+> - `Refraction_01` Render 中 `Mesh Renderer` 启用。
+> - `RadialBlur_01` Render 中 `Sprite Renderer` 启用。
+>
+> Parameters:
+> - 左下角 `Parameters` 面板显示 `Decal Emitter`、`Glow_01 Emitter`、`Glow_02 Emitter`、`Glow_03 Emitter`、`Glow_04 Emitter` 等条目及其 `Scale Color`、`Scale Sprite...` 子项。
+>
+> Timeline:
+> - 当前时间约 `1.68`。
+> - 轨道中可见 `Debris_01`、`Debris_01001`、`Debris_01002`。
+>
+> 联动关系: 此图记录第二个例子爆炸系统被复制到第三个例子后仍包含大量旧发射器，后续 S02 将根据新例子需求删除或保留部分元素。
+
+### 00:05:00-00:08:20 Texture、粒子、网格
+
+- 本段定位：Texture、粒子、网格。
+- 知识点：现在几乎全部都不需要 只留下贴花,旁边会进行删除 保留可以变化的元素 这里也会删除 所以贴花这里多余还是要用 制作成其他实例 这里这个角色。
+- 知识点：还要解除Receive Deco 解除Receive Deco 保存,这个粒子也会保存 简单地,现在爆炸的时间 这些设置在序列中已完成 现在我们测试的相机。
+- 知识点：会在这里 测试用作新创建的内容 需要上传一共查看 首先用Alexey Rotund创建一个MNT 检查本地 需要把它设置为EEM 还有Burst。
+- 知识点：不使用FirstBall 我们这次要讨论的这个模块呢 就是Sample Texture这个模块的使用方法。
+- 知识点：简单地,最后一种 就是Sample Texture 这个模块 可以用这个模块 在这个模块上 用这个使用方法 简单地就展示两种 第一种是通过Grid。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Texture`、`粒子`、`序列`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Exp_01` 发射器删除前的整理状态
+> - 组成部分: Niagara Preview + System Overview + Parameters + Timeline + 字幕
+> - 所属: `Exp_01`
+> - 目的: 在新例子中只保留需要变化的元素，准备删除多余发射器。
+>
+> Preview:
+> - 仍处于 `Compiling...` 状态。
+> - 编译列表显示 `Decal`、`Glow_01`、`Glow_02`、`Glow_03`、`Glow_04`、`Smoke_01`、`Smoke_02`、`Debris_01`、`Debris_01001`、`Glow_05`、`Debris_01002`、`Debris_01003`、`Light_01`、`Refraction_01`、`RadialBlur_01`。
+>
+> System Overview:
+> - 画面中间可见 `Smoke_02`、`Debris_01`、`Debris_01001`。
+> - `Debris_01001` 中 `Emitter State`、`Spawn Burst Instantaneous`、`Shape Location`、`Add Velocity`、`Particle State`、`Sub UVAnimation`、`Scale Velocity`、`Gravity Force`、`Scale Color`、`Sprite Renderer` 等模块/项可见。
+>
+> Parameters:
+> - 左下继续显示 `Decal Emitter`、`Glow_01`、`Glow_02`、`Glow_03`、`Glow_04` 等分组。
+>
+> Timeline:
+> - 轨道中 `Debris_01`、`Debris_01001`、`Debris_01002` 可见。
+> - 当前时间约 `0.62`。
+>
+> 字幕:
+> - 字幕写着“只留下贴花，旁边会进行删除。”
+>
+> 联动关系: 该图是发射器清理前的证据，说明当前系统还保留多个上一例元素，下一步会围绕 Decal 和少量可改元素继续。
+> 图表转写（UE-GTXT v4）
+> - 类型: 关卡中整理后的 `03_Ice_Explosion` 测试状态
+> - 组成部分: Level Viewport + Content Browser + Outliner + Actor Details + 底部 Niagara 窗口
+> - 所属: `03_Ice_Explosion`
+> - 目的: 检查删除多余元素后，角色、贴花测试资源和 `Exp_01` 在关卡中的状态。
+>
+> Level Viewport:
+> - 地面为灰色棋盘格测试面。
+> - 画面右侧有一处黑灰贴花/爆炸残留效果，中心有亮色裂纹，旁边可见 Aurora 角色姿态。
+>
+> Content Browser:
+> - 路径位于 `Content/Coloso_Tutorial/Test`。
+> - 可见 `Decal_Test` Material、一个名称以 `Te...` 开头的 Niagara System、`Trail_Test...` Niagara System。
+>
+> Outliner:
+> - 当前关卡为 `03_Ice_Explosion`。
+> - 可见 `Lighting`、`DirectionalLight`、`01_Swing_Trail`、`Aurora`、`Cine Camera Actor`、`Exp 01`。
+> - `Aurora` 被选中，类型为 Skeletal Mesh。
+>
+> Actor Details:
+> - 右侧 Details 显示 `Aurora (Instance)`。
+> - 搜索框里输入了 `rec`。
+> - Lighting 分组中可见 `Capsule Direct Shadow`、`Capsule Indirect Shadow`，均未勾选。
+>
+> 底部 Niagara 窗口:
+> - `Exp_01` System Overview 中只剩较少发射器可见，包括 `Decal`、`Glow_01`、`Glow_02`。
+> - Preview 粒子计数可读到 `Decal` 为 `1 Current, 1 Max (est)`，其余多个发射器显示 `0 Current` 或 Disabled/Complete 状态。
+>
+> 联动关系: 该图把关卡预览中的贴花/残留效果与底部整理后的 `Exp_01` 发射器状态对应起来，并确认 Aurora 的阴影接收相关选项正在被检查。
+> 图表转写（UE-GTXT v4）
+> - 类型: 新 `SampleTexture` Niagara System 的初始粒子设置
+> - 组成部分: Niagara Preview + System Overview + Initialize Particle Details + Timeline
+> - 所属: `SampleTexture / Empty / Initialize Particle`
+> - 目的: 创建用于讲解 `Sample Texture` 模块的基础粒子网格，并先调整统一尺寸。
+>
+> Preview:
+> - 粒子计数显示 `2500 Current, 5000 Max (est) - [Empty] [Inactive]`。
+> - 预览中出现一块几乎填满视口的白色粒子/面片区域，边缘略有透视裁切。
+>
+> System Overview:
+> | 组 | 模块/项 | 状态 |
+> |---|---|---|
+> | System | `SampleTexture` | `Properties`、`User Parameters`、`System Spawn`、`System Update`、`System State` 可见 |
+> | Emitter | `Empty` | CPU 发射器 |
+> | Emitter Update | `Emitter State` | `Self / Once` |
+> | Emitter Update | `Spawn Particles in Grid` | 启用 |
+> | Emitter Update | `Spawn Burst Instantaneous` | 灰置/未启用状态 |
+> | Particle Spawn | `Initialize Particle` | 选中 |
+> | Particle Spawn | `Grid Location` | 启用 |
+> | Particle Update | `Particle State` | 启用 |
+> | Render | `Sprite Renderer` | 启用 |
+>
+> Initialize Particle Details:
+> | 分组 | 字段 | 值 |
+> |---|---|---|
+> | Point Attributes | Lifetime Mode | `Direct Set` |
+> | Point Attributes | Lifetime | `5.0` |
+> | Point Attributes | Color Mode | `Unset` |
+> | Point Attributes | Position Mode | `Simulation Position` |
+> | Point Attributes | Position Offset | `0.0, 0.0, 0.0` |
+> | Sprite Attributes | Sprite Size Mode | `Unset` |
+> | Mesh Attributes | Mesh Scale Mode | `Unset` |
+> | Ribbon Attributes | Ribbon Width/Facing/Twist Mode | `Unset` |
+>
+> Timeline:
+> - 当前时间约 `3.81`。
+> - `Empty` 轨道贯穿较长时间，底部字幕提示“将统一尺寸调整小一点。”
+>
+> 联动关系: `Spawn Particles in Grid` 和 `Grid Location` 生成网格粒子，`Lifetime=5.0` 让粒子持续显示；此阶段尚未展示纹理采样结果。
+
+### 00:08:24-00:13:06 GPU、UV、Texture
+
+- 本段定位：GPU、UV、Texture。
+- 知识点：生成的粒子网格相互创建 Grid location,模块会自动生成 这里面包含Position 所以会根据生成的粒子。
+- 知识点：索引,一个一个找到位置 那么其本身就 已经拥有粒子的位置 那么这个形状也 与我们现在在 材料中经常使用的UV的 形状略微相似 用于制作材料的纹理。
+- 知识点：可以认为 是这样映射的方式 第一种方式 再来试试 我们用GPU来查看 这里先做一个样本纹理。
+- 知识点：将放置纹理资源 我们来一个简单纹理 在我提供的纹理中 这个波浪源 来看看 纹理出现了 但现在没有显示任何内容的原因是 使用Sample。
+- 知识点：texture的话 这是UV规范 如何映射 需要与这里匹配 做这个Make vector 2D Make vector 2D 获取规范化数组位置。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Particle`、`Texture`、`Curve`、`GPU`、`纹理`、`粒子`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `SampleTexture.Empty` 网格粒子预览与统一 Sprite Size
+> - 组成部分: Niagara Preview + System Overview + Initialize Particle Details + Timeline
+> - 所属: `SampleTexture / Empty / Initialize Particle`
+> - 目的: 通过 Grid 生成规则点阵，并把粒子尺寸调小到能看清网格结构。
+>
+> Preview:
+> - 粒子计数显示 `2500 Current, 2500 Max (est) - [Empty] [Inactive]`。
+> - 预览中是规则的白色点阵方形网格，点与点之间间距均匀。
+> - 字幕写着“这里面包含Position。”
+>
+> System Overview:
+> - `Empty` 发射器被选中。
+> - `Emitter State` 为 `Self / Once`。
+> - `Spawn Particles in Grid` 启用。
+> - `Initialize Particle` 选中，`Grid Location` 位于其后并启用。
+> - Render 中 `Sprite Renderer` 启用。
+>
+> Initialize Particle Details:
+> | 分组 | 字段 | 值 |
+> |---|---|---|
+> | Point Attributes | Lifetime Mode | `Direct Set` |
+> | Point Attributes | Lifetime | `5.0` |
+> | Point Attributes | Color Mode | `Unset` |
+> | Point Attributes | Position Mode | `Simulation Position` |
+> | Point Attributes | Position Offset | `0.0, 0.0, 0.0` |
+> | Sprite Attributes | Sprite Size Mode | `Uniform` |
+> | Sprite Attributes | Uniform Sprite Size | `5.0` |
+> | Sprite Attributes | Sprite Rotation Mode | `Unset` |
+> | Sprite Attributes | Sprite UV Mode | `Unset` |
+>
+> 联动关系: `Grid Location` 负责把粒子放成规则网格，粒子自身带有 Position 信息；`Uniform Sprite Size=5.0` 让每个点足够小，可以看出网格采样结构。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Sample Texture` 模块与 Texture UV 输入
+> - 组成部分: Niagara Stack + Sample Texture Details + 模块输入菜单 + Timeline
+> - 所属: `SampleTexture / Empty / Sample Texture`
+> - 目的: 在 `Particle Spawn` 中加入 `Sample Texture`，准备把 Grid 粒子位置转换成纹理 UV 采样坐标。
+>
+> Niagara Stack:
+> | 组 | 模块/项 | 状态 |
+> |---|---|---|
+> | Emitter Properties | `Properties` | GPU 图标可见 |
+> | Emitter Update | `Emitter State` | `Self / Once` |
+> | Emitter Update | `Spawn Particles in Grid` | 启用 |
+> | Particle Spawn | `Initialize Particle` | 启用 |
+> | Particle Spawn | `Grid Location` | 启用 |
+> | Particle Spawn | `Sample Texture` | 选中 |
+> | Particle Update | `Particle State` | 启用 |
+> | Render | `Sprite Renderer` | 启用 |
+>
+> Sample Texture Details:
+> - Details 标题为 `Sample Texture`。
+> - 可见分组：`Module Usage`、`Texture Sampling`、`Texture`、`Texture UV`、`Sample Rejection`。
+> - `Texture UV` 分组中 `UV` 展开，显示 X/Y 分量输入。
+> - X 行当前为 `Vector` 输入，字段值显示为 `0.0, 0.0, 0.0`，下方 `Channel` 为 `X`。
+> - Y 行显示 `0.0`。
+> - `Generate UV Using`、`Transform`、`Transform UV Into` 位于同一分组下方。
+>
+> 模块输入菜单:
+> - 右侧弹出菜单顶部有 Source Filtering：`Niagara`、`Game`、`Plugins`、`Developer`，并勾选 `Library Only`。
+> - Suggested 中可见 `Convert Position to Vector`、`Lerp Vector`、`Multiply Vector`、`Multiply Vector by Float`、`Random Range Vector`、`Random Vector`、`Rotate Vector`、`Select Vector from Array`、`Vector from Curve`、`Vector from Float`。
+> - General 中可见 `Dynamic Inputs`、`Link Inputs`、`Make`、`New Expression`、`New Local Value`、`New Scratch Dynamic Input`。
+>
+> 联动关系: 此图正在为 `Sample Texture.Texture UV` 构造输入；菜单中选择 `Make`/向量类输入后，可把 Grid 粒子位置拆成纹理采样需要的二维 UV 分量。UV 的空间含义只按 Texture UV 字段记录，不额外推断外部坐标系。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Kill Particles` 使用采样比较控制粒子显示
+> - 组成部分: Niagara Stack + Kill Particles Details + Timeline
+> - 所属: `SampleTexture / Empty / Kill Particles`
+> - 目的: 用浮点比较结果决定粒子是否被 Kill，为后续按纹理颜色/Alpha 形成图案做准备。
+>
+> Niagara Stack:
+> | 组 | 模块/项 | 状态 |
+> |---|---|---|
+> | Emitter Properties | `Properties` | GPU 图标可见 |
+> | Emitter Update | `Emitter State` | `Self / Once` |
+> | Emitter Update | `Spawn Particles in Grid` | 启用 |
+> | Particle Spawn | `Initialize Particle` | 启用 |
+> | Particle Spawn | `Grid Location` | 启用 |
+> | Particle Spawn | `Sample Texture` | 启用 |
+> | Particle Spawn | `Kill Particles` | 选中 |
+> | Particle Update | `Particle State` | 启用 |
+> | Render | `Sprite Renderer` | 启用 |
+>
+> Preview:
+> - 粒子计数显示 `0 Current, 2500 Max (est) - [Empty] [Active]`。
+> - 预览区当前没有可见粒子。
+>
+> Kill Particles Details:
+> | 字段 | 值 |
+> |---|---|
+> | 条件输入 | `Set Bool by Float Comparison` |
+> | A | `1.0` |
+> | B | `0.0` |
+> | Comparison Type | `A Greater Than B` |
+>
+> Timeline:
+> - 当前时间约 `0.79`。
+> - `Empty` 轨道可见，底部字幕写着“这将是最重要的。”
+>
+> 联动关系: `Sample Texture` 先为粒子提供采样结果，`Kill Particles` 再通过 A/B 浮点比较输出布尔值决定粒子是否消失；当前 A=1.0、B=0.0 且比较方式为 `A Greater Than B`，因此预览中粒子被全部移除。
+
+### 00:13:06-00:15:47 Color、Alpha、Texture
+
+- 本段定位：Color、Alpha、Texture。
+- 知识点：所有粒子都消失了 获取Color值 并将其变为B 如果B值高于A值 那么这些粒子就会消失 所以0.1 0.2 0.3 0.4 0.5 0.6 0.6。
+- 知识点：逐渐收紧 一旦超过这个值 所有的都会消失 这个纹理当前拥有的颜色值 这一部分是0.1 这一部分是0.2 0.3 0.4 0.5 这一部分是0.1。
+- 知识点：0.2 0.3 0.4 0.5 现在有这种颜色值 这些颜色值被直接应用到粒子颜色值上 然后与B的数值进行比较 如果小于B的数值 就可以认为是particle。
+- 知识点：这是目前展示的结果 所以在Sample texture中解除这个 这样做黑色的部分也不会被表现出来 然后Alpha值也是 不过在这里杀掉可以找到这个形状。
+- 知识点：这个模块的强点是可以 在这个模块的强点上 可以把这个模块的颜色 杀掉可以找到这个形状 所以这个模块的强点是可以 某种我们常用的纹理形状。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Particle`、`Color`、`Alpha`、`Texture`、`纹理`、`粒子`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Kill Particles` 输入连接到 Sample Texture 采样通道
+> - 组成部分: Niagara Stack + Kill Particles Details + Link Inputs 菜单
+> - 所属: `SampleTexture / Empty / Kill Particles`
+> - 目的: 将 `Sample Texture` 的采样通道连接到 Kill 比较输入，用采样值控制粒子显隐。
+>
+> Niagara Stack:
+> - `Empty` 为 GPU 发射器。
+> - `Emitter State` 为 `Self / Once`。
+> - `Spawn Particles in Grid`、`Initialize Particle`、`Grid Location`、`Sample Texture`、`Kill Particles`、`Particle State`、`Sprite Renderer` 均可见。
+> - `Kill Particles` 被选中。
+>
+> Kill Particles Details:
+> - 条件输入为 `Set Bool by Float Comparison`。
+> - A 字段当前显示 `1.0`，正在从菜单选择采样输入。
+> - Preview 粒子计数显示 `0 Current, 2500 Max (est) - [Empty] [Active]`。
+>
+> Link Inputs 菜单:
+> | 分组 | 可见候选 |
+> |---|---|
+> | `Particles` | `Particles.SampleTexture.SampledA`、`SampledB`、`SampledG`、`SampledR` |
+> | `StackContext` | `StackContext.SampleTexture.SampledA`、`SampledB`、`SampledG`、`SampledR` |
+>
+> 操作语境:
+> - 搜索框输入 `sample`。
+> - 悬浮提示显示当前候选可连接到 `Particles.SampleTexture.SampledR`。
+>
+> 联动关系: `Sample Texture` 模块写出 `SampledA/B/G/R` 通道，`Kill Particles` 通过 Link Inputs 读取这些通道并参与 A/B 比较；该图记录的是把采样颜色或 Alpha 通道接入 Kill 条件的步骤。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Kill Particles` 阈值比较后形成圆形采样点阵
+> - 组成部分: Niagara Preview + Kill Particles Details + System Overview + Timeline
+> - 所属: `SampleTexture / Empty / Kill Particles`
+> - 目的: 用采样值与阈值比较，保留圆形纹理区域内的粒子。
+>
+> Preview:
+> - 粒子计数显示 `1159 Current, 5000 Max (est) - [Empty] [Inactive]`。
+> - 预览中出现由白色粒子组成的圆形点阵，圆外粒子被移除。
+>
+> Kill Particles Details:
+> | 字段 | 值 |
+> |---|---|
+> | 条件输入 | `Set Bool by Float Comparison` |
+> | A | `Particles.SampleTexture...`，来源标签显示 `PARTICLES / SAMPLE TEXTURE` |
+> | B | `0.2` |
+> | Comparison Type | 显示为 `A ... Than B`，下拉区域部分被输入框遮挡 |
+>
+> System Overview:
+> - `Empty` 发射器为 GPU。
+> - `Spawn Particles in Grid`、`Grid Location`、`Sample Texture`、`Kill Particles` 依次位于 Particle Spawn 相关流程中。
+>
+> Timeline:
+> - 当前时间约 `1.19`。
+> - 字幕写着“然后与 b 的数值进行比较,”。
+>
+> 联动关系: A 读取 `Sample Texture` 的采样输出，B 为阈值 `0.2`；比较结果驱动 `Kill Particles`，因此点阵只保留采样值满足条件的圆形区域。
+> 图表转写（UE-GTXT v4）
+> - 类型: 复制发射器 `Empty001` 与 Sprite Renderer 设置
+> - 组成部分: Niagara Preview + System Overview + Sprite Renderer Details + Timeline
+> - 所属: `SampleTexture / Empty001 / Sprite Renderer`
+> - 目的: 复制一个新的发射器继续测试纹理采样，同时保留旧 `Empty` 作为禁用对照。
+>
+> Preview:
+> - 粒子计数显示 `0 Current, 2500 Max (est) - [Empty] [Disabled]`。
+> - `Empty001` 显示 `2500 Current, 2500 Max (est) - [Empty001] [Inactive]`。
+> - 预览为圆形白色点阵。
+>
+> System Overview:
+> | 发射器 | 状态 |
+> |---|---|
+> | `Empty` | 灰置，底部显示 `Disabled` |
+> | `Empty001` | 启用，GPU 图标可见，包含 `Initialize Particle`、`Grid Location`、`Sample Texture`、`Kill Particles`、`Particle State`、`Sprite Renderer` |
+>
+> Sprite Renderer Details:
+> | 字段 | 值 |
+> |---|---|
+> | Material | `DefaultSpriteMaterial` |
+> | Material User Param Binding | `None` |
+> | Source Mode | `Particles` |
+> | Alignment | `Automatic` |
+> | Facing Mode | `Automatic` |
+> | Macro UVRadius | `0.0` |
+> | Default Pivot in UV Space | `0.5, 0.5` |
+> | Remove HMD Roll | 未勾选 |
+> | Pixel Coverage Mode | `Automatic` |
+> | Pixel Coverage Blend | `1.0` |
+> | Sort Mode | `None` |
+> | Renderer Visibility | `0` |
+>
+> Timeline:
+> - 轨道中 `Empty` 和 `Empty001` 均可见，`Empty001` 轨道被选中。
+>
+> 联动关系: 新发射器 `Empty001` 继承 Grid/Sample/Kill 逻辑并继续用 Sprite Renderer 输出点阵；旧 `Empty` 禁用，用于避免与后续 Static Mesh Location 测试混合。
+
+### 00:15:52-00:20:02 UV、Texture、粒子
+
+- 本段定位：UV、Texture、粒子。
+- 知识点：在中心值处生成大约一万个粒子 还有一个叫 静态网格位置的东西 这个是基于 进入的静态网格的顶点 随机生成粒子参考三角形。
+- 知识点：我们经常 使用这种 板状的网格 现在出来了 这部分正在生成 这个网格有它的UV 可以直接采样这个UV 来利用这个样本纹理。
+- 知识点：可以进行 的映射 需要展示这种方法 这个是那个圆的U 这样一圈转动 是现在的U方向 这样从中心向外扩散 是V方向 需要放一个更清晰好看的纹理。
+- 知识点：这种渐变 纹理放上去 就已经这样了 粒子正在生成一定程度 要将这个静态网格位置 抬高 这里模块输出生成的UV属性值 可以在这个sample。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Particle`、`Alpha`、`Opacity`、`Texture`、`Panner`、`Emissive`、`材质`、`纹理`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Static Mesh Location` 初始警告与采样设置
+> - 组成部分: Niagara Preview + System Overview + Static Mesh Location Details + Timeline
+> - 所属: `SampleTexture / Empty001 / Static Mesh Location`
+> - 目的: 切换到基于静态网格顶点/三角形的粒子生成方式，并准备从网格 UV 中取得采样坐标。
+>
+> Preview:
+> - 左侧显示 `Compiling Emitter - Empty001`。
+>
+> System Overview:
+> - `Empty001` 发射器为 GPU，标题处有黄色警告图标。
+> - `Spawn Burst Instantaneous` 启用。
+> - `Static Mesh Location` 位于 Particle Spawn 中，标签显示 `Triangles / Random`。
+> - `Grid Location`、`Sample Texture`、`Kill Particles`、`Sprite Renderer` 仍在模块栈中可见。
+>
+> Static Mesh Location Details:
+> | 分组 | 字段 | 值 |
+> |---|---|---|
+> | Static Mesh | Source Mode | `Default` |
+> | Static Mesh | Preview Mesh | `None` |
+> | Errors and Warnings | Warning | `No mesh assigned warning` |
+> | StaticMesh | Instance Index | `-1` |
+> | StaticMesh | Filtered Sockets | `0 Array element` |
+> | LOD | LODIndex | `0` |
+> | LOD | LODIndex User... | `None` |
+> | Sampling | Mesh Sampling Type | `Triangles` |
+> | Sampling | Triangle Sampling Mode | `Random (All Triangles)` |
+> | Apply | Position Sampling | `Apply (Rigid)` |
+>
+> 提示:
+> - 模块提示说明该阶段会为每个新粒子设置初始值，并在 Particle Spawn 阶段后继续执行 Particle Update。
+>
+> 联动关系: `Static Mesh Location` 还未分配 Mesh，因此发射器有警告；当前重点是准备把生成位置从 Grid 改为基于静态网格三角形的随机采样。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Static Mesh Location` 指定 `Circle_03` 并输出采样属性
+> - 组成部分: Niagara Preview + System Overview + Static Mesh Location Details + Timeline
+> - 所属: `SampleTexture / Empty001 / Static Mesh Location`
+> - 目的: 用圆形平面网格作为粒子生成表面，并输出可供 Sample Texture 使用的 UV 属性。
+>
+> Preview:
+> - 粒子计数显示 `10000 Current, 10000 Max (est) - [Empty001] [Inactive]`。
+> - 预览中只看到中心附近少量白点/粒子，背景较暗。
+>
+> Static Mesh Location Details:
+> | 分组 | 字段 | 值 |
+> |---|---|---|
+> | StaticMesh | Source Mode | `Default` |
+> | StaticMesh | Preview Mesh | `Circle_03` |
+> | StaticMesh | Default Mesh | `Circle_03` |
+> | StaticMesh | Source Actor | `None` |
+> | StaticMesh | Instance Index | `-1` |
+> | StaticMesh | Filtered Sockets | `0 Array element` |
+> | LOD | Allow Sampling... | 未勾选 |
+> | LOD | LODIndex | `0` |
+> | LOD | LODIndex User... | `None` |
+> | Sampling | Mesh Sampling Type | `Triangles` |
+> | Sampling | Triangle Sampling Mode | `Random (All Triangles)` |
+> | Apply | Position Sampling | `Apply (Rigid)` |
+> | Apply | Write To Particle Position | 勾选 |
+> | Apply | Velocity Sampling | `Output` |
+> | Apply | Sampled Velocity Coordinate Space | `World` |
+> | Apply | Orientation Sampling | `Apply` |
+>
+> System Overview:
+> - `Static Mesh Location` 标签显示 `Triangles / Random`。
+> - `Sample Texture` 位于 `Static Mesh Location` 之后。
+>
+> 字幕:
+> - 字幕写着“这里模块输出生成的UV属性值”。
+>
+> 联动关系: `Static Mesh Location` 使用 `Circle_03` 生成粒子位置并输出采样属性；后续 `Sample Texture` 读取这些 UV 相关输出，实现基于网格 UV 的纹理采样。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Sample Texture` 读取 Static Mesh UV 后生成环形粒子
+> - 组成部分: Niagara Preview + Parameters + System Overview + Sample Texture Details + Timeline
+> - 所属: `SampleTexture / Empty001 / Sample Texture`
+> - 目的: 用 `Circle_03` 的静态网格采样属性作为 UV，采样渐变纹理并形成环形粒子图案。
+>
+> Preview:
+> - 粒子计数显示 `2863 Current, 20000 Max (est) - [Empty001] [Active]`。
+> - 预览中白色粒子聚成一个环形带，中心为空，环带内外边界不完全均匀，呈随机粒子分布。
+>
+> Parameters:
+> - `Particles.Position` 可见。
+> - `Particles.SampleTexture.SampledA`、`SampledB`、`SampledColor`、`SampledG`、`SampledR`、`SamplerUV` 可见。
+> - `Particles.StaticMeshLocation.SampledNormal`、`SampledPosition`、`SampledRotation` 可见。
+>
+> System Overview:
+> - 旧 `Empty` 灰置并禁用。
+> - `Empty001` 启用，模块顺序包含 `Static Mesh Location (Triangles / Random)`、`Sample Texture`、`Kill Particles`、`Particle State`、`Sprite Renderer`。
+>
+> Sample Texture Details:
+> | 分组 | 字段 | 值 |
+> |---|---|---|
+> | Texture Sampling | Mode | `Importance Sampled UVs` |
+> | Sample Rejection | 页签 | `All` |
+> | Texture | Sample Texture | 勾选 |
+> | Texture | Texture | `T_Beam_Gradient_02` |
+> | Texture | Texture User Pa... | `None` |
+> | Texture | Mip Level | `0.0` |
+> | Texture | Apply Sampled RGBA to Particles | 勾选 |
+> | Texture | Sampled RGBA Mask | `1.0, 1.0, 1.0, 0.0` |
+> | Texture UV | UV | `Particles.StaticMeshLocation...` |
+> | Texture UV | Generate UV Using Import... | 未勾选 |
+> | Transform | Transform UV Into Position | 未勾选 |
+> | Sample Rejection | Enable Sample Rejection | 未勾选 |
+>
+> 联动关系: `Static Mesh Location` 输出的采样 UV 进入 `Sample Texture.Texture UV`，`Sample Texture` 读取 `T_Beam_Gradient_02` 并把采样 RGBA 应用到粒子；`Kill Particles` 再筛掉不满足条件的粒子，最终预览形成环形粒子带。
+
+## 补充视觉证据
+
+### S01 00:03:43
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `03_Ice_Explosion` 中 Aurora 相机视角补充证据
+> - 组成部分: Level Viewport + Content Browser + Outliner + Actor Details + Sequencer
+> - 所属: `03_Ice_Explosion / Aurora`
+> - 目的: 补充说明第三个例子的角色在相机视角中的大致位置，以及 Sequencer 当前播放帧。
+>
+> Level Viewport:
+> - 视口处于 `Pilot Actor: Cine Camera Actor`。
+> - 灰色棋盘格地面占据画面主体。
+> - Aurora 角色位于画面中下部附近，角色旁边有白色/蓝灰色的短暂效果残影。
+> - 字幕写着“相机视角中心位置”。
+>
+> Content Browser:
+> - 路径位于 `ParagonAurora/Characters/Heroes/Aurora/Meshes`。
+> - `Aurora` Skeletal Mesh 被选中。
+> - 旁边可见 `Aurora_Cyl...`、`Aurora_... Physics Asset`、`Aurora_Clothes...`、`Orion_Proto...` 等资源缩略图。
+>
+> Outliner:
+> - 当前关卡为 `03_Ice_Explosion`。
+> - 可见 `Lighting`、`DirectionalLight`、`01_Swing_Trail`、`Aurora`、`Cine Camera Actor`、`Floor`。
+> - `Aurora` 被选中。
+>
+> Actor Details:
+> - `Aurora (Instance)` 展开。
+> - Transform 显示 Location `0.0, 0.0, 0.0`，Rotation `0.0, 0.0, 0.0`，Scale `1.0, 1.0, 1.0`。
+> - Animation Mode 为 `Use Custom Mode`。
+> - Mesh 分组中可见 Skeletal Mesh Asset 字段。
+>
+> Sequencer:
+> - 底部 Sequencer 为 `03_Ice_Explosion`。
+> - 当前帧显示约 `0037`，状态约 `38 of 91`，帧率 `30 fps`。
+> - 顶部 `Camera Cuts` 轨道可见。
+>
+> 联动关系: 该补充图用于确认 Aurora 已放入 `03_Ice_Explosion`，并位于 Cine Camera 观察范围内；这为后续粒子或纹理采样效果对角色位置的叠加提供基础场景证据。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

@@ -1,102 +1,98 @@
 # UeAgentInterface 当前能力与边界
 
-本文只记录当前已经实现、文档化并纳入覆盖矩阵的能力快照。具体命令参数以 `<SkillDir>/docs/UeAgentInterface/commands/` 分册为准。
+本文记录统一框架的当前正式状态。它不以旧 CommandSpec、旧 handler 数量或 generated
+目录数量推导可用性；命令全集以 `Resources/UaiCommandManifest.json` 为准，单条命令
+的 production-ready 状态以对应真实纵向证据为准。
 
-## 覆盖状态
+## 当前公开边界
 
-最近一次 `uai-cli release coverage`：
+- 正式 active command 集合与数量在读取时从 `Resources/UaiCommandManifest.json` 动态取得；
+  command ID 必须唯一，长期文档不固化易过期数量。
+- 业务请求只经 `POST /api/uai/command` 进入正式 CommandService。
+- HTTP 只是当前 Transport Adapter；Protocol、Client、CommandService 和 C++ owner
+  不依赖 HTTP 业务类型，可在保持上层调用不变的情况下增加其他 transport。
+- Python SDK/CLI 只转发一条真实 command，不拥有 UE、HJSON 或领域业务。
+- dotted canonical command 不进入旧 underscore prefix fallback。
+- 已迁移 legacy command ID 在正式 registry 中 fail closed；旧业务 ingress 不再绑定。
+- ping/status/listener 只承担连接和服务状态，不是业务第二入口。
 
-- 命令总数：`876`
-- 缺正式文档：`0`
-- 缺实现：`0`
-- 缺 smoke：`0`
-- actionable smoke debt：`0`
-- 所有命令均有 direct smoke/source-audit 覆盖记录
+manifest 或 generated binding 只证明其读取时公开结构存在，不代表其中全部 command 已经获得
+同等级的真实 UE 纵向证明。对外声明能力时必须引用对应模块测试与读回证据。
 
-生成文件：
+## 统一模块职责
 
-- `docs/generated/command_coverage_matrix.json`
-- `docs/generated/command_coverage_matrix.md`
-- `docs/generated/smoke_coverage_debt.md`
-
-## 已完成能力
-
-| 领域 | 当前能力 | 主要分册 |
+| 模块 | 唯一职责 | 当前验证重点 |
 | --- | --- | --- |
-| Core / Editor lifecycle | world state、transaction、undo/redo、dirty resource、open/save/close、batch 基础能力 | `01`, `UeAgentInterface_Usage.md` |
-| Level / Actor / Component | Actor/Component 查询、transform、属性、选择、folder/tag、trace/sweep/overlap、NavMesh 基础、截图和 viewport 控制 | `01` |
-| Level Content JSON | 场景 Actor/Component 内容的 query/validate/plan/apply/diff/snapshot/delete/merge/repair | `23` |
-| Level Topology | Level Streaming、World Partition、DataLayer、HLOD 操作和构建任务 | `25` |
-| Blueprint | Blueprint folder workflow、变量、组件、图节点、Pin、编译、截图、CDO、reparent | `02` |
-| UMG | WidgetBlueprint folder workflow、WidgetTree、Slot、属性、绑定、UMG 动画基础 | `03` |
-| StaticMesh / EnhancedInput | StaticMesh folder workflow、collision、socket、lightmap/Nanite 安全字段、InputAction/InputMappingContext JSON | `04` |
-| Modeling | Modeling Mode、selection、active tool、primitive wrapper、mesh edit wrapper、UV/material/collision helper | `10` |
-| Material | Material、Material Instance、Material Function folder workflow 和图/参数读写 | `05` |
-| Sequence | Level Sequence folder workflow、binding、track、key、camera cut、spawnable、subsequence、UMG animation | `06` |
-| Niagara | System、Emitter、Script folder workflow、Stack issue、refresh、compile log、preview advance、runtime probe、screenshot | `07`, `08`, `09`, `15` |
-| AnimBlueprint | AnimBlueprint folder workflow、Layer Interface、Anim Layer、State Machine、Transition、图节点、预览、CDO | `11` |
-| Montage | Montage 单文件 JSON、slot、segment、section、notify、notify state、Skeleton slot/group | `12` |
-| Animation / Skeleton | AnimSequence、BlendSpace、Skeleton、socket、virtual bone、metadata、notify、sync marker | `13` |
-| IK Rig / Retargeter | IK Rig / IK Retargeter folder workflow、preview solve、auto map/align、batch retarget | `14` |
-| SkeletalMesh | SkeletalMesh folder workflow、Morph Target、Skin Weight Profile、socket、physics/deformer 引用摘要 | `16` |
-| Control Rig | Control Rig folder workflow、Shape Library JSON、compile/log、runtime probe、screenshot、Sequencer bake | `17` |
-| Deformer / Geometry Cache | Geometry Cache import/info/validate、Deformer Graph folder workflow、ML Deformer/Data collection JSON | `18` |
-| AI | Blackboard、BehaviorTree、StateTree、EQS、AI Perception、Navigation、Smart Object、AI stack export/validate/probe | `19` |
-| Audio | SoundWave、SoundCue、MetaSound、Attenuation、Concurrency、SoundClass/Mix/Submix、EffectPreset、runtime probe/record/meter | `20` |
-| Texture / RenderTarget / Media | Texture import/reimport/stat/export、RVT、TextureArray/Cube/Volume、RenderTarget、Media、TextureGraph、SubUV、Paper2D | `21` |
-| Project Settings / Config | ISettingsModule 实时反射导出/校验/diff/apply；受限 config section fallback | `22` |
-| Data Driven | DataAsset、PrimaryAsset、DataTable JSON workflow、scan/query/sample、all-or-nothing DataTable apply | `24` |
-| Physics 基础 | Capabilities、Primitive physics query/validate/patch plan、PhysicalMaterial、PhysicsConstraint、PhysicsAsset、runtime probe | `26` |
-| Production Pipeline | Localization、StringTable、PO/report/culture preview、Packaging UAT plan/run/status/log/artifact/clean、Platform/Profile/SDK/DeviceProfile/Scalability | `27` |
-| Node Graph | 普通 Blueprint、UMG 逻辑图、AnimBlueprint pin 图、Material / MaterialFunction 表达式图和可枚举横向 EdGraph 的通用 list/layout 入口 | `28` |
+| NetworkTransport | 连接、认证、wire request/response；当前实现 HTTP Adapter | 认证、协议、失败映射，不含领域业务 |
+| CommandService / Registry | canonical ID、binding、正式 dispatch、legacy fail-closed | public ingress 与唯一 owner |
+| Read / Export | 无副作用查询、投影、分页、artifact export | complete/partial 语义与来源可追踪 |
+| Reference CRUD | 通用目标解析和 typed CRUD | create/update/delete、持久化、独立读回 |
+| SimpleAuthoring | typed 属性与项目配置 | 字段合同、原生默认、保存与读回 |
+| Timeline / Spatial | 时间、空间、序列与世界状态 | frame/subject 不混用、HJSON source parity |
+| GraphCompound | 图结构、关系、节点属性与复合资产 | 公共 composition、compile/settle、持久读回 |
+| Destructive / Import | 删除、世界破坏性操作、外部导入 | 完整 preflight、terminal state、rollback/state_unknown |
+| LongRunning / Session | operation lifecycle、cancel/recovery、safe exit | 外部 terminal witness 与 cleanup |
 
-## 重要边界
+跨模块公共能力必须由 composition、事务、持久化、settle 和 readback owner 提供；单条
+route 不得复制 parser、直接保存、伪造 readback 或建立第二套业务实现。
 
-- Project Settings 普通字段统一走 `project_settings_*`，业务分册不重复实现普通设置页字段编辑。
-- 普通 `.ini` section 裸写只走受限 `config_*` fallback；平台 config、DeviceProfile、Localization target 等必须走专用 schema。
-- Level Actor 持久内容 authoring 优先走 `level_content_*_json`；旧 Actor 原子写入命令只保留兼容、bootstrap、探针和局部补修。
-- 关卡拓扑系统优先走 `level_topology_*`、`level_streaming_*`、`data_layer_*`、`world_partition_*`、`hlod_*`；不要把拓扑关系硬塞进普通 Actor CRUD。
-- 复杂资产 authoring 优先走 JSON / folder JSON，不推荐通过原子写入命令完整手搓。
-- Raw render resource、raw vertex/index/skin weight/morph delta/cloth simulation data、shader 内部缓存和 cook 内部依赖图不作为普通 JSON 手写面。
-- 需要额外启用插件的能力不并入基础承诺；命令应先检查 feature/plugin availability，再返回 `feature_unavailable` 或等价诊断。
-- PIE 操控不是当前主承诺。当前主要依赖 editor-safe runtime probe、trace、readback、compile log、screenshot 和 automation smoke。
+## HJSON 架构
 
-## 可选插件与未承诺范围
+HJSON 以 LLM 易用和最小必要字段为目标：
 
-以下能力可能已有部分读取、验证或 guard，但不作为“无需插件即可稳定完整 authoring”的基础能力：
+- token 控制通过 profile、字段分层、投影、引用与文件拆分完成，不设置导出硬限制。
+- 统一对象/属性/关系模型组合类属性、节点属性、图结构、连接和领域扩展。
+- folder export 的 `included_files`、`read_order` 和实际 ref 决定读取顺序。
+- 同一 owner 的 inline 属性与 grouped details ref 冲突时 fail closed。
+- `update` 与 `replace` 语义由服务端合同决定；Python 不补默认值。
+- import 由唯一 C++ owner 完成 parse、Planning、execution、compile/settle、save 与独立
+  readback；失败必须给出明确 terminal state。
 
-- GAS / Gameplay Ability System
-- PCG 深度图 authoring
-- Chaos Vehicles
-- Geometry Collection / Destruction
-- Field System
-- Chaos Cloth / Flesh / PhysicsControl
-- Gameplay Debugger
-- Networking/Replication 深度运行时调试
-- Editor Utility 深度 UI workflow
+## 已证明的纵向范围
 
-这些模块如果要纳入正式命令集，应先单独做设计文档、冗余复查、插件可用性 guard、实现和 smoke。
+本轮统一框架验收已经覆盖以下代表性纵向路径：
 
-## 质量门禁
+- public Read/Export 正式 route 与 production dispatch；
+- Reference CRUD owned fixture 的真实 create/update/delete 和持久读回；
+- SimpleAuthoring Editor/Project 配置的持久读回；
+- Timeline/Spatial public HJSON source parity；
+- GraphCompound public Rig/IK 纵向路径；
+- DestructiveImport public asset delete 纵向路径；
+- LongRunning safe-exit 的进程外 terminal witness；
+- active framework 的未知 ingress、重复 owner、legacy fallback 与 cleanup 审计。
 
-每次新增或修改命令后应通过：
+这些代表性测试不能自动替代未选择 command 的领域验收；修改具体 route 时仍应运行其
+模块测试，并按影响范围扩大验证。
 
-1. UBT build。
-2. 对应 UE automation smoke。
-3. `uai-cli release coverage`，确认 doc/implementation/smoke/actionable debt 为 0。
-4. CLI release/source audit。
-5. Dev/Pak 目标文件 hash 检查。
-6. skill sync check，如修改 skill 路由。
-7. touched files strict UTF-8 检查。
-8. 无残留 `UnrealEditor`、`UnrealEditor-Cmd`、`CrashReportClient`。
+## 测试与门禁边界
 
-UE 启动阶段可能存在非目标 warning/error 文本；判断结果以目标 automation result、report JSON、crash folder 和日志上下文为准。
+- 测试先依据目标设计确定证明对象，再修改实现。
+- 模块测试只验证本模块合同；跨模块测试只覆盖明确集成合同。
+- mock、recording port、synthetic success、manifest 数量和 generated 文件数量不能
+  冒充 production-ready。
+- Result envelope 有效与业务成功必须分开判断。
+- SafeExit 会终止 owned worker，必须独立运行并由外部进程 witness 验收。
+- 局部修改只运行最小充分验证；无关旧 selector、runner 或发布 Gate 不得阻断。
+- 旧测试、旧 fixture 和旧门禁不因曾经通过而成为权威；确认无适配价值的删除，有
+  审计价值的物理隔离且不进入编译、发现、selector、runner 或 Gate。
 
-## 当前维护重点
+## 分发边界
 
-当前最大短板不是普通命令覆盖，而是工程化维护：
+Pak 与 installed `ue-agent-interface` skill 只同步正式可用文档、公开 CLI、Connection
+模板和稳定工作流。以下内容不得进入 skill：
 
-- 整理仓库 dirty/untracked/deleted 状态。
-- 固化 CI / 发布门禁。
-- 增加更真实的端到端 workflow 回归。
-- 继续把用户任务导向 cookbook 和分册参数表分离维护。
+- deprecated 命令页
+- 旧生成文档和覆盖报告
+- coverage 生成物
+- 任务表、任务复盘、runtime log 与临时文件
+
+分发前必须检查正式 manifest 与 generated binding 一致、Dev/Pak 正式文档副本一致，
+再执行 Pak 到 installed skill 的完整文件集同步检查。
+
+## 当前限制
+
+- Transport 抽象已与业务解耦，但当前只实现 HTTP Adapter。
+- 命令存在于 manifest 不等于已获得完整 E3/E4 证据；缺少真实 readback 的 route 不得
+  声称 production-ready。
+- 需要可选 UE 插件或运行时环境的命令必须显式返回 availability 失败，不静默降级。
+- 发布提交、推送和远端发布不属于普通验证流程。

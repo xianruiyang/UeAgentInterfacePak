@@ -1,0 +1,1018 @@
+# 01 Introduction To Embergen
+
+# 01 Introduction To Embergen
+
+## 关键术语
+
+- `Spawn`、`Alpha`、`Material`、`Post Process`、`UV`、`Houdini`、`EmberGen`、`Smoke`、`粒子`、`速度`、`Niagara`、`发射器`、`颜色`、`火焰`、`Niagara System`、`Emitter`、`Particle`、`Spawn Rate`
+
+## 分段知识
+
+### 00:00:05-00:04:56 Houdini、更多
+
+- 本段定位：Houdini、更多。
+- 知识点：在这段影片中,需要談論Houdini和Ambergen的作用和创建视觉效果 我们不会深入研究这兩項計劃 我只会给大家一个基本的理解,就是他們在哪裏使用。
+- 知识点：这兩項計劃有很多學習 Houdini和Ambergen有很多學習方法 这兩項計劃相当複雜 我们甚至可以做一个分開的課程 所以需要尝试提供最多的剩餘物料。
+- 知识点：现在需要告訴你如何使用它们 需要分析一些实际的點,例如实际效果 造成爆炸,或是其他破坏,等等 首先需要开始研究Ambergen,因为它非常简单。
+- 知识点：这是一个非常強大的計劃,以创建实际模式 它是用来创建烟,火,和爆炸的 需要模仿,例如烟,火,或爆炸 然后把它焗成这个质感,这个质感是这樣的。
+- 知识点：需要用2D的质感在Unreal Engine 在Ambergen,可以创建非常漂亮和实际的效果 非常有優勢的效果 Ambergen比Houdini好很多。
+- 知识点：因为你能够做到相似的事情,但更快 它也可以在Houdini做到 但Ambergen是用来玩游戏的 它可以做效果更快 这里可观察到它是更快的。
+- 知识点：它是游戏中的一种视觉效果 视觉效果在电影中,它是用Houdini的 因为它可以造成更好的爆炸 但Houdini是更難學習的 模拟时间更长,需要更多資源。
+- 核对对象：`Houdini`。
+
+**关键画面：**
+
+这一张是本段关于 EmberGen 的标题页。画面中央直接给出本节主题：
+
+- `Using Embergen in Game Development`
+- 副标题：`Creating realistic and optimized visual effects`
+
+字幕说明这一节不会深入讲解 Houdini 和 EmberGen 的全部细节，而是先建立一个基础理解，帮助读者知道这两个程序分别适合做什么、通常在什么场景下使用。因此这张图的作用是给后续内容定调：本节重点不是操作某个具体 Niagara 节点，而是介绍 EmberGen 在游戏视觉特效制作中的定位和用途
+这一张是 EmberGen 的结论页，画面中给出了两条明确总结：
+
+- `Embergen is an essential tool for modern game developers`
+- `Saves development time and enhances final product quality`
+
+字幕同时补充了与 Houdini 的对比结论：Houdini 更难学习，模拟时间更长，也需要更多资源。因此这张图表达的核心不是说 Houdini 没用，而是强调在游戏特效生产场景里，EmberGen 的优势在于上手更快、出结果更快，更适合高效率地制作烟、火、爆炸等可用于游戏的模拟素材
+这一张展示的是 EmberGen 的项目/预设浏览界面，左侧可以看到 `Home`、`Learn`、`Presets`、`My Projects` 等入口，中央是大量现成效果缩略图，直接包括：
+
+- `Gas Explosion 03`
+- `Ground Fire 1`、`Ground Fire 2`
+- `Magic And Sparks`
+- `Magic Projectile`
+- `Major Storm Cloud`
+- `Muzzle Flash 1/2/3`
+- `Oil Fire`
+- `Particle Bridge Collapse`
+- `Particle Smoke Collisions 1`
+- `Portal Disintegration`
+- `Pyroclastic Orb`
+- `Rainstorm`
+- `Rocket Launch`
+
+字幕提到 Houdini 和 EmberGen 时，画面同时指向这些现成爆炸、火焰、烟雾、魔法和破坏类案例。它传达的重点是：EmberGen 天然面向这类游戏常见特效题材，用户可以直接从预设和示例项目出发，快速得到爆炸、火焰、烟、魔法弹等基础模拟结果，再把它们烘焙或导出到 Unreal Engine 中使用
+
+### 00:04:56-00:09:37 Niagara
+
+- 本段定位：Niagara。
+- 知识点：我打開它,按下它 模式馬上开始 它显示了它需要多少記憶 需要把它關上,让你们看到我按下的东西 你们可以停止和转换空间 你们可以從任何一邊看。
+- 知识点：需要开始完成了这个項目 我點了新項目 它是一个標準的項目,空氣 它开始模式,它开始很快 我们需要很多不同的设置 我们不需要,只是为了能够優勢视觉。
+- 知识点：可以设置各种设置和控制它们 这里我们有我们最喜欢的模式等着我们 它们很简单 首先我们有一个发射器,它会有磁力。
+- 知识点：如果我把它關掉,磁力不会有磁力 很像Niagara 这是我们进行的模式 如果我们没有任何东西,就没有任何东西 如果我们點擊任何这些模式。
+- 知识点：可以從下面的選項看到 设置每个模式 这里有標準的模式 左邊是可以加入的模式 例如,这不必要,这输入 现在不需要 这些是標準的模式。
+- 知识点：有些可以删除,有些不能删除 例如,你不能關掉模式 你不能这樣,那樣,那樣 但它们不能,它们没有这个關掉的按鍵 例如,我把樓梯關掉 樓梯可以被關掉。
+- 知识点：例如,我把模式重新删除 停止它 你也可以把背景灯關掉 还有方向盤 影像,相機,和类似的东西不能删除 但可以被删除 如何加入新的模式 这要按下右邊的按鈕,来空空的空间。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`Niagara`、`发射器`。
+
+**关键画面：**
+
+这一张展示了 EmberGen 的标准工作界面，左侧是 3D 预览窗口，中央右侧是节点图，底部是时间轴与参数曲线区，当前示例工程文件名为 `artillery_explosion_2.ember`
+
+从画面可直接确认的界面结构包括：
+
+- 顶部主菜单：`File`、`Edit`、`Simulation`、`Settings`、`Account`、`Help`
+- 视图页签：`Scene`、`Render`、`Export`
+- 预览区右上打开了性能/显示面板，可见 `Render Quality = Low`、`View Mode = Lit`
+- 节点图里已经搭好一套完整流程：`Force: Noise`、`Force: Line`、`Shape: Primitive`、`Emitter: Volume`、`Emitter: Particles`、`Simulation`、`Light: Ambient`、`Light: Directional`、`Shading`、`Skybox`、`Ground`、`Volume Processing`、`Camera`、`Scene`
+- 时间轴左侧当前选中的模块包含 `Emitter: Volume`、`Volume Processing`、`Force: Noise`
+
+字幕说明在 EmberGen 里可以暂停模拟并从任意角度旋转观察。这张图要传达的重点是：EmberGen 的工作流本质上也是模块化节点图，只是更聚焦烟火爆炸这类体积模拟；用户可以一边看 3D 结果，一边在时间轴和节点图里调发射、力场、光照和体积渲染
+这一张切到一个空白或初始状态的 EmberGen 工程，窗口标题显示为 `Untitled (Edited)`，左侧预览场景里还没有实际体积效果，右侧能看到默认节点链已经存在
+
+当前界面中可直接确认的基础节点包括：
+
+- `Light: Ambient`
+- `Light: Directional`
+- `Shading`
+- `Skybox`
+- `Ground`
+- `Simulation`
+- `Volume Processing`
+- `Camera`
+- 导出节点组：`Export Flipbooks and Image Sequences`
+
+预览信息面板还能看到：
+
+- `Render Quality = Low`
+- `View Mode = Lit`
+- `Projection Quality = Fast`
+
+字幕说明“有些可以删除，有些不行”。这张图的重点是在说明 EmberGen 的默认工程里有一批基础环境/渲染节点，它们负责相机、天空盒、地面、光照、体积处理和导出流程。用户在整理工程时，可以删除部分可选节点，但像相机、场景和核心模拟链这种基础结构通常需要保留，否则就无法正常预览或导出效果
+这一张演示了在 EmberGen 里添加新模块时的典型流程。当前节点图区域出现了 `Choose your emitter type` 选择框，里面同时给出：
+
+- `Emitter: Volume`
+- `Emitter: Particles`
+
+左侧已经连接了一个 `Shape: Primitive` 节点，并且下方参数面板正在编辑它的 `General` 设置，可直接确认：
+
+- `Type = Torus`
+- `Minor Radius = 2.917 m`
+- `Major Radius = 2.000 m`
+- `Position.Z = 2.000 m`
+
+预览窗口里也同步显示了这个环形体积生成出来的火焰/烟雾形状。结合上下文，这张图要表达的是：在 EmberGen 中新增效果模块时，通常先决定一个 `Shape` 作为发射区域，再选择它接到 `Volume Emitter` 还是 `Particle Emitter`。也就是先定义几何形状和空间位置，再决定它驱动的是体积烟火模拟，还是粒子类效果
+
+### 00:09:40-00:11:05 更多
+
+- 本段定位：更多。
+- 知识点：不同的形状 按照形状,大小会改变 它们会有什么樣的大小 火,需要把它删除 需要加一个標準的 这里我们设置了它的形状 在发射器里,可以设置它的力量。
+- 知识点：它会影响它的效果 在这个情况下,它是聲音 我设置了这个聲音 现在我们的测试会更加詳細 这里显示了这个聲音的样子 不同的功能可以被編輯 可以減低聲音。
+- 知识点：或者,可以增加聲音 来增加更多的細節 在这个情况下,它会影响发射器 它会影响整个测试的力量 因为可以從不同的氣体来测试 在这个情况下,它是一种。
+- 知识点：可以從更多氣体来创建 需要设置这个形状为基礎 我们可观察到氣体在爆发 在紐約做过的一樣,可以爆发 可以從氣体爆发出来 可以從氣体爆发出来。
+- 知识点：可以從氣体爆发出来 可以從氣体爆发出来。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`发射器`。
+
+**关键画面：**
+
+这一张继续在 EmberGen 里说明不同 `Shape` 会怎样改变模拟结果。当前选中的是 `Shape: Primitive`，并且它已经接到右侧的发射器类型选择框；左侧预览中的火焰/烟雾体已经明显受到这个形状约束
+
+下方 `General` 面板里可直接确认的参数如下：
+
+- `Type = Cylinder`
+- `Radius = 3.000 m`
+- `Height = 4.000 m`
+- `Position.X = 0.177 m`
+- `Position.Y = -0.000 m`
+- `Position.Z = 5.757 m`
+
+字幕强调“不同的形状、大小会改变它们最终的样子”。这张图的重点是：EmberGen 的发射器并不是抽象地喷烟火，而是先依赖一个具体几何体作为发射区域；只要改 `Shape` 的类型、半径、高度和位置，火焰与烟柱的整体轮廓、体积分布和爆发方式就会随之改变
+这一张切到 `Force: Noise`，说明除了改发射形状，还可以直接编辑力场参数来改变火焰和烟雾细节。当前节点图中 `Force: Noise` 已连接到 `Emitter: Volume`
+
+`Force: Noise` 面板里可直接确认的参数包括：
+
+- `Mode = Volume And Particles`
+- `Scale = 6.000`
+- `Seed = 0`
+- `Octaves = 1`
+- `Lacunarity = 2.000`
+- `Gain = 0.500`
+- `Amplitude = 10.000`
+- `Bias = (0.000, 0.000, 0.000)`
+- `Animation speed = 2.000`
+- `Curl noise` 已开启
+
+左侧预览中，火焰已经不再只是规则圆柱喷发，而是出现更明显的翻卷、撕裂和向上拉伸的烟流。字幕也明确说“各种参数都可以编辑”。这张图要传达的是：噪声力场不是附加装饰，而是决定火焰/烟雾细节和流动感的核心来源；通过调 `Scale`、`Amplitude`、`Animation speed` 和 `Curl noise`，可以让模拟结果从平滑柱状变成更复杂、更有生命感的翻腾形态
+这一张继续回到 `Emitter: Volume` 本体，说明除了形状和噪声，还能直接从发射器层面控制火焰、烟和压力。当前选中节点是 `Emitter: Volume`，下方面板处于 `Activity` 页签，并且已经展开到 `Emission` 区域
+
+可直接确认的参数包括：
+
+- `Duration of burst = 0.500 s`
+- `Time between bursts = 0.000 s`
+- `Position = (0.000 m, 0.000 m, 0.000 m)`
+- `Rotation = (0.000°, 0.000°, 0.000°)`
+- `Fuel emission = Add`
+- `Fuel rate = 100.000 %/s`
+- `Smoke emission = Add`
+- `Smoke rate = 100.000 %/s`
+- `Temperature emission = Replace`
+
+左侧预览中火焰和黑烟的强度已经明显增强，说明这里的设置会直接影响整个爆发体积的核心能量来源。结合上下文，这张图要表达的是：`Emitter: Volume` 是控制基础介质注入的关键节点，用户不仅能决定发射区域，还能分别调燃料、烟雾和温度的注入方式与速率，从而决定这个模拟更偏火焰、更偏浓烟，还是更偏爆炸冲击
+
+### 00:13:32-00:18:25 更多
+
+- 本段定位：更多。
+- 知识点：可以從氣体爆发出来 当它开始爆发,烟会爆发 它会在这里做同樣的動作 我们可观察到氣体 可以设置一个獨特的烟 但烟会变成烟 我会把烟消掉。
+- 知识点：烟会继续保留 烟会爆发 因为这里还有烟 如果没有烟,就没有烟 爆发烟,烟会爆发 我们可观察到各种控制的功能 烟会爆发 烟会爆发出来 烟会在它的位置爆发。
+- 知识点：氣体控制烟火的火力 越低这个氣体 越快烟会变成烟 所以爆发前,会有很多烟 然后在它的位置 烟会爆发出来 烟会出现 可以把烟消掉 如果我们只需要烟消掉。
+- 知识点：可以把烟消掉 这里可以控制氣体 烟会在这里 如果我忘了,这里可以把烟消掉 我们可观察到氣体 可观察到 这里是搜尋的地方 可以使用暗示。
+- 知识点：来看烟会怎麼動 如果我把更多的力量調節 烟会影响氣体 需要看到烟火 它会显示邊緣 可以增加烟火 这烟会有多大影响 如果我把它降低到0 它会没有影响。
+
+**关键画面：**
+
+这一张继续在 `Emitter: Volume` 里讲发射介质本身如何影响结果。当前选中节点仍是 `Emitter: Volume`，下方面板停在 `Transform` 页签，但 `Emission` 与 `Pressure` 区域已经展开，左侧预览能看到一根较细、烟占比较高的火柱
+
+可直接确认的参数如下：
+
+- `Fuel emission = Add`
+- `Fuel rate = 45.000 %/s`
+- `Smoke emission = Add`
+- `Smoke rate = 100.000 %/s`
+- `Temperature emission = Replace`
+- `Temperature = 1766.667 K`
+- `Emission gradient = 20.000`
+- `Additional pressure rate = 0.000 %/s`
+- `Pressure random intensity = 75.000 %`
+- `Pressure random scale = 0.100`
+
+字幕反复在讲“烟会不会爆出来”“如果没有烟就没有烟”。这张图的重点是：在 EmberGen 里，烟和火不是自动绑死的，`Fuel rate`、`Smoke rate`、`Temperature` 和 `Pressure` 会共同决定它更像明火、浓烟还是爆发性烟柱。当前这一组数值就把火焰压得比较细，同时保留了明显的黑烟上升柱
+这一张已经从单个发射器切到更高层的场景显示控制。当前选中的是 `Scene` 节点，节点图里还能看到它汇总了 `Skybox`、`Ground`、`Volume` 等输入，并接到 `Render` 导出链路
+
+下方 `Scene` 面板当前位于 `Style` 页签，可直接确认的显示参数包括：
+
+- `Rendering style = Realistic`
+- `RGB quantization = 64`
+- `Hue quantization = 64`
+- `Value quantization = 64`
+- `Saturation quantization = 64`
+- `Quantization dither = 0.150`
+- `Dithering mode = Bayer 2x2`
+- `Translucency limit = 0.500`
+- `Translucency sharpening = 0.000`
+- `Remapping style = None`
+
+字幕说明接下来要找到办法打开 `fuel view`。这张图的重点不是继续改发射率，而是说明 EmberGen 也支持从场景层切换不同显示/诊断视图，通过改变显示模式来单独观察燃料、烟雾或其他模拟通道，从而更准确判断当前模拟问题出在火焰、燃料分布还是烟量过多
+这一张回到 `Emitter: Volume` 的基础活动与介质注入设置，同时把右侧的 `Emitter: Particles` 一并保留在同一组发射器选择区域内。画面左侧预览里，体积效果已经被压到很弱，只剩一小团低强度烟火，便于单独观察当前发射器作用
+
+当前 `Emitter: Volume` 面板中可直接确认：
+
+- `Duration of burst = 0.500 s`
+- `Time between bursts = 0.000 s`
+- `Fuel emission = Add`
+- `Fuel rate = 10.000 %/s`
+- `Smoke emission = Add`
+- `Smoke rate = 100.000 %/s`
+- `Temperature emission = Replace`
+- `Temperature = 2200.000 K`
+
+字幕说明“这种方法通常会和粒子混合”。这张图要传达的重点是：单独做体积发射可以控制基础火焰/烟柱，但在实际游戏特效里，通常会再叠一层 `Emitter: Particles` 去补火星、碎屑、拖尾或次级细节。也就是体积模拟负责大形体，粒子发射负责补充更轻量、可控的装饰层
+
+### 00:18:25-00:23:21 速度、更多
+
+- 本段定位：速度、更多。
+- 知识点：现在太多了 需要改变速度 要細節各种聲音 像这个 生命可以增长 通常是怎樣? 溫度 首先它很大 它是这樣的 现在我们按着这个鍵 再按另一个鍵 它会慢慢降到0。
+- 知识点：这个模式有一定的限制 我们有一个圆形 它设置了模式的位置 我们按模式鍵 这就是我们的模式 这里我们控制了火力的数量 需要再次提醒大家 这里有火力。
+- 知识点：3D,这里有很多 所以看起来很好 这里有4萬萬火力 如果我再增加它们的数量 我们的限制框架 它们已经延伸了 我们的碼頭已经增加了 但是我们已经正確地增加了。
+- 知识点：火力的数量 根據模式的調節 可以改变它们的数量 在我延伸的位置 需要把高度留在同一个位置 它可以降低和增加 我降低了,可观察到結果 你能看到的都是大小。
+- 知识点：可以把它变得很大 33萬 模式因此会更慢 因为火力有很多 这些限制必须控制 这里是它们的数量 可以增加或降低数量 例如我们增加数量 它们会变得少。
+- 知识点：因为数量增加了 但是模式的质量降低 这里也有升級 如果你没有这麼強大的电脑 我建議你不要设置升級 如果你有強大的电脑 可以已经设置升級。
+- 知识点：在模式的階段 当你創作时 它会提升质量 但也会影响整体模式的现象 因此可以这樣做 设置升級 增加Voxel数量 我们有18萬 我猜X2已经有150萬。
+- 核对对象：`速度`。
+
+**关键画面：**
+
+这一张开始从 `Emitter: Volume` 切到 `Emitter: Particles`，说明粒子发射器主要用于补体积模拟之外的次级细节。当前节点图中的 `Emitter: Particles` 已被选中，位于与 `Emitter: Volume` 并列的同一发射器类型选择框内
+
+下方面板当前停在 `Freeze` 页签，可直接确认的参数包括：
+
+- `Unfreeze min simulation force = 5.000`
+- `Unfreeze min particles force = 5.000`
+- `Lifetime limits` 已开启
+- `Lifetime = min 0.010 s / max 0.010 s`
+- `Emission speed limits` 当前模式为 `Velocity From Position`
+- `Emission speed = min 12.000 / max 15.000`
+- `Center position offset = (0.000, 0.000, 0.000)`
+
+字幕说明这层粒子“用于细节处理各种噪波”。这张图的重点是：体积发射器负责主体火焰和烟柱，而粒子发射器则用很短寿命、可控速度的小粒子去补微小扰动、碎点或火星感，让整体模拟不只依赖体积噪声本身
+这一张转到 `Simulation` 节点，开始说明体素域大小和总体分辨率会怎样影响模拟成本与细节。当前节点图中 `Simulation` 汇总了 `Forces`、`Emitters`、`Colliders`，并输出到 `Volume Processing`
+
+下方 `Domain` 页签里可直接确认的设置包括：
+
+- `Current Size = 256 x 256 x 256 = 16777216 (16.78 million) voxels`
+- `Voxel count = X 256 / Y 256 / Z 256`
+- `Voxel size = 0.100 m`
+- `Upscaling = None`
+- `Fast upscaler` 未开启
+- `Zero position on X = Center`
+- `Zero position on Y = Center`
+- `Zero position on Z = Min`
+- `Bounds Position = (0.000, 0.000, 0.000)`
+- `Simulation Mode = Combustion`
+- `Velocity Advection method = Cubic`
+
+左上角性能面板还能看到当前 `Voxels = 16.8 Mvox`。字幕这一段在讲数量、限制和电脑性能负担，这张图的重点就是：当你提升域尺寸或体素数时，细节会增加，但模拟负担也会明显变重；如果机器性能不足，就不应该盲目拉高分辨率
+这一张再次回到 `Emitter: Volume`，但重点已经变成如何通过发射率与压力参数直接塑造爆发体积。当前面板停在 `Emission` 页签，同时 `Pressure` 区域也展开了；左侧预览中火焰被压成几团更低矮、更厚重的亮团，而不是细长火柱
+
+可直接确认的参数如下：
+
+- `Fuel emission = Add`
+- `Fuel rate = 120.000 %/s`
+- `Smoke emission = Add`
+- `Smoke rate = 230.000 %/s`
+- `Temperature emission = Replace`
+- `Temperature = 1296.126 K`
+- `Emission gradient = 20.000`
+- `Additional pressure rate = -126.667 %/s`
+- `Pressure random intensity = 75.000 %`
+- `Pressure random scale = 0.100`
+- `Pressure random seed = 0`
+- `Pressure random speed = 0.000`
+
+这张图对应的要点是：当你提高燃料和烟率时，模拟会变得更厚、更重，但如果同时把 `Additional pressure rate` 调成明显负值，体积又会被往下压，形成更低矮、更团块化的爆发。也就是发射量和压力并不是独立看的，它们会一起决定爆炸是高耸喷发，还是扁平铺开的火团
+
+### 00:23:21-00:27:54 速度
+
+- 本段定位：速度。
+- 知识点：主要功能的发射器是设置 在这次的情况下 或者是这樣的 现在可观察到 它开始在发射的形状 可以改变它 不同的功能 有不同的力量 可以影响 这里有很多。
+- 知识点：例如加一條線 可以加幾个 可以设置幾个力量 在一个发射器上 例如你还可以轉動 我还可以移动 你移动它 像这樣 需要把它轉到中心 很多不同的功能。
+- 知识点：需要把它们搖晃 这是发射器的場景 这里是发射器的 基本设置 有氣体控制、速度、烟壓、 氣溫、发射、 氣溫、生成 很多功能 可以控制。
+- 知识点：氣体和其他功能 这里它们是各种类型 可以设置一个 会再次发射的模式 非常适合发射 但我们不需要发射 这里不需要发射 可以控制烟壓 比較少。
+- 知识点：改变发射的濃度 它的發展 之后它开始發展 如果我改变这里 它的發展变变 这是氣体溫度 溫度 氣体很快地生成 如果我把它調到0 它会再次發展 發電能够生成。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`发射器`、`速度`。
+
+**关键画面：**
+
+这一张继续对比 `Emitter: Volume` 与 `Emitter: Particles` 的分工。当前选中的仍是 `Emitter: Volume`，但右侧节点组里 `Emitter: Particles` 也保留在同一发射器链上；左侧预览里只有一团较小的体积烟雾主体，说明此时还没有叠出明显的粒子装饰层
+
+当前 `Emitter: Volume` 面板中可直接确认：
+
+- `Duration of burst = 0.500 s`
+- `Time between bursts = 0.000 s`
+- `Fuel emission = Add`
+- `Fuel rate = 120.000 %/s`
+- `Smoke emission = Add`
+- `Smoke rate = 230.000 %/s`
+- `Temperature emission = Replace`
+- `Temperature = 163.457 K`
+
+字幕明确提到“这种情况下是粒子”。这张图要表达的是：即使体积发射器仍然存在，作者已经开始把注意力转向粒子层的用途，准备说明哪些细节更适合交给 `Emitter: Particles` 处理，而不是继续靠体积模拟硬做
+这一张切回 `Simulation` 节点，但重点不再是域大小，而是燃烧与耗散控制。当前面板位于 `Combustion` 页签，左侧预览中火焰几乎被压没，只剩一根持续上升的灰烟柱，说明这一组参数正在把模拟往“少火、多烟、快速熄灭”的方向推
+
+可直接确认的参数包括：
+
+- `Generated smoke = 100.000`
+- `Flame intensity = 100.000`
+- `Expansion = 20.000`
+- `Temperature dissipation = 32.000 %/s`
+- `Velocity dissipation = 0.000 %/s`
+- `Smoke dissipation = 28.500 %/s`
+- `Flames dissipation = 0.000 %/s`
+- `Fuel dissipation = 0.000 %/s`
+
+这张图要传达的是：除了发射器本身，`Simulation` 里的燃烧和耗散参数也会直接决定火焰到底能维持多久、烟会保留多久。只要提高烟相关权重并让温度更快耗散，就能把原本的火团逐渐收成以烟柱为主的效果
+这一张继续在 `Simulation` 节点里收口速度与耗散，当前面板切到了 `Dissipation` 页签。左侧预览几乎已经没有可见体积，只剩场景地面和坐标轴，说明这一组耗散数值足以把原本的火焰/烟雾非常快地清空
+
+可直接确认的参数包括：
+
+- `Temperature dissipation = 0.000 %/s`
+- `Velocity dissipation = 42.667 %/s`
+- `Smoke dissipation = 0.000 %/s`
+- `Flames dissipation = 0.000 %/s`
+- `Fuel dissipation = 0.000 %/s`
+- `Smoke dissipation = 0.000 units/s`
+- `Flames dissipation = 0.000 units/s`
+- `Fuel dissipation = 0.000 units/s`
+- `Smoke Diffusion Speed = 0.000 m/s`
+- `Temperature Diffusion Speed = 0.770 m/s`
+- `Fuel Diffusion Speed = 0.000 m/s`
+- `Flames Diffusion Speed = 0.000 m/s`
+- `Velocity Diffusion Speed = 0.000 m/s`
+
+这张图要表达的是：如果把速度耗散拉高，模拟中的运动会很快被刹住，烟火就不再继续向上翻卷或向外扩张。即使其他介质通道的耗散还是 0，单独提高 `Velocity dissipation` 也足以让整体效果迅速失去动能，变成几乎不可见的静止状态
+
+### 00:27:54-00:31:37 Post Process、粒子、更多
+
+- 本段定位：Post Process、粒子、更多。
+- 知识点：如果我調到0.5 它会很快地消失 可以,例如 把最初的價值調到0 把鍵放在这里 調到0 然后它很快地变到0.5 这就是它 这就是它 烟很快地消失。
+- 知识点：如果我調到3 烟很快地消失 因为價值非常大 这就是你能够發展 其他功能 溫度是这樣的一个功能 在物理上 溫度会均衡 这是溫度 有很多物理功能 不需要理解。
+- 知识点：也有弱勢 如果我調到0 让我们改变效果 我正在创建新的計劃 我不会儲存 把它全部關掉 在標準设置上 需要增加高度 让它提高了 因为这里限制了 这些設施。
+- 知识点：我们没有弱勢 但它会從旁邊移动 它会有反应 如果我们把它關掉 我们要等一段时间 但它开始有效果 如果我調到多一点 看看結果如何改变 加上更多的細節。
+- 知识点：它是小的 但它是大的 不同的膜 可以改变它们的重量 例如 加上負重 負重的重量不可行 如果重量高 它会提高它 如果我調到少一点 我建議你用这些設施。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+这一张继续在 `Simulation` 节点的 `Dissipation` 页签里做关键帧控制。时间线下方已经给 `Simulation` 和 `Emitter: Volume` 打上关键点，左侧预览里只剩一小团很短命的亮火，说明当前目标是让烟火在生成后迅速退场
+
+当前可直接确认的耗散参数包括：
+
+- `Temperature dissipation = 0.000 %/s`
+- `Velocity dissipation = 42.667 %/s`
+- `Smoke dissipation = 0.000 %/s`
+- `Flames dissipation = 0.000 %/s`
+- `Fuel dissipation = 0.000 %/s`
+- `Smoke Diffusion Speed = 0.000 m/s`
+- `Temperature Diffusion Speed = 0.770 m/s`
+
+字幕明确说明如果把值调到 `0.5`，烟会很快消失，并且可以把起始值先设成 `0`，再让它很快过渡到 `0.5`。这张图的重点就是：通过时间轴关键帧，不必让耗散全程固定不变，而是可以在模拟开始后很短时间内快速提高耗散，让烟在需要的时候立刻收掉
+这一张转到 `Simulation` 节点的 `Vorticity` 页签，开始用涡度和浮力相关参数塑造烟柱的上升与翻卷。左侧预览里能看到一根细长的火焰/烟柱，说明当前参数已经更偏垂直喷发，而不是扩散成团
+
+`Vorticity` 与 `Force` 区域里可直接确认的参数包括：
+
+- `Vorticity intensity = 0.000 %`
+- `Large vorticity intensity = 0.000 %`
+- `Velocity mask = 100.000 %`
+- `Temperature mask = 0.000 %`
+- `Smoke mask = 0.000 %`
+- `Constant mask = 20.000 %`
+- `Temperature Range = 0.000 K min / 10000.000 K max`
+- `Smoke Range = 0.000 % min / 300.000 % max`
+- `Vorticity ramp = 0.001`
+- `Force Tightness = 0.000 %`
+- `Buoyancy = 100.000 % of gravity per 1000 K`
+- `Smoke weight = 0.000 % of gravity`
+- `Fuel weight = 0.000 % of gravity`
+
+节点图右侧还能看到新增的导出节点：`Export Particles` 与 `Export VDB`。这张图要表达的是：除了简单调发射率，EmberGen 还允许直接从模拟层控制旋涡、浮力和介质权重，让烟是笔直上冲、侧向漂移，还是更强烈地卷曲翻腾
+这一张切到 `Volume Processing` 节点，开始从后处理层直接调体积结果的观感。左侧预览里已经出现一根完整的火焰加浓烟柱，说明核心模拟已经成立，现在进入的是最后的显示强化阶段
+
+当前 `Post Process` 页签里可直接确认的设置包括：
+
+- `Volume post process = Motion Blur`
+- `Motion blur intensity = 244.167 %`
+- `Smoke style = Box`
+- `Temperature style = Box`
+- `Fuel style = Box`
+- `Flames style = Box`
+- `Post Modulation 1 > Active` 未开启
+
+节点图右侧还能看到它与 `Scene`、`Export Particles`、`Export VDB` 的连接关系。字幕明确说“在这里你可以改变强度”，因此这张图的重点是：当基础模拟已经定型后，可以在 `Volume Processing` 层继续调整运动模糊和各通道显示样式，让烟火看起来更柔、更拖尾，或者更锐利、更真实，而不需要回到发射器和模拟参数里反复改物理过程
+
+### 00:31:45-00:36:39 关键流程 08
+
+- 本段定位：关键流程 08。
+- 知识点：为了所有东西 但现在我们把它放在一旁 这里是一个面具 可以把模拟器裝上 例如 從下面加上 这里是我们的基礎 我可以把它切掉 例如 需要想像我们有烟。
+- 知识点：它非常清晰切掉 從上面 首先需要增加 面積在旁邊 模拟器被切掉 因为它必须增加 但你必须等一等 有很多模拟器 它们很慢 它们会非常強烈 应该是早前设置的。
+- 知识点：这个面積会怎樣 需要從上面 做出一种順滑的转换 切掉 现在还不太好 这就是需要做出 順滑的转换 同樣的方式 它可以從不同的邊界做 後制作可以用。
+- 知识点：可以用手動 这是一个比較有体驗的东西 只要我们不碰到 如果你想,可以用手動 这里是色彩 这是我们的模拟器的现象 颜色会被制作。
+- 知识点：这是光线被制作 这里可以控制 光线会影响模拟器 可以用转换角色 这里有一个階段 这里有一个階段 可以用調校 可以用準備的階段 可以调整。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这是 EmberGen 的 `Volume Processing` 节点裁剪遮罩示意，用来按体积边界把烟火模拟从某些方向切掉
+
+- 当前节点与连接关系：
+  - `Emitter: Volume`、`Emitter: Particles`、`Simulation` 输出连接到 `Volume Processing`
+  - `Volume Processing` 再连接到右侧 `Scene`
+  - 下方还并列连接 `Export: Particles` 与 `Export: VDB`
+- 当前查看的页签是 `Post Modulation 1`
+- 面板中展开的是 `Slicing Mask`
+- 可调裁剪参数按轴向列出，包括：
+  - `X - wall offset`、`X - wall width`
+  - `X+ wall offset`、`X+ wall width`
+  - `Y - wall offset`、`Y - wall width`
+  - `Y+ wall offset`、`Y+ wall width`
+  - `Z - ground offset`
+  - `Z+ roof width`
+  - `Mask ramp`
+- 图中这些值当前基本显示为 `0.000`，`Mask ramp` 为 `1.000`
+- 左侧预览显示地面上的火焰与上升烟柱，说明该遮罩用于直接裁剪体积模拟的边界范围，例如从底部、顶部或侧面切掉一部分烟雾，使截断边缘可以继续做平滑过渡
+这是 EmberGen 中用方向光配合火焰渐变颜色控制着色结果的设置示意
+
+- 当前节点关系：
+  - `Light: Ambient` 输出接到 `Shading.Lights`
+  - `Light: Directional` 输出也接到 `Shading.Lights`
+  - `Color: Gradient` 通过 `Fire Gradient` 组接到 `Shading.Fire color`
+- 当前选中节点是 `Light: Directional`
+- 下方面板显示方向光主要参数：
+  - `Direction definition = Angles`
+  - `Azimuth = 28.800`
+  - `Elevation = 79.200`
+  - `Light intensity = 5.300`
+  - `Light color = 白色`
+  - `Inherit sun color = 0.000`
+- 左侧视口中出现方向控制 gizmo，表明此时正在调整主方向光的入射方向
+- 这一组设置的作用是让火焰和烟雾在视口里获得明确的受光方向，同时用 `Fire color` 的渐变节点控制火焰本身的颜色分布
+这是 EmberGen 的 `Shading` 节点参数面板，演示如何在火焰与浓烟效果上调节受光、散射和发光遮罩
+
+- 当前节点关系仍然是 `Shading` 汇总多个输入后输出到 `Scene`
+- `Shading` 的可见输入包括：
+  - `Lights`
+  - `Fire color`
+- 当前打开的页签是 `Lighting`
+- `Smoke shadow density` 约为 `108.333`
+- `Smoke shadow intensity` 约为 `96.060`
+- `Scattering` 分组中的主要参数可见为：
+  - `Direct light contribution = 200.000`
+  - `Flames contribution = 676.667`
+  - `Particles contribution = 97.333`
+  - `Scattering radius = 3.407 m`
+  - `Scattering occlusion = 0.750`
+- `Emissive masking` 分组处于展开状态，且 `Masking Active` 已启用
+- 该分组可见参数包括：
+  - `Density reference = 0.313`
+  - 其下还有多项频率与阈值滑条，当前截图可确认 `Low frequencies = 50.000`、`Medium frequencies = 50.000`
+- 左侧预览显示高亮火焰和大体积黑烟，说明这一页主要用于控制烟雾阴影强度、体积散射贡献，以及发光区域在不同密度频段中的保留范围
+
+### 00:36:39-00:41:14 火焰
+
+- 本段定位：火焰。
+- 知识点：可观察到我用重量去管理 我可以改变它在时间內 比如說 首先,这个火会变得更濃密 然后慢慢地会熄滅 另外,可观察到 这个很棒的风格 需要给你看看。
+- 知识点：这些东西都可以轉上来 这烟可以控制 改变颜色的显示 这里是烟的灯光 这是很有趣的功能 可以改善观察 非常好 我正在創作新的計劃 需要把它關掉。
+- 知识点：我们回到烟的灯光 需要把它關掉 模拟器会变得很濃密 烟模拟器会加上細節 让我们看到了 这个很大的分別 我建議你使用 这全都要視乎你的模拟器。
+- 知识点：你喜欢的 可以用 比如說,火焰色 我们用了颜色圖 可以用黑色 这是標準的颜色 從紅色到黃色 你应该用你的光源 因为你能够 達到更好的結果 我们把它轉回。
+- 知识点：我们把光源丟在这里 我们去看星際球 让我们看到更好的观察 需要把模拟器轉掉 我们把它轉掉 还有其他东西 我们去看鏡頭 我们有鏡頭,可以把它裝置。
+- 知识点：我们已经在鏡頭的一面 看到了鏡頭 可以看看模拟器的样子 因为很常常没有鏡頭 模拟器不見了 可以把它转换到这里 比如說,我们要從哪一邊转换。
+- 知识点：比如說,我喜欢 可以在这里转换这邊 显示度 按照最佳的標準 它是最低的 可以甚至放4K 我改变了,这是为了观察 这就是模拟器的样子 我们看看模拟器的样子。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`、`火焰`。
+
+**关键画面：**
+
+这是 EmberGen 中 `Shading` 节点继续调整火焰外观的画面，重点是通过散射与发光遮罩让火焰前期更浓、后期逐渐减弱
+
+- 当前节点关系：
+  - `Light: Directional`、`Fire Gradient`、`Color: Gradient` 等节点输入汇入 `Shading`
+  - `Simulation` 输出连接到 `Volume Processing`
+  - `Shading` 最终输出到 `Scene`
+- 当前打开的页签是 `Lighting`
+- `Scattering` 分组中可见参数：
+  - `Direct light contribution = 200.000`
+  - `Flames contribution = 676.667`
+  - `Particles contribution = 97.333`
+  - `Scattering radius = 3.407 m`
+  - `Scattering occlusion = 0.750`
+- `Emissive masking` 分组已展开并启用 `Masking Active`
+- 可见的发光遮罩参数包括：
+  - `Density reference = 0.000`
+  - `Width = 0.580`
+  - `Masking ramp = 0.789`
+  - `Strength = 100.000`
+  - `Medium frequencies = 50.000`
+  - `High frequencies = 50.000`
+- 左侧视口显示明亮的底部火焰和较厚的烟柱，说明这里在通过发光遮罩与散射贡献控制火焰亮区集中度，以及火焰随时间衰减时的体积表现
+这是 EmberGen 的 `Shading` 节点切换到 `Flames` 页签后的设置画面，用来直接控制火焰颜色映射与火焰形态
+
+- 当前节点结构仍然是：
+  - `Light: Ambient`、`Light: Directional` 接入 `Shading.Lights`
+  - `Color: Gradient` 接入 `Shading.Fire color`
+  - `Simulation`、`Volume Processing`、`Scene` 组成主输出链
+- 当前打开的页签是 `Flames`
+- `Flames` 分组中可确认的设置包括：
+  - `Render flames` 已启用
+  - `Temperature Histogram` 可视化面板正在显示当前温度分布
+  - 右侧 `Log Y` 已启用
+  - `Coloring remap range` 为 `min 0.000` 到 `max 4000.000`
+  - `Coloring remap ramp = 1.000`
+  - `Clamp the remapping` 已启用
+  - `Shaping by flames = 1400.000`
+  - `Shaping by velocity = 0.000`
+  - `Flames coloring = Exposed Color Gradient`
+- 左侧视口中的火焰主体更亮、更完整，说明这一页主要决定火焰颜色如何根据温度区间映射，以及火焰外形在着色阶段如何被进一步塑形
+这是 EmberGen 的 `Scene` 节点设置画面，重点是通过暗角和像素化风格参数改变最终渲染观感
+
+- 当前主链路为：
+  - `Simulation` 输出到 `Volume Processing`
+  - `Volume Processing` 输出到 `Scene`
+  - `Scene` 再输出到 `Render`
+- 当前选中节点是 `Scene`
+- 可见输入槽包括：
+  - `Shading`
+  - `Skybox`
+  - `Ground`
+  - `Volume`
+  - `Particles`
+- 底部面板中当前显示 `Vignetting` 与 `Style` 相关参数
+- `Vignetting` 参数可确认为：
+  - `Width = 300 pixels`
+  - `Offset = 100 pixels`
+  - `Roundness = 50.000`
+  - `Intensity = 0.000`
+- `Style` 分组可见参数包括：
+  - `Rendering style = Pixelized`
+  - `Pixel size = 8`
+  - `RGB quantization = 64`
+  - `Hue quantization = 64`
+  - `Value quantization = 64`
+  - `Saturation quantization = 64`
+  - `Quantization dither = 0.150`
+  - `Dithering mode = Bayer 2x2`
+  - `Translucency limit = 0.500`
+  - `Translucency sharpening = 0.000`
+- 左侧预览背景已切成黑底，画面只保留火焰和烟柱，说明这里在为最终输出测试不同的后期渲染风格与观察环境，而不仅仅是继续调火焰本身
+
+### 00:41:14-00:45:51 Spawn、更多
+
+- 本段定位：Spawn、更多。
+- 知识点：可以把它叫做FILTERS 可以转换最後的样子 我喜欢这个功能 如果我设置很高的價值 设计上,可以減少这个东西 我们有Spawn的转换。
+- 知识点：这会造成设计 可以继续玩 设计可以成功 需要展示一个例子 用了一个很相似的东西 如果一个现實的选择 是用这个颜色。
+- 知识点：只要这个颜色 最高,就能完成 需要展示一个例子 用一个很相似的东西 只要这个颜色,就能完成 最後需要說到 Render 当我们做了测试 然后把相機放到我们需要的位置。
+- 知识点：視乎相機的大小 需要开启这个項目 用爆炸的方式 我看到它是在Render中 我们把反射鏡頭设置到最高 让我们看到最終的結果 最美丽的样子。
+- 知识点：需要從下面拿这个烟 用一个面膜 把下面的部分切掉 相機放得很遠 空间太多 需要把她放得更近 像这个64个鏡頭 通常都会显示 我们已经在70个鏡頭。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Spawn`、`颜色`。
+
+**关键画面：**
+
+这是 EmberGen 的 `Scene` 节点里测试最终画面滤镜风格的设置画面，当前切换到了边缘检测渲染
+
+- 当前主链路为：
+  - `Simulation -> Volume Processing -> Scene -> Render`
+- 当前选中节点是 `Scene`
+- 可见输入槽包括：
+  - `Shading`
+  - `Skybox`
+  - `Ground`
+  - `Volume`
+  - `Particles`
+- 底部面板显示 `Vignetting` 与 `Style` 参数
+- `Vignetting` 参数可见为：
+  - `Width = 300 pixels`
+  - `Offset = 100 pixels`
+  - `Roundness = 50.000`
+  - `Intensity = 0.000`
+- `Style` 分组当前可确认为：
+  - `Rendering style = Edge Detect Filter`
+  - `Edge color = 白色`
+  - `Edge ramp = 1.000`
+  - `Detection type = Sobel Color`
+  - `Base color = 80.000`
+  - `RGB quantization = 64`
+  - `Hue quantization = 64`
+  - `Value quantization = 64`
+  - `Saturation quantization = 64`
+  - `Quantization dither = 0.150`
+- 左侧视口几乎全黑，说明这里正在预览强风格化滤镜的输出效果，而不是继续调整火焰本体的物理模拟
+这是 EmberGen 中切到 `Camera` 节点后调整镜头与预览输出的画面，左下时间线还能看到多个关键帧轨道
+
+- 当前节点关系可见为：
+  - `Light: Ambient`、`Light: Directional` 接入 `Shading`
+  - `Shading` 接入 `Scene`
+  - `Camera` 与 `Scene` 一起接入 `Render`
+  - `Simulation` 还连接了 `Volume Processing`
+- 当前选中节点是 `Camera`
+- 底部面板当前打开 `Transform` 页签，并显示以下参数：
+  - `Roll angle = 0.000`
+  - `Near clipping plane = 0.100 m`
+  - `Far clipping plane = 1000.000 m`
+- `Display` 分组中可见：
+  - `Projection = Perspective`
+  - `Field of view = 60.000`
+  - `Display resolution = 4096 x 4096`
+  - `Sensor fit = Horizontal`
+- `Preview` 分组中可见：
+  - `Preview scale to fit` 已启用
+  - `Display scale = 100.000`
+- 左下时间线列出了 `Emitter: Volume`、`Volume Processing`、`Force: Noise`、`Render` 等轨道，并能看到若干关键帧，说明这一阶段已经在结合镜头位置、时间变化和最终渲染预览一起检查爆炸效果
+这是 EmberGen 的 `Render` 节点导出页，展示最终序列输出时的帧范围、步长和文件名模板设置
+
+- 当前节点关系可见为：
+  - `Camera` 与 `Scene` 共同接入 `Render`
+  - 左侧仍保留完整的模拟、着色、体积处理与粒子节点链
+- 当前选中节点是 `Render`
+- 底部面板当前打开 `Export` 页签
+- 可确认的导出参数包括：
+  - `First Frame = 15`
+  - `Number of Frames = 64`
+  - `Frame Stride = 2`
+  - `Absolute Frames` 未启用
+  - `Filename = $(project)_$(safeName)`
+  - 输出扩展名为 `.png`
+- 面板中还能看到：
+  - `Directory` 路径输入框
+  - `Export Now` 按钮
+  - `Open Folder` 按钮
+- 底部还显示 `Render Settings` 区域中的 `Alpha Blending Mode = Premultiplied Alpha`
+- 左下时间线仍显示多个关键帧轨道，左侧视口则是黑底下的爆炸烟火预览，说明这一阶段已经从效果调节转到最终序列导出准备
+
+### 00:45:51-00:50:31 关键流程 11
+
+- 本段定位：关键流程 11。
+- 知识点：这就是結束的位置 我们没有足夠的鏡頭 所以需要從一个鏡頭Render出来 需要把鏡頭的位置改变 让我们看看結束的位置 模拟时间太近了。
+- 知识点：我们有些問題 在爆炸时 需要有0的爆炸时间 会慢慢增长到0.5 爆炸时间会更快 需要去到这个階段 这里会更快 爆炸时间会开始減速 我们有足夠的空间。
+- 知识点：我们如何理解 爆炸时间的結束 需要给你们示範一个技巧 我们的Render結束在这里 但通常爆炸时间可以继续 看到最後一段鏡頭 可以完全解決爆炸时间。
+- 知识点：并且有一个要求 可以停止爆炸时间 需要以这个为例 例如 在爆炸时间 或是在爆炸时间 在SIMSPEED 爆炸时间停止了 以这个方式停止 需要移到Frame。
+- 知识点：144 但我看到这里 会有太多的反射 需要放0.4 可能需要改变它 让我们看看Render的样子 现在需要改变尺寸 再近一点 已经在这里結束了。
+
+**关键画面：**
+
+这是 EmberGen 在 `Render` 节点导出预览中检查爆炸结束段的画面，重点是观察当前帧位置下烟云体积是否已经接近最终停止状态
+
+- 当前节点关系可见为：
+  - `Camera` 与 `Scene` 一起接入 `Render`
+  - 左侧仍保留 `Simulation`、`Volume Processing`、`Emitter`、`Force` 等完整效果链
+- 当前选中节点是 `Render`
+- 底部面板仍停留在 `Export` 页签
+- 可见导出参数包括：
+  - `First Frame = 15`
+  - `Number of Frames = 64`
+  - `Frame Stride = 2`
+  - `Absolute Frames` 未启用
+  - `Filename = $(project)_$(safeName)`
+  - 输出扩展名为 `.png`
+- 左下时间线可见多条关键帧轨道：
+  - `Emitter: Volume`
+  - `Volume Processing`
+  - `Force: Noise`
+  - `Render`
+- 当前蓝色播放头位于时间线后段，左侧黑底预览显示大体积蘑菇云烟雾，火焰几乎已经消失，说明这一阶段是在核对渲染结尾是否需要继续延长或调整爆炸结束时机
+这是 EmberGen 中切到 `Simulation` 节点后，通过时间线关键帧控制模拟停止时刻的画面
+
+- 当前选中节点是 `Simulation`
+- `Node Details` 面板中可见：
+  - `Simulation Mode = Combustion`
+  - `Time Control` 分组
+  - `Freeze Simulation` 选项
+- 左下时间线中，`Simulation` 轨道已经展开并可见以下可动画参数：
+  - `Freeze Simulation`
+  - `Smoke dissipation`
+- `Freeze Simulation` 旁边显示已启用状态，并且时间线中出现紫色关键帧，说明这里正在把“冻结模拟”的开关写入时间轴
+- 其他仍可见的时间线轨道包括：
+  - `Emitter: Volume`
+  - `Volume Processing`
+  - `Force: Noise`
+- 左侧预览中火球仍处于早期膨胀阶段，说明教程此时在演示如何把爆炸停在某个指定阶段，而不是让模拟自然持续到末尾
+这是 EmberGen 在冻结模拟后的爆炸末段，回到 `Camera` 节点微调镜头构图的画面
+
+- 当前选中节点是 `Camera`
+- `Node Details` 面板当前打开 `General` 页签，下面展开了 `Transform` 与 `Display` 信息
+- 可确认的镜头参数包括：
+  - `Position X = -25.000 m`
+  - `Position Y = 262.882 m`
+  - `Position Z = 49.844 m`
+  - `Yaw angle = 188.500`
+  - `Pitch angle = 17.300`
+  - `Roll angle = 0.000`
+  - `Near clipping plane = 0.100 m`
+  - `Far clipping plane = 1000.000 m`
+- `Display` 分组中可见：
+  - `Projection = Perspective`
+  - `Field of view = 60.000`
+  - `Display resolution = 4096 x 4096`
+  - `Sensor fit = Horizontal`
+- 左下时间线依然保留：
+  - `Simulation.Freeze Simulation`
+  - `Simulation.Smoke dissipation`
+  - `Volume Processing.Motion blur intensity`
+  - `Force: Noise.Bias`
+- 左侧黑底预览显示已经成形的蘑菇云烟柱，说明这里是在模拟被停止后的状态下，通过镜头位置和角度进一步确定最终渲染画面的构图
+
+### 00:50:31-00:55:24 Alpha、Smoke
+
+- 本段定位：Alpha、Smoke。
+- 知识点：有烟囪的限制 需要增加它的解析度 让它更高 需要增加Frame 它可以很长 所以它应该会改变 因为我增加了解析度 我喜欢它 可能需要把它降低一点。
+- 知识点：我们看到了一些有趣的东西 这是什么 现在所有东西都显示了 Render All 可以分開来 只有烟囪现在分開来 可以反射 或是反射。
+- 知识点：我们有火,油 它们必须分開来 我们有烟囪 这里有这个东西 我们还有一个Alpha 需要錄影在烟囪上 我们有深度 Motion Vector是一个很酷的东西。
+- 知识点：它是用来滑動的 需要說明它们 这里有很多不同的东西 它们会被錄影在不同的质感 这里需要设置 在哪里它们会被錄影 需要选择这里 这里需要把所有东西都放在標準。
+- 知识点：现在我们必须 加上所有这些东西 我们不需要Render All 我们通常不需要 我们只要Alpha 我說会有一个Render Smoke RGB。
+- 知识点：Channel 我们还需要Alpha 我们选择这个Alpha Alpha会在这里 可以把不同的頻道 混合起来 可以用兩张不同的图片。
+- 知识点：在一个质感上 我用了Alpha 然后把它写在这里 需要把濃度和雜音 分開来錄影 需要写它的深度 当我们做了 第一次在 Unreal Engine的测试。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`。
+
+**关键画面：**
+
+这是 EmberGen 的 `Simulation` 节点 `Domain` 页，用来提升烟雾与火焰输出时的体素域分辨率和边界设置
+
+- 当前选中节点是 `Simulation`
+- 当前打开的标签组包括：
+  - `Domain`
+  - `Simulation`
+  - `Time Control`
+  - `Projection`
+  - `Combustion`
+  - `Dissipation`
+  - `Diffusion`
+  - `Vorticity`
+  - `Force`
+  - `Wind`
+  - `Shredding`
+  - `Mask`
+  - `Visual`
+  - `Particles`
+- 当前停留在 `Domain` 页签
+- `Domain` 分组中可确认的参数包括：
+  - `Current Size = 384 x 384 x 512 = 75,497,472 (75.50 million) voxels`
+  - `Voxel count X = 384`
+  - `Voxel count Y = 384`
+  - `Voxel count Z = 512`
+  - `Voxel size = 0.500 m`
+  - `Upscaling = None`
+  - `Fast upscaler` 未启用
+  - `Zero position on X = Center`
+  - `Zero position on Y = Center`
+  - `Zero position on Z = Min`
+  - `Import control` 未启用
+  - `Bounds Position X = 0.000`
+  - `Bounds Position Y = 0.000`
+- 下方还能看到 `Simulation Mode = Combustion`
+- 左侧预览显示高亮火球，左下时间线依然保留 `Freeze Simulation`、`Smoke dissipation`、`Motion blur intensity` 等轨道，说明这里是在为后续烟雾、Alpha 或分通道输出先提高模拟域精度
+这是 EmberGen 的 `Render` 节点在查看分通道输出时切换到 `Depth` 预览的画面，用来把深度结果从主彩色渲染中单独检查出来
+
+- 当前选中节点是 `Render`
+- 顶部渲染通道下拉框当前选的是 `Depth`
+- 左侧预览因此变成黑底灰度的体积轮廓，而不是正常彩色火焰
+- 右侧 `Node Graph` 可见最终输出链为：
+  - `Shading -> Scene -> Render`
+  - `Camera -> Render`
+  - `Volume Processing` 仍保留在场景链旁边
+- 左上参数面板中可确认：
+  - `Alpha Blending Mode = Premultiplied Alpha`
+  - `Emissive Alpha Mode = Black To ...`，后半段在截图中被截断
+  - `Invert Render Alpha` 未启用
+  - `Shapes Rendering = Holdout`
+  - `Shapes Masking = No Mask...`
+  - `Invert Shapes Alpha` 未启用
+  - `Volume Occluded Particles` 已启用
+  - `Particles Occlude Volume` 已启用
+  - `Render Volume` 已启用
+  - `Render Particles` 已启用
+  - `Depth Min = 150.000 cells`
+  - `Depth Max = 450.000 cells`
+- 底部 `Export` 页还能看到：
+  - `Flipbook Columns / Rows = 8 x 8`
+  - `Number of Frames = 64`
+  - `Frame Stride = 2`
+- 这说明教程正在演示把烟雾、Alpha、深度等结果拆成不同渲染通道分别查看和导出，而不是只输出一张合成彩色图
+这是 EmberGen 的 `Render` 节点继续切换到法线类渲染通道后的画面，用来把烟雾体积的方向信息单独导出
+
+- 当前选中节点是 `Render`
+- 左侧预览不再是彩色火焰，而是蓝底配合彩色边缘的法线图样，说明当前查看的是法线相关输出而不是 Beauty、Depth 或 Alpha
+- 左上通道选择器当前显示 `Render 1`
+- 其右侧另一个下拉框可见前缀 `Six Point...`，结合左侧画面推断这是某种法线/方向编码模式，但截图中完整名称未显示
+- 左上参数面板中可确认：
+  - `Alpha Blending Mode = Premultiplied Alpha`
+  - `Emissive Alpha Mode = Black To ...`，后半段被截断
+  - `Invert Render Alpha` 未启用
+  - `Shapes Rendering = Holdout`
+  - `Shapes Masking = No Masking`
+  - `Invert Shapes Alpha` 未启用
+  - `Volume Occludes Particles` 已启用
+  - `Particles Occlude Volume` 已启用
+  - `Render Volume` 已启用
+  - `Render Particles` 已启用
+  - `Normal shadowing intensity = 150.000`
+  - `Normal smoke density boost = 150.000`
+  - `Normal intensity = 100.000`
+  - `Normalize normal` 已启用
+- 底部导出区还能看到：
+  - `Filename = $(project)_$(safeName)`
+  - 扩展名 `.png`
+  - `Export Now` 与 `Open Folder` 按钮
+- 这张图表明教程不仅拆分 Alpha 和 Depth，也在准备法线类贴图或辅助通道，供后续在 Unreal Engine 中做材质混合、光照响应或后期合成
+
+### 00:55:24-00:57:14 Material、UV
+
+- 本段定位：Material、UV。
+- 知识点：我们需要这6點 有黑色背景 可以设置UV的 和弧度 或者不设置它们 这是一个比較技術化的东西 根據创建的材料 可能不需要 Motion Vector需要改变。
+- 知识点：它们在滑動 Motion Vector是什么 需要很简单地解釋 这是质感 为什么R&G頻道在这里 为什么我们錄影R&G頻道 因为藍頻道 并不是在这里。
+- 知识点：R&G 这里有兩條頻道 其他兩條都会空空的 但在这里加了一张普通的图片 这是什么 这是指定的方向 在这里的模式会移动 用这图片的幫助 可以把模式的滑動。
+- 知识点：变得很順利 如果画面很慢 需要用这图片的幫助 来做一种順滑的模式 我们錄了64个画面 但我们必须很慢 因为我们不懂如何把画面 分開来 需要把它们滑出来。
+- 知识点：分開来分開来 这图片会幫助 它会有指定方向 它錄影指定方向 这R&G頻道 它会有指定方向 Material在 Unreal Engine。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Material`。
+
+**关键画面：**
+
+这是 EmberGen 的 `Render` 节点在输出方向编码贴图时的画面，利用六向颜色把烟雾体积的朝向信息写进贴图，供后续材质中做方向感或平滑运动
+
+- 当前选中节点是 `Render`
+- 顶部第二个下拉框显示 `Six Point...`，结合左侧六向彩色预览和面板项目，可确认这里在查看 `Six points world space` 类输出
+- 左侧预览中：
+  - 顶部偏蓝
+  - 左下偏绿
+  - 右侧偏红/洋红
+  - 其余区域混合青、黄、紫等颜色
+  - 这些颜色不是美术着色，而是用来区分不同方向的体积响应
+- 左上参数面板中可确认：
+  - `Alpha Blending Mode = Premultiplied Alpha`
+  - `Six points world space` 已启用
+  - `Six points black background` 已启用
+  - `Smoke density boost = 0.000`
+  - `Exposure adjustment = 0.000`
+  - `Gamma adjustment = 0.000`
+  - `Blacks adjustment = 0.000`
+  - `Whites adjustment = 0.000`
+  - `Per direction parameters` 未启用
+  - `Shadowing intensity = 150.000`
+  - `Top shadowing intensity = 150.000`
+  - `Right shadowing intensity = 150.000`
+  - `Left shadowing intensity = 150.000`
+- 下方导出设置区还能看到：
+  - `Alpha Blending Mode = Premultiplied Alpha`
+  - `Shapes Rendering = Holdout`
+  - `Shapes Masking = No Masking`
+  - `Render Volume` 已启用
+  - `Render Particles` 已启用
+  - `Depth Min = 150.000 cells`
+  - `Depth Max = 450.000 cells`
+  - `MV outer blur radius = 4.000 pixels`
+  - `MV inner blur radius = 2.000 pixels`
+- 这张图说明教程已经进入为 Unreal 材质准备辅助贴图的阶段，不再只输出颜色、深度或 Alpha，而是输出可驱动材质方向效果的六向编码图
+这是 EmberGen 的 `Render` 节点在查看 `Motion Vector` 通道，并同时编辑 `Render Passes` 通道打包关系的画面
+
+- 当前选中节点是 `Render`
+- 顶部第二个下拉框显示 `Motion V...`，结合左侧预览和右下通道表，可确认当前查看的是 `Motion Vector`
+- 左侧预览使用红绿为主的伪彩色显示速度方向：
+  - 红色和绿色分别编码平面方向分量
+  - 背景呈黄绿色，说明当前通道并不是普通 RGB 贴图，而是运动方向/位移信息
+- 左上参数面板可见：
+  - `MV outer blur radius = 4.000 pixels`
+  - `MV inner blur radius = 2.000 pixels`
+- 右下 `Render Passes` 列表中可直接确认以下条目与映射：
+  - `Depth` 输出到 `Depth`，当前目标通道标记为 `R`
+  - `Motion Vector` 输出到 `Motion Vector`，目标打包格式为 `RGBA`
+  - `Six Point Normal Map` 输出到 `Six Point Normal...`，目标格式为 `RGB`
+  - `Six Point 1 (TLR)` 输出到 `Six Point 1 (TLR)`，目标格式为 `RGB`
+  - `Six Point 2 (BBF)` 输出到 `Six Point 2 (BBF)`，目标格式为 `RGB`
+- `Motion Vector` 条目下能看到分量命名：
+  - `X -> R`
+  - `Y -> G`
+  - `Z -> B`
+- 这与正文里“R&G 两条频道”一致，说明教程是在强调 Unreal 材质里通常主要读取运动向量的红绿通道来做帧间平滑、UV 位移或插值补偿，而不是依赖完整彩色贴图
+这是 EmberGen 的 `Render` 节点继续讲解运动向量与多通道贴图打包的画面，重点是说明烟雾移动方向会被记录进 `Motion Vector`
+
+- 当前选中节点是 `Render`
+- 顶部通道仍是 `Motion V...`
+- 左侧预览依旧是以红绿为主的运动向量伪彩色图，表示烟雾在屏幕平面中的移动方向与强度
+- 右下 `Render Passes` 列表相比上一张更清楚地展示了多个通道的组织方式：
+  - `Emissive + Scatte...` 输出到 `Emissive + Scatt...`，目标格式为 `RGBA`
+  - `Depth` 输出到 `Depth`，目标通道为 `R`
+  - `Motion Vector` 输出到 `Motion Vector`，目标格式为 `RGBA`
+  - `Six Point Normal Map` 输出到 `Six Point Normal...`，目标格式为 `RGB`
+  - `Six Point 1 (TLR)` 输出到 `Six Point 1 (TLR)`，目标格式为 `RGB`
+- 在 `Motion Vector` 条目下仍能看到：
+  - `X -> R`
+  - `Y -> G`
+  - `Z -> B`
+- 这张图与字幕“它包含了烟雾移动的方向”一致，明确说明该贴图不是普通颜色图，而是给 Unreal 材质或后期系统读取运动方向用的辅助贴图
+- 结合本段前后文，可以据此在材质中使用红绿通道驱动 UV 偏移、插帧平滑或慢速 flipbook 的过渡修正
+
+### 00:58:00-01:00:47 Houdini、更多
+
+- 本段定位：Houdini、更多。
+- 知识点：在这里 设置的名字和 它会写的卡號 我们選P&G 需要有64个画面 8x8 如果你想,可以放多一点 但为什么我们不放多一点 因为如果我们更加計算。
+- 知识点：需要有更小的空间 每个画面会有更低的质感 因为会有更多的画面 因此,质感会降低 8x8是金色的意思 可以放多一点 可能12个 在爆炸时,我们需要设置8x8。
+- 知识点：按下输入鍵 这里很快 例如,在Houdini 可以等了一小时 这里会更快 因为这里是影片卡上的 而在Houdini 是中心的機器上 这是一个很大的分別。
+- 知识点：让我们等一等,需要给你看 这就是結果 如何看起来 完成了 我们得到这个結果 是烟火和α 是濃度和深度 是通常的圖案的動作 我们把所有的頻道混合起来。
+- 知识点：这樣看起来不太清楚 所有的物料都很棒 还有6點光 我稍後会解釋 因为现在很難解釋 在Adriane Engine 会更清楚 还有 可以立刻看看。
+- 核对对象：`Houdini`。
+
+**关键画面：**
+
+这是 EmberGen 的 `Render` 节点导出设置画面，演示把运动向量等辅助通道按 `8x8` flipbook 导出，并选择最终文件格式
+
+- 当前选中节点是 `Render`
+- 顶部通道仍显示 `Motion V...`，左侧预览保持运动向量伪彩色结果
+- 左上参数面板可见：
+  - `MV outer blur radius = 0.250 pixels`
+  - `MV inner blur radius = 0.100 pixels`
+- 底部 `Export` 页签中可确认：
+  - `Flipbook Columns / Rows = 8 x 8`
+  - `First Frame = 15`
+  - `Number of Frames = 64`
+  - `Frame Stride = 2`
+  - `Absolute Frames` 未启用
+  - `Directory = C:/Users/Stand1k/Desktop/Embergen/myfirstember_export`
+  - `Filename = $(project)_$(safeName)`
+- 文件扩展名下拉框已展开，可见可选格式：
+  - `.png`
+  - `.tga`
+  - `.exr`
+- 当前文件名预览末尾可见 `artillery_explosion_2_alpha.png`
+- 这张图对应正文里“8x8 是黄金值，可以更多但会降低单帧质量”，说明教程在强调 flipbook 分辨率与帧数之间的取舍，以及导出到不同格式时的实际设置位置
+这是在系统图片查看器里直接打开 EmberGen 导出的 flipbook 结果，用来检查混合通道导出后的整张图集外观
+
+- 窗口标题可见当前文件名：
+  - `artillery_explosion_2_emissive_and_scattering.png`
+- 画面中能看到一张 `8 x 8` 排布的大图集：
+  - 上方前几行是较亮的爆炸和烟雾帧
+  - 其余多数格子较暗，说明该通道本身偏向发光与散射信息而不是完整 beauty 输出
+- 左下状态栏可见：
+  - 分辨率 `4096 x 4096`
+  - 文件大小约 `3.6 MB`
+- 底部缩放显示约 `49%`
+- 结合字幕“我们在这里混合了所有的通道，所以看起来不太清晰”，可知这一步是在直接查看某一张导出的通道贴图集，确认通道混合后的可读性，而不是在 EmberGen 内继续改参数
+这是 EmberGen 内部的 flipbook 帧浏览界面，用来逐格检查 `64` 帧图集的内容，而不是只看整张拼图
+
+- 当前选中节点仍是 `Render`
+- 左侧主预览区切成缩略格模式，按编号显示 `0` 到 `63` 共 `64` 帧
+- 其中某一格被蓝色框选，当前选中的是靠后段的单帧
+- 右侧大预览显示被选中单帧的放大结果，是一张高亮爆炸火球
+- 顶部可见：
+  - `R G B A` 通道开关
+  - 当前查看的渲染项前缀为 `Emissive + S...`
+  - 视图缩放约 `274%`
+- 下方时间与播放控制可见：
+  - 播放按钮和逐帧按钮
+  - 时间轴刻度
+  - 右下角标注 `60 fps`
+- 底部时间线仍保留：
+  - `Simulation.Freeze Simulation`
+  - `Simulation.Smoke dissipation`
+  - `Volume Processing.Motion blur intensity`
+  - `Force: Noise.Bias`
+- 这说明教程在导出后还会逐帧核对 flipbook 是否生成正确，确认每一格都能作为后续 Unreal 材质或粒子序列的一帧输入
+
+## 补充视觉证据
+
+### S07 00:31:12
+
+这是 `S07 00:31:12` 的补充节点图，说明在 EmberGen 里把粒子发射器并入当前体积模拟链时，节点连接与裁剪后处理的实际布局
+
+- 当前主节点链可确认为：
+  - `Shape: Primitive` 输出连接到 `Emitter: Volume.Shapes`
+  - `Emitter: Volume` 输出接入 `Simulation.Emitters`
+  - `Emitter: Particles` 也接入 `Simulation.Emitters`
+  - `Minor Turbulence` 组中的 `Force: Noise` 输出接入 `Simulation.Forces`
+  - `Simulation.Volume` 输出到 `Volume Processing.Volume`
+  - `Volume Processing` 再输出到右侧后续导出链
+- 图中灰框 `Choose your emitter type` 明确表明：
+  - 可以在同一套模拟中切换或叠加不同发射器
+  - 当前 `Emitter: Volume` 处于启用可见状态
+  - `Emitter: Particles` 已经被加入，但节点显示较暗，说明此时在讲解其接入而不是深入调整它的面板参数
+- 当前选中节点是 `Volume Processing`
+- 底部 `Node Details` 当前打开 `Post Process` 页签，并能看到：
+  - `Volume post process = None`
+  - `Post Modulation 1` 分组存在，但未启用
+  - `Slicing Mask` 分组展开
+- `Slicing Mask` 中可见一整组边界裁剪参数，包含：
+  - `X- wall offset`、`X- wall width`
+  - `X+ wall offset`、`X+ wall width`
+  - `Y- wall offset`、`Y- wall width`
+  - `Y+ wall offset`、`Y+ wall width`
+  - `Z- ground offset`、`Z- ground width`
+- 这些值在截图中基本保持 `0.000`
+- 左侧视口显示细长上升烟柱和底部火焰，结合字幕“我添加了粒子，暂时暂停”，可知这张补图的作用是补充说明粒子发射器接入模拟后的节点结构，而不是展示最终渲染结果
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

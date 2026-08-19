@@ -1,0 +1,73 @@
+---
+category: modeling
+title: Modeling
+summary: Modeling active commands.
+---
+
+# Modeling
+
+- status_scope: active commands
+- command_count: 60
+
+## Commands
+
+- [`modeling_accept_tool`](./modeling_accept_tool.md)
+- [`modeling_activate_mode`](./modeling_activate_mode.md)
+- [`modeling_add_material_slot`](./modeling_add_material_slot.md)
+- [`modeling_align_to_world`](./modeling_align_to_world.md)
+- [`modeling_auto_uv`](./modeling_auto_uv.md)
+- [`modeling_bake_transform`](./modeling_bake_transform.md)
+- [`modeling_bevel_edges`](./modeling_bevel_edges.md)
+- [`modeling_boolean`](./modeling_boolean.md)
+- [`modeling_cancel_tool`](./modeling_cancel_tool.md)
+- [`modeling_clear_mesh_selection`](./modeling_clear_mesh_selection.md)
+- [`modeling_convert_actor_to_dynamic_mesh`](./modeling_convert_actor_to_dynamic_mesh.md)
+- [`modeling_create_box`](./modeling_create_box.md)
+- [`modeling_create_cylinder`](./modeling_create_cylinder.md)
+- [`modeling_create_plane`](./modeling_create_plane.md)
+- [`modeling_create_ramp`](./modeling_create_ramp.md)
+- [`modeling_create_ramp_corner`](./modeling_create_ramp_corner.md)
+- [`modeling_create_sphere`](./modeling_create_sphere.md)
+- [`modeling_create_stairs`](./modeling_create_stairs.md)
+- [`modeling_duplicate_faces`](./modeling_duplicate_faces.md)
+- [`modeling_duplicate_to_new_static_mesh`](./modeling_duplicate_to_new_static_mesh.md)
+- [`modeling_extrude_faces`](./modeling_extrude_faces.md)
+- [`modeling_fill_holes`](./modeling_fill_holes.md)
+- [`modeling_generate_convex_collision`](./modeling_generate_convex_collision.md)
+- [`modeling_generate_simple_collision`](./modeling_generate_simple_collision.md)
+- [`modeling_get_active_tool`](./modeling_get_active_tool.md)
+- [`modeling_get_active_tool_properties`](./modeling_get_active_tool_properties.md)
+- [`modeling_get_mesh_selection_info`](./modeling_get_mesh_selection_info.md)
+- [`modeling_get_mesh_spatial_info`](./modeling_get_mesh_spatial_info.md)
+- [`modeling_get_selection`](./modeling_get_selection.md)
+- [`modeling_inset_faces`](./modeling_inset_faces.md)
+- [`modeling_invoke_active_tool_action`](./modeling_invoke_active_tool_action.md)
+- [`modeling_mesh_cut`](./modeling_mesh_cut.md)
+- [`modeling_mirror`](./modeling_mirror.md)
+- [`modeling_offset`](./modeling_offset.md)
+- [`modeling_plane_cut`](./modeling_plane_cut.md)
+- [`modeling_project_uv`](./modeling_project_uv.md)
+- [`modeling_push_pull`](./modeling_push_pull.md)
+- [`modeling_recompute_normals`](./modeling_recompute_normals.md)
+- [`modeling_remesh`](./modeling_remesh.md)
+- [`modeling_remove_material_slot`](./modeling_remove_material_slot.md)
+- [`modeling_replace_actor_mesh`](./modeling_replace_actor_mesh.md)
+- [`modeling_save_mesh_asset`](./modeling_save_mesh_asset.md)
+- [`modeling_select_mesh_elements_via_screen`](./modeling_select_mesh_elements_via_screen.md)
+- [`modeling_select_mesh_elements_via_world_ray`](./modeling_select_mesh_elements_via_world_ray.md)
+- [`modeling_set_active_tool_property`](./modeling_set_active_tool_property.md)
+- [`modeling_set_material_slot`](./modeling_set_material_slot.md)
+- [`modeling_set_mesh_selection_mode`](./modeling_set_mesh_selection_mode.md)
+- [`modeling_set_pivot`](./modeling_set_pivot.md)
+- [`modeling_set_selection`](./modeling_set_selection.md)
+- [`modeling_simplify`](./modeling_simplify.md)
+- [`modeling_snap_to_ground`](./modeling_snap_to_ground.md)
+- [`modeling_start_tool`](./modeling_start_tool.md)
+- [`modeling_subdivide`](./modeling_subdivide.md)
+- [`modeling_trim`](./modeling_trim.md)
+- [`modeling_voxel_boolean`](./modeling_voxel_boolean.md)
+- [`modeling_voxel_grid_add_bounds`](./modeling_voxel_grid_add_bounds.md)
+- [`modeling_voxel_grid_apply`](./modeling_voxel_grid_apply.md)
+- [`modeling_voxel_grid_begin`](./modeling_voxel_grid_begin.md)
+- [`modeling_voxel_grid_remove_bounds`](./modeling_voxel_grid_remove_bounds.md)
+- [`modeling_weld_edges`](./modeling_weld_edges.md)

@@ -1,0 +1,1302 @@
+# 01 Magic Projectiles
+
+# 01 Magic Projectiles
+
+## 关键术语
+
+- `Spawn`、`UV`、`Lerp`、`粒子`、`系统`、`速度`、`透明度`、`深度测试`、`Niagara`、`发射器`、`颜色`、`Niagara System`、`Emitter`、`Particle`、`Spawn Rate`、`Initialize Particle`、`Lifetime`、`Color`
+
+## 分段知识
+
+### 00:00:06-00:04:10 颜色
+
+- 本段定位：颜色。
+- 知识点：嘿,在这一系列视频中,后续会制作魔法的光线 颜色将像在空间中一样,在一个现实性的风格中。
+- 知识点：让我们看看一些例子,所用的链子 让我们看看这个例子 我们已经看看链子了,这是它们的基础 链子也有些东西 链子可以为链子、链子、与其他有趣的东西使用。
+- 知识点：在这些链子中,这些链子是链子,它们是这种基础 这是这个效果,链子也能看到 这里,这里 是链子,链子在后面 这是它的基础 链子是链子,链子在链子上。
+- 知识点：这是一个非常好的例子 链子是很多东西都使用,例如链子,或是其他角色 可以使用,有些能量,等等 另外一个好例子,链子 也有很多种类的链子,例如魔法。
+- 知识点：这是一个比较现实的风格,有很多细节 链子的链子仍然是一个链子 我们已经做了相似的东西 我们使用链子,我们使用了链子 但在这些情况下,需要使用链子使用链子。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这是教程开头展示的参考案例之一，画面中心是一名跪姿或半蹲姿的人形角色，角色背后和身体周围包着大面积深色到蓝灰色的能量形体，整体风格偏写实、冷色、低饱和。
+
+可确认的视觉特征如下：
+- 主体特效不是卡通亮色，而是更克制的蓝灰色能量块、烟雾或披挂状流体
+- 亮部集中在角色附近，背景保持暗灰色，让注意力落在角色和能量轮廓上
+- 能量形体有向后拖拽和向外展开的趋势，像是角色身后展开的魔法尾迹或护罩
+- 整体对比度不依赖高彩度，而是依赖明暗层次和形体细节来建立真实感
+
+这张图的作用是给“颜色”主题建立目标参考：后续不一定只做高饱和特效，也可以通过偏冷、偏暗、较写实的配色，把魔法或能量效果做成更贴近写实项目的视觉方向
+这是另一个参考案例页面，来自一组 `Fireball, Frostbolt, Arcane Missiles` 展示图。画面里最明显的是暖色火球魔法：角色前方有一颗明亮的橙黄色火球，后方拖着火焰尾迹，另一张缩略画面还能看到角色周围绕出一圈燃烧火环。
+
+可确认的视觉特征如下：
+- 主色采用橙黄到红橙的高温火焰配色，亮心偏黄，外缘偏橙红
+- 投射物本体是高亮球状核心，后接连续拖尾，说明这种效果依赖明显的方向性和速度感
+- 火焰边缘不是平滑光团，而是带破碎、抖动和火舌状轮廓，更接近真实燃烧纹理
+- 下方示例里还能看到围绕角色生成的圆环火焰，说明同一套颜色语言可以同时服务于投射物和范围技能
+
+这张图用于补充“颜色决定题材”的判断标准：当颜色切到黄橙红一侧，并配合高亮核心和火焰噪声边缘时，观众会立刻把它识别成火焰类魔法，而不是中性能源或电流类效果
+这是 `NS_MagicProjectiles` 系统中一个名为 `Empty` 的基础发射器设置图，作者直接在 `Initialize Particle` 里修改粒子的初始颜色，用最简单的方式演示“仅改颜色就能改变魔法观感”
+
+可确认的发射器结构如下：
+- `Emitter Update`：`Emitter State`、`Spawn Burst Instantaneous`
+- `Particle Spawn`：`Initialize Particle`
+- `Particle Update`：`Particle State`
+- `Render`：`Sprite Renderer`
+
+当前打开的是 `Initialize Particle`，右侧能确认的参数如下：
+- `Lifetime Mode = Direct Set`
+- `Lifetime = 1.5`
+- `Color Mode = Direct Set`
+- 当前颜色被设置为偏粉紫的亮粉色
+- `Position Mode = Simulation Position`
+- `Mass Mode = Unset / (Mass of 1)`
+
+颜色选择器中还能读到一组可见数值：
+- `R = 1.0`
+- `G = 0.163769`
+- `B = 0.425643`
+- `A = 1.0`
+- `H = 341.210358`
+- `S = 0.836231`
+- `V = 1.0`
+- `Hex Linear = FF2A6DFF`
+- `Hex sRGB = FF71AEFF`
+
+左侧预览窗口显示的是一个粉色发光球体，说明当前发射器就是最小化的投射物雏形。这里的核心做法是先用最简单的单发射器和单色球体测试颜色方向，确认风格后再继续叠加拖尾、噪声、次级粒子等细节
+
+### 00:04:13-00:09:05 Spawn、速度
+
+- 本段定位：Spawn、速度。
+- 知识点：在这里有一个通过设计的 我们把它伸向Y线,让它这样 它们在现在的位置上,它们在同一个位置上 让它们在不同的位置上 需要用这个位置的出口。
+- 知识点：需要加一个Make Vector,让它们分成两个 需要加一个Make Vector,让它们分成三个 这样会比较容易 需要随意地把它们移向X线。
+- 知识点：在这个位置上 按照X的方向 也会是Y线的方向,以及我们用的另一个有趣的东西 这是通过正常的正常的指令 希望你们记得,三块是结合的 它们是分成0和1。
+- 知识点：为什么我们需要它?需要用一个有趣的东西 需要用一个25,再加25 这里是0.5 0.5,现在需要明白了它们的原因 需要我们现在就把它们放在这里。
+- 知识点：我们需要什么?需要用速度,需要移动速度 需要加上所有的依靠点 需要把它们移向X线,在这边已经移动了 但有一个问题,它们在这里不移动得很好。
+- 知识点：我们重新调整它们,但是我们需要改变它的定位 我们可观察到它们在这里移动了,希望它们会更清楚 我把这个影响移到一个等级 需要把它们在这里准备到一个位置。
+- 知识点：我们可观察到它在这里移动了 需要把它转到90度 因为它们在X线的方向移动了 它们在移动了,但它们不清楚在什么地方 因此我们加上了另一个速度。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`Spawn`、`速度`。
+
+**关键画面：**
+
+这是 `NS_MagicProjectiles` 系统中 `Empty` 发射器的 `Initialize Particle` 设置图，当前重点是把原本接近圆形的精灵沿单一轴向拉长，为后续做出有方向感的投射物主体
+
+可确认的发射器结构如下：
+- `Emitter Update`：`Emitter State`、`Spawn Burst Instantaneous`
+- `Particle Spawn`：`Initialize Particle`
+- `Particle Update`：`Particle State`
+- `Render`：`Sprite Renderer`
+
+当前打开的是 `Initialize Particle`，右侧可确认的参数如下：
+- `Lifetime Mode = Direct Set`
+- `Lifetime = 1.5`
+- `Color Mode = Direct Set`
+- `Color = 亮粉色`
+- `Position Mode = Simulation Position`
+- `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Size Mode = Non-Uniform`
+- `Sprite Size = 10.0, 10.0`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+
+字幕明确给出当前操作意图：`Let's stretch it along the Y axis`
+
+这一步的目的不是调生成数量，而是先把投射物的基础形体从球状改成可被拉伸的长条精灵。虽然截图里尺寸仍显示为 `10.0, 10.0`，但教程语义已经指向下一步会按 `Y` 轴方向把精灵拉长，用它建立投射物前进时更清晰的方向性
+这是把 `NS_MagicProjectiles` 放回场景后的测试画面。视口里能看到一名角色站在棋盘地面上，角色前上方悬着一个小型白色发光投射物，用来检查当前生成位置、飞行方向和整体比例是否合理
+
+可确认的结果特征如下：
+- 当前测试环境是简单的灰黑棋盘地面，没有复杂背景干扰，便于观察位移和朝向
+- 角色位于画面中央偏左，投射物悬在角色前方上空，说明特效已经脱离脚下原点，而不是还卡在角色中心
+- 投射物当前仍是非常基础的白色亮点，还没有拖尾、火焰或其他次级层
+- 画面右侧 Outliner 与下方 Content Browser 同时打开，说明这一步处于场景内验证阶段，而不是继续改模块参数
+
+这张图主要用于检查 Spawn 后的空间位置是否可用。当前结果表明：系统已经可以在角色附近生成一个独立可见的投射物占位，后续再继续叠加速度和方向控制，就能把它从“悬停亮点”推进到真正飞出的魔法弹体
+这是 `NS_MagicProjectiles` 中 `Empty` 发射器的 `Scale Velocity` 模块设置图，用来按生命周期曲线控制粒子速度，从而让投射物在飞行过程中逐步加快或调整推进感
+
+可确认的发射器堆栈如下：
+- `Emitter Update`：`Emitter State`、`Spawn Burst Instantaneous`
+- `Particle Spawn`：`Initialize Particle`、`Add Velocity Linear`、`Add Velocity 001 From Point`
+- `Particle Update`：`Scale Velocity`、`Solve Forces and Velocity`、`Particle State`、`Scale Sprite Size`
+- `Render`：`Sprite Renderer`
+
+当前打开的是 `Scale Velocity`，右侧可确认的参数如下：
+- `Coordinate Space = Local`
+- `Velocity Scale = Vector from Curve`
+- 使用 `VectorCurve`
+- 曲线索引为 `PARTICLES.NormalizedAge`
+- `Scale Curve` 三个通道当前都可见为 `1.0`
+
+曲线编辑器中可确认的信息：
+- 当前选中的是红色 `X` 通道
+- 在 `Time = 1` 位置有一个关键点
+- 该关键点的 `Value = 0.275`
+- 红色曲线从左到右缓慢上升，说明至少有一个轴向速度比例会随生命周期变化
+
+左侧预览窗口里已经能看到短小的白色拖痕，而不是纯静止亮点，说明速度控制开始生效。结合本段正文，这一步的实际目标是先通过 `Scale Velocity` 把现有速度按时间重分布，再配合前面添加的线性速度与点向速度，让投射物移动得更清楚、更像真正射出的魔法弹
+
+### 00:09:05-00:13:02 粒子、速度
+
+- 本段定位：粒子、速度。
+- 知识点：最后它会有2个数字 这是它的温度 需要用自动调整,让它们温度更好 需要慢慢地增加速度在X线上。
+- 知识点：现在需要解释为什么 我们认为这就是一个很有趣的动作 需要用速度调整 需要控制X和Z 需要控制它们同时 在我们的体体生命中 我发现了一个错误。
+- 知识点：需要发生什么 我们有一个X线 这是我们的前面的线 需要把-10,10移到这里 让它们变化 比如说,需要增加它们的价值 让它们能清楚发生什么。
+- 知识点：它们有不同的位置 在宿命中 这个价值是在X线上的宿命 需要提高这个价值 Y是在这个线上的 如果Y是0的,他们会在同一个位置 需要移到Y线上。
+- 知识点：需要用这个温度调整这个价值 如果我把它调整至0 在这里需要调整至-1 现在更有趣了 我刚才做了什么 我加了回正常的指標,每个这些粒子,它们都在循環上,左邊的粒子在循環上,我把它分成25,我把它轉成25,并且歪掉。
+- 核对对象：`粒子`、`速度`。
+
+**关键画面：**
+
+这是 `NS_MagicProjectiles` 中 `Empty` 发射器的 `Scale Velocity` 模块继续调参的画面，作者正在直接修改速度曲线的取值范围，让粒子在生命周期里获得更明显的速度增长
+
+可确认的发射器堆栈如下：
+- `Emitter Update`：`Emitter State`、`Spawn Burst Instantaneous`
+- `Particle Spawn`：`Initialize Particle`、`Add Velocity Linear`、`Add Velocity 001 From Point`
+- `Particle Update`：`Scale Velocity`、`Solve Forces and Velocity`、`Particle State`、`Scale Sprite Size`
+- `Render`：`Sprite Renderer`
+
+当前打开的是 `Scale Velocity`，右侧可确认的参数如下：
+- `Coordinate Space = Local`
+- `Velocity Scale = Vector from Curve`
+- 使用 `VectorCurve`
+- 曲线索引为 `PARTICLES.NormalizedAge`
+- 当前仍以红色 `X` 通道为主要编辑对象
+
+曲线编辑器中当前可见的变化如下：
+- 红色 `X` 曲线从左下向右上斜升
+- 纵轴读数最高可见到 `2.5`
+- 左端关键点接近 `0.2`
+- 右端关键点接近 `2.2`
+- 字幕明确提示：`This will be the range`
+
+这张图传达的核心是：作者不再让速度比例只在很小区间内变化，而是把 `X` 方向速度比例拉到一个更大的范围，让粒子会随着生命周期逐步提速。结合正文里多次提到 `X` 轴，这一步是在强化投射物沿前进方向的加速感
+这是 `Empty` 发射器 `Scale Velocity` 的进一步调试画面。此时不再只看单一 `X` 通道，而是同时把 `X`、`Y`、`Z` 三个轴向的曲线摆在一起，对比它们在生命周期中的不同变化趋势
+
+可确认的模块上下文如下：
+- 当前仍处于 `Particle Update > Scale Velocity`
+- `Coordinate Space = Local`
+- `Velocity Scale = Vector from Curve`
+- 曲线索引仍为 `PARTICLES.NormalizedAge`
+
+曲线编辑器中可确认的三轴关系如下：
+- 红色 `X` 曲线从 `0` 左右缓慢上升，到生命周期末端接近 `+1`
+- 绿色 `Y` 通道当前基本贴近 `0`，没有明显大幅变化
+- 蓝色 `Z` 曲线从开头的正值开始，随后一路下降，末端落到明显负值区域，约在 `-4` 附近
+- 纵轴可见范围大约从 `-6` 到 `+4`
+- 字幕点明作者正在解释 `X` 轴的作用：`We have an X axis here`
+
+左侧预览窗口里能看到三个细长白色粒子分布在不同位置，说明粒子不再完全重叠，而是在多轴速度影响下出现分离
+
+这张图要表达的是：速度不是一个单标量，而是 `Vector Curve`。作者开始分别控制不同轴向，让一个轴负责前进，另一个轴负责上下或侧向偏移，这样多个粒子在飞行时才不会都走同一条直线，从而形成更自然的散开感和层次感
+这是 `Empty` 发射器 `Initialize Particle` 的调参图，作者在这里直接修改粒子的初始位置分布和尺寸，让多个投射粒子从一开始就错开位置，而不是完全堆叠在同一点
+
+可确认的发射器结构如下：
+- `Emitter Update`：`Emitter State`、`Spawn Burst Instantaneous`
+- `Particle Spawn`：`Initialize Particle`、`Add Velocity Linear`、`Add Velocity 001 From Point`
+- `Particle Update`：`Scale Velocity`、`Solve Forces and Velocity`、`Particle State`、`Scale Sprite Size`
+- `Render`：`Sprite Renderer`
+
+当前打开的是 `Initialize Particle`，右侧可确认的参数如下：
+- `Lifetime Mode = Direct Set`
+- `Lifetime = 1.5`
+- `Color Mode = Direct Set`
+- `Color = 亮粉色`
+- `Position Mode = Simulation Position`
+- `Position Offset = Make Vector`
+
+`Position Offset` 三轴设置可确认如下：
+- `X = Random Range Float`
+- `X Minimum = -10.0`
+- `X Maximum = 10.0`
+- `Y = Float from Curve`
+- `Y` 使用 `Curve for Floats`
+- 该曲线索引使用 `Return Normalized Exec Index`
+- `Normalized Index = 1.0`
+- `Scale Curve = 25.0`
+- `Z = Random Range Float`
+- `Z Minimum = -25.0`
+- `Z Maximum = 25.0`
+- `Position Offset Coordinate Space = Simulation`
+
+同一面板下还能确认的精灵尺寸设置：
+- `Sprite Size Mode = Non-Uniform`
+- `Sprite Size = 15.0, 100.0`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+- `Mass Mode = Unset / (Mass of 1)`
+
+左侧预览窗口中可见多个白色细长粒子已经分散排开，不再重叠成一个点。字幕说明作者对这些数值已经满意
+
+这张图的关键作用是把“多粒子分布”固定下来：`X` 和 `Z` 用随机范围打散横向与纵深位置，`Y` 用执行索引曲线给不同粒子分配有序偏移，再配合 `15 x 100` 的细长精灵尺寸，就能让同一批粒子形成前后错层、长度统一的魔法弹体群
+
+### 00:13:05-00:17:56 速度
+
+- 本段定位：速度。
+- 知识点：还有重點,它们会给我们快速在旁邊,我们有快速在这旁邊。
+- 知识点：它们会飛走,如果我用重點,它们会飛直。
+- 知识点：我控制速度在这里,控制在X的角度。
+- 知识点：可以用高速度来控制速度。
+- 知识点：在这里设置了一个系统,然后把它直接連接到发射器。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`发射器`、`系统`、`速度`。
+
+**关键画面：**
+
+这是 `NS_MagicProjectiles` 中 `Empty` 发射器的 `Add Velocity 001` 模块设置图，作者在这里额外加入一股“从某个点向外推开”的速度，用来让几个细长粒子不要全部笔直并行，而是带一点分叉和散开趋势
+
+可确认的发射器堆栈如下：
+- `Emitter Update`：`Emitter State`、`Spawn Burst Instantaneous`
+- `Particle Spawn`：`Initialize Particle`、`Add Velocity Linear`、`Add Velocity 001 From Point`
+- `Particle Update`：`Scale Velocity`、`Solve Forces and Velocity`、`Particle State`、`Scale Sprite Size`
+- `Render`：`Sprite Renderer`
+
+当前打开的是 `Add Velocity 001`，右侧可确认的参数如下：
+- `Velocity Mode = From Point`
+- `Velocity Speed = 100.0`
+- `Constrain To Radius = 0.0`
+
+同一模块下的 `Offset` 设置可确认如下：
+- `Velocity Origin` 选择的是 `SimulationPosition`
+- `Origin Offset = 0.0, 10.0, 10.0`
+- `Origin Offset Coordinate Space = Local`
+
+左侧预览窗口里已经能看到三条短小白色粒子轨迹略微分开，不再完全贴合在同一条线上，说明这股附加速度正在把粒子从指定原点附近向外推开
+
+这一步的作用是给投射物群增加“发散起步”的动势。`Add Velocity Linear` 负责主前进方向，`Add Velocity 001 From Point` 则从一个偏移原点向外补一股速度，让多个粒子既整体向前飞，又不会呆板地重合成一束
+这是 `NS_MagicProjectiles` 中另一个发射器 `Source` 的切换画面。作者把视角从前面一直调整的 `Empty` 发射器切到 `Source`，准备继续补系统里还缺的部分
+
+当前画面可确认的信息如下：
+- 中央堆栈标题已经变成 `Source`
+- 发射器当前处于折叠状态，只能看到顶层分组：
+  - `Emitter Update`
+  - `Particle Spawn`
+  - `Particle Update`
+  - `Render`
+- 右侧 `Details` 面板为空白，说明这一帧没有选中某个具体模块参数
+- 左侧预览窗口里仍能看到几条白色细长粒子轨迹，说明系统结果保持可见，没有因为切换发射器而消失
+- 时间轴光标约在 `1.08` 秒，说明作者是在播放中途检查系统层里的另一个组成部分
+
+这张图本身不提供具体参数，而是记录工作流上的一步：当前教程已经不只是在单独修 `Empty` 发射器，而是开始检查整个系统中的其它发射器组件。结合本段“系统直接连接到发射器”的表述，这一帧的意义是把关注点从单个粒子模块，转回到系统内多个发射器的协同
+这是 `NS_MagicProjectiles` 的系统级对照图，`Source` 和 `Empty` 两个发射器同时展开，作者用它说明系统里一个发射器负责产生源粒子，另一个发射器再从前者取样并生成最终可见结果
+
+可确认的两发射器结构如下
+
+`Source` 发射器
+- `Emitter Update`：`Emitter State`、`Spawn Burst Instantaneous`
+- `Particle Spawn`：`Initialize Particle`、`Add Velocity Linear`、`Add Velocity 001 From Point`
+- `Particle Update`：`Scale Velocity`、`Solve Forces and Velocity`、`Particle State`、`Scale Sprite Size`
+- `Render`：`Sprite Renderer`
+
+`Empty` 发射器
+- `Emitter Update`：`Emitter State`、`Spawn Particles from Other Emitter`
+- `Particle Spawn`：`Initialize Particle`、`Sample Particles from Other Emitter`
+- `Particle Update`：`Solve Forces and Velocity`、`Particle State`
+- `Render`：`Ribbon Renderer`
+
+右侧当前选中的仍是 `Empty > Initialize Particle`，可确认的参数如下
+- `Lifetime Mode = Direct Set`
+- `Lifetime = 1.5`
+- `Color Mode = Unset`
+- `Position Mode = Simulation Position`
+- `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Size Mode = Unset`
+- `Ribbon Width Mode = Unset`
+- `Ribbon Facing Mode = Unset`
+- `Ribbon Twist Mode = Unset`
+
+左侧预览窗口里已经能看到一串连续的白色细线被拉成带状尾迹，说明 `Ribbon Renderer` 正在利用前面的源粒子生成拖尾结果，而不再只是几个独立短条
+
+这张图明确了当前系统分工：`Source` 负责生成和推动粒子，`Empty` 通过 `Spawn/Sample Particles from Other Emitter` 读取这些粒子，再交给 `Ribbon Renderer` 画出连续拖尾。也就是说，教程这一段已经从“调单个粒子速度”推进到“用一个发射器驱动另一个发射器产出最终丝带效果”
+
+### 00:17:56-00:18:56 关键流程 05
+
+- 本段定位：关键流程 05。
+- 知识点：需要解釋如何解決。
+- 知识点：我们必须在这里转换。
+- 知识点：需要用3个鋼管来发射。
+- 知识点：我们必须用3个鋼管来发射。
+- 知识点：为了防止鋼管問題, 我们需要设置下一个方式。
+
+**关键画面：**
+
+这是 `NS_MagicProjectiles` 中 `Empty` 发射器的 `Sample Particles from Other Emitter` 设置图，作者正在控制从 `Source` 发射器采样哪些粒子属性，以避免生成过多或错误连接的丝带
+
+系统结构在这一帧可确认如下
+
+`Source` 发射器
+- `Emitter Update`：`Emitter State`、`Spawn Burst Instantaneous`
+- `Particle Spawn`：`Initialize Particle`、`Add Velocity Linear`、`Add Velocity 001 From Point`
+- `Particle Update`：`Scale Velocity`、`Solve Forces and Velocity`、`Particle State`、`Scale Sprite Size`
+- `Render`：`Sprite Renderer`
+
+`Empty` 发射器
+- `Emitter Update`：`Emitter State`、`Spawn Particles from Other Emitter`
+- `Particle Spawn`：`Initialize Particle`、`Sample Particles from Other Emitter`
+- `Particle Update`：`Solve Forces and Velocity`、`Particle State`
+- `Render`：`Ribbon Renderer`
+
+当前选中的是 `Empty > Sample Particles from Other Emitter`，右侧可确认的设置如下
+- `Reject Particle By Sampled Age = Disabled`
+- `Reject Particle If Sampled Index ... = Enabled`
+- `Reject Particle on Sampled Part... = Disabled`
+
+采样项中可确认的设置如下
+- `Position Sampling = Apply to Attribute`
+- `Applied Position Offset = 0.0, 0.0, 0.0`
+- `Velocity Sampling = Disabled`
+- `Color Sampling = Disabled`
+- `Age Sampling = Disabled`
+- `Lifetime Sampling = Disabled`
+- `Mass Sampling = Disabled`
+- `Material Random Sampling = Disabled`
+- `Sprite Size Sampling = Disabled`
+- `Sprite Rotation Sampling = Disabled`
+- `Sprite Facing Sampling = Disabled`
+- `Sprite Alignment Sampling = Disabled`
+- `Mesh Scale Sampling = Disabled`
+- `Mesh Orientation Sampling = Disabled`
+- `Dynamic Material Parameter 0/1/2/3 Sampling = Disabled`
+- `Particle ID Sampling = Disabled`
+- `Ribbon UV Distance = Disabled`
+
+左侧预览窗口里能看到一个非常亮的白色扁圆形尾迹块，说明当前 Ribbon 已经被大量源粒子驱动，正处在需要收敛采样规则的阶段
+
+这张图的核心是在“少采样、只拿必要信息”。作者保留位置采样，把其他大多数属性采样都关掉，并启用基于采样索引的剔除逻辑，目的是只让目标那几条带状结果跟随源粒子位置，而不是把所有源粒子属性都复制过来，避免丝带混乱或数量失控
+这是 `Empty > Sample Particles from Other Emitter` 的继续设置图，作者把注意力移到 `Particle ID (Ribbon ID)` 相关采样上，用它来决定 Ribbon 如何继承或输出源粒子的编号，从而避免多条带子错误连在一起
+
+本帧可确认的系统结构与上一张一致
+- `Source` 发射器负责产生源粒子并用 `Sprite Renderer` 显示
+- `Empty` 发射器通过 `Spawn Particles from Other Emitter` 和 `Sample Particles from Other Emitter` 读取这些源粒子
+- `Empty` 最终使用 `Ribbon Renderer`
+
+当前右侧面板新增可确认的信息如下
+- `Particle ID Sampling` 的下拉菜单已展开
+- 可见选项包括：
+  - `Disabled`
+  - `Apply to Attribute`
+  - `Output Only`
+- 同一分组标题显示为 `Particle ID (Ribbon ID)`
+- 紧接其后的 `Ribbon UV Distance` 也可见为 `Output Only`
+
+左侧预览窗口里白色尾迹仍然是一整团高亮块，说明作者此时正处于“修正 Ribbon 归属关系”的阶段，还没有完全把带子拆分干净
+
+这张图对应的关键流程是：Ribbon 不只需要采样位置，还需要正确处理每个样本的 `Particle ID / Ribbon ID`。如果这个编号没有正确输出或绑定，多个源粒子生成的丝带可能会互相串接成一整片。作者此时打开下拉菜单，就是在决定编号应该被禁用、写回属性，还是只作为输出传递给后续 Ribbon 使用
+这是 `Source` 发射器的基础发射设置图，作者在这里回到源头，把源粒子的发射数量明确限制为 `3`，为后面三条独立 Ribbon 提供稳定的一一对应关系
+
+这一帧可确认的系统结构如下
+
+`Source` 发射器
+- `Emitter Update`：`Emitter State`、`Spawn Burst Instantaneous`
+- `Particle Spawn`：`Initialize Particle`、`Add Velocity Linear`、`Add Velocity 001 From Point`
+- `Particle Update`：`Scale Velocity`、`Solve Forces and Velocity`、`Particle State`、`Scale Sprite Size`
+- `Render`：`Sprite Renderer`
+
+`Empty` 发射器
+- `Emitter Update`：`Emitter State`、`Spawn Particles from Other Emitter`
+- `Particle Spawn`：`Initialize Particle`、`Sample Particles from Other Emitter`
+- `Particle Update`：`Solve Forces and Velocity`、`Particle State`
+- `Render`：`Ribbon Renderer`
+
+右侧当前选中的是 `Source`，可确认的参数如下
+- `Interpolated Spawning = Enabled`
+- `Sim Target = CPUSim`
+- `Calculate Bounds Mode = Dynamic`
+
+`Emitter State` 中可确认
+- `Life Cycle Mode = System`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Once`
+- `Loop Duration Mode = Fixed`
+- `Loop Duration = 3.0`
+- `Loop Delay = 0.0`
+
+`Spawn Burst Instantaneous` 中可确认
+- `Spawn Count = 3`
+- `Spawn Time = 0.0`
+- `Spawn Probability = 1.0`
+- `Loop Count Limit = 1`
+
+左侧预览窗口中已经能看到一个被拉成长条的亮白尾迹体，说明三颗源粒子正在被后续 Ribbon 组合成可见拖尾
+
+这张图给出本段最核心的解决办法：如果希望得到三条独立的丝带，就先在 `Source` 里只生成 `3` 个源粒子，再让 `Empty` 基于采样结果去生成对应 Ribbon。这样每个源粒子都能稳定对应一条带子，能明显降低 Ribbon 串接错乱的问题
+
+### 00:20:45-00:25:34 UV
+
+- 本段定位：UV。
+- 知识点：我们设置一條对着我们的UV關聯。
+- 知识点：我们设置了一條对着UV的關聯。
+- 知识点：有个U和一條是我们要转换的。
+- 知识点：或者我们稱之为, 需要转换在X線上。
+- 知识点：我们设置了一个X、 一條对着UV的關聯。
+
+**关键画面：**
+
+这是材质 `M_MagicRibbon` 的一段 UV 控制节点图，作者开始把 Ribbon 材质的 `TexCoord` 与 Niagara 传入的 `Dynamic Parameter` 关联起来，为后续按 `U/X` 方向滚动或偏移纹理做准备
+
+节点定义集
+- `TexCoord[0]`
+  - `Coordinate Index = 0`
+  - 输出当前材质使用的基础 UV 坐标
+- `Add`
+  - 节点标题显示为 `Add(1)`
+  - `B = 1.0`
+  - 作用是给输入 UV 再叠加一个固定或可替换的偏移值
+- `Dynamic Parameter`
+  - `Parameter Index = 0`
+  - 输出端包括 `Param1`、`Param2`、`Param3`、`Param4`、`RGB`、`RGBA`
+  - 左侧参数面板里可见 `Param Names` 仍为默认的 `Param1~Param4`
+  - `Default Value` 为白色，`R/G/B/A = 1.0`
+
+连线集
+- `TexCoord[0]` 输出 -> `Add.A`
+- `Add.B` 当前直接使用常量 `1.0`
+- `Dynamic Parameter` 在本帧尚未连入可见节点，但已被单独摆入图中，显然是下一步准备接入 UV 运算链
+
+设置/参数
+- 预览窗口当前是一个纯黑圆盘，说明这段节点还没完整接到最终可见的发光或透明计算上
+- 底部统计可见：
+  - `Texture samplers: 3/16`
+  - `Texture Lookups (Est.): VS(0), PS(3)`
+  - `Shader Count: 4`
+
+输出/预览
+- 当前可见链路只建立了“基础 UV + 偏移”的骨架
+- 结合本段正文多次提到的 `UV`、`U` 和 `X`，作者此时的目标是把 Niagara 传来的动态参数映射到 Ribbon 材质的某个 UV 轴上，让纹理能沿带子方向移动或错位，而不只是静态贴在 Ribbon 上
+这是材质 `M_MagicRibbon` 中一段扭曲贴图采样节点图，作者把前面整理过的 `uv` 输入接到一张噪声/扭曲纹理 `T_Distortion_01` 上，并从采样结果里取出 `R/G` 两个通道，准备把它们当成二维 UV 扰动量使用
+
+节点定义集
+- `uv`
+  - 一个绿色命名节点
+  - 作为当前这段图的 UV 输入源
+- `Texture Sample Parameter2D` `T_Distortion_01`
+  - 参数名为 `T_Distortion_01`
+  - 预览图是灰白噪声纹理
+  - 左侧属性面板可见其底层纹理资产为 `T_Distortion_Noise`
+  - `Sampler Type = Color`
+  - `Const Coordinate = 0`
+- `Mask (R G)`
+  - 只保留纹理采样结果中的 `R` 与 `G` 通道
+  - 作用是把彩色采样结果缩减成二维向量
+
+连线集
+- `uv` -> `T_Distortion_01.UVs`
+- `T_Distortion_01.RGB` -> `Mask (R G)` 输入
+
+设置/参数
+- `T_Distortion_01` 左侧参数面板可确认：
+  - `Parameter Name = T_Distortion_01`
+  - `MipValueMode = None (use computed mip level)`
+  - `Sampler Source = From texture asset`
+  - `Automatic View Mip Bias = Enabled`
+- 字幕给出当前说明语义：`The semi UV coordinates`
+- 左侧预览窗口仍是接近纯黑的几何体，说明这段扭曲链还未完全接入最终发光结果
+
+输出/预览
+- 当前这段链路的输出是一个基于噪声纹理的二维扰动向量候选值
+- 通过只取 `R/G` 两个通道，作者等于把一张纹理变成了可驱动 `U/V` 偏移的二维数据源，后续可以把 Ribbon 的纹理沿带子表面做出流动、抖动或撕裂感，而不是保持规则直线 UV
+这是材质 `M_MagicRibbon` 中“把扭曲真正加到主贴图 UV 上”的节点图。作者把噪声贴图得到的 `RG` 偏移量，与 Niagara 传入的 `Dynamic Parameter` 一起做缩放和偏移，然后把结果送到主纹理 `T_RibbonMain` 的 `UVs`
+
+节点定义集
+- `Mask (RG)` 上支路
+  - 提供一组二维 UV 扰动值
+- `Mask (RG)` 下支路
+  - 提供另一组二维值，可能来自另一份 UV/噪声拆分结果
+- `Dynamic Parameter`
+  - `Parameter Index = 0`
+  - 输出端可见自定义命名：
+    - `Distortion`
+    - `RandomUVOffset`
+    - `Param3`
+    - `Param4`
+  - 本帧中 `Distortion` 与 `RandomUVOffset` 都被接入后续运算
+- `Multiply` 上支路
+  - 把上方 `Mask (RG)` 与 `Distortion` 强度相乘
+- `Multiply(-0.5)`
+  - 节点标题显示 `Multiply(-0.5)`
+  - `B = -0.5`
+  - 用来把某路偏移整体反向并缩放一半
+- `Add(0,1)`
+  - `A = 0.0`
+  - `B = 1.0`
+  - 把前面算出的偏移重新平移回可用于采样的 UV 区间
+- `Multiply` 下支路
+  - 接收下方 `Mask (RG)` 与 `RandomUVOffset`，用于另一组 UV 偏移控制
+- `Texture Sample Parameter2D` `T_RibbonMain`
+  - 参数名为 `T_RibbonMain`
+  - 其 `UVs` 端口等待接收前面整合后的 UV 结果
+- 材质输出 `M_MagicRibbon`
+  - 右侧可见 `Emissive Color`、`Opacity`、`World Position Offset` 等输出口
+
+连线集
+- 上方 `Mask (RG)` -> 上方 `Multiply.A`
+- `Dynamic Parameter.Distortion` -> 上方 `Multiply.B`
+- 上方 `Multiply` -> `Add(0,1)` 前级链路
+- `Dynamic Parameter.RandomUVOffset` -> `Multiply(-0.5).A`
+- `Multiply(-0.5).B = -0.5`
+- `Multiply(-0.5)` -> `Add(0,1)` 另一输入
+- 下方 `Mask (RG)` -> 下方 `Multiply.A`
+- `Dynamic Parameter` 的另一输出 -> 下方 `Multiply.B`
+- 整合后的结果最终用于驱动 `T_RibbonMain.UVs`
+
+设置/参数
+- 左侧属性面板显示当前选中的是 `Add`
+  - `Const A = 0.0`
+  - `Const B = 1.0`
+- 字幕明确说明当前目的：`We will add here, so that we have distortion applied`
+- 左侧预览窗口仍是黑色平面，说明作者此时在搭建 UV 运算链，还没有把最终可视结果完整调亮
+
+输出/预览
+- 这张图完成了“噪声扰动 + 动态参数控制 + 偏移回采样区间”的关键步骤
+- 结果是 `T_RibbonMain` 不再使用静态 UV，而是使用一套会受 Niagara 动态参数驱动的扭曲 UV。这样 Ribbon 主纹理就能沿带子长度产生滚动、抖动和随机偏移，视觉上不再像一条完全规则的平直贴图
+
+### 00:25:34-00:30:10 Lerp
+
+- 本段定位：Lerp。
+- 知识点：我们已经可以更多的移动 用这个绘图的绘图 需要给你们看它是什么 不同的绘图 用不同的功能 用不同的绘图 这个绘图是用来做墨镜 但不是你可能想象的墨镜。
+- 知识点：这就是用来做 用来做主体的绘图 在这里问它们的名字 我们需要什么 找绘图 需要去到文件里 我们来拿这个 这个很棒 调节调节调节调到0 加墨镜。
+- 知识点：可能需要找到一些东西 我们需要找到有趣的声音 需要去到文件里面用声音 可能这个会做 需要做什么 需要把墨镜和主体的绘图 加上R频道。
+- 知识点：加Lerp 声音 墨镜 需要把它调到0 如果我们有墨镜的影响 需要有什么事 需要有0到1的数字 调节调节调到 如果我们有0的数字 需要有白色的绘图。
+- 知识点：如果我们把墨镜调到白色 结果就没有什么大问题 就会是一般的绘图 但如果我们仍然调节调到Lerp 需要有B值 需要用这个墨镜 需要有这个绘图。
+- 核对对象：`Lerp`。
+
+**关键画面：**
+
+这是材质 `M_MagicRibbon` 中更完整的主纹理 UV 组装图。作者把前面两路噪声/扭曲数据、`Dynamic Parameter` 提供的控制量，以及基础 `uv` 一起合成，准备把最终结果送给 `T_RibbonMain`
+
+节点定义集
+- `uv`
+  - 基础 UV 输入节点
+- 上方 `Mask (RG)`
+  - 提供第一路二维扰动
+- `Dynamic Parameter`
+  - `Parameter Index = 0`
+  - 输出端可见命名：
+    - `Distortion`
+    - `RandomUVOffset`
+    - `Param3`
+    - `Param4`
+- 上方 `Multiply`
+  - 把第一路 `Mask (RG)` 与 `Dynamic Parameter.Distortion` 相乘
+- `Multiply(-0.5)`
+  - `B = -0.5`
+  - 把 `RandomUVOffset` 乘以负半幅值
+- 上方 `Add`
+  - 把 `uv` 与上一轮扰动结果叠加
+- 下方纹理采样 `T_Distortion_02`
+  - 预览图是蓝紫色噪声/法线状纹理
+  - 用作第二路扰动来源
+- 下方 `Mask (RG)`
+  - 从 `T_Distortion_02` 中取 `R/G`
+- 下方 `Multiply`
+  - 把第二路 `Mask (RG)` 与 `Dynamic Parameter` 的另一输出相乘
+- 中间 `Add`
+  - 把上支路结果与下支路结果再汇合
+- `T_RibbonMain`
+  - 主 Ribbon 纹理采样节点
+  - 其 `UVs` 将接收前述合成结果
+- 材质输出 `M_MagicRibbon`
+  - 右侧可见 `Emissive Color`、`Opacity`、`World Position Offset`
+
+连线集
+- `uv` -> 上方 `Add.A`
+- 上方 `Mask (RG)` -> 上方 `Multiply.A`
+- `Dynamic Parameter.Distortion` -> 上方 `Multiply.B`
+- `Dynamic Parameter.RandomUVOffset` -> `Multiply(-0.5).A`
+- `Multiply(-0.5)` -> 上方 `Add.B`
+- 上方 `Add` 输出 -> 中间 `Add.A`
+- `T_Distortion_02.RGB` -> 下方 `Mask (RG)`
+- 下方 `Mask (RG)` -> 下方 `Multiply.A`
+- `Dynamic Parameter` 的另一输出 -> 下方 `Multiply.B`
+- 下方 `Multiply` -> 中间 `Add.B`
+- 中间 `Add` 的输出用于驱动 `T_RibbonMain.UVs`
+
+设置/参数
+- 左侧属性面板当前没有显示具体数值参数，主要用于浏览整体链路
+- 字幕说明当前意图：`I'll show you what comes out of it`
+- 右侧材质输出面板中 `Opacity = 1.0`
+
+输出/预览
+- 当前节点图已经把“基础 UV、动态偏移、双路噪声扰动”汇合成一套主 UV
+- 这意味着 `T_RibbonMain` 不再只沿单一路径平移，而是会同时受到随机偏移和两层噪声形变影响，最终带来更复杂的 Ribbon 表面流动与撕裂感
+这是材质 `M_MagicRibbon` 的 `Lerp` 混合链图，作者把一张遮罩纹理 `T_Mask` 与主纹理 `T_RibbonMain` 组合起来，准备用遮罩控制 Ribbon 哪些区域显示主形态、哪些区域被裁掉或减弱
+
+节点定义集
+- `Texture Sample Parameter2D` `T_Mask`
+  - 参数名为 `T_Mask`
+  - 预览图是黑白云状/烟状遮罩纹理
+  - 输出口包括 `RGB`、`R`、`G`、`B`、`A`、`RGBA`
+- `Lerp`
+  - 节点标题显示 `Lerp(1,0.5)`
+  - `A = 1.0`
+  - `Alpha = 0.5`
+  - `B` 端在当前帧未显示明确常量，显然由贴图采样或后续链路决定
+- `Texture Sample Parameter2D` `T_RibbonMain`
+  - 主 Ribbon 纹理
+  - 预览图可见是亮丝带状图案
+- `Multiply`
+  - 节点标题显示 `Multiply(0)`
+  - `A = 0.0`
+  - 用于对 `T_RibbonMain` 的某个通道进一步缩放
+- 材质输出 `M_MagicRibbon`
+  - 右侧可见 `Emissive Color`、`Opacity`
+- 左侧材质属性面板可确认：
+  - `Material Domain = Surface`
+  - `Blend Mode = Translucent`
+  - `Shading Model = Unlit`
+  - `Cast Ray Traced Shadows = Enabled`
+
+连线集
+- `T_Mask` 的采样输出 -> `Lerp.B` 或其前级混合链
+- `T_RibbonMain` 的某个通道输出 -> 下方 `Multiply`
+- `Lerp` 和 `Multiply` 位于同一最终输出区域，说明它们会共同参与发光或透明度计算
+
+设置/参数
+- `Lerp` 当前的显式常量为 `A = 1.0`、`Alpha = 0.5`
+- `Multiply` 当前显式常量为 `A = 0.0`
+- 左侧预览窗口仍是黑色几何体，说明材质仍在搭建中，尚未恢复可见发光效果
+
+输出/预览
+- 这张图对应本段“用遮罩和主体贴图做 Lerp”的核心操作
+- 实际意义是：用 `T_Mask` 提供一张 0 到 1 的过渡图，把 `T_RibbonMain` 的形态控制在需要的位置上。遮罩黑的地方可以让主纹理被压掉，遮罩白的地方保留主纹理，从而让 Ribbon 轮廓更像能量火焰而不是整块均匀贴图
+这是一个新的材质函数 `MF_ChromaticAbberation` 的起始搭建画面。作者从 `M_MagicRibbon` 临时切出，准备单独做一个可复用的“色差/偏移”函数，再回到主材质里调用
+
+节点定义集
+- `Texture Object`
+  - 左侧唯一已放入图中的输入对象
+  - 预览图看起来是一张浅色噪声或纹理贴图
+  - 用作后续函数的纹理输入源
+- 搜索面板
+  - 当前打开节点搜索框
+  - 可见分类包括 `Blends`、`Color`、`Coordinates`、`Custom`、`Debug`、`Depth`、`Distance Fields` 等
+  - 说明作者正在选择接下来要加入函数里的节点
+- `Output Result`
+  - 右侧函数输出节点
+  - 当前处于 `Previewing`
+  - 还没有任何有效输入连到输出
+
+连线集
+- 当前帧没有已完成的节点连线
+- `Texture Object` 与 `Output Result` 仍然分离，函数尚未形成有效计算链
+
+设置/参数
+- 顶部标签显示当前编辑的是 `MF_ChromaticAbberation`
+- 左侧属性面板表明这是 `Material Function`
+- `Library Categories Text` 中可见分类为 `Misc`
+- `Preview Blend Mode = Opaque`
+- 底部报错明确显示：
+  - `[SM6] Missing function output 'Result'`
+
+输出/预览
+- 这张图说明函数还处在骨架阶段，只创建了输入对象和输出节点，但还没把真正的色差逻辑接上
+- 结合本段从 `Lerp` 扩展到更多贴图控制的语境，可以推断作者准备把某种纹理偏移或通道错位逻辑封装进 `MF_ChromaticAbberation`，以便后续在 Ribbon 主材质中复用。不过当前帧只能确认“函数已新建且输出缺失”，不能确认具体色差算法细节
+
+### 00:30:10-00:35:08 UV
+
+- 本段定位：UV。
+- 知识点：这是一个Texter Object 需要把它分成三个Texter Samples 在这里刷过这个Texter 它们都会用同一个Texter。
+- 知识点：但有一个不同 我们会做什么 它们都会有同一个Texter 但有不同的UV绘图 每个Texter Samples 需要变化一点 我们的UV绘图。
+- 知识点：我制作了一个 Texter Coordinates的Texter 我们再刷一个Input 这是一个普通的Scalar Input 我们叫它Influence。
+- 知识点：它是我们的Texter Coordinates的Texter 我们把它们分成这个数字 这样可以把数字 比如说一千二三四 而不是一千。
+- 知识点：我们分成了它们 因为我们需要 它们的UV绘图的小分数 这是为了方便 我们的数字更好 我们要做什么 我们需要一个更多的UV绘图 可以转移不同的UV。
+- 知识点：可以转移普通的UV绘图 这就是我们的Vector2 可以用Preview为绘图 可以用Preview为 每个UV的standard。
+- 知识点：Influence会设定为0 我们需要什么 它们用了一张Texter 它们是UV绘图 它们是用了 standard UV绘图 可以把它们变化。
+
+**关键画面：**
+
+这是材质函数 `MF_ChromaticAbberation` 的初步采样骨架图。作者把一个 `Texture2D` 输入接进函数，并摆出多个 `Texture Sample` 节点，准备让它们共享同一张纹理，但使用略有差异的 UV，以做出色差偏移效果
+
+节点定义集
+- 左侧输入节点
+  - 一个未完全显示名称的函数输入节点
+  - 可确认是某个函数输入口，负责向后续链路提供基础数据
+- `Input In (Texture2D)`
+  - 类型明确为 `Texture2D`
+  - 当前处于 `Preview` 状态
+  - 作为函数内部统一使用的纹理输入
+- `Texture Sample` 上方
+  - 独立的纹理采样节点
+  - 包含 `UVs`、`Tex`、`RGB/R/G/B/A/RGBA` 输出
+- `Texture Sample` 中间
+  - 第二个纹理采样节点
+  - 结构与上方节点相同
+- `Texture Sample` 下方
+  - 第三个纹理采样节点
+  - 结构与前两者相同
+- `Output Result`
+  - 右侧函数输出节点
+  - 当前为 `Previewing`
+
+连线集
+- 左侧函数输入节点 -> `Input In (Texture2D)`
+- 当前帧尚未看到 `Input In (Texture2D)` 明确连到三个 `Texture Sample` 的 `Tex` 端口
+- 三个 `Texture Sample` 与 `Output Result` 之间也还没有可见完成连线
+
+设置/参数
+- 左侧属性面板当前选中一个 `Texture Sample`
+  - `MipValueMode = None (use computed mip level)`
+  - `Sampler Source = From texture asset`
+  - `Automatic View Mip Bias = Enabled`
+  - `Const Coordinate = 0`
+  - `Texture = None`
+  - `Sampler Type = Color`
+- 左侧预览球体当前是默认灰白棋盘球，说明函数还没形成有效输出
+- 底部错误仍然存在：
+  - `[SM6] Missing function output 'Result'`
+
+输出/预览
+- 这张图表达的不是最终算法，而是函数结构方向：一张输入纹理会被拆成多个 `Texture Sample` 复用
+- 结合本段正文，作者的目标是“同一张纹理，多个采样，不同 UV”，为后续分别偏移不同颜色通道或不同样本位置做准备，从而实现色差/多重采样效果
+这是 `MF_ChromaticAbberation` 的核心搭建图。作者已经把一张输入纹理、一个 `UV(Vector2)` 输入以及一个 `Influence(Scalar)` 输入接到三次纹理采样链上，并用 `Add`、`Subtract` 生成略微不同的 UV 偏移值，让三次采样共享同一张贴图但位置略有差异
+
+节点定义集
+- `TexCoord[0]`
+  - `Coordinate Index = 0`
+  - 提供默认 UV 参考
+- `Input UV (Vector2)`
+  - 一个向量 2 输入节点
+  - 当前处于 `Preview`
+  - 作为三次采样共同使用的基础 UV 输入
+- `In(Texture2D)`
+  - 纹理输入节点
+  - 作为三次 `Texture Sample` 的统一纹理来源
+- `Input Influence (Scalar)`
+  - 标量输入节点
+  - 用于控制 UV 偏移强度
+- `Multiply(0.001)`
+  - `B = 0.001`
+  - 把 `Influence` 压缩到很小的偏移量
+- `Add`
+  - 用于在基础 UV 上加一份微小偏移
+- `Subtract(1,1)`
+  - 当前显示 `A = 1.0`
+  - `B = 1.0`
+  - 结合连线位置，用于在基础 UV 上生成相反方向或另一侧的偏移
+- 三个 `Texture Sample`
+  - 使用同一张输入纹理
+  - 每个采样共享结构，但 UV 会略有差异
+- `Output Result`
+  - 函数输出节点
+  - 当前仍未形成最终输出连线
+
+连线集
+- `Input UV (Vector2)` -> 三个 `Texture Sample.UVs` 的基础输入链
+- `In(Texture2D)` -> 三个 `Texture Sample.Tex`
+- `Input Influence (Scalar)` -> `Multiply(0.001).A`
+- `Multiply(0.001)` -> `Add` / `Subtract` 的偏移量链
+- `Add` 的结果 -> 其中一个 `Texture Sample.UVs`
+- `Subtract(1,1)` 的结果 -> 另一个 `Texture Sample.UVs`
+- 未偏移的基础 `Input UV` -> 第三个 `Texture Sample.UVs`
+
+设置/参数
+- 本帧最关键的显式参数是 `Multiply.B = 0.001`
+- 这说明作者故意把偏移量控制在千分量级，避免 RGB 分离过大
+- 左侧预览球体仍是默认灰白材质球，底部错误依旧存在：
+  - `[SM6] Missing function output 'Result'`
+
+输出/预览
+- 这张图清楚说明了函数思想：同一张纹理做三次采样，但三组 UV 分别是“原始、正偏移、负偏移”
+- 这正是经典色差函数的骨架。后续只要把三次采样的不同颜色通道重新组合，就能得到边缘有轻微 RGB 分离的色差效果，而 `Influence` 用来控制这种分离有多强
+这是 `MF_ChromaticAbberation` 的完成态节点图。作者把三次纹理采样的结果分别拆出不同颜色通道，再用 `MakeFloat3` 重新组装成一个新的 RGB 输出，完成色差函数的核心逻辑
+
+节点定义集
+- `Add`
+  - 为上方一组采样提供正向 UV 偏移
+- `Subtract`
+  - 为下方一组采样提供反向 UV 偏移
+- 三个 `Texture Sample`
+  - 上方采样：使用一组偏移后的 UV
+  - 中间采样：当前处于 `Previewing`
+  - 下方采样：使用另一组偏移后的 UV
+  - 三者都来自同一张输入纹理，但 UV 不同
+- `MakeFloat3`
+  - 接收三路标量输入 `X(S)`、`Y(S)`、`Z(S)`
+  - 用来把三次采样中选出的不同颜色通道重组成最终颜色
+- `Output Result`
+  - 已经接入可见结果
+  - 当前预览窗口也能看到有效纹理输出
+
+连线集
+- 左侧统一输入链分别进入 `Add`、中间直连采样链、`Subtract`
+- `Add` 的结果 -> 上方 `Texture Sample.UVs`
+- 中间基础 UV -> 中间 `Texture Sample.UVs`
+- `Subtract` 的结果 -> 下方 `Texture Sample.UVs`
+- 三个 `Texture Sample` 的不同颜色通道分别连入 `MakeFloat3.X / Y / Z`
+- `MakeFloat3` -> `Output Result`
+
+设置/参数
+- 左侧预览面板标题显示当前正在预览 `MaterialExpressionTextureSample_2`
+- 预览窗口已经不再是默认球体，而是显示一块可见纹理平面，说明函数输出已有效
+- 左侧属性面板当前选中的仍是某个 `Texture Sample`
+  - `MipValueMode = None (use computed mip level)`
+  - `Sampler Source = From texture asset`
+  - `Automatic View Mip Bias = Enabled`
+  - `Const Coordinate = 0`
+
+输出/预览
+- 这张图完成了色差函数的最后一步：同一张纹理做三次采样，然后不是直接混合整张 RGB，而是把不同采样的不同颜色通道拆开后重新组装
+- 结果就是一个经典的 RGB 偏移效果：例如一个通道取正偏移样本，另一个通道取原始样本，第三个通道取反偏移样本。这样边缘会出现轻微的红绿蓝分离感，而 `Influence` 控制这种分离量的大小
+
+### 00:35:08-00:40:07 UV、颜色
+
+- 本段定位：UV、颜色。
+- 知识点：当我们组合三个RGB频道 我们就会有 这么一个有趣的东西 红、绿、蓝的频道 都会变化 当它们组合 我们就会有这么一个有趣的效果 比如我可以调整它的颜色。
+- 知识点：我选择一些声音 让它是这个 按照这个素质 它会是这种 您不能看到它 如果我调整到0 那么素质的调整 就会是这种 我调整的比例越大 越多我们调整UV固定。
+- 知识点：和RGB频道 我们就会有这么一个有趣的效果 如果我只调整R频道 我们就会有这个效果 因为它们都相互相互 但为什么我问R G和B 因为可以调整颜色的调整。
+- 知识点：200度我已经很快地移动了 它有一个红 绿 和 蓝的频道在它的核心 如果我调整到红的地方 结果会很差 只有红的频道会在每个颜色中结合。
+- 知识点：我们要把它们放在这里 我们把搜索中放在这里 现在我们就会把材料放在这里 然后我们就会用它 这是我们的颜色。
+- 知识点：它会是一个调整的调整 这是我们的颜色 这是我们的铁板的颜色 我们就会用这个颜色调整 我们就会用新的材料功能 需要开始调整颜色。
+- 知识点：可以把颜色调整到这里 首先我们需要一个颜色 接着我们就会设置UV 在最后的影响 我们就会保留 首先我们需要一个颜色。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这是材质函数 `MF_ChromaticAbberation` 的结果预览图。三次纹理采样经过不同 UV 偏移后，作者把它们重新组合成一个 `MakeFloat3` 输出，预览窗里已经能看到明显的红绿蓝彩边，证明色差函数开始生效
+
+可确认的节点关系如下
+- 左侧仍是三路 `Texture Sample`
+- 它们的不同颜色通道分别接入 `MakeFloat3`
+- `MakeFloat3` 直接连到右侧 `Output Result`
+- 左侧属性面板当前显示 `Material Function = MakeFloat3`
+
+当前可见效果特征如下
+- 预览窗口中的原始浅色气泡/团块纹理周边出现明显的红、黄、蓝、青色边缘
+- 色彩分离主要出现在高对比边界，主体内部仍以浅色为主
+- 这种彩边不是整体染色，而是 RGB 通道位置错开后形成的边缘偏移
+- 字幕直接说明当前状态：`When they are combined, we get such an interesting effect`
+
+这张图传达的核心是：色差函数的正确做法不是简单给整张纹理上色，而是让不同通道使用不同 UV 采样后再合并。这样得到的是“边缘有颜色分裂”的镜头像差感，而不是一层统一色相覆盖
+这是主材质 `M_MagicRibbon` 中“颜色贴图 + 遮罩 + 粒子颜色”链路的搭建画面。作者已经从单独的色差函数回到主材质，开始把一张颜色纹理、遮罩纹理和 Niagara 提供的 `Particle Color` 连接到同一套材质逻辑里
+
+可确认的节点如下
+- `T_Color`
+  - 节点标题显示为 `T_Color`
+  - 类型是 `Param Tex Object`
+  - 左侧属性面板可确认：
+    - `Parameter Name = Param`
+    - `Texture = T_Inky_Smoke_Tile`
+    - `Sampler Type = Color`
+  - 节点预览图是一张黑白烟雾/云状纹理
+- `Add`
+  - 位于左下方
+  - 当前只看到其输出连向后方节点，输入细节未完全展开
+- `T_Mask`
+  - 类型为 `Param2D`
+  - 位于下方中部
+  - 接收来自 `Add` 的输入
+- `Particle Color`
+  - 类型为 `Input Data`
+  - 右侧可见输出 `RGB`、`R`、`G`、`B`
+
+当前可见连线集
+- `Add` 输出 -> `T_Mask` 左侧输入链
+- `T_Mask` 的某个颜色通道正在向右侧后续链路输出
+- `Particle Color` 已被摆入当前工作区域，显然将参与后续颜色混合
+
+设置/参数
+- 左侧预览窗口当前是纯黑平面，说明颜色链还未完整接入最终发光或透明输出
+- 底部统计仍可见：
+  - `Texture samplers: 3/16`
+  - `Texture Lookups (Est.): VS(0), PS(3)`
+  - `Shader Count: 4`
+
+这张图表达的重点不是最终结果，而是材质开始进入“颜色控制”阶段：`T_Color` 负责提供基础纹理颜色，`T_Mask` 负责限定显示区域，而 `Particle Color` 则让 Niagara 系统可以在材质层继续调色。这样后面既能保留贴图细节，又能在系统里实时改颜色倾向
+这是主材质 `M_MagicRibbon` 中“颜色贴图 -> 色差函数 -> 去饱和”控制链的搭建图。作者已经把 `T_Color` 接进前面做好的 `MF_ChromaticAbberation`，再把结果送入 `Desaturation`，同时用一个向量参数统一控制色差强度、去饱和程度和乘法强度
+
+可确认的节点如下
+- `T_Color`
+  - 作为 `Param Tex Object`
+  - 输出接入 `MF_ChromaticAbberation`
+- `MF_ChromaticAbberation`
+  - 可见输入：
+    - `In (T2d)`
+    - `UV (V2)`
+    - `Influence (S)`
+  - 可见输出：
+    - `Result`
+- `Desaturation`
+  - 接收来自 `MF_ChromaticAbberation` 的结果
+  - 还接收一条额外控制线作为 `Fraction`
+- `Color Texture Control`
+  - 一个向量参数节点
+  - 左侧属性面板可确认：
+    - `Parameter Name = Color Texture Control`
+    - 通道命名：
+      - `R = Chroma`
+      - `G = Desaturation`
+      - `B = Multiply`
+    - 默认值：
+      - `Chroma = 15.0`
+      - `Desaturation = 1.0`
+      - `Multiply = 1.0`
+      - `A = 0.0`
+- `Particle Color`
+  - 位于右下区域，当前帧只看到节点本体的一部分
+
+当前可见连线集
+- `T_Color` -> `MF_ChromaticAbberation.In (T2d)`
+- `Color Texture Control.R (Chroma)` -> `MF_ChromaticAbberation.Influence (S)`
+- `MF_ChromaticAbberation.Result` -> `Desaturation` 颜色输入
+- `Color Texture Control.G (Desaturation)` -> `Desaturation.Fraction`
+- 还有一条上游 UV 连线进入 `MF_ChromaticAbberation.UV (V2)`
+
+设置/参数
+- 左侧预览窗口当前显示的是黑白烟雾纹理，顶部标题明确写着：
+  - `Previewing MaterialExpressionDesaturation_0`
+- 这说明当前正在预览去饱和节点结果，而不是原始色差函数结果
+- 底部统计此时显示：
+  - `Texture samplers: 0/16`
+  - `Texture Lookups (Est.): VS(0), PS(3)`
+  - `Shader Count: 0`
+
+这张图的关键意义是把“颜色控制”抽成了一个统一参数接口：
+- `Chroma` 控制色差函数偏移强度
+- `Desaturation` 控制去饱和程度
+- `Multiply` 预留给后续颜色/强度放大使用
+
+这样做之后，主材质不只是固定显示一张贴图，而是可以通过一个向量参数集中调节 UV 色差、彩度和整体强度，既方便做风格变化，也方便在 Niagara 系统或材质实例里做实时调参
+
+### 00:40:07-00:45:04 系统、颜色、透明度
+
+- 本段定位：系统、颜色、透明度。
+- 知识点：如果我们特别用这种东西, 如果我们转换质量, 需要得到更多的色彩, 但我们必须要非常小心。
+- 知识点：这样一个转换会发生, 我们也会制作颜色的调整, 让这些颜色差不多一样。
+- 知识点：在出口看什么? 我们看到面膜在出口, 当它有黑色时, 需要把颜色调成绿色。
+- 知识点：慢慢地, 它们会在这个颜色中出现, 我们把它放在这里。
+- 知识点：但几乎所有东西都准备好了, 我们把它放在透明度上, 还有我们还需要的东西。
+- 知识点：需要把25倍的颜色调成, 让它更加显示。
+- 知识点：我们可观察到, 颜色现在正在转移。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`系统`、`颜色`、`透明度`。
+
+**关键画面：**
+
+这是主材质 `M_MagicRibbon` 中 `MF_ChromaticAbberation -> Desaturation` 颜色链的参数预览图。作者把颜色控制参数调到一个非常激进的区间，预览窗里出现了极强的红蓝黄彩边效果，并明确提醒“必须非常小心”
+
+可确认的节点关系如下
+- 左侧颜色纹理输入 -> `MF_ChromaticAbberation.In (T2d)`
+- 上游 UV 与控制量 -> `MF_ChromaticAbberation.UV / Influence`
+- `MF_ChromaticAbberation.Result` -> `Desaturation`
+- 一条控制线进入 `Desaturation.Fraction`
+
+左侧 `Color Texture Control` 向量参数面板可确认的当前数值如下
+- `Chroma = 15.0`
+- `Desaturation = -5.0`
+- `Multiply = 1.0`
+- 第二个乘法槽可见为 `-5.0`
+- `A = 0.0`
+
+预览结果可确认如下
+- 黑白烟雾纹理边缘被拉成大面积红、蓝、青、黄的强烈彩边
+- 颜色分离已经明显超出轻微镜头像差的范围，趋向夸张的后期特效
+- 主体亮部仍然能看到原始纹理轮廓，但高对比区域几乎都被多色边缘包裹
+- 字幕直接提醒：`But we have to be very careful with this`
+
+这张图的作用是告诉读者：色差、去饱和和颜色乘法一旦数值过大，很容易把材质推到过饱和和失控状态。也就是说，当前链路已经有效，但它不是越大越好，而是需要把参数控制在能看出色差、又不破坏主体形状的范围内
+这是主材质 `M_MagicRibbon` 的整体颜色与透明度链路总览图。作者把前面分散调过的色差、颜色贴图、粒子颜色、遮罩和透明度逻辑全部放回同一张图中，检查它们怎样一起驱动最终材质输出
+
+可确认的主要结构如下
+- 左侧上方存在 `T_Color` 与 `MF_ChromaticAbberation` 所在的颜色链
+- 中上区域有多个颜色参数/颜色块节点，颜色包含偏黄、偏红、偏粉紫等，用于做颜色插值
+- 中央可见至少一个蓝色 `Lerp` 节点，预览结果是白到粉紫的渐变块
+- 左中和左下区域还存在多张纹理采样节点，仍在参与主颜色或遮罩计算
+- 中下区域可见 `Particle Color` 输入节点，说明 Niagara 发射器颜色仍会参与最终结果
+- 右侧是材质主输出节点，至少有两条主要连线汇入它
+
+当前预览与参数信息如下
+- 左侧预览窗口标题显示：`Previewing MaterialExpressionLinearInterpolate_1`
+- 预览面板中显示的是一块从白色过渡到粉紫色的颜色板，说明当前正在看 `Lerp` 混色结果，而不是最终发光结果
+- 左侧属性面板当前选中的是某个 `Multiply`
+  - `Const A = 0.0`
+  - `Const B = 1.0`
+
+底部统计可确认
+- `Texture samplers: 0/16`
+- `Texture Lookups (Est.): VS(3), PS(7)`
+- `User interpolators: 4/4 Scalars (1/4 Vectors)`
+- `Shader Count: 0`
+- `Preshaders: 10`
+
+这张图的关键信息不在单个参数，而在整体分工：
+- 一条链负责把颜色纹理与色差/去饱和结果整合成基础颜色
+- 一条链负责把 `Particle Color` 和遮罩/透明度逻辑整合到最终输出
+- 中间通过 `Lerp` 和 `Multiply` 做颜色插值与强度控制
+
+也就是说，到这一阶段材质已经不再是“单张贴图 + 单个颜色参数”，而是一个由系统颜色、材质纹理和透明度规则共同控制的复合网络
+这是把材质实例应用回 Niagara 系统后的场景验证图。作者已经在内容浏览器中选中 `M_MagicRibbon_Inst`，并在场景里观察 `NS_MagicProjectiles` 的实际效果，确认颜色和透明度链在真实发射器上是否成立
+
+可确认的场景与资源关系如下
+- 右侧 Outliner 中当前选中对象为 `NS_MagicProjectiles`
+- 右侧 Details 面板显示的是该 Niagara 组件实例
+- 下方 Content Browser 目录位于 `VFX_Library > Materials > MM`
+- 当前选中的资源是 `M_MagicRibbon_Inst`
+- 同目录还能看到：
+  - `M_MagicRibbon`
+  - `M_UberMaterial`
+
+当前可见结果特征如下
+- 角色前方出现两条偏粉白色核心的能量带
+- 核心外侧带有明显的紫色发光拖尾和半透明烟雾感
+- 颜色不再是前面测试里的纯白条，而是已经带有风格化的紫粉配色
+- 效果落在棋盘测试场景里，便于对比亮度、透明度和拖尾范围
+- 字幕说明作者已经把它保留在这个位置：`Yes, I kept it here`
+
+这张图的关键意义是“材质链路已经从节点预览走到系统实装”：
+- `M_MagicRibbon_Inst` 不只是材质编辑器里的结果，而是已经驱动 `NS_MagicProjectiles`
+- 颜色链、透明度链和 Ribbon 形态已经在真实粒子效果上共同生效
+- 读者可以据此确认：若想在系统里继续调色，优先调整材质实例参数，而不是回头改每个底层节点
+
+### 00:45:04-00:49:29 颜色、透明度、深度测试
+
+- 本段定位：颜色、透明度、深度测试。
+- 知识点：我们的面膜在这里和那里也在重新变化, 因为我们使用了0绿色和绿色。
+- 知识点：需要使用一些颜色。
+- 知识点：如果我把它们重新变化, 需要把它们放在重新变化上。
+- 知识点：为什么? 因为我们使用了0绿色和绿色的硬件。
+- 知识点：也就是它们把每个250绿色的硬件都转移到 每个250绿色的硬件中。
+- 知识点：它的颜色都是色彩的。
+- 知识点：它的颜色是被反转的。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`、`透明度`。
+
+**关键画面：**
+
+这是 `NS_MagicProjectiles` 在场景中的结果验证图，当前重点是观察颜色、透明度和遮罩重复后的实际显示问题
+
+可确认的结果特征如下
+- 场景里能看到三枚偏粉白色的细长投射物核心
+- 每枚核心周围都有明显的紫色半透明能量片和烟雾状拖尾
+- 地面和拖尾区域里出现了大量重复的亮紫色遮罩碎片，呈块状或片状散布
+- 这些碎片不是均匀柔和渐隐，而是出现较明显的重复图案和分段感
+- 字幕明确指出问题来源：`our here and there mask would also be repeated`
+
+可确认的场景/资源状态如下
+- Outliner 中选中的是 `NS_MagicProjectiles`
+- Details 面板显示的是该 Niagara 组件实例
+- Content Browser 中仍选中 `M_MagicRibbon_Inst`
+
+这张图的结论是：当前材质链已经能做出粉紫色发光和透明拖尾，但遮罩或颜色纹理在带子上重复得过于明显，导致“这里一块、那里一块”的重复块感。接下来需要继续在 UV、透明度或遮罩处理上收敛重复模式，而不是只继续加颜色强度
+这是主材质 `M_MagicRibbon` 的透明度/遮罩链路图。作者开始把一张单独的透明度遮罩纹理 `T_MaskOpacity` 接到多个 `Multiply` 链路里，用来更细地控制哪些部分可见、哪些部分淡出
+
+可确认的节点与参数如下
+- `Lerp`
+  - 节点标题显示 `Lerp(1,...)`
+  - `A = 1.0`
+  - 预览图为红色遮罩状结果
+- `Noise Mask Influence`
+  - 类型为 `Param (S)`
+  - `Default Value = 1.0`
+  - 其输出接入 `Lerp.Alpha`
+- `TexCoord[1]`
+  - `Coordinate Index = 1`
+  - 说明这一段透明度遮罩使用的是第二套 UV，而不是默认 `TexCoord[0]`
+- `T_MaskOpacity`
+  - 类型为 `Param2D`
+  - 左侧属性面板可确认：
+    - `Parameter Name = T_MaskOpacity`
+    - `Sampler Source = Shared: Clamp`
+    - `Texture = T_Gradient4`
+    - `Sampler Type = Color`
+  - 预览图为从白到黑的纵向渐变
+- 多个 `Multiply`
+  - 中央和右侧至少有三处 `Multiply`
+  - 最右侧蓝色高亮节点当前正在预览
+
+当前可见连线集
+- `Noise Mask Influence` -> `Lerp.Alpha`
+- `TexCoord[1]` -> `T_MaskOpacity.UVs`
+- `T_MaskOpacity` 的某个颜色通道 -> 右侧 `Multiply` 链
+- `Lerp` 输出 -> 中间 `Multiply`
+- 其他遮罩/颜色采样结果继续汇入后续 `Multiply`，共同驱动透明度结果
+
+预览结果可确认如下
+- 左侧预览窗口标题显示：`Previewing MaterialExpressionMultiply_8`
+- 预览平面上只剩下少量浅灰白色透明烟片，背景大部分变黑
+- 这说明当前乘法链已经在明显裁剪可见区域，不再是整张纹理大面积铺开
+
+这张图的核心作用是把“透明度控制”从单纯颜色遮罩，升级为“颜色遮罩 × 噪声遮罩 × 单独的梯度透明度贴图”。尤其 `TexCoord[1] + T_Gradient4` 这一组，说明作者希望用另一套 UV 控制一张渐变遮罩，让 Ribbon 在长度方向或宽度方向上更可控地淡入淡出，从而减少前一张里那种随机块状重复感
+这是主材质 `M_MagicRibbon` 透明度输出链的近景图，作者把纹理遮罩结果与 `Particle Color` 进一步相乘，确认最终输往材质输出的透明度/亮度结果
+
+可确认的节点关系如下
+- 左侧可见一个红色预览纹理节点，作为当前遮罩或颜色输入之一
+- `Particle Color` 节点位于上方中部，其输出向下游 `Multiply` 提供输入
+- 中间连续有三个 `Multiply`
+  - 第一个 `Multiply` 接收左侧遮罩链
+  - 第二个 `Multiply` 接收 `Particle Color`
+  - 第三个 `Multiply(1)` 当前正在预览
+- 一个 `Mask` 节点位于中下区域，但本帧未见其完成连线
+- 最右侧仍有一条连线继续通往更远处的材质主输出
+
+当前可见参数/预览如下
+- 高亮预览节点标题显示：`Multiply(1)`
+- 该节点可见常量：
+  - `B = 1.0`
+- 左侧预览窗口标题显示：`Previewing MaterialExpressionMultiply_8`
+- 预览结果是一张黑底上的灰白半透明丝带/烟雾纹理，边缘比前一张更平滑，重复感已明显收敛
+
+底部统计可确认
+- `Texture samplers: 0/16`
+- `Texture Lookups (Est.): VS(3), PS(7)`
+- `User interpolators: 4/4 Scalars (1/4 Vectors)`
+- `Preshaders: 11`
+
+这张图说明最终透明度不是单靠一张遮罩图决定，而是至少经过三层控制：
+- 纹理/噪声遮罩给出基础形态
+- `Particle Color` 参与系统级颜色或强度控制
+- 末端 `Multiply` 再统一做强度收口后送往材质输出
+
+结果是 Ribbon 的透明区域和亮区关系会同时受到材质纹理与系统颜色驱动，不会只是一张静态 Alpha 图。这正对应本段“颜色、透明度、深度测试”的主题：颜色链和透明度链已经真正耦合在一起
+
+### 00:49:29-00:51:01 UV、透明度
+
+- 本段定位：UV、透明度。
+- 知识点：为了增加某些软度。
+- 知识点：在本体上, 这是我们的基本设置。
+- 知识点：我们已经有了材料。
+- 知识点：现在它们仍然是这样。
+- 知识点：因为我们把它设置好了。
+- 核对对象：`透明度`。
+
+**关键画面：**
+
+这是主材质 `M_MagicRibbon` 透明度链末端的基础设置图，作者在最终 `Opacity` 输出前加入 `Depth Fade`，用它让 Ribbon 与场景表面接触时更柔和，不会生硬地切断
+
+可确认的节点与连线如下
+- 左下方一个 `Multiply` 当前处于 `Previewing`
+- `Multiply` 的输出接到 `Depth Fade.Opacity`
+- 一个标量参数节点 `Depth Fade` 接到 `Depth Fade.FadeDistance`
+- `Depth Fade` 的输出继续连向右上方材质主输出的 `Opacity`
+
+可确认的参数如下
+- 标量参数节点名称：`Depth Fade`
+- 左侧属性面板显示：
+  - `Parameter Name = Depth Fade`
+  - `Default Value = 0.0`
+  - `Slider Min = 0.0`
+  - `Slider Max = 0.0`
+- `Depth Fade` 节点本体可见：
+  - `FadeDistance = 100.0`
+
+右侧材质输出节点可确认
+- 当前连接的是 `Opacity`
+- 同一输出面板中还能看到 `Emissive Color`
+
+预览结果可确认如下
+- 左侧预览窗口标题显示：`Previewing MaterialExpressionMultiply_8`
+- 预览图中只剩下柔和的灰白烟带和细丝状结构，边缘较软，没有硬切片感
+- 字幕说明当前属于“基本设置”：`In principle, these are the basic settings`
+
+这张图的关键作用是给透明度链加上一层与场景深度相关的软化处理：
+- 上游 `Multiply` 决定基础可见度
+- `Depth Fade` 再根据几何体与场景表面的深度差做淡出
+
+这样 Ribbon 靠近地面、墙面或其他物体时，会更自然地渐隐，而不是直接穿模或出现硬边
+这是 `NS_MagicProjectiles` 中 `Ribbon_Magic` 发射器的 `Ribbon Renderer` 设置图。作者从材质节点切回 Niagara 系统，确认 Ribbon 使用的材质实例、朝向模式和基础形状是否与前面做的透明度链匹配
+
+系统结构在这一帧可确认如下
+
+`Source` 发射器
+- 作为上游源粒子发射器存在
+
+`Ribbon_Magic` 发射器
+- `Emitter Update`：`Emitter State`、`Spawn Particles from Other Emitter`
+- `Particle Spawn`：`Initialize Particle`、`Sample Particles from Other Emitter`
+- `Particle Update`：`Solve Forces and Velocity`、`Particle State`
+- `Render`：`Ribbon Renderer`
+
+右侧 `Ribbon Renderer` 细节面板可确认如下
+- `Material = M_MagicRibbon_Inst`
+- `Material User Param Binding = None`
+- `Facing Mode = Screen`
+- `Max Num Ribbons = 0`
+- `Use GPUInit = Disabled`
+
+`Ribbon Shape` 分组可确认
+- `Shape = Plane`
+- `Use Material Backface Culling = Disabled`
+- `Use Geometry Normals = Enabled`
+- `Width Segmentation Count = 1`
+
+`Ribbon Tessellation` 分组可确认
+- `Mode = Automatic`
+- `Curve Tension = 0.0`
+
+`Sorting` 分组可确认
+- `Draw Direction = Front to Back`
+
+左侧预览窗口可见结果如下
+- 仍然是粉白核心加紫色半透明拖尾
+- 拖尾已经呈现连续 Ribbon 片状，而不是离散粒子
+- 当前系统时间约在 `0.74` 秒，说明这是发射早期的形态检查
+
+这张图的重点是：透明度软化不仅依赖材质，还依赖 Ribbon Renderer 的形状与排序设置。`Facing Mode = Screen`、`Shape = Plane` 和 `Front to Back` 一起决定了这些半透明带子如何面向镜头、如何叠加显示。如果这些渲染器基础设置不对，前面做好的透明度和深度淡出也很难得到稳定结果
+这是主材质 `M_MagicRibbon` 中 `T_MaskOpacity` 采样链的近景图，作者专门检查这张透明度遮罩为什么会“切得太锋利”，并用它解释需要增加软度的原因
+
+可确认的节点与参数如下
+- `TexCoord[1]`
+  - `Coordinate Index = 1`
+  - 为透明度遮罩提供第二套 UV
+- `T_MaskOpacity`
+  - 类型为 `Param2D`
+  - 左侧属性面板可确认：
+    - `Parameter Name = T_MaskOpacity`
+    - `Sampler Source = Shared: Clamp`
+    - `Texture = T_Gradient4`
+    - `Sampler Type = Color`
+  - 预览图是白到黑的硬渐变遮罩
+- `Mask`
+  - 接收 `T_MaskOpacity` 的某个颜色通道输出
+  - 用于从贴图里抽出实际参与透明度计算的单通道
+
+当前可见连线集
+- `TexCoord[1]` -> `T_MaskOpacity.UVs`
+- `T_MaskOpacity` -> `Mask`
+
+预览结果可确认如下
+- 左侧预览窗口标题显示：`Previewing MaterialExpressionMultiply_8`
+- 预览平面上仍能看到一块比较明显的亮白 Ribbon 片段，但其边界存在清晰的硬切感
+- 字幕直接指出问题：`it also cuts off very sharply here`
+
+底部统计可确认
+- `Texture samplers: 8/16`
+- `Texture Lookups (Est.): VS(3), PS(8)`
+- `Preshaders: 12`
+
+这张图的结论很明确：当前 `T_Gradient4` 这张透明度遮罩虽然已经接入第二套 UV，但它给出的黑白过渡仍然太硬，导致 Ribbon 被“像戴了一个面具一样”直接切掉。要提高软度，就需要继续优化这张遮罩的梯度、采样方式，或在后续链路中再做额外平滑，而不是只依赖这张原始渐变图
+
+## 补充视觉证据
+
+### S01 00:03:36
+
+这是 `NS_MagicProjectiles` 中 `Empty` 发射器 `Emitter State` 的补充参数图，用来补证发射器生命周期循环方式和持续时间设置
+
+可确认的发射器结构如下
+- `Emitter Update`：`Emitter State`
+- `Particle Spawn`：`Initialize Particle`
+- `Particle Update`：`Particle State`
+- `Render`：`Sprite Renderer`
+
+右侧 `Emitter State` 细节面板可确认如下
+- `Life Cycle Mode = System`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Infinite`
+- `Loop Duration = 1.0`
+- `Recalculate Duration Each Loop = Disabled`
+- `Loop Delay = 0.0`
+
+`Scalability` 分组可确认
+- `Scalability Mode = System`
+
+左侧预览窗口当前没有清晰粒子结果，只显示编译中的占位画面，说明这张补充图的作用主要是参数取证，而不是结果观察
+
+这张图补足了前面 `S01` 段关于基础发射器循环方式的证据：`Empty` 不是一次性只跑一轮，而是挂在系统生命周期下按 `1.0` 秒周期持续循环，并在失活时等待粒子自然结束后再销毁发射器
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

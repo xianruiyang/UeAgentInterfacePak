@@ -1,0 +1,175 @@
+{
+  "build_mode": "bucket",
+  "build_scope": "delta",
+  "chunk_fingerprint": "sha256:e110c17ce47cbe38",
+  "collection": "uai-niagara-bplus",
+  "collection_info": {
+    "result": {
+      "config": {
+        "hnsw_config": {
+          "ef_construct": 100,
+          "full_scan_threshold": 10000,
+          "m": 16,
+          "max_indexing_threads": 0,
+          "on_disk": false
+        },
+        "optimizer_config": {
+          "default_segment_number": 0,
+          "deleted_threshold": 0.2,
+          "flush_interval_sec": 5,
+          "indexing_threshold": 10000,
+          "max_optimization_threads": null,
+          "max_segment_size": null,
+          "memmap_threshold": null,
+          "prevent_unoptimized": null,
+          "vacuum_min_vector_number": 1000
+        },
+        "params": {
+          "on_disk_payload": true,
+          "replication_factor": 1,
+          "shard_number": 1,
+          "vectors": {
+            "distance": "Cosine",
+            "size": 1024
+          },
+          "write_consistency_factor": 1
+        },
+        "quantization_config": null,
+        "wal_config": {
+          "wal_capacity_mb": 32,
+          "wal_retain_closed": 1,
+          "wal_segments_ahead": 0
+        }
+      },
+      "indexed_vectors_count": 0,
+      "optimizer_status": "ok",
+      "payload_schema": {
+        "chunk_id": {
+          "data_type": "keyword",
+          "points": 8945
+        },
+        "doc_id": {
+          "data_type": "keyword",
+          "points": 8945
+        },
+        "kb_id": {
+          "data_type": "keyword",
+          "points": 8945
+        },
+        "language": {
+          "data_type": "keyword",
+          "points": 8945
+        },
+        "source_id": {
+          "data_type": "keyword",
+          "points": 8945
+        }
+      },
+      "points_count": 8945,
+      "segments_count": 8,
+      "status": "green",
+      "update_queue": {
+        "length": 0
+      }
+    },
+    "status": "ok",
+    "time": 0.01163562
+  },
+  "completed_items": 8484,
+  "deleted_stale_points": 0,
+  "embedding_fingerprint": "sha256:5c509eb1c0747b0d",
+  "embedding_text_policy_fingerprint": "sha256:18893d59dcf186e7",
+  "existing_points_scanned": 461,
+  "kb_id": "uai-niagara-bplus",
+  "pending_items": 8484,
+  "point_count": 8945,
+  "qdrant_url": "http://127.0.0.1:6333",
+  "remaining_items": 0,
+  "resume_supported": true,
+  "schema_version": "0.1.0",
+  "skipped_unchanged": 461,
+  "status": "complete",
+  "timings": {
+    "batches_total": {
+      "attach_vectors_ms": 43.85390000000004,
+      "avg_batch_ms": 2921.0177154003436,
+      "avg_item_ms": 2021.024751225839,
+      "batches": 5870,
+      "direct_upsert_attempt_ms": 0.0,
+      "direct_upsert_batches": 0,
+      "embedding_ms": 17022561.75959999,
+      "items": 8484,
+      "items_per_sec": 0.49479849239523505,
+      "managed_batches": 5870,
+      "max_batch_ms": 7322.9183,
+      "point_shell_ms": 3806.5604000000035,
+      "qdrant_upsert_ms": 119901.1107999998,
+      "total_ms": 17146373.989400018
+    },
+    "elapsed_ms": 17158498.9685,
+    "stages": {
+      "classify_existing_points_ms": {
+        "avg_ms": 7.9555,
+        "count": 1,
+        "total_ms": 7.9555
+      },
+      "delete_stale_points_ms": {
+        "avg_ms": 0.0071,
+        "count": 1,
+        "total_ms": 0.0071
+      },
+      "embedding_binding_ms": {
+        "avg_ms": 0.8165,
+        "count": 1,
+        "total_ms": 0.8165
+      },
+      "fingerprint_and_chunk_map_ms": {
+        "avg_ms": 753.5454,
+        "count": 1,
+        "total_ms": 753.5454
+      },
+      "load_chunks_ms": {
+        "avg_ms": 732.3346,
+        "count": 1,
+        "total_ms": 732.3346
+      },
+      "load_optimization_profile_ms": {
+        "avg_ms": 12.0548,
+        "count": 1,
+        "total_ms": 12.0548
+      },
+      "managed_service_startup_ms": {
+        "avg_ms": 34.9043,
+        "count": 1,
+        "total_ms": 34.9043
+      },
+      "prepare_vector_items_ms": {
+        "avg_ms": 105.6019,
+        "count": 1,
+        "total_ms": 105.6019
+      },
+      "progress_write_ms": {
+        "avg_ms": 1.2368093340146498,
+        "count": 5871,
+        "total_ms": 7261.307600000009
+      },
+      "qdrant_collection_ms": {
+        "avg_ms": 98.5974,
+        "count": 1,
+        "total_ms": 98.5974
+      },
+      "scan_existing_points_ms": {
+        "avg_ms": 60.5536,
+        "count": 1,
+        "total_ms": 60.5536
+      },
+      "sort_vector_items_ms": {
+        "avg_ms": 1.0026,
+        "count": 1,
+        "total_ms": 1.0026
+      }
+    }
+  },
+  "total_chunks": 8945,
+  "updated_at": "2026-07-10T10:33:00Z"
+}

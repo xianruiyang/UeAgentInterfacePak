@@ -1,0 +1,764 @@
+# 05-1 制作Niagara粒子特效
+
+# 05-1 制作Niagara粒子特效
+
+## 关键术语
+
+- `Color`、`Alpha`、`Multiply`、`Mesh`、`材质`、`材质实例`、`粒子`、`发射器`、`渲染器`、`Niagara`、`Emitter`、`Particle`、`Spawn Rate`、`Spawn`、`Lifetime`、`Normalized Age`、`Niagara System`、`Initialize Particle`
+
+## 分段知识
+
+### 00:00:05-00:03:18 Niagara、Mesh、材质
+
+- 本段定位：Niagara、Mesh、材质。
+- 知识点：您好,在第五節課再次問候您。
+- 知识点：本段围绕 `粒子` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：上次我们进行过这种测试。
+- 知识点：首先我们制作第一个发射器,用Time-Aniogravitya-Nauti把 Timing设置好,然后順序添加一些輔助元素,逐个进行尝试。
+- 知识点：现在看到这个动作先挥一次再挥两次 所以第一集和第二集将分开制作粒子 我们就这样进行 首先打开挥动动作 让屏幕显示出来 我们先生成新的粒子。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Niagara`、`Particle`、`材质`、`粒子`、`发射器`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 第五讲粒子制作起始场景
+> - 组成部分: Level Viewport + Sequencer + Outliner/Details + Content Browser
+> - 所属: `01_Sword_Trail`
+> - 目的: 在已有 Swing Trail 测试场景中开始制作第一组 Niagara 粒子。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | 当前关卡/序列 | `01_Sword_Trail` |
+> | Viewport | Terra 角色位于灰色网格地面上 |
+> | Sequencer | 播放头约在前段，`Camera Cuts` 轨道可见 |
+> | Outliner | 选中 `Cine Camera Actor`，同时可见 `Terra Gryp...`、`Floor`、`PostProce...` 等对象 |
+> | Details | Cine Camera 相关组件与参数面板打开 |
+> | Content Browser | 项目资源树显示 `Coloso_Second`、`Tutorial` 等目录 |
+> | 字幕 | 开始说明这节课将制作 VFX 粒子 |
+>
+> 该图用于确认第五讲从测试序列和角色预览状态进入 Niagara 粒子制作。
+> 图表转写（UE-GTXT v4）
+> - 类型: 复制动作制作粒子时机
+> - 组成部分: Sequencer + Content Browser + Viewport + Outliner
+> - 所属: `01_Sword_Trail / Q_swing_B`
+> - 目的: 复制前一动作的教程测试轨迹，分离第一击和第二击的粒子制作时机。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Content Browser | 左侧资源列表与多张动作缩略图可见 |
+> | Sequencer | `Q_swing_B` 轨道被展开，蓝色/绿色区段横跨时间线 |
+> | Viewport | 角色挥动路径上可见黄色轨迹线 |
+> | 时间线 | 播放头位于动作中段 |
+> | 字幕 | “复制之前制作的教程测试轨迹” |
+>
+> 该图记录以现有 `Q_swing_B` 动作为依据，为第一段和第二段挥击分别制作粒子。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Trail_01` Niagara 主材质绑定
+> - 组成部分: Niagara System Overview + Ribbon Renderer Details + Timeline
+> - 所属: `Trail_01`
+> - 目的: 新建第一组轨迹粒子，并在 Ribbon Renderer 中绑定上一讲制作的主材质。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Niagara System | `Trail_01` |
+> | Emitter | `Empty` |
+> | Emitter Update | `Emitter State` 为 `Self / Once`，`Spawn Per Unit` 勾选，`Spawn Rate` 可见 |
+> | Particle Spawn | `Initialize Particle` |
+> | Particle Update | `Particle State`、`Dynamic Material Parameters`、`Scale Color` |
+> | Render | `Ribbon Renderer` 选中 |
+> | Ribbon Material | `M_SwordTrail_01` |
+> | Facing Mode | `Custom` |
+> | UV0 Settings | `UV Mode: Tiled By Distance (By Particles.RibbonUVDistance)`；`Tiling Length: 1000.0`；Offset `0.0, 0.0`；Scale `1.0, 1.0` |
+> | Ribbon Shape | Shape `Plane`，Width Segmentation `1` |
+> | Timeline | 约 `0.37` 秒，`240 fps` |
+>
+> 该图记录 `Trail_01` 通过 Ribbon Renderer 使用 `M_SwordTrail_01` 主材质，并采用按距离平铺的 UV 模式。
+
+### 00:03:21-00:06:14 Color、材质、颜色
+
+- 本段定位：Color、材质、颜色。
+- 知识点：这个实例材质也不能混合 需要新文件加以实例号码分类 实例将会移动到这里 然后把这个连接到这里 然后打开对应资源边界 实例将之前创建的参数全部先打开。
+- 知识点：而且暂时不需要更改纹理 因为是主用的纹理 首先看一下最基本的颜色 当我们制作一些轨迹时 使角色颜色适当。
+- 知识点：这样看主色因为金色 不过这次需要试试 一种普通的变体颜色 以红色调来制作 因为应该很突出 先从颜色开始。
+- 知识点：给数值后 前面的头发颜色有点亮 后面逐渐 饱和度升高的感觉 让黄色显现出来 需要试着给颜色 然后再给数值 让黄色显现出来 需要试着给颜色。
+- 知识点：这部分现在确定了颜色 但会提高Color Boards 使得黄色部分更明显 Color Text这区是现在可能没有明显应用的部分 这个参数是为了让其他人使用时。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Color`、`材质`、`纹理`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 材质实例连接到 Ribbon Renderer
+> - 组成部分: Level Viewport + Sequencer + Niagara Editor + Content Browser
+> - 所属: `Trail_01 / M_SwordTrail_01_Ins_01`
+> - 目的: 复制并分类材质实例后，将实例材质连接到第一组轨迹发射器。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Content Browser | `M_SwordTrail_01_Ins_01` 等材质实例资源可见 |
+> | Niagara Editor | `Trail_01` 打开，`Ribbon Renderer` Details 位于右侧 |
+> | Renderer Material | 材质插槽显示已连接材质实例 |
+> | Sequencer | 动作轨道和播放头仍打开 |
+> | 字幕 | “这个实例材质也不能混合” |
+>
+> 该图记录将主材质派生出的实例材质用于 `Trail_01`，便于后续单独调参。
+> 图表转写（UE-GTXT v4）
+> - 类型: 红色调轨迹预览
+> - 组成部分: Level Viewport + Sequencer + Content Browser
+> - 所属: `Trail_01 / M_SwordTrail_01_Ins_01`
+> - 目的: 调整材质实例颜色后，在角色挥击动作中查看轨迹色调。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Viewport | 角色挥击路径上出现红色/粉红色 ribbon 轨迹 |
+> | Content Browser | `M_SwordTrail_01_Ins_01` 材质实例被选中 |
+> | Sequencer | 播放头位于挥击动作中段，Camera Cuts 与动作轨道可见 |
+> | Outliner | `01_Sword_Trail` 场景对象列表可见 |
+> | 字幕 | 讨论先从颜色开始制作普通变体 |
+>
+> 该图记录第一版红色调轨迹已经能在测试场景中显示。
+> 图表转写（UE-GTXT v4）
+> - 类型: `M_SwordTrail_01_Ins_01` 材质实例参数
+> - 组成部分: Material Instance Preview + Layer Parameters + Details
+> - 所属: `M_SwordTrail_01_Ins_01`
+> - 目的: 打开主材质实例参数，调整基础颜色、纹理和平铺/强度值。
+>
+> 可见参数:
+> | 分组 | 参数 | 值/资源 |
+> |---|---|---|
+> | Global Scalar Parameter Values | `Color_Bias` | `3.0` |
+> | Global Scalar Parameter Values | `Color_Tile_U` | `0.5` |
+> | Global Scalar Parameter Values | `Color_Tile_V` | `1.0` |
+> | Global Scalar Parameter Values | `Desaturation` | `0.0` |
+> | Global Scalar Parameter Values | `Edge_Pow` | `1.0` |
+> | Global Scalar Parameter Values | `Edge_Str` | `1.0` |
+> | Global Scalar Parameter Values | `Normal_Tile_U/V` | `1.0 / 1.0` |
+> | Global Scalar Parameter Values | `Opacity_Pow` | `1.0` |
+> | Global Scalar Parameter Values | `Opacity_Str` | `1.0` |
+> | Global Scalar Parameter Values | `Opacity_Tile_U/V` | `1.0 / 1.0` |
+> | Global Scalar Parameter Values | `Refraction_Str` | `1.5` |
+> | Global Texture Parameter Values | `Color_Tex` | `T_Cloud_Wisp_Chromatic_Tile` |
+> | Global Texture Parameter Values | `Normal_Tex` | `2ndInfectedMapNormal` |
+> | Global Texture Parameter Values | `Opacity_Tex` | `T_Streak_Soft_Trail_04` |
+> | Global Vector Parameter Values | `Head_Color` / `Tail_Color` | 白色到黄色色带 |
+>
+> 左侧预览显示白色/金色碎片状轨迹材质，该图用于记录第一版主元素材质实例的实际参数。
+
+### 00:06:18-00:09:18 渲染器、颜色、透明度
+
+- 本段定位：渲染器、颜色、透明度。
+- 知识点：故意适当提高试证度 让颜色影响不那么大 正常部分如果是主要的话 其实不一定需要使用发现扭曲 调整也不太需要 在不透明度方面适当提高力度。
+- 知识点：并且增加亮度 给出强烈的感觉 然后现在亮度提高了 现在可观察到外部部分也一起缩小了 在自动现实 将透明度部分连接了反射 所以如果数值适当增大。
+- 知识点：可观察到比刚才多一点被推开的感觉 这个主元素实际上不是扮演外国角色 所以我觉得没有什么大问题 即使看不清楚也没有外国 去掉扩散渲染器。
+- 知识点：需要保存实力 那么我觉得需要先掌握基本的时间 大概哪个时间的情况 还不错 这个时机开始移动较多的时间比较好 从第五针开始 这个时候的动作是这样。
+- 知识点：如果再画得太多 到后面可能会一起出现杂乱的部分 所以直到第14针左右 在这里转动到这里的时候会调整 区间是某种程度上匹配的感觉 现在即使设置了四棚塔。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 核对对象：`渲染器`、`颜色`、`透明度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 第一版轨迹材质实例效果检查
+> - 组成部分: Material Instance Preview + Layer Parameters
+> - 所属: `M_SwordTrail_01_Ins_01`
+> - 目的: 在提高透明度与亮度前，检查颜色对主轨迹的影响程度。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Preview | 白色/金色碎片状轨迹占据预览区域，右侧亮度更强 |
+> | 参数面板 | `Color_Bias`、`Color_Tile_U/V`、`Edge_Pow`、`Edge_Str`、`Opacity_Pow`、`Opacity_Str`、`Refraction_Str` 等均可见 |
+> | 纹理参数 | `Color_Tex`、`Normal_Tex`、`Opacity_Tex` 仍使用第一版资源 |
+> | 向量色 | `Head_Color` 与 `Tail_Color` 色带可见 |
+> | 字幕 | “正常部分如果是主要的话” |
+>
+> 该图记录颜色影响较弱时的主元素预览，为后续提高透明度/亮度提供对照。
+> 图表转写（UE-GTXT v4）
+> - 类型: 增强透明/亮度后的材质实例预览
+> - 组成部分: Material Instance Preview + Layer Parameters
+> - 所属: `M_SwordTrail_01_Ins_01`
+> - 目的: 调整 Opacity/Color 等参数后，查看碎片轨迹的亮度和外扩感。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Preview | 白色碎片更亮，局部有金黄色点状过渡 |
+> | 参数面板 | Global Scalar、Texture、Vector 参数仍展开 |
+> | 纹理参数 | `Color_Tex`、`Normal_Tex`、`Opacity_Tex` 三项可见 |
+> | 字幕 | 讨论数值增大后会看到比刚才更被推开的感觉 |
+>
+> 该图记录透明度/亮度调整后的材质实例视觉效果。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Trail_01` Notify 时机预览
+> - 组成部分: Animation Editor + Anim Notify Details + Asset Browser
+> - 所属: `Q_swing_B / Trail_01`
+> - 目的: 在动画中检查第一组轨迹的开始帧、结束帧和武器挥动匹配。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Animation | `Q_swing_B`，Previewing Animation |
+> | 播放头 | 约第 `33` 帧，显示 `33 (1.10) (35.6%)` |
+> | Notify | `Trail_01` 蓝色区段位于时间线前段 |
+> | Niagara System | `Trail_01` |
+> | Socket Name | `FX_Trail_R_01` |
+> | Location Offset | `0.0, 0.0, 0.0` |
+> | Rotation Offset | `0.0, 0.0, 0.0` |
+> | Notify Color | 淡紫色 |
+> | Trigger on Dedicated Server | 勾选 |
+> | Notify Filter Type | `No Filtering` |
+> | Preview | 角色挥动武器，红色 ribbon 轨迹显示在动作路径上 |
+> | Asset Browser | `Q_swing_B` 被选中 |
+>
+> 该图记录第一组轨迹大致覆盖动作前段，用于后续调节 Spawn、Lifetime 和长度。
+
+### 00:09:28-00:12:01 关键流程 04
+
+- 本段定位：关键流程 04。
+- 知识点：正在出来适当增大一下尺寸 现在感觉上有一定的匹配 这个现在正在制作的摇摆轨迹 可以认为是力量最强的部分 用于测试的我们调整过的 这个Pacing。
+- 知识点：Vector部分应该不用动了 这个主要元素适当向前出来了 希望能够把相机偏移和排序顺序部分 向前拉一下画出动态 现在不使用实战 偏移也不太会使用。
+- 知识点：好了 这个适当现在慢慢消失吧 摇摆本身 这样时间长了帐户留下了 感觉很奇怪 我再简单查一下 不过总觉得跟不上 现在感觉好一点了 这些瞬间的元素应该同时马上消失。
+- 知识点：它更真实 然后现在太摇摆 我们刚才的时机 小矮武器走到后面去 现在这个 一个周期好像没画到那 所以这里微弱出现的部分 尾部的部分就有点重合的部分。
+- 知识点：正在反复绘制中 这个长度本身需要适当调整一下。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Trail_01` 尺寸与动作匹配预览
+> - 组成部分: Animation Editor + Anim Notify Details + Asset Browser
+> - 所属: `Q_swing_B / Trail_01`
+> - 目的: 在动作中检查红色 ribbon 轨迹的尺寸和第一段挥击匹配程度。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Animation | `Q_swing_B` |
+> | 播放头 | 约第 `38` 帧，显示 `38 (1.27) (40.9%)` |
+> | Notify | `Trail_01` 蓝色区段位于时间线前段 |
+> | Niagara System | `Trail_01` |
+> | Socket Name | `FX_Trail_R_01` |
+> | Location Offset | `0.0, 0.0, 0.0` |
+> | Rotation Offset | `0.0, 0.0, 0.0` |
+> | Notify Color | 淡紫色 |
+> | Trigger on Dedicated Server | 勾选 |
+> | Notify Filter Type | `No Filtering` |
+> | Preview | 红色 ribbon 轨迹较长，跟随武器挥击弧线显示 |
+>
+> 该图记录增大尺寸后，主轨迹已与第一段挥击有一定匹配。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Trail_01` Camera Offset 调整
+> - 组成部分: Niagara System Overview + Emitter Stack + Details
+> - 所属: `Trail_01`
+> - 目的: 为了让主要元素更向前显示，调整相机偏移/排序相关模块。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Niagara System | `Trail_01` |
+> | Emitter | `Empty` |
+> | Particle Spawn | `Initialize Particle` 与 `Camera Offset` 可见，`Camera Offset` 被选中 |
+> | Particle Update | `Particle State`、`Dynamic Material Parameters`、`Scale Color` |
+> | Render | `Ribbon Renderer` |
+> | Details 面板 | `Camera Offset` 模块参数展开 |
+> | Camera Offset Amount | 数值输入框可见，当前值约为 `1000` |
+> | 字幕 | 说明希望把相机偏移和排序顺序部分向前拉出动态 |
+>
+> 该图记录在 `Particle Spawn` 中加入/调整 `Camera Offset`，用于控制轨迹显示层次。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Trail_01` 长度与尾部重合检查
+> - 组成部分: Animation Editor + Anim Notify Details + Asset Browser
+> - 所属: `Q_swing_B / Trail_01`
+> - 目的: 检查轨迹消失速度和动作尾部重合，准备缩短或调整生命周期。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Animation | `Q_swing_B` |
+> | 播放头 | 约第 `39` 帧，显示 `39 (1.30) (42.0%)` |
+> | Notify | `Trail_01` 区段仍在前段可见 |
+> | Niagara System | `Trail_01` |
+> | Socket Name | `FX_Trail_R_01` |
+> | Location/Rotation Offset | 均为 `0.0, 0.0, 0.0` |
+> | Preview | 角色翻转/挥动中，当前帧红色轨迹基本不明显 |
+> | 字幕 | “所以这里微弱出现的部分” |
+>
+> 该图记录动作尾段附近轨迹变弱或消失的状态，用于判断轨迹长度和生命周期是否需要继续调整。
+
+### 00:12:06-00:14:50 Alpha、Multiply、颜色
+
+- 本段定位：Alpha、Multiply、颜色。
+- 知识点：让它画得更长一些 适当往后面一起画着呢 这个程度能够显示一些轨迹 武器方面有点看起来更契合一些 有点模糊 位置似乎不太对 然后我就会拉一下。
+- 知识点：查看内部轨迹 在这个视角看起来会更方便 那么先把主要元素做成第一个 是的,颜色也来改改 因为是红色出来的 比起更红色 感觉有些黄色金色的感觉。
+- 知识点：主要元素就是如果饱和度太高也不行 改成Multiply Vector by Float 瞬间来调整一下亮度 刚开始画是亮度高 然后急剧下降的感觉。
+- 知识点：按这个按钮就可以在这里看到曲线 点击这个标记后按数字1 就是快捷键了 可以设置为改变曲线形状 所以只在最开始生成时 亮 亮画出并且Alpha也可以慢一点消失。
+- 知识点：感觉适当好看了一些 感觉更合适 一点点的光光 可以适当过度低化出轨迹。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`Multiply`、`颜色`、`曲线`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Ribbon 平铺长度调整
+> - 组成部分: Niagara System Overview + Ribbon Renderer Details + Timeline
+> - 所属: `Trail_01 / Ribbon Renderer`
+> - 目的: 让轨迹绘制得更长，并通过 Ribbon UV 平铺长度控制纹理重复。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Niagara System | `Trail_01` |
+> | Emitter | `Empty`，右上显示 `6 Particles` |
+> | Emitter Update | `Spawn Per Frame` 勾选，`Spawn Per Unit` 未勾选 |
+> | Particle Spawn | `Initialize Particle`、`Camera Offset` |
+> | Particle Update | `Particle State`、`Dynamic Material Parameters`、`Scale Color` |
+> | Render | `Ribbon Renderer` 选中 |
+> | Material | `M_SwordTrail_01_Ins_01` |
+> | UV Mode | `Tiled By Distance (By Particles.RibbonUVDistance)` |
+> | Tiling Length | `1150.0` |
+> | Offset | `0.0, 0.0` |
+> | Scale | `1.0, 1.0` |
+> | Ribbon Shape | `Plane`，Width Segmentation `1` |
+> | Render Sort Order Hint | `10` |
+> | Timeline | 当前约 `0.98` 秒，`235 of 2400` |
+>
+> 该图记录主轨迹改用材质实例后，将 Ribbon 平铺长度调到 `1150.0`。
+> 图表转写（UE-GTXT v4）
+> - 类型: 主轨迹颜色/曲线调整预览
+> - 组成部分: Level Viewport + Niagara Editor + Sequencer 背景
+> - 所属: `Trail_01`
+> - 目的: 调整主元素颜色和亮度曲线后，在测试场景中查看整体匹配。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Viewport | Terra 角色站在灰色网格场景中 |
+> | Content Browser | `M_SwordTrail_01_Ins_01` 等资源在 `Tutorial/Particle` 附近可见 |
+> | Niagara Editor | `Trail_01` 打开，`Particle Update` 与 `Scale Color` 模块区域可见 |
+> | Sequencer | 动作轨道在下方保持打开 |
+> | 字幕 | 讨论红色与黄色/金色感觉的调整 |
+>
+> 该图记录从材质实例和 Niagara 模块之间来回调整，检查主轨迹颜色是否更契合角色。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Scale Color` 曲线调整
+> - 组成部分: Level Viewport + Niagara Emitter Stack + Curve/Details 区域
+> - 所属: `Trail_01 / Scale Color`
+> - 目的: 通过曲线让轨迹开始时亮度更高，随后快速下降，Alpha 慢慢消失。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Niagara System | `Trail_01` 打开 |
+> | Particle Update | `Scale Color` 模块区域可见 |
+> | Details/曲线区域 | 下方右侧有颜色/曲线相关字段，字幕提到按曲线按钮后用数字 `1` 调整曲线形状 |
+> | Viewport | Terra 角色预览仍在场景中显示 |
+> | 字幕 | “只在最开始生成时亮，亮画出并且Alpha也可以慢一点消失” |
+>
+> 该图记录通过 `Scale Color` 曲线塑造初始高亮、随后衰减的轨迹表现。
+
+### 00:15:05-00:18:08 材质、发射器、颜色
+
+- 本段定位：材质、发射器、颜色。
+- 知识点：适当夸张一点 反正我们不只用这个主要元素 因为要添加两三层东西来制作图画 那么就再添加一个辅助颜色吧。
+- 知识点：需要复制这个来使用 然后这个用7号 改变排序 其他的可以同样写 相反现在需要从材质开始 再复制一个来制作 然后这个用7号 相反现在需要从材质开始。
+- 知识点：再复制一个来制作 将新的材质连接到第二个发射器 这个元素会使用适当不同的质感 所以需要觉得改变纹理部分。
+- 知识点：现在因为录制正在一个窗口中移动 请理解即使有些令人困惑的部分 需要尝试增加一些粗糙的感觉 现在这里冒出来 因为我们的动态参数默认值是1。
+- 知识点：现在的正常扭曲效果已最大化 可以这样认为 然后颜色现在适当朝更高饱和度的方向调整一下。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`材质`、`纹理`、`发射器`、`颜色`、`透明度`、`动态参数`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 主轨迹定稿前的 Notify 预览
+> - 组成部分: Animation Editor + Anim Notify Details + Asset Browser
+> - 所属: `Q_swing_B / Trail_01`
+> - 目的: 检查主元素在挥击动作中的最终亮度、长度和时机，随后准备复制第二层辅助元素。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Animation | `Q_swing_B` |
+> | 播放头 | 约第 `42` 帧，显示 `42 (1.40) (45.2%)` |
+> | Notify | `Trail_01` 蓝色区段位于动作前半段 |
+> | Niagara System | `Trail_01` |
+> | Socket Name | `FX_Trail_R_01` |
+> | Notify Color | 淡紫色 |
+> | Trigger on Dedicated Server | 勾选 |
+> | Preview | 角色翻转/挥动，当前帧主要红色轨迹已不明显 |
+> | 字幕 | 说明可以稍微过渡地画出轨迹 |
+>
+> 该图记录主元素调整到较合适后，准备复制新材质/发射器制作辅助颜色。
+> 图表转写（UE-GTXT v4）
+> - 类型: 第二个材质实例参数
+> - 组成部分: Material Instance Preview + Layer Parameters + Content Browser
+> - 所属: `M_SwordTrail_01_Ins_02`
+> - 目的: 复制主材质实例，制作第二层辅助轨迹的粗糙/高饱和变体。
+>
+> 可见参数:
+> | 分组 | 参数 | 值/资源 |
+> |---|---|---|
+> | Global Scalar Parameter Values | `Color_Bias` | `3.0` |
+> | Global Scalar Parameter Values | `Color_Tile_U` | `0.5` |
+> | Global Scalar Parameter Values | `Color_Tile_V` | `0.2` |
+> | Global Scalar Parameter Values | `Desaturation` | `0.8` |
+> | Global Scalar Parameter Values | `Edge_Pow` | `1.0` |
+> | Global Scalar Parameter Values | `Edge_Str` | `1.0` |
+> | Global Scalar Parameter Values | `Normal_Tile_U/V` | `1.0 / 1.0` |
+> | Global Scalar Parameter Values | `Opacity_Pow` | `2.0` |
+> | Global Scalar Parameter Values | `Opacity_Str` | `10.0` |
+> | Global Scalar Parameter Values | `Opacity_Tile_U/V` | `1.0 / 1.0` |
+> | Global Scalar Parameter Values | `Refraction_Str` | `2.0` |
+> | Global Texture Parameter Values | `Color_Tex` | `T_Cloud_Wisp_Chromatic_Tile` |
+> | Global Texture Parameter Values | `Normal_Tex` | `2ndInfectedMapNormal` |
+> | Global Texture Parameter Values | `Opacity_Tex` | `T_Streak_Soft_Trail_04` |
+> | Global Vector Parameter Values | `Head_Color` / `Tail_Color` | 白色到黄色色带 |
+>
+> 左侧预览显示白色/金色碎片更粗糙且更高对比，表示第二层辅助轨迹材质实例已与第一层产生差异。
+> 图表转写（UE-GTXT v4）
+> - 类型: 第二层材质实例与场景预览
+> - 组成部分: Level Viewport + Content Browser + Material Instance 窗口 + Outliner
+> - 所属: `M_SwordTrail_01_Ins_02`
+> - 目的: 在测试场景中预览第二层辅助轨迹材质，并确认资源与窗口上下文。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Viewport | Terra 角色站在灰色网格地面上 |
+> | Content Browser | `Coloso_Second > Texture` 下多个贴图缩略图可见 |
+> | 打开窗口 | `M_SwordTrail_01_Ins_02` 材质实例窗口位于前景 |
+> | 参数片段 | `Color_Bias 5.0`、`Color_Tile_U 0.5`、`Color_Tile_V 0.2`、`Desaturation 0.8`、`Edge_Pow 1.0` 可见 |
+> | Preview | 下方材质实例预览显示黄白碎片状轨迹 |
+> | Outliner | `01_Swing_Trail`、`Cine Camera Actor`、`Floor`、`PlayerStart`、`PostProcessVo`、`SpotLight`、`Terra Gryphon` |
+>
+> 该图记录第二层辅助材质实例在编辑器中的预览和调参状态。
+
+### 00:18:23-00:20:55 纹理
+
+- 本段定位：纹理。
+- 知识点：也要避免太强烈太尖锐 所以会降低压力 而且这也不需要特别的反射折射效果 我先保存资源 我们来看看现在到底是什么样子 虽然出来了 但现在这个位置有点不匹配吧。
+- 知识点：可以试着增大一下 能匹配位置的尺寸 这就能提升了 可以增大一下 能匹配位置的尺寸 这个不需要像主元素那样迅速消失 让它慢慢消失。
+- 知识点：把片移关掉 有时整理一下不使用的声音的习惯也好 这家伙现在也不需要特别使用扭曲 我感觉现在的位置有点不对劲 因为这个纹理现在的位置。
+- 知识点：如果比较一下我们作为主元素 使用的纹理和现在出来的位于外侧的部分 大多位于中心的下方吧 所以这一部分是 这里的片移 需要把四代显眼镜微偏移方向 就推得更远一点 现在正好出来了。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 第二层材质实例纹理/颜色预览
+> - 组成部分: Material Instance Preview + Layer Parameters + Content Browser
+> - 所属: `M_SwordTrail_01_Ins_02`
+> - 目的: 检查第二层辅助轨迹纹理在降低强度后是否仍然过尖锐或过强。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Preview | 深色、红棕色与金黄色碎片/裂纹状纹理，占据较大预览区域 |
+> | 参数面板 | Global Scalar、Texture、Vector 参数仍展开 |
+> | 可见纹理 | `Color_Tex`、`Normal_Tex`、`Opacity_Tex` 三项资源槽可见 |
+> | 向量色 | 白色/浅色、红褐色、黄色色带可见 |
+> | 字幕 | 讨论避免太强烈、太尖锐并降低强度 |
+>
+> 该图记录第二层辅助轨迹材质在降低强度前后的预览，用于后续位置和偏移调整。
+> 图表转写（UE-GTXT v4）
+> - 类型: 第二层发射器 Camera Offset 调整
+> - 组成部分: Niagara System Overview + Emitter Stack + Curve Panel + Details
+> - 所属: `Trail_01 / Empty001`
+> - 目的: 复制辅助发射器后，调节其 Camera Offset，使第二层轨迹位置更匹配。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Niagara System | `Trail_01` |
+> | Emitter 列表 | `Empty` 与 `Empty001` 并列可见 |
+> | 当前选中 | `Empty001` 的 `Camera Offset` |
+> | Details | `Camera Offset Amount` = `110.0` |
+> | Emitter Update | `Emitter State` 为 `Self / Once`，`Spawn Per Frame` 勾选 |
+> | Particle Spawn | `Initialize Particle`、`Camera Offset` |
+> | Particle Update | `Particle State`、`Dynamic Material Parameters`、`Scale Color` |
+> | Render | `Ribbon Renderer` |
+> | 曲线面板 | 左下显示 `Scale Color` 的曲线列表和衰减曲线 |
+> | 预览 | 左侧 Preview 显示 `Compiling...` |
+>
+> 该图记录第二层发射器在复制后通过 `Camera Offset Amount 110.0` 调整显示位置。
+> 图表转写（UE-GTXT v4）
+> - 类型: 第二层辅助轨迹场景预览
+> - 组成部分: Level Viewport + Content Browser + Niagara/Material Instance 窗口
+> - 所属: `Trail_01 / M_SwordTrail_01_Ins_02`
+> - 目的: 在测试场景中确认第二层辅助轨迹的偏移与纹理位置。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Viewport | Terra 角色位于灰色网格场景中 |
+> | Content Browser | Texture 文件夹中多个贴图缩略图可见 |
+> | 打开窗口 | 下方可见 `Trail_01` 与 `M_SwordTrail_01_Ins_02` 相关窗口 |
+> | Details | 右侧提示未选中对象 |
+> | 字幕 | “这里的偏移” |
+>
+> 该图记录第二层辅助轨迹调节过程中回到场景视口确认位置与偏移。
+
+### 00:20:58-00:24:31 颜色、透明度、不透明度
+
+- 本段定位：颜色、透明度、不透明度。
+- 知识点：这种饱和感也和主元素的色调 有点融合在一起 新的感觉也会出现 摇摆本身感觉有点太瘦了 对颜色的混合适当有些出现。
+- 知识点：适当沉重 再添加一个深色调 同样复制一个实例并连接 打开实例来看看 这个将使用更宽广的纹理 颜色也会更高饱和度。
+- 知识点：其实点的颜色不必太不同 最后表达部分的颜色将完全是红色调 制造更戏剧的感觉 拉比阿斯不宜过高 边缘强度适当降低 不如把不透明度的范围适当调低。
+- 知识点：很多部分会有较多的暗色调表现 并且提高不透明度 颜色让深暗色调更加突出 在这一元素时 数值也强烈计算一下看看 现在很多重叠出 只开这个看看。
+- 知识点：现在这个复制过来了 现在offset已经到位 减去一次 添加了可以表现斧头厚度感的沉重分析 适当下移一点 这种话它的生存期就不必。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`颜色`、`透明度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 新增深色调元素前的场景检查
+> - 组成部分: Level Viewport + Sequencer/Niagara 背景 + Content Browser
+> - 所属: `Trail_01`
+> - 目的: 在主元素和第二层辅助元素基础上，准备继续添加深色调轨迹。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Viewport | Terra 角色站在测试场景中 |
+> | Content Browser | Texture 文件夹贴图缩略图与资源树可见 |
+> | 下方窗口 | `Q_swing_B`、`Trail_01`、材质实例标签可见 |
+> | Outliner | `01_Swing_Trail`、`Cine Camera Actor`、`Floor`、`PostProcessVo`、`SpotLight`、`Terra Gryphon` |
+> | 字幕 | 讨论颜色混合、沉重感和再添加一个深色调 |
+>
+> 该图记录在已有两层轨迹基础上准备复制第三个实例/发射器，加入更暗更重的色调。
+> 图表转写（UE-GTXT v4）
+> - 类型: 第三层深色材质实例预览
+> - 组成部分: Material Instance Preview + Layer Parameters
+> - 所属: `M_SwordTrail_01_Ins_03`
+> - 目的: 复制材质实例后，调整更宽、更深、更高饱和的纹理和颜色。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Preview | 非常暗的竖向纹理/拖尾形状，局部带微弱红色或黑色调 |
+> | 参数面板 | Global Scalar、Texture、Vector 参数展开 |
+> | 可见字段 | `Color_Tex`、`Normal_Tex`、`Opacity_Tex` 资源槽；多个 Scalar 参数；向量色块 |
+> | 字幕 | “制造更戏剧的感觉” |
+>
+> 该图记录第三层深色轨迹材质实例的初始调色和纹理预览。
+> 图表转写（UE-GTXT v4）
+> - 类型: 第三层轨迹动作预览
+> - 组成部分: Animation Editor + Anim Notify Details + Asset Browser
+> - 所属: `Q_swing_B / Trail_01`
+> - 目的: 检查第三层深色调元素与主轨迹、第二层辅助轨迹叠加后的动作匹配。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Animation | `Q_swing_B` |
+> | 播放头 | 约第 `37` 帧，显示 `37 (1.23) (39.8%)` |
+> | Notify | 时间线中 `Trail_01` 区段和多条曲线轨道可见 |
+> | Details | Notify 的 Niagara System、Socket、Location/Rotation Offset、Notify Color、Trigger Settings 面板可见 |
+> | Preview | 角色动作预览，深色/红色轨迹在当前帧不明显 |
+> | 字幕 | 讨论“这个复制过来了，现在 offset 已经到位” |
+>
+> 该图记录第三层元素复制并调好 offset 后，在动画中检查叠加效果。
+
+### 00:24:42-00:27:40 颜色、动态参数
+
+- 本段定位：颜色、动态参数。
+- 知识点：跟这个朋友和第二个元素一起进行 只需排序 下移一层 动态参数也不用调 有点尺寸过大 需要减小尺寸 这样拖动查看 如果太快看不清的话 这样看的话也不错。
+- 知识点：最底层的元素 和更重的色 适当不要太强 这样微妙的渐变一点 通过搭配红色混合 更强烈的感觉出来 一个高饱和度调色混合 那么这个颜色适当有点太。
+- 知识点：一开始不必太强烈 调整到一指左右 让颜色接近黑色 颜色适当调整一下 主调会更加突出 混合适当显得弱些 第二个颜色反而会更强烈。
+- 知识点：与主调更好递混合 那么现在我们看看 这里背景是无彩色的 关于折射表现是有还是没有 并不明显 但这里可以明显看到这个折射。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`颜色`、`动态参数`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 第三层 Ribbon Renderer 偏移与排序
+> - 组成部分: Niagara System Overview + Ribbon Renderer Details + Curve Panel
+> - 所属: `Trail_01 / Empty002`
+> - 目的: 将最底层/深色元素下移一层，并设置材质实例、UV 偏移和渲染排序。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Emitter 列表 | `Empty001` 与 `Empty002` 可见，`Empty002` 被选中 |
+> | Ribbon Material | `M_SwordTrail_01_Ins_03` |
+> | Facing Mode | `Custom` |
+> | UV Mode | `Tiled By Distance (By Particles.RibbonUVDista...)` |
+> | Tiling Length | `1150.0` |
+> | Offset | `0.0, -0.05` |
+> | Scale | `1.0, 1.0` |
+> | Ribbon Shape | `Plane` |
+> | Draw Direction | `Front to Back` |
+> | Sort Order Hint | `7` |
+> | Curve Panel | 左下显示 `Scale Color` 曲线，当前三层发射器均在列表中 |
+> | 字幕 | “下移一层” |
+>
+> 该图记录第三层深色轨迹通过 `Offset -0.05` 和 Sort Order `7` 进行层级/位置调整。
+> 图表转写（UE-GTXT v4）
+> - 类型: 第三层 `Scale Color` 曲线
+> - 组成部分: Niagara System Overview + Scale Color Details + Curve Panel
+> - 所属: `Trail_01 / Empty002 / Scale Color`
+> - 目的: 调整第三层深色元素的 RGB 与 Alpha 衰减，使颜色一开始不太强，随后更自然混合。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | 当前选中 | `Empty002` 的 `Scale Color` |
+> | Scale Mode | `RGB and Alpha Separately` |
+> | Scale RGB | `Multiply Vector by Float` |
+> | Vector | `10.0, 4.0, 3.0` |
+> | Float | `Float from Curve` |
+> | RGB 曲线 | 以 `PARTICLES NormalizedAge` 为索引，曲线从约 `3.0` 降到接近 `0` |
+> | Scale Alpha | `Float from Curve` |
+> | Alpha 曲线 | 从约 `1.0` 随 NormalizedAge 下降到接近 `0` |
+> | Timeline | 当前约 `0.32` 秒，`76 of 2400` |
+> | 字幕 | “调整到1值左右” |
+>
+> 该图记录第三层深色元素使用 RGB/Alpha 分离曲线控制亮度和透明度。
+> 图表转写（UE-GTXT v4）
+> - 类型: 三层轨迹场景预览
+> - 组成部分: Level Viewport + Niagara Editor + Content Browser + Sequencer
+> - 所属: `Trail_01`
+> - 目的: 检查主元素、第二层和深色第三层的叠加效果，以及折射表现是否明显。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Viewport | Terra 角色在灰色网格测试场景中 |
+> | Content Browser | 左侧当前位于 `Coloso_Second` 相关目录 |
+> | Niagara Editor | `Trail_01` 打开，下方显示 `Empty`、`Empty001`、`Empty002` 三个发射器 |
+> | Outliner | `01_Swing_Trail`、`Cine Camera Actor`、`Floor`、`PlayerStart`、`PostProcessVo`、`SpotLight`、`Terra Gryphon` |
+> | Details | 右侧未选中对象提示 |
+> | 字幕 | “这里背景是无彩色的” |
+>
+> 该图记录三层轨迹在中性背景下的整体预览，用于判断颜色混合和折射可见性。
+
+### 00:27:46-00:30:38 颜色、纹理
+
+- 本段定位：颜色、纹理。
+- 知识点：我适当调整一下相机角度 折射如果过于强烈 则会显得过度 需要适当减弱一些 太多了这样 完全看起来就是角色分离 背景什么的也不好 所以要保存。
+- 知识点：要时不时定一下 简单明了的区分 整理是必要的 最后单看这个动作就会很无聊 所以会放一个与黑色调相配合的 适当有余韵的扭曲形状 名字用黑色。
+- 知识点：放在0号 这个也单独创建实例 复制一个实例 进行连接 需要双击打开对应资源 这个基本上会接近黑色调使用 所以得到的颜色。
+- 知识点：从感觉的颜色混合 虽然不会很明显 会给予 需要放这个纹理 可以感受到鱼 鱼羹。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 第四层黑色调/余韵元素创建前预览
+> - 组成部分: Level Viewport + Sequencer + Content Browser + Outliner
+> - 所属: `01_Sword_Trail / Trail_01`
+> - 目的: 在三层轨迹基础上，准备添加黑色调、带余韵的扭曲形状。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Content Browser | `Tutorial > Material > 01`，三个 `M_Swor...` 材质实例缩略图可见，其中右侧实例被选中 |
+> | Viewport | Terra 角色位于灰色网格测试场景，当前帧未明显显示轨迹 |
+> | Sequencer | 播放头约 `0101` 帧，`102 of 124`，`30 fps` |
+> | Camera Track | `Camera Cuts` 与 `Cine Camera Actor` 轨道可见 |
+> | Outliner | `01_Swing_Trail`、`Cine Camera Actor`、`Floor`、`PlayerStart`、`PostProcessVo`、`SpotLight`、`Terra Gryphon` |
+> | 字幕 | 讨论保存并整理、再添加黑色调余韵形状 |
+>
+> 该图记录进入第四层黑色/余韵元素制作前的测试场景和材质实例资源状态。
+> 图表转写（UE-GTXT v4）
+> - 类型: 第四个材质实例 `M_SwordTrail_01_Ins_04`
+> - 组成部分: Material Instance Preview + Layer Parameters
+> - 所属: `M_SwordTrail_01_Ins_04`
+> - 目的: 为黑色调余韵元素设置更暗、更细长的纹理和红粉色渐变。
+>
+> 可见参数:
+> | 分组 | 参数 | 值/资源 |
+> |---|---|---|
+> | Global Scalar Parameter Values | `Color_Bias` | `3.0` |
+> | Global Scalar Parameter Values | `Color_Tile_U` | `0.5` |
+> | Global Scalar Parameter Values | `Color_Tile_V` | `0.2` |
+> | Global Scalar Parameter Values | `Desaturation` | `0.8` |
+> | Global Scalar Parameter Values | `Edge_Pow` | `1.0` |
+> | Global Scalar Parameter Values | `Edge_Str` | `0.02` |
+> | Global Scalar Parameter Values | `Normal_Tile_U` | `1.0` |
+> | Global Scalar Parameter Values | `Normal_Tile_V` | `0.2` |
+> | Global Scalar Parameter Values | `Opacity_Pow` | `0.75` |
+> | Global Scalar Parameter Values | `Opacity_Str` | `3.5` |
+> | Global Scalar Parameter Values | `Opacity_Tile_U/V` | `1.0 / 1.0` |
+> | Global Scalar Parameter Values | `Refraction_Str` | `1.15` |
+> | Global Texture Parameter Values | `Color_Tex` | `T_Cloud_Wisp_Chromatic_Tile` |
+> | Global Texture Parameter Values | `Normal_Tex` | `2ndInfectedMapNormal` |
+> | Global Texture Parameter Values | `Opacity_Tex` | `T_Streak_Soft_Trail_01` |
+> | Global Vector Parameter Values | `Head_Color` | RGBA 可见为 `10.0, 4.0, 3.0, 1.0` |
+> | Global Vector Parameter Values | `Tail_Color` | 色带为粉色，RGB 可见约 `1.0, 0.5, 0.8` |
+>
+> Preview 显示暗灰细长纹理中夹杂红色痕迹，作为最终黑色调余韵元素。
+> 图表转写（UE-GTXT v4）
+> - 类型: p05 多层轨迹最终检查
+> - 组成部分: Level Viewport + Content Browser + Sequencer + Animation/Material 窗口背景
+> - 所属: `01_Sword_Trail / Trail_01`
+> - 目的: 在保存与整理前，确认多层轨迹资源、场景和角色状态。
+>
+> 可见信息:
+> | 区域 | 值/状态 |
+> |---|---|
+> | Content Browser | 左侧显示一个 Niagara System 资源缩略图，名称截断为 `Niagara S...` |
+> | Viewport | Terra 角色被选中，位于灰色网格场景中 |
+> | Sequencer | 播放头约 `0106` 帧；下方多条彩色轨道可见 |
+> | Outliner | `Terra Gryphon` 被选中 |
+> | Details | Terra 相关面板在右侧打开 |
+> | 背景窗口 | `Q_swing_B`、`Trail_01`、多个 `M_SwordTrail_01_Ins_0x` 标签可见 |
+> | 字幕 | 课程进入收尾，准备保存和整理 |
+>
+> 该图记录 p05 多层轨迹制作完成后的最终场景状态。
+
+## 补充视觉证据
+
+### S01 00:02:34
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Anim Notify 参数补充图
+> - 组成部分: Animation Editor + Anim Notify Details + Sequencer 背景 + Content Browser
+> - 所属: `Q_swing_B / Trail_Test_01`
+> - 目的: 补充 Niagara Notify 绑定系统、socket 和触发参数。
+>
+> 可见信息:
+> | 字段 | 值/状态 |
+> |---|---|
+> | Animation | `Q_swing_B` |
+> | Notify State Class | Anim Notify 面板可见 |
+> | Niagara System | `Trail_Test_01` |
+> | Socket Name | `FX_Trail_R_01` |
+> | Location Offset | `0.0, 0.0, 0.0` |
+> | Rotation Offset | `0.0, 0.0, 0.0` |
+> | Destroy Immediately | 未勾选 |
+> | Notify Color | 淡紫色 |
+> | Trigger on Dedicated Server | 勾选 |
+> | Trigger on Follower | 未勾选 |
+> | Notify Filter Type | `No Filtering` |
+> | Preview | Terra 角色近景动作，红色/粉色轨迹片段可见 |
+> | Sequencer 背景 | `01_Swing_Trail` 时间线在右侧背景中可见 |
+>
+> 该补充图用于确认 Anim Notify 绑定 `Trail_Test_01` 到 `FX_Trail_R_01`，并保留默认 offset 与触发过滤设置。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

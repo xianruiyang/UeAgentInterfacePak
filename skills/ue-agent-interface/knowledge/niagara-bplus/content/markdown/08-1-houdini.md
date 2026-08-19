@@ -1,0 +1,825 @@
+# 08-1-Houdini火灾模拟设置
+
+# 08-1-Houdini火灾模拟设置
+
+## 关键术语
+
+- `Houdini`、`Noise`、`粒子`、`精灵`、`碰撞`、`速度`、`纹理`、`曲线`、`噪声`、`Niagara`、`Normalized Age`、`Material`、`生命周期`、`颜色`、`烟雾`、`火焰`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:05-00:03:21 粒子、精灵、速度
+
+- 本段定位：粒子、精灵、速度。
+- 知识点：大家好,这里是第八讲 这次我们终于要开始制作第一个实例了 首先我们要一起制作用于勾火的火焰模拟资源 先得做个几何体 需要创建几何体并用于模拟的对象。
+- 知识点：这次用圆圈来给这个物体做模拟 需要去做的 这里先是从地面开始,像这样火往上冒的构成 简单试试看 首先在制作这种火焰形态时 在序换中我们常用的典型方法是这种。
+- 知识点：以中心为基准可以自由旋转的精灵方式 有一种方向性就会变成生起的烟或火的形状 所以把速度的形状这样分成两种。
+- 知识点：作为代表的话可能会制作的最多 这次制作的是有方向性 从下往上上升的这个速度形状可能会被运用。
+- 知识点：有了这个方向性 从下往上的速度形态就这样了 所以有了这个方向性 从下往上的这个速度形态就。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`粒子`、`速度`、`火焰`。
+
+**关键画面：**
+
+这一步是第一个实际火焰案例的起点：Houdini 刚打开一个全新的空场景，还没有创建任何对象或节点。画面中三个主要区域都处于初始状态：
+
+- 左侧 `Scene View` 是空的透视视口，只显示参考网格与坐标轴
+- 中间 `/obj` 网络为空，中央提示 `Empty Network / Press Tab to Add Nodes`
+- 右侧参数区显示 `No Operator Selected`
+
+底部时间轴当前停在：
+
+- 第 `1` 帧
+
+左下表格区域当前没有任何节点或属性记录，说明项目尚未建立几何体、散射器或模拟链。结合正文“首先我们要一起制作用于勾火的火焰模拟资源”“先得做个几何体”，这张图表达的是：教程从一个完全空白的 Houdini 对象层开始，而不是加载现成模板；接下来的几何体、粒子方向、速度形状和火焰资源都将在这个空网络中逐步搭建。
+这一步已经在 `/obj` 下创建了一个几何体容器 `geo1`，并在其中放入第一个 SOP 节点 `circle1`。左侧视口能看到一个贴地放置的圆形多边形轮廓，说明作者选择用圆环/圆盘作为最基础的模拟起点。
+
+中间网络当前非常简单，只包含：
+
+- `circle1`
+
+右侧参数面板打开的是 `Circle circle1`，当前能确认的参数包括：
+
+- `Primitive Type = Polygon`
+- `Orientation = ZX Plane`
+- 已启用 `Reverse`
+- `Radius = 1, 1`
+- `Center = 0, 0, 0`
+- `Rotate = 0, 0, 0`
+- `Uniform Scale = 1`
+- `Divisions = 12`
+- `Arc Type = Closed`
+- `Arc Angles = 0 -> 360`
+
+左下表格区域已经显示 `circle1` 的点位数据，说明这个几何体已经实际生成而不是占位节点。结合字幕“这次制作的是有方向性，从下往上上升的”和正文“这次用圆圈来给这个物体做模拟”，这张图表达的是：教程没有从体积盒子或复杂模型起步，而是先用一个简单圆形作为发射基础，再围绕“从地面向上生长”的方向性去塑造火焰/烟雾速度形态。
+这一步把基础圆形进一步转换成可用于火焰模拟的散点源。中间网络当前已经形成最小工作链：
+
+- `circle1`
+- `pyrosource1`
+
+左侧视口里能看到圆形平面已经不再只是一圈边界，而是被大量均匀散布的黑色点填满，说明源几何已被转成表面散射点。右侧参数面板打开的是 `Pyro Source pyrosource1`，当前能确认的设置包括：
+
+- `Group Type = Guess from Group`
+- 预设按钮：`Initialize`
+- `Mode = Surface Scatter`
+- `Particle Separation = 0.01`
+- `Particle Scale = 2`
+- `Primitive Attributes = shop_materialpath`
+- `Attributes = 0`
+
+左下属性表中还能看到 `pyrosource1` 已经生成点属性数据，例如：
+
+- `P[x] / P[y] / P[z]`
+- `pscale = 0.02`
+- `group:particles = 1`
+
+结合字幕“模式中要换成表面散射器”和正文“以中心为基准可以自由旋转的精灵方式”“从下往上上升”，这张图表达的是：教程先用 `circle1` 提供底部发射区域，再通过 `pyrosource1` 的 `Surface Scatter` 模式把这个区域离散成大量粒子/采样点，为后续施加有方向性的上升速度、Noise 扰动和火焰形态塑造做准备。
+
+### 00:03:25-00:08:20 Noise、速度、噪声
+
+- 本段定位：Noise、速度、噪声。
+- 知识点：如果是体积的话就是3D空间里会填满那个散射器 然后 就算这样也请给个最新款 因为现在要这样从地面绽放 因为现在要这样从地面绽放 可以看作是已经设置好了圆。
+- 知识点：会单独加一个属性 不要定制 不要定制 需要在这里创建一个叫什么的字段 需要在这里创建一个叫什么的字段 那么现在这里 又有字段值 又有字段值。
+- 知识点：可以看作生成了一个名为的属性 由于Bright 从这个属性出发 由于Bright 我们分成两条路径 对于场员 大约会进行三种配置 首先 后续会创建一个用于速度场的属性。
+- 知识点：用属性调整下面外获取 这个节点也是比如说调整 后面有香料有浮点数有各种东西 然后 还有要用的 节点中有什么属性 Noyce这个节点两个节点有点相似的作用。
+- 知识点：可以生成Attribute 也可以在现有Attribute上 加上Noise图案还有 这里也 选择噪音的话 这部分也可以添加 所以我们不是只有一般的值。
+- 知识点：而是需要某个字段有随机模式 并产生作用的力量 这样用两种节点来做 两种角色有点相似 就是 知道这个就行 这里默认是V 可以改也可以那样用 看起来可以。
+- 知识点：那现在我们 只在外轴上加了噪音 让速度变得随机一些的长 要试着做一下 所以 改成零中心 但现在 这属性怎么变的 完全猜不到 所以 往下看的话加个标记。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`Noise`、`速度`、`噪声`。
+
+**关键画面：**
+
+这张图仍然停留在 `geo1` 内部的基础发射源阶段，用来确认火焰会以“贴地绽放”的方式从地面起势，而不是从体积内部向四周平均扩散。
+
+当前可见节点链只有两步：
+
+- `circle1`
+- `pyrosource1`
+
+左侧视口显示的是一片贴在地面的扁平散点区域，整体几乎没有高度厚度，说明散射源仍然严格受限在圆形平面上。中间网络里 `pyrosource1` 处于选中状态，右侧参数面板打开的是 `Pyro Source pyrosource1`，当前能确认的设置包括：
+
+- `Group Type = Guess from Group`
+- `Mode = Surface Scatter`
+- `Particle Separation = 0.01`
+- `Particle Scale = 2`
+- `Primitive Attributes = shop_materialpath`
+- `Attributes = 0`
+
+左下属性表还能确认该节点已经输出散点属性，例如：
+
+- `P[x] / P[y] / P[z]`
+- `pscale = 0.02`
+- `group:particles = 1`
+
+结合本段正文“如果是体积的话就是3D空间里会填满那个散射器”“因为现在要这样从地面绽放”，这一步的作用是先把发射源限定为一个地面圆盘上的表面散点集合。这样后面无论添加速度属性还是叠加 Noise，随机变化都会从这片贴地源面向上展开，而不会先得到一个填满体积的 3D 初始分布。
+这一步开始真正给散点源添加“随机速度”，核心做法是在 `pyrosource1` 之后新增一个向量属性调整节点，对速度属性 `v` 直接叠加 Noise。
+
+当前主链路可见为：
+
+- `circle1`
+- `pyrosource1`
+- `attribadjustvector1`
+
+同时在旁边还能看到一个带红色警告图标、名称被遮挡的属性节点分支，它没有接回主输出；从节点下方显示的属性标记看，这个分支与 `Cd` 有关，但本图无法可靠确认其具体配置，因此这里不把它作为主步骤的一部分展开。
+
+右侧参数面板打开的是 `Attribute Adjust Vector attribadjustvector1`，当前能确认的关键设置如下：
+
+- `Attribute Name = v`
+- `Attribute Class = Point`
+- `Component Scope = X / Y / Z`
+- `Adjust Value` 已启用
+- `Adjustment for = Direction & Length`
+- `Operation = Add`
+- `Adjust with = Noise`
+- `Range Values = Positive`
+- `Amplitude = 1`
+- `Noise Type = Simplex`
+- `Location Attribute = P`
+- `Element Size = 1`
+- `Offset = 0`
+
+左下属性表说明输出里已经存在并被查看的属性包括：
+
+- `burn`
+- `pscale`
+- `v[x]`
+
+这一步的含义是：不再把所有散点都视为只有统一的上升方向，而是基于每个点的位置 `P` 生成一套 `Simplex Noise`，再把这套噪声作为增量加到速度向量 `v` 上。由于此时 `Range Values` 还是 `Positive`，噪声更像是在原有速度基础上追加偏移，先建立“每个点的速度不完全一样”的随机性。
+这一步仍然在调 `attribadjustvector1` 的 `v` 噪声，但已经把它从单纯的正向偏移升级成会随时间变化、可在正负两侧摆动的动态速度场。
+
+节点链与上一张图一致，仍然是：
+
+- `circle1`
+- `pyrosource1`
+- `attribadjustvector1`
+
+右侧 `Attribute Adjust Vector attribadjustvector1` 中当前能确认的设置包括：
+
+- `Attribute Name = v`
+- `Attribute Class = Point`
+- `Adjustment for = Direction & Length`
+- `Operation = Add`
+- `Adjust with = Noise`
+- `Range Values = Zero Centered`
+- `Amplitude = 1`
+- `Noise Type = Simplex`
+- `Location Attribute = P`
+- `Element Size = 1`
+- `Offset = 0`
+- `Animate Noise` 已启用
+- `Pulse Duration = 0.1`
+- `Fractal Type = Standard (fBm)`
+- `Max Octaves = 3`
+- `Lacunarity = 2.01234`
+- `Roughness = 0.5`
+
+左侧视口不再只是地面散点，而是出现一条沿地面延展、上下起伏的黄色带状可视化结果，说明作者正在直接观察 Noise 对速度属性产生的波动形态。左下属性表里当前 `v[x]` 多数行为 `0.0`，表明画面此刻更像是在检查某一分量或整体模式，而不是最终火焰外观。
+
+结合正文“只在外轴上加了噪音”“改成零中心”“这种变化的场会一直”，这一步的关键是两点：
+
+- 把 `Range Values` 改成 `Zero Centered`，让噪声围绕零值正负摆动，而不是只往一个方向累加
+- 开启 `Animate Noise`，让这个速度噪声场随时间持续变化
+
+这样后续送入模拟时，粒子或体积不会只得到静态、单边偏移的速度，而会获得持续抖动、方向可反转的随机场，火焰边缘和整体上升流向就会更自然。
+
+### 00:08:22-00:13:13 Noise、粒子、颜色
+
+- 本段定位：Noise、粒子、颜色。
+- 知识点：之前准备好的属性中 有一个叫Burn的 属性已经获取了 这里也会添加噪声值 这里用成法来添加 这里暂时关闭视觉 这次用视觉来展示Burn的属性。
+- 知识点：我们来看看颜色 这样现在噪音用颜色表示 这里暗的部分和 这个颜色的部分 这里暗的部分和 白色区域就这样表现出来 把最大值调高一点调整一下。
+- 知识点：Up,然后Low Value 取消Check Element size 适当减少密度来看 这里也Check动画 但Duration适当。
+- 知识点：降到Noise 变化的模式出现了 创建一个叫Burn的字段 这里白色部分越亮 然后燃烧就越强烈 而且Burn要改成Float 现在看清楚了。
+- 知识点：这样想就行 黑色不亮白色亮 这样制作图案 制作图案 先第二个这些 会根据Name属性单独分组并保存 Source Name和Double Name。
+- 知识点：以后进行恢复时 在带到模拟拍录球铁期之前 其实 必须将Point属性 转换为Volume属性 然后通过音量 转换成字段带走 这里使用了原属性。
+- 知识点：作为原名称 这个属性名称是固定的 所以这样匹配的部分 这里制作的图案 用材料区分的字段 用空格这个属性 分类 可以这么想 这里再加一条 又Adjust。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Noise`、`粒子`、`颜色`、`噪声`。
+
+**关键画面：**
+
+这一步开始在已有的发射源属性上叠加第二类噪声，不再处理速度 `v`，而是改为制作一个名为 `burn` 的点属性，用它控制后续哪些区域燃烧更强。
+
+当前主链路可见为：
+
+- `circle1`
+- `pyrosource1`
+- `attribadjustvector1`
+- `attribnoise1`
+
+右侧参数面板打开的是 `Attribute Noise attribnoise1`。当前能可靠确认的设置包括：
+
+- `Attribute Names` 类型为 `Vector`
+- 目标属性名为 `burn`
+- `Attribute Class = Point`
+- `Operation = Add`
+- `Range Values = Positive`
+- `Amplitude = 1`
+- `Output Raw Value` 已启用
+- `Noise Type = Simplex`
+- `Location Attribute = P`
+- `Element Size = 1`
+- `Offset = 0`
+- `Fractal Type = Standard (fBm)`
+
+左侧视口继续显示贴地分布的黄色噪声带状形态，说明作者正在直接观察这个属性在地面圆盘上的空间分布，而不是看最终火焰。左下属性表中已经能看到：
+
+- `burn`
+- `pscale`
+- `v[x]`
+
+其中 `burn` 当前示例值大多在 `1.4` 到 `1.5` 左右，说明这个属性已经被写入点数据。结合正文“之前准备好的属性中 有一个叫 Burn 的属性已经获取了 这里也会添加噪声值”“白色部分越亮 然后燃烧就越强烈”，这一步的目的就是先建立一张附着在散点上的 `burn` 强度图，为后续用明暗分布区分燃烧强弱做准备。
+这一步进入“把点属性带入后续模拟”的准备阶段：`burn` 仍然保留在散点链路上，但作者已经开始补充标识信息并准备把点数据转换成体积字段。
+
+当前主链路可见为：
+
+- `circle1`
+- `pyrosource1`
+- `attribadjustvector1`
+- `attribnoise1`
+- `name1`
+
+其中节点下方的属性标记表明：
+
+- `attribadjustvector1` 输出 `v`
+- `attribnoise1` 输出 `burn`
+
+左侧视口中，原本黄色的可视化已经切换成黑白分布，亮部和暗部交替落在贴地散点带上，这与正文里“黑色不亮白色亮”“用颜色表示噪音”的描述一致，说明作者正在用亮暗对比检查 `burn` 图案，而不是再看速度噪声。
+
+中间网络最下方正在新建节点，Tab 搜索面板中输入的是与 `volume` 相关的关键字，候选列表里能清楚看到：
+
+- `Volume Rasterize`
+- `Volume Rasterize Attributes`
+- `Volume Rasterize Curve`
+- `Volume Rasterize Hair`
+- `Volume Rasterize Lattice`
+- `Volume Rasterize Particles`
+- `Volume Rasterize Points`
+
+右侧参数区当前切到一个空的 `Merge merge1`，尚未配置有效输入，这说明这一张图的重点不是参数值，而是流程转折：作者已经确认 `burn` 噪声图案可用，下一步要通过体积栅格化类节点把这些点属性转换成模拟真正可消费的 Volume/Field 数据。结合正文“必须将 Point 属性转换为 Volume 属性 然后通过音量转换成字段带走”，这一步表达的是从点级属性编辑过渡到体积字段构建。
+这一步已经把“点属性转体积”的链路正式搭起来了：作者单独拉出一条 `pscale` 调整分支，用来扩大点的影响半径，然后把它与带有 `burn` 的主分支合并，最后送入 `Volume Rasterize Attributes`。
+
+当前可见网络结构为：
+
+- 主分支：`circle1 -> pyrosource1 -> attribadjustvector1 -> attribnoise1 -> name1`
+- 侧分支：`pyrosource1 -> attribadjustfloat1`
+- 汇合与输出：`name1 + attribadjustfloat1 -> merge1 -> volumerasterizeattributes1`
+
+右侧参数面板打开的是 `Attribute Adjust Float attribadjustfloat1`，当前能确认的设置包括：
+
+- `Attribute Name = pscale`
+- `Attribute Class = Point`
+- `Adjust Value` 已启用
+- `Operation = Multiply`
+- `Pattern Type = Constant`
+- `Constant Value = 2.5`
+
+左下属性表也能看到这一修改已经生效：
+
+- `burn = 1.0`
+- `pscale = 0.05`
+- `group:particles = 1`
+
+结合前面 `pyrosource1` 阶段的 `pscale = 0.02`，这里相当于把粒子半径放大了 `2.5` 倍。画面中央仍显示正在拖线连接，说明作者此刻就在把这条放大过 `pscale` 的分支接入合并链。字幕“稍微扩大了一些”与之吻合。
+
+这一步的实际作用是：
+
+- 用 `attribadjustfloat1` 放大 `pscale`，让每个点在体积栅格化时覆盖更宽的空间范围
+- 保留主分支上的 `burn` 和 `v` 等属性
+- 通过 `merge1` 汇合后送进 `volumerasterizeattributes1`
+
+这样后续生成的体积字段就不再只是极细的点采样，而会得到更适合火焰模拟的体积厚度与可读的 `burn` 分布。
+
+### 00:13:13-00:18:10 粒子、速度、噪声
+
+- 本段定位：粒子、速度、噪声。
+- 知识点：按了两次回车 这里现在要创建温度属性 这样来创建 创建了一个叫温度的属性 这里也要改成Float才行 噪声值和这里设置的有点相似 设置一下。
+- 知识点：用成法运算 定的最大值 这里也运算一下 上传值取消检查 动画时间这里会适当加快一点 我也加个属性来确认一下 这里可观察到变化速度更快。
+- 知识点：用点抖动值 给烟雾场加更多随机值 适当晃动点位置的节点 这样看就行 以中心为基准上下左右 随机添加噪音 变平的时候 如果粒子不断生成。
+- 知识点：6.5是这样生成 但有了这个抖动值就有厚度感 可以适当打破那个保存值 还有这里的Name属性 这个就直接复制然后连接吧 这里加了temperature属性。
+- 知识点：合并一下 得正式开始做restore这个节点了 Furn字段会带走 temperature字段需要 V字段也是 还有source value。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`粒子`、`速度`、`噪声`、`烟雾`。
+
+**关键画面：**
+
+当前可见网络结构为：
+
+- 主分支：`circle1 -> pyrosource1 -> attribadjustvector1 -> attribnoise1 -> name1 -> merge1 -> volumerasterizeattributes1`
+- 侧分支：`pyrosource1 -> attribadjustfloat1 -> attribnoise2`
+
+右侧参数面板打开的是 `Attribute Noise attribnoise2`，当前能确认的设置包括：
+
+- `Attribute Names` 类型为 `Vector`
+- 目标属性名显示为 `Cd`
+- `Attribute Class = Point`
+- `Operation = Add`
+- `Range Values = Positive`
+- `Amplitude = 1`
+- `Output Raw Value` 已启用
+- `Noise Type = Simplex`
+- `Location Attribute = P`
+- `Element Size = 1`
+- `Offset = 0`
+- `Fractal Type = Standard (fBm)`
+
+左侧视口中，贴地散点带已经被彩色渐变可视化，左下属性表也能看到：
+
+- `burn = 1.0`
+- `Cd[r]`
+- `Cd[g]`
+
+这说明作者正在用颜色通道直接检查一组新的噪声分布。当前可确认的结论是：教程在 `pyrosource1 -> attribadjustfloat1` 这条分支后新增了一个噪声节点，用颜色方式预览其空间图案；但“这一步是否已经把该属性正式命名为 temperature，以及是否已改成 Float”在本图里证据不足，需要后续画面继续核对。
+这一步把用于烟雾场的第二条属性分支正式补全了：上一张图里尚不明确的新噪声属性，现在已经能确认命名为 `temperature`，并且在送入体积前额外插入了一个点抖动节点，用来打破过于平整的分布。
+
+当前可见网络结构为：
+
+- 主分支：`circle1 -> pyrosource1 -> attribadjustvector1 -> attribnoise1 -> name1`
+- 烟雾分支：`pyrosource1 -> attribadjustfloat1 -> attribnoise2 -> pointjitter1 -> name2`
+- 汇合与输出：`name1 + name2 -> merge1 -> volumerasterizeattributes1`
+
+图中节点下方显示的关键属性标签包括：
+
+- `attribadjustvector1` 输出 `v`
+- `attribnoise1` 输出 `burn`
+- `attribadjustfloat1` 输出 `pscale`
+- `attribnoise2` 输出 `temperature`
+
+右侧参数面板当前打开的是 `Name name2`，能确认的设置有：
+
+- `Attribute = source_name`
+- `Class = Primitive`
+- `Number of Namings = 1`
+- `Name = burn v`
+
+左侧视口显示的是一条较为均匀的白色散点带，说明此时重点不再是颜色噪声预览，而是检查点分布本身。左下属性表里当前能看到：
+
+- `burn`
+- `pscale`
+- `v[x]`
+
+结合正文“用点抖动值 给烟雾场加更多随机值”“这里加了 temperature 属性”“还有这里的 Name 属性 这个就直接复制然后连接吧”，这一步的作用可以分成三点：
+
+- 把前一张图里的新噪声属性正式作为 `temperature` 分支保留下来
+- 通过 `pointjitter1` 给点位置增加随机扰动，让烟雾场不那么平
+- 再用 `name2` 给这条分支补上命名信息，准备与主分支一起送进后面的体积栅格化流程
+这一步已经从“构建输入字段”正式进入模拟器配置阶段：前面通过 `merge1 -> volumerasterizeattributes1` 汇总出的体积属性，被直接送入 `pyrosolver1`，并在右侧 `Sourcing` 面板中明确指定了各字段如何写入火焰模拟。
+
+当前可见网络结构为：
+
+- 左支：`attribnoise1 -> name1`
+- 右支：`attribnoise2 -> pointjitter1 -> name2`
+- 汇合链：`name1 + name2 -> merge1 -> volumerasterizeattributes1 -> pyrosolver1`
+
+右侧参数面板打开的是 `Pyro Solver pyrosolver1`，标签页位于 `Sourcing`。当前能确认的关键设置如下：
+
+- `Source Type = Individual Volumes`
+- `Number of Sources = 4`
+
+`Source Volumes` 列表当前可见的四组映射关系为：
+
+1. `Source 1: density`
+- `Operation = Add`
+- 标量类型
+- `Source Volume = density`
+- `Target Field = density`
+- `Source Scale = 1`
+
+2. `Source 2: temperature`
+- `Operation = Pull`
+- 标量类型
+- `Source Volume = temperature`
+- `Target Field = temperature`
+- `Source Scale = 1`
+- `Acceleration Strength = 50`
+- `Deceleration Strength = 0`
+
+3. `Source 3: flame`
+- `Operation = Maximum`
+- 标量类型
+- `Source Volume = burn`
+- `Target Field = flame`
+- `Source Scale = 1`
+
+4. `Source 4: vel`
+- `Operation = Add`
+- 向量类型
+- `Source Volume = v`
+- `Target Field = vel`
+- `Source Scale = 1`
+
+左侧视口显示一条明亮的体积带，说明输入字段已经不再只是点，而是能被求解器识别的体积源。结合正文“得正式开始做 restore 这个节点了”“burn 字段会带走 temperature 字段需要 V 字段也是”，这一步的核心就是把前面整理出的四类信息接入 Pyro 求解器：
+
+- `density` 负责基础烟雾密度
+- `temperature` 负责温度驱动
+- `burn` 作为 `flame` 源控制燃烧强度
+- `v` 作为 `vel` 源注入速度场
+
+这样火焰、温度、烟雾密度和初始速度就都被接入同一套 Pyro 模拟源配置中，后面才可以继续调碰撞、边界和缓存输出。
+
+### 00:18:10-00:22:44 碰撞、烟雾
+
+- 本段定位：碰撞、烟雾。
+- 知识点：temperature的话放着也行 flame也放着吧 varsity适当提高一点 火中摇曳的部分 可以看作是负责的 还有就是基本人油门大小。
+- 知识点：现在在测试 所以用稍高的数值先确认一下 时间尺度是火的运动随机性很强 现在有那种飘动的动作 为了更快地检查那种动作 把时间尺度也调高一点看看。
+- 知识点：这稍后再看 边界框或碰撞 现在应该不太需要 现在设置的原好像匹配好了 先这样默认设置的部分 我来测验证效果 这的字段不需要了 需要用VDB来部署。
+- 知识点：比如说 转换后原本是32位 这会生成体积 优化为16位 现在进行导出 像Loc站直接连接 Pyro-Bake Volume 这个确认会更好 12位的话是5%。
+- 知识点：现在做20位左右 这个按钮需要用Diana确认 需要一起生成烟雾 但渲染会分开 分两次做一次用火渲染 一个是烟雾来命名 这样先看看模拟是怎么做的。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`碰撞`、`烟雾`。
+
+**关键画面：**
+
+这一步继续细化 `pyrosolver1` 的输入源设置，重点是在已有四个体积源的基础上，重新指定密度字段的来源，并确认 `temperature`、`flame`、`vel` 都一起参与同一套求解。
+
+当前可见输入链仍然是：
+
+- `name1 + name2 -> merge1 -> volumerasterizeattributes1 -> pyrosolver1`
+
+右侧 `Pyro Solver pyrosolver1` 停留在 `Sourcing` 标签页，当前能确认的设置包括：
+
+- `Source Type = Individual Volumes`
+- `Number of Sources = 4`
+
+当前四组源字段映射为：
+
+1. `Source 1: density`
+- `Operation = Add`
+- 标量类型
+- `Source Volume = burn`
+- `Target Field = density`
+- `Source Scale = 1`
+
+2. `Source 2: temperature`
+- `Operation = Pull`
+- 标量类型
+- `Source Volume = temperature`
+- `Target Field = temperature`
+- `Source Scale = 1`
+- `Acceleration Strength = 50`
+- `Deceleration Strength = 0`
+
+3. `Source 3: flame`
+- `Operation = Maximum`
+- 标量类型
+- `Source Volume = burn`
+- `Target Field = flame`
+- `Source Scale = 1`
+
+4. `Source 4: vel`
+- `Operation = Add`
+- 向量类型
+- `Source Volume = v`
+- `Target Field = vel`
+- `Source Scale = 1`
+
+和上一段刚接入求解器时相比，这里最关键的变化是 `density` 不再取名为 `density` 的独立体积，而是直接使用 `burn` 作为密度输入来源。结合字幕“flame 也放着吧”和正文“temperature 的话放着也行 flame 也放着吧 varsity 适当提高一点”，这一步表达的是：作者先用同一份 `burn` 分布同时驱动烟雾密度与火焰强度，再保留 `temperature` 和 `v` 分别控制温度与初始速度，快速搭出一个可测试的火焰/烟雾联合输入版本。
+这一步开始补可视化与烘焙链路。`pyrosolver1` 下方新增了 `pyrobakevolume1`，作者一边保留“火焰和烟雾一起生成”的模拟输入，一边在 `Look` 面板中单独调烟雾和火焰的显示强度，方便后面分开渲染。
+
+当前可见链路为：
+
+- `merge1 -> volumerasterizeattributes1 -> pyrosolver1 -> pyrobakevolume1`
+
+右侧参数面板打开的仍是 `Pyro Solver pyrosolver1`，但标签页已经切到 `Look`。当前能确认的设置包括：
+
+- `Smoke` 启用
+- `Density Scale = 10`
+- `Smoke Color = (1, 1, 1)`，常量模式
+- `Shadow Color = (1, 1, 1)`
+- `Shadow Density = 1`
+- `Ambient Shadow Scale = 0.5`
+
+`Fire` 区域当前能确认：
+
+- `Intensity Scale = 25`
+- `Source Range = 0 -> 1`
+- `Fire Intensity Ramp` 为从左低到右高的线性斜坡
+- `Color Mode = Color Ramp`
+- `Source Range = 0 -> 1`
+- `Fire Color Ramp` 为深棕到亮橙的渐变
+
+画面中下方正在通过环形菜单新建或连接 `pyrobakevolume1`，左侧视口只看到一条细长体积包围区，还没有真正展示最终火焰外观。结合字幕“我们会一起生成烟雾，但渲染会分开”和正文“需要一起生成烟雾 但渲染会分开 分两次做 一次用火渲染 一个是烟雾来命名”，这一步的意义是：
+
+- 模拟阶段仍然同时保留火和烟两个体积结果
+- 通过 `Look` 面板先把烟雾密度、火焰亮度和颜色梯度调到便于观察的范围
+- 再借助 `pyrobakevolume1` 为后续单独输出火焰版和烟雾版做准备
+这一步已经把 Pyro 模拟后的输出正式拆成两条渲染支路，同时继续在求解器里调整火焰上升感和随机摆动，让火苗的运动更有漂浮和摇曳效果。
+
+当前可见网络结构为：
+
+- 输入链：`attribadjustvector1 / attribadjustfloat1 -> attribnoise1 / attribnoise2 -> pointjitter1 -> name1 / name2 -> merge1 -> volumerasterizeattributes1 -> pyrosolver1`
+- 输出链：`pyrosolver1 -> Pyro Bake Volume Render_Smoke`
+- 输出链：`pyrosolver1 -> Pyro Bake Volume Render_Fire`
+
+这表明同一份模拟结果被拆成两个命名明确的烘焙/渲染节点，分别对应烟雾版和火焰版。
+
+右侧参数面板当前打开的是 `Pyro Solver pyrosolver1`，位于 `Shape` 标签页。当前能确认的设置包括：
+
+- `Buoyancy Scale = 0.3`
+- `Ambient Temp (K) = 300`
+- `Reference Temp (K) = 3000`
+
+`Gravity` 区域：
+
+- `Gravity Acceleration = 9.8`
+- `Gravity Direction = (0, -1, 0)`
+
+`Turbulence` 区域：
+
+- `Noise Type = Analytic Fast Simplex Noise`
+- `Turbulence = 0.35`
+- `Swirl Size = 0.5`
+- `Roughness = 0.5`
+- `Pulse Length = 0.5`
+- `Max Octaves = 2`
+- `Seed = 0`
+- `Threshold Field = temperature`
+- `Threshold Range = 0.01 -> 0`
+- `Control Field = density`
+- `Control Range = 0 -> 1`
+
+左侧视口里能看到一条已经开始发亮的细长体积盒，说明作者正在一边调求解形态，一边观察基础火焰体积的响应。结合正文“时间尺度是火的运动随机性很强”“有那种飘动的动作”“会一起生成烟雾 但渲染会分开”，这一步的意义是：
+
+- 用 `Buoyancy` 和 `Gravity` 控制火焰/烟雾总体的上升与下坠关系
+- 用 `Turbulence` 为体积添加随机卷动和晃动
+- 通过 `temperature` 与 `density` 作为阈值/控制字段限制扰动影响区域
+- 最终把同一套模拟结果拆成 `Render_Smoke` 与 `Render_Fire` 两条独立渲染输出
+
+### 00:22:44-00:27:29 曲线、火焰、缓存
+
+- 本段定位：曲线、火焰、缓存。
+- 知识点：让中间部分的值更强一些 设置成平滑的曲线 然后Monotone Cubic这种形式 把这个图表和平面场互动 现在火焰 在需要墙面表达的部分要更加用力。
+- 知识点：中间 那时候那种动荡的力量就会变得更强 一样 在火焰的某个中间点 这样再来一次 现在Turbulence的力量其实没有特别强 所以现在制服的作用用眼睛。
+- 知识点：不太能确认 现在这里适当有点小小的波动感 但只用Turbulence 要抓住这种感觉有点难 所以上升的力量本身就会通过吸附反射 变得更强大。
+- 知识点：我们再提高一下部数 来比较一下变化值 这个边考边看可能会更好 创建了一个文件缓存节点 然后保存了一下场景 然后再做 文件缓存变量会更强。
+- 知识点：这样作用才能正常发挥 我个人会建个文件夹来保存 这样命名的 还有比如说 那么会自动设置到80帧 我们按版本分开 然后边考缓存边就是比较那个。
+- 核对对象：`曲线`、`火焰`。
+
+**关键画面：**
+
+这一步继续细调 `pyrosolver1` 的火焰形态，但重点已经从单纯调数值切换到“按曲线控制作用分布”。作者在 `Turbulence` 区域里启用控制场，并通过一条可编辑曲线强化火焰中间区域的作用强度。
+
+当前可见网络结构为：
+
+- 输入链：`attribadjustvector1 / attribadjustfloat1 -> attribnoise1 / attribnoise2 -> pointjitter1 -> name1 / name2 -> merge1 -> volumerasterizeattributes1 -> pyrosolver1`
+- 输出链：`pyrosolver1 -> Render_Smoke`
+- 输出链：`pyrosolver1 -> Render_Fire`
+
+右侧参数面板打开的是 `Pyro Solver pyrosolver1`，位于 `Shape` 标签页。当前能确认的设置包括：
+
+- `Buoyancy Scale = 0.3`
+- `Ambient Temp (K) = 300`
+- `Reference Temp (K) = 3000`
+- `Gravity Acceleration = 9.8`
+- `Gravity Direction = (0, -1, 0)`
+
+`Turbulence` 区域当前能确认：
+
+- `Noise Type = Analytic Fast Simplex Noise`
+- `Turbulence = 0.35`
+- `Swirl Size = 0.5`
+- `Roughness = 0.5`
+- `Pulse Length = 0.5`
+- `Max Octaves = 2`
+- `Seed = 0`
+- `Threshold Field = temperature`
+- `Threshold Range = 0.01 -> 0`
+- `Use Control Field` 已启用
+- `Control Field = flame`
+- `Control Range = 0 -> 1`
+- `Remap Control Field` 已启用
+
+下方 `Control Field Ramp` 明显不是默认直线，而是被手动加点并抬高中段，形成“中间高、两端低”的分布趋势。字幕“移动到中间，再加一个点，让中间部分的值更强一些”和正文“设置成平滑的曲线”“Monotone Cubic 这种形式”与此一致。
+
+这一步的作用是：不再让湍流对所有火焰区域平均生效，而是借助 `flame` 作为控制场，通过曲线把扰动权重集中到火焰中段。这样中部的翻卷、摆动和上升力会更明显，火焰形状也更容易做出教程想要的“中间更有力、边缘相对收敛”的效果。
+这一步开始把模拟结果落盘缓存，方便后面反复比较不同参数版本，而不是每次都重新从头烹算 Pyro。网络中在 `pyrosolver1` 后面新增了一个 `filecache1`，并由它再向两个渲染输出分支供数。
+
+当前可见网络结构为：
+
+- 输入链：`attribadjustvector1 / attribadjustfloat1 -> attribnoise1 / attribnoise2 -> pointjitter1 -> name1 / name2 -> merge1 -> volumerasterizeattributes1 -> pyrosolver1`
+- 缓存链：`pyrosolver1 -> filecache1`
+- 输出链：`filecache1 -> Render_Smoke`
+- 输出链：`filecache1 -> Render_Fire`
+
+右侧参数面板打开的是 `File Cache filecache1`。当前能确认的设置包括：
+
+- 顶部文件格式后缀为 `bgeo.sc`
+- `Time Dependent Cache` 已启用
+- `Base Name = $HIPNAME.$OS`
+- `Base Folder = $HIP/geo`
+- `Version = 1`
+
+`Cache` 区域可见的操作按钮有：
+
+- `Save to Disk`
+- `Save to Disk in Background`
+- `Cancel Cook`
+
+`Sequence` 区域当前能确认：
+
+- `Evaluate As = Frame Range`
+- `Simulation` 已勾选
+- `Start/End/Inc = 1 -> 80 -> 1`
+
+节点下方还能看到当前生成的缓存文件名示例：
+
+- `$HIPNAME.$OS_v1.$F4.bgeo.sc`
+
+结合字幕“创建了一个文件缓存节点，保存了一下场景”和正文“文件缓存节点”“自动设置到 80 帧”“按版本分开”，这一步的意义是：
+
+- 把 `pyrosolver1` 的时序结果缓存到磁盘而不是只停留在内存里
+- 以 `80` 帧为一个完整测试区间比较火焰变化
+- 用 `Version = 1` 和统一命名规则管理不同实验版本
+- 让后续 `Render_Smoke` / `Render_Fire` 都可以基于同一份已缓存模拟结果工作
+这一步在继续保留缓存链的同时，又回到 `pyrosolver1` 的输入时间控制，限制源字段只在指定帧段内生效，避免整个时间轴都无差别持续注入。
+
+当前可见网络结构仍然是：
+
+- 输入链：`attribnoise1 / attribnoise2 -> name1 / name2 -> merge1 -> volumerasterizeattributes1 -> pyrosolver1`
+- 缓存链：`pyrosolver1 -> filecache1`
+- 输出链：`filecache1 -> Render_Smoke`
+- 输出链：`filecache1 -> Render_Fire`
+
+右侧参数面板打开的是 `Pyro Solver pyrosolver1`，位于 `Sourcing` 标签页。当前能确认的全局设置包括：
+
+- `Source Type = Individual Volumes`
+- `Limit Source Range` 已启用
+- `Range Type = Frame Range`
+- `Frame Range = 1 -> 40`
+- `Cycle Length = 120`
+- `Number of Sources = 4`
+
+当前四组源字段仍然保持：
+
+1. `density`
+- `Operation = Add`
+- `Source Volume = burn`
+- `Target Field = density`
+- `Source Scale = 1`
+
+2. `temperature`
+- `Operation = Pull`
+- `Source Volume = temperature`
+- `Target Field = temperature`
+- `Source Scale = 1`
+- `Acceleration Strength = 50`
+- `Deceleration Strength = 0`
+
+3. `flame`
+- `Operation = Maximum`
+- `Source Volume = burn`
+- `Target Field = flame`
+- `Source Scale = 1`
+
+4. `vel`
+- `Operation = Add`
+- `Source Volume = v`
+- `Target Field = vel`
+
+中间网络里 `filecache1` 下方还能看到当前缓存文件名已经展开为具体工程命名，例如：
+
+- `Ex_01_CampFire_01.filecache1_v1.$F4.bgeo.sc`
+
+这说明作者已经不只是建立缓存结构，而是在当前教程工程里实际采用带项目名的缓存命名。结合正文“自动设置到 80 帧”“边考缓存边比较”和当前图里 `Frame Range = 1 -> 40` 的设置，这一步表达的是：作者在做局部时段测试时，不一定每次都整段烹算到最后，而是先把源输入限定在前 `40` 帧内连续释放，借此更快比较参数变化和缓存结果。
+
+### 00:27:29-00:30:32 纹理、火焰
+
+- 本段定位：纹理、火焰。
+- 知识点：现在这部分再适当 以后 比较一下看 现在 关于分散的部分 似乎有点需要 在那之前 现在火的模式就有点那种 简化了 希望能表达出来 所以 如果这个参考温度降低。
+- 知识点：机制温度 适当降低的话 上升的力量会更强一些 火焰的纹理会更明显 更分散或类似这样 嗯 更多一些 嗯 然后 轻松表达 应该可以 再试一次现金 嗯 然后现金都花完了。
+- 知识点：这次是怎么出来的 然后 嗯 是这样出来的 嗯 火 太 像是 火焰 不急 比预期的要多 现在我傻傻的造影 有这种模式 再多一点 这部分 适当抓住 太早了 嗯 要解决那部分。
+- 知识点：我们刚才不小心 这里的数据 以为和这里一样输入了 没输入的部分 适当修改了一下 做一下 还有什么 比如说 现在然后 这部 这里值货 这里价格呢 嗯 这个价格也行。
+- 知识点：解决不了的时候 年度值 适当加两 是的 这里是虚线 表示的 是的 嗯 对 然后球的纹理 有点激动的作用 对 然后 所以这个值 加点东西 再来一次 需要选择。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`火焰`。
+
+**关键画面：**
+
+这一步继续在 `pyrosolver1` 内部细调模拟基础参数，目标是让火焰纹理更明显、变化更容易比较。重点已经不是源字段映射，而是时间尺度、子步数和求解缓存等求解精度相关参数。
+
+当前可见网络结构为：
+
+- 输入链：`attribnoise1 / attribnoise2 -> name1 / name2 -> merge1 -> volumerasterizeattributes1 -> pyrosolver1`
+- 缓存链：`pyrosolver1 -> filecache1`
+- 输出链：`filecache1 -> Render_Smoke`
+- 输出链：`filecache1 -> Render_Fire`
+
+右侧参数面板打开的是 `Pyro Solver pyrosolver1`。当前能确认的设置包括：
+
+`General`
+- `Voxel Size = 0.035`
+- `Velocity Voxel Scale = 1`
+- `Time Scale = 1.5`
+
+`Simulation`
+- `Simulation Type = Sparse`
+- `Global Substeps = 1`
+- `Min Substeps = 2`
+- `Max Substeps = 3`
+- `CFL Condition = 1`
+- `Advection-Reflection = Single-Project`
+- `Reflection Amount = 0.95`
+- `Cache Memory (MB) = 5000`
+
+结合正文“如果这个参考温度降低”“我们再提高一下步数 来比较一下变化值”和字幕“比较一下看看”，这张图表达的是：作者在保持当前火焰链路不变的前提下，通过增大 `Time Scale`、设置更高的最小/最大子步数，以及较高的反射量，来观察火焰纹理是否更清晰、分散感是否更强。`filecache1` 仍然保留在 `pyrosolver1` 下游，也说明这些参数调整是准备立刻重新缓存并比较结果，而不是一次性定稿。
+这一步进入“看结果再回调参数”的阶段：缓存节点已经接上并开始承接模拟结果，左侧视口第一次清楚显示出较完整的 campfire 火焰体积，作者用它来判断当前纹理是否过多、上升形态是否符合预期。
+
+当前可见网络结构为：
+
+- 输入链：`attribnoise1 / attribnoise2 -> name1 / name2 -> merge1 -> volumerasterizeattributes1 -> pyrosolver1`
+- 缓存链：`pyrosolver1 -> filecache1`
+- 输出链：`filecache1 -> Render_Smoke`
+- 输出链：`filecache1 -> Render_Fire`
+
+右侧参数面板打开的是 `File Cache filecache1`。当前能确认的设置包括：
+
+- `Load from Disk` 已启用
+- `Time Dependent Cache` 已启用
+- `Base Name = Ex_01_CampFire_01.filecache1`
+- 文件格式后缀为 `bgeo.sc`
+- `Base Folder = $HIP/geo`
+- `Version = 1`
+
+`Sequence` 区域当前能确认：
+
+- `Evaluate As = Frame Range`
+- `Simulation` 已勾选
+- `Start/End/Inc = 1 -> 80 -> 1`
+
+节点下方展开的实际缓存命名也与之对应：
+
+- `Ex_01_CampFire_01.filecache1_v1.$F4.bgeo.sc`
+
+左侧视口中已经能看到一个竖直向上的火焰柱，底部亮黄，向上逐渐过渡成浅色烟火体，并被一个细长的模拟边界盒包住。时间轴当前停在约第 `35` 帧，说明作者正在抽取中段帧查看火焰演化，而不是只看起始帧。
+
+结合正文“火焰的纹理会更明显 更分散”“火太像是火焰 不急 比预期的要多”和字幕直接点出“火焰”，这一步的作用是：在缓存链可用之后，用实际中段帧结果反向检查前面调过的温度、时间尺度、湍流和子步设置是否让火焰纹理过多或过散，并据此决定下一步继续回调模拟参数。
+这一步展示的是缓存真正开始计算时的状态。作者不再只是设置 `filecache1` 的参数，而是已经点击写盘，让 Pyro 模拟逐帧烹算并输出缓存文件。
+
+当前可见网络结构仍然是：
+
+- 输入链：`name1 + name2 -> merge1 -> volumerasterizeattributes1 -> pyrosolver1`
+- 缓存链：`pyrosolver1 -> filecache1`
+- 输出链：`filecache1 -> Render_Smoke`
+- 输出链：`filecache1 -> Render_Fire`
+
+右侧 `File Cache filecache1` 当前仍保持：
+
+- `Base Name = Ex_01_CampFire_01.filecache1`
+- `Base Folder = $HIP/geo`
+- `Version = 1`
+- `Evaluate As = Frame Range`
+- `Simulation` 已勾选
+- `Start/End/Inc = 1 -> 80 -> 1`
+
+但这张图最关键的信息来自左上方弹出的烹算进度窗口。当前窗口可直接确认：
+
+- 正在 `render frame 13 (13 of 80)`
+- 当前求解阶段显示为 `Solving: GAS_FieldVex`
+- 窗口提供 `Pause` 与 `Interrupt` 控制
+- 已运行时间约 `0:04`
+
+节点下方仍显示当前缓存输出命名：
+
+- `Ex_01_CampFire_01.filecache1_v1.$F4.bgeo.sc`
+
+这说明本批缓存并不是概念上的“准备要存”，而是已经开始从第 `1` 帧连续解算到第 `80` 帧。结合字幕“根据数值变化”和正文“边考缓存边就是比较那个”，这一步表达的是：作者通过正式写盘，把不同参数版本的火焰模拟转成可反复回放和比对的缓存序列，然后根据缓存后的实际变化结果再回头判断哪些数值需要继续修正。
+
+## 补充视觉证据
+
+### S01 00:02:35
+
+这张补充图是 `S01` 阶段关于基础发射几何体的更精确参数证据。画面仍然位于 `geo1` 内部，网络中只有一个节点：
+
+- `circle1`
+
+左侧视口显示的是一条非常扁的贴地椭圆/细圆盘轮廓，说明这里不是等半径圆，而是已经把一个方向压得很窄，用它作为后续从地面窄带区域向上生成火焰的初始截面。
+
+右侧参数面板打开的是 `Circle circle1`，当前能确认的关键设置包括：
+
+- `Primitive Type = Polygon`
+- `Orientation = ZX Plane`
+- `Reverse` 已启用
+- `Radius = 1.25, 0.1`
+- `Center = 0, 0, 0`
+- `Rotate = 0, 0, 0`
+- `Uniform Scale = 1`
+- `Divisions = 48`
+- `Arc Type = Closed`
+- `Arc Angles = 0 -> 360`
+
+左下表格区域也显示了该圆形的点位数据，说明这不是示意设置，而是已经生成的实际几何。与前面普通 `circle1` 截图相比，这张补充图补足了两个关键细节：
+
+- 半径不是对称的 `1, 1`，而是 `1.25 x 0.1` 的扁长形截面
+- `Divisions` 提高到了 `48`
+
+这意味着教程实际使用的基础发射面更接近“细长椭圆条带”而不是标准圆盘。这样在后续散点、速度噪声和体积栅格化阶段，火焰源会天然带有横向展开、纵向较薄的初始形状，更适合 campfire 式的窄带上升火焰。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

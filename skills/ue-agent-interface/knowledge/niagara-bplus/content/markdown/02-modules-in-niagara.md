@@ -1,0 +1,1673 @@
+# 02 Modules in Niagara
+
+# 02 Modules in Niagara
+
+## 关键术语
+
+- `Emitter`、`System`、`Module`、`Spawn`、`Spawn Rate`、`Alpha`、`Material`、`UV`、`Blender`、`粒子`、`Niagara`、`Particle`、`Lifetime`、`发射器`、`系统`、`速度`、`Niagara System`、`Initialize Particle`
+
+## 分段知识
+
+### 00:00:05-00:04:46 Emitter、System、Material
+
+- 本段定位：Emitter、System、Material。
+- 知识点：大家好,在这影片中,需要考慮哪些主要模組使用视觉效果 我们也会看看视觉效果編輯的Niagara系统。
+- 知识点：让我们看看Sprite Render是什么 先把它们都推掉 首先我们要設立我们的 particle。
+- 知识点：本段围绕 `Niagara System`、`Niagara`、`Emitter` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：wireframe 可以把实时更新的设置都推掉 这里有个小課題 可以找到我们的效果位置 可以用这个方式拍摄 需要考慮这个後面。
+- 知识点：在做optimization的时候 但这就夠了 也要找到我们的用戶,这就要找到後面 中间有个editor 这里的所有东西都可以移动。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Niagara System`、`Niagara`、`Emitter`、`Particle`、`Alpha`、`Opacity`、`Material`、`Panner`。
+
+**关键画面：**
+
+这是 `p28.md` 教程的起始画面，重点是重新回到 `VFX_Library/Niagara` 目录，准备从系统与渲染模块层继续讲解。
+
+- 当前关卡：`Level_Stylized`
+- 视口：场景中只有角色 `GideonInquisitor`，仍然保持空旷测试环境，方便后续单独观察效果
+- 右侧 `Outliner` 当前只显示基础场景对象：
+  - `DirectionalLight`
+  - `ExponentialHeightFog`
+  - `Floor`
+  - `PointLight`
+  - `PostProcessVolume`
+  - `SkyAtmosphere`
+  - `Skylight`
+  - `WorldDataLayers`
+  - `GideonInquisitor`
+- 下方 `Content Browser` 当前路径为：
+  - `Content / VFX_Library / Niagara`
+- 当前文件夹里还没有拍到具体 Niagara 资产缩略图，说明此时重点是先定位到工作目录，而不是直接打开某个具体系统。
+- 字幕明确提到：要更深入地看视觉效果编辑器 `Niagara System`。
+
+这张图的作用是建立本页的起点：从 Niagara 资源目录出发，接下来会围绕 `Emitter`、`System` 和 `Material` 的配合关系继续拆解模块用法。
+这一步打开了一个示例 Niagara 系统 `NS_TestNiagara`，并开始从真实系统中拆解模块与参数。
+
+- 当前资源：`NS_TestNiagara`
+- 左侧预览：白色精灵粒子向上喷发，仍是基础喷泉示例
+- 中央 `System Overview` 可见：
+  - 系统层：
+    - `Properties`
+    - `User Parameters`
+    - `System Spawn`
+    - `System Update`
+    - `System State`
+  - 发射器层：
+    - `Fountain`
+    - `Emitter Spawn`
+    - `Emitter Update`
+      - `Emitter State`
+      - `Spawn Rate`
+    - `Particle Spawn`
+      - `Initialize Particle`
+      - `Shape Location = Sphere`
+      - `Add Velocity in Cone`
+    - `Particle Update`
+      - `Particle State`
+      - `Gravity Force`
+      - `Drag`
+      - `Scale Color`
+      - `Solve Forces and Velocity`
+    - `Render`
+      - `Sprite Renderer`
+- 右侧 `Details` 当前除了 `Emitter State` 与 `Spawn Rate` 外，还展开了 `Particle Spawn > Initialize Particle`
+  - 能明确看到 `Point Attributes` 区
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 1.4`
+  - `Lifetime Max = 1.7`
+
+这张图的重点是把“粒子初始化属性”落实到实际参数面板中：寿命不是抽象概念，而是直接在 `Initialize Particle` 模块里，以随机区间的形式设置。
+这一步继续停留在 `NS_TestNiagara` 中，但不再聚焦单个参数，而是把 Niagara 编辑器的整体工作布局完整展示出来。
+
+- 左侧 `Preview`：
+  - 白色精灵粒子继续向上喷发
+  - 说明当前系统仍在运行和回放
+- 中央 `System Overview`：
+  - 系统块 `NS_TestNiagara`
+  - 发射器块 `Emitter_1`
+  - 发射器堆栈仍包含：
+    - `Emitter Spawn`
+    - `Emitter Update`
+    - `Particle Spawn`
+    - `Particle Update`
+    - `Render`
+    - `Sprite Renderer`
+- 下方时间线：
+  - 当前播放时间约为 `0.59`
+  - 轨道区可见 `Emitter_1`
+  - 说明可以逐时查看系统在某一时刻的粒子状态
+- 右侧 `Details` 面板此时为空，只剩搜索栏：
+  - 说明当前没有具体选中某个模块参数，或者面板焦点被清空
+  - 也侧面表明 Niagara 的各个面板是独立的，可以按需切换查看内容
+
+这张图的重点不是新增某个具体模块知识，而是强调 Niagara 编辑器的观察方式：左边看效果，中间看系统与模块结构，下方看时间线，右边在需要时查看被选中模块的参数。
+
+### 00:04:46-00:09:43 UV、Blender、颜色
+
+- 本段定位：UV、Blender、颜色。
+- 知识点：如果我们按下讯号,我们可观察到我们的讯号的设置。
+- 知识点：如果我按下粑粑的键盘,它们会展示讯号讯号讯号。
+- 知识点：如果我们需要一次开启这些讯号的讯号, 可以按下这里,如果我们需要某些讯号,比如说,讯号位置。
+- 知识点：我们可观察到我们需要的讯号的讯号。
+- 知识点：我们先谈谈Sprite Render。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 核对对象：`Blender`、`颜色`。
+
+**关键画面：**
+
+这一步继续在 `NS_TestNiagara` 里强调 Niagara 的一个基本交互逻辑：点哪个堆栈区块，右侧就显示那个区块的参数。
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Emitter_1`
+- 中央堆栈当前高亮的是 `Emitter Update`
+- 右侧 `Details` 面板因此显示的是 `Emitter Update` 下的两个主要模块参数：
+  - `Emitter State`
+    - `Life Cycle Mode = Self`
+    - `Loop Behavior = Infinite`
+    - `Loop Duration = 2.0`
+  - `Spawn Rate`
+    - `SpawnRate = 90.0`
+    - `Spawn Probability = 1.0`
+- 左侧预览结果：
+  - 依然是白色精灵粒子持续向上喷发
+  - 说明当前系统还处于默认喷泉示例，没有切换到别的渲染器
+- 字幕明确表达：如果点击 `Particle Spawn`，右侧就会显示该模块的设置。
+
+这张图的重点不是新增某个特定参数，而是建立查看习惯：Niagara 中“模块在哪里”和“参数在哪里”是联动的，堆栈负责定位模块，右侧 `Details` 负责编辑该模块的实际设置。
+这一步开始实际优化默认喷泉效果，目标是先减少粒子数量，让画面更干净。
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Emitter_1`
+- 中央堆栈当前选中模块：
+  - `Emitter Update > Spawn Rate`
+- 右侧 `Details` 当前只显示 `Spawn Rate` 模块参数：
+  - `SpawnRate = 90.0`
+  - `Spawn Probability = 1.0`
+- 左侧预览结果已经表现成一条更细、更稀疏的白色粒子柱，说明讲解正在围绕“减少数量”来改善默认效果。
+- 字幕明确表达：要减少它们的数量，让效果好一些。
+
+这张图的重点是说明一个非常基础但常用的调优入口：当默认 Niagara 粒子太密、太乱时，优先先回到 `Emitter Update > Spawn Rate` 调整发射密度，而不是先去改材质或渲染器。
+这一步切到 Blender，不再讲 Niagara 堆栈本身，而是回到粒子使用的贴图资源与基础材质预览。
+
+- 软件界面：Blender
+- 左上资源浏览区当前可见一组贴图文件，包含：
+  - `checker.png`
+  - `Circle21.png`
+  - `FlameTrail...`
+  - `Noise3.png`
+  - `Noise23.png`
+  - `Noise26.png`
+  - `Noise28.png`
+  - `SmokeTrail...`
+- 中央 3D 视口当前选中对象是 `Plane`
+  - 平面上正在显示一张圆环形黑白贴图预览
+- 下方材质节点当前是一个非常基础的测试材质：
+  - `checker.png` 的 `Color` 输出接到 `Principled BSDF.Base Color`
+  - `Principled BSDF` 再接到 `Material Output.Surface`
+  - 旁边还能看到另一张 `Circle21.png` 纹理节点，说明教程正在准备拿不同黑白纹理测试材质输入
+- 左下角还打开了一个棋盘格/彩色十字的 2D 参考图，用于观察贴图与 UV 的对应关系
+
+这张图的重点是：在正式把纹理拿进 Niagara 或 UE 材质前，先在 Blender 里用简单平面和基础材质预览贴图本身是否适合作为遮罩、形状或噪声来源。当前段标题里的 `UV、Blender、颜色`，这里落到的就是“先看贴图源，再决定后面怎样接到粒子材质里”。
+
+### 00:09:43-00:14:32 UV、粒子、系统
+
+- 本段定位：UV、粒子、系统。
+- 知识点：围绕当前效果继续调整 Niagara 系统，需结合关键画面确认实际节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 核对对象：`粒子`、`系统`、`颜色`。
+
+**关键画面：**
+
+这是在 `NS_TestNiagara > Emitter_1 > Particle Spawn > Initialize Particle` 中设置粒子基础属性的界面，当前右侧 `Details` 展开的仍是 `Initialize Particle` 模块，而不是 `Sprite Renderer`。
+
+可确认的结构与参数如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Emitter_1`
+- 当前选中模块：`Particle Spawn > Initialize Particle`
+- 预览结果：左侧场景中只有少量白色发光精灵沿竖直方向分布，说明此时主要在调单粒子的寿命、尺寸和初始属性。
+
+`Initialize Particle` 中当前可见的参数组：
+
+- `Point Attributes`
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 1.4`
+  - `Lifetime Max = 1.75`
+  - `Color Mode = Direct Set`
+  - `Color = 白色`
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)`
+  - `Mass Mode = Random`
+  - `Mass Min = 0.75`
+  - `Mass Max = 1.25`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Random Uniform`
+  - `Uniform Sprite Size Min = 25.0`
+  - `Uniform Sprite Size Max = 55.0`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Unset`
+- `Mesh Attributes`
+  - `Mesh Scale Mode = Unset`
+  - `Mesh Renderer Array Visibility Mode = Unset`
+- `Ribbon Attributes`
+  - `Ribbon Width Mode = Unset`
+  - `Ribbon Facing Mode = Unset`
+  - `Ribbon Twist Mode = Unset`
+
+这张图表达的重点是：先在 `Initialize Particle` 里把粒子的寿命、初始颜色、质量和精灵尺寸区间定下来；对于当前这个精灵效果，粒子的基础观感首先由这里的 `Lifetime` 与 `Sprite Size` 区间控制。
+这张图切到另一个发射器 `Fountain`，当前选中的是 `Emitter Update > Emitter State`，讲解重点是发射器生命周期既可以自管，也可以绑定到系统设置。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Fountain`
+- 左侧预览：大量白色圆形精灵从底部喷出，形成典型喷泉分布
+- 当前选中模块：`Emitter Update > Emitter State`
+- 画面字幕含义：如果进入系统设置，这里的生命周期行为可以与系统绑定
+
+`Emitter State` 可见参数：
+
+- `Life Cycle`
+  - `Life Cycle Mode = System`
+  - `Inactive Response = Complete (When system finishes, emitter 也结束)`
+  - `Loop Behavior = Infinite`
+  - `Loop Duration = 2.0`
+  - `Recalculate Duration Each Loop = 关闭`
+  - `Loop Delay = 0.0`
+- `Scalability`
+  - `Scalability Mode = System`
+
+这张图要表达的操作意义是：如果希望发射器跟随整个 Niagara 系统统一启停，就把 `Emitter State` 的 `Life Cycle Mode` 切到 `System`；这样发射器不再完全依赖自身循环，而是受系统级生命周期控制。
+这张图继续停留在 `NS_TestNiagara > Fountain > Emitter Update > Emitter State`，但讲解重点从“是否绑定系统”进一步收敛到“完成后如何关闭”。
+
+当前可确认的信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Fountain`
+- 当前选中模块：`Emitter Update > Emitter State`
+- 搜索框中正在筛选 `Life Cycle Mode`
+- 左侧预览只剩少量白色粒子，说明正在观察发射器接近结束时的状态
+- 画面字幕含义：当所有粒子都结束、整段效果都完成后，发射器会自动关闭
+
+`Emitter State` 当前可见参数：
+
+- `Life Cycle Mode = System`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Infinite`
+- `Loop Duration = 2.0`
+- `Recalculate Duration Each Loop = 关闭`
+- `Loop Delay = 0.0`
+- `Scalability Mode = System`
+
+这张图表达的是结束语义而不是发射数量调整：把 `Inactive Response` 设成允许粒子先播完，再关闭发射器，可以避免系统停用时粒子被突然截断。
+
+### 00:14:32-00:18:59 关键流程 04
+
+- 本段定位：关键流程 04。
+- 知识点：围绕当前效果继续调整 Niagara 系统，需结合关键画面确认实际节点和参数。
+
+**关键画面：**
+
+这张图继续在 `NS_TestNiagara > Fountain > Emitter Update > Emitter State` 中讲解循环时长，核心不是新增模块，而是说明当前喷泉效果每轮存在 `2` 秒，然后重新开始。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Fountain`
+- 当前选中模块：`Emitter Update > Emitter State`
+- 左侧预览：白色粒子从底部向上喷出，属于喷泉型粒子分布
+- 底部时间轴显示发射器片段长度约到 `2.0` 秒处
+- 画面字幕含义：该效果存在两秒，然后再次重复
+
+`Emitter State` 中当前可见参数：
+
+- `Life Cycle Mode = System`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Infinite`
+- `Loop Duration = 2.0`
+- `Recalculate Duration Each Loop = 关闭`
+- `Loop Delay = 0.0`
+- `Scalability Mode = System`
+
+这张图表达的操作意义是：通过 `Loop Duration = 2.0` 配合 `Loop Behavior = Infinite`，让发射器每轮持续两秒并自动进入下一轮，形成重复播放的节奏。
+这张图仍在 `NS_TestNiagara > Fountain > Emitter Update > Emitter State`，重点是把发射器的循环行为改成单次播放，而不是持续无限循环。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Fountain`
+- 当前选中模块：`Emitter Update > Emitter State`
+- 左侧预览：白色粒子继续以喷泉方式向上喷发
+- 底部时间轴中可见一段绿色发射区间，说明仍在观察发射器有效持续段
+- 字幕含义：当前设置与前一种情况非常相似，只是循环模式发生了变化
+
+`Emitter State` 中当前可见参数：
+
+- `Life Cycle Mode = System`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Once`
+- `Loop Duration Mode = Infinite`
+- `Loop Delay = 0.0`
+- `Scalability Mode = System`
+
+这张图表达的操作意义是：在保留系统绑定和正常结束语义的前提下，把 `Loop Behavior` 从无限循环改成 `Once`，让发射器只播放一轮而不自动重复。图中 `Loop Duration Mode = Infinite` 为当前可见值，未展示更多解释，因此这里只按界面记录，不额外推断其组合语义。
+这张图继续讲 `NS_TestNiagara > Fountain > Emitter Update > Emitter State` 的循环模式，不过这里已经切到多次循环，并显式设置了循环次数、单轮持续时间和循环延迟。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Fountain`
+- 当前选中模块：`Emitter Update > Emitter State`
+- 左侧预览：白色粒子仍以喷泉方式向上发射
+- 底部时间轴中绿色发射段较短，说明当前关注的是单轮发射长度与间隔
+
+`Emitter State` 中当前可见参数：
+
+- `Life Cycle Mode = System`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Multiple`
+- `Loop Count = 25`
+- `Loop Duration = 1.0`
+- `Recalculate Duration Each Loop = 关闭`
+- `Loop Delay = 1.0`
+- `Delay First Loop Only = 开启`
+- `Scalability Mode = System`
+
+这张图表达的操作意义是：把发射器设置为多轮循环后，可以进一步用 `Loop Count`、`Loop Duration` 和 `Loop Delay` 控制总共循环多少次、每轮持续多久、轮与轮之间间隔多久；这里的示例是循环 `25` 次，每轮 `1` 秒，并带 `1` 秒延迟。
+
+### 00:18:59-00:23:51 发射器生成与粒子初始化
+
+- 本段定位：发射器生成与粒子初始化。
+- 知识点：例如,我们需要等待延迟时, 可以设置延迟。
+- 知识点：可以设置幾个延迟。
+- 知识点：它是否应该是永久,还是它应该一次性運作。
+- 知识点：有何不同? 延迟一旦產生了我们預定的数量物体。
+- 知识点：当发射器开始運作, 25物体会在开始时產生。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`粒子`、`发射器`。
+
+**关键画面：**
+
+这张图展示的是在同一个系统里并排使用两个喷泉发射器，并通过第二个发射器的 `Emitter State` 延迟参数把两段效果错开，而不是直接调整 `Spawn Rate`。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前可见发射器：`Fountain`、`Fountain001`
+- 当前选中发射器：`Fountain001`
+- 当前选中模块：`Emitter Update > Emitter State`
+- 左侧预览当前没有正在播放的粒子，右侧 `Details` 也显示 `No running preview...`
+- 底部时间轴有两条发射器轨道，说明系统里已经存在两个相近的喷泉发射器实例
+
+`Fountain001 > Emitter State` 中当前可见参数：
+
+- `Life Cycle Mode = System`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Multiple`
+- `Loop Duration = 1.0`
+- `Recalculate Duration Each Loop = 关闭`
+- `Loop Delay = 3.0`
+- `Delay First Loop Only = 关闭`
+- `Scalability Mode = System`
+
+这张图表达的重点是：如果希望第二个发射器不要和第一个同时开始，可以复制出一个新的发射器实例，然后在它自己的 `Emitter State` 中设置更长的 `Loop Delay`，用延迟把两段喷发时机错开。
+这张图切到 `Fountain` 发射器的生成模块本身，重点是同时使用持续生成和瞬时爆发生成，而不再只是调整生命周期。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Fountain`
+- 当前选中模块：`Emitter Update > Spawn Rate`
+- 左侧预览：白色粒子持续向上喷出，数量中等
+- 底部时间轴可见当前发射器在一段持续区间内保持激活
+
+当前发射器堆栈中可见的相关生成模块：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous 001`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Rate`
+
+`Spawn Rate` 右侧 `Details` 当前可见参数：
+
+- `SpawnRate = 50.0`
+- `Spawn Probability = 1.0`
+
+这张图表达的重点是：一个发射器里可以同时保留多个生成模块。这里除了持续生成的 `Spawn Rate` 之外，还额外叠加了两个 `Spawn Burst Instantaneous`，用于在发射器开始或特定时刻额外抛出一批粒子。
+这张图展示的是对 `Fountain` 发射器生成结构做精简，当前画面里只保留了一个瞬时爆发生成模块，字幕说明这样做是出于优化考虑。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Fountain`
+- 当前左侧预览：白色粒子仍向上喷发，但数量较少
+- 画面字幕含义：这是为了优化，在真正需要之前先保持更精简的生成结构
+
+当前堆栈中可见的相关模块：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous 001`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Shape Location = Sphere`
+  - `Add Velocity = In Cone`
+
+右侧 `Emitter State` 当前可见参数：
+
+- `Life Cycle Mode` 行可见，但截图只可靠确认当前在该参数搜索结果中，不对其选项状态做额外推断
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Infinite`
+- `Loop Duration = 0.5`
+- `Recalculate Duration Each Loop = 关闭`
+- `Loop Delay = 0.0`
+- `Scalability Mode = System`
+
+这张图表达的重点是：当效果不需要持续高密度生成时，可以先把发射器收敛成更轻量的结构，例如只保留一个 `Spawn Burst Instantaneous`，并缩短循环时长，以降低不必要的持续生成开销。
+
+### 00:24:00-00:28:44 速度
+
+- 本段定位：速度。
+- 知识点：我把它安裝了,并没有發生什么事 让我把它改成無限 我们可观察到每个單位的鑲嵌 只当我们移动了宇宙的发射器。
+- 知识点：例如,可以把 一个英雄的物体系统連接到 一个英雄的物体 假設它在移动 根據它的移动 物体会被發生 没有停止的东西会被產生 我们设置了鑲嵌的空间。
+- 知识点：距離应该是,例如 我现在放500 每500个距離的物体会發生 如果我设置了很小的價值 这会是結果,需要放200 每200公尺的物体会發生。
+- 知识点：可以試試看 我们走向哪个位置 或上或下,或左或右 物体会發生 最大動作的时限是 物体会移动得很快 物体不会發生 如果我移动得慢 物体会發生。
+- 知识点：如果我移动得快 必须要減少数字 当物体的速度 超过一定的限制 物体会停止發生 如果我们想要 無論速度上的物体。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`发射器`、`系统`、`速度`、`颜色`。
+
+**关键画面：**
+
+这张图切到 `Fountain` 发射器的 `Spawn Per Unit` 模块，重点是说明该模块不会按时间持续产出，而是要在发射器发生空间位移时，才会按移动距离生成粒子。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Fountain`
+- 当前选中模块：`Emitter Update > Spawn Per Unit`
+- 当前左侧预览：`0 Particles`，说明静止状态下没有新粒子生成
+- 画面字幕含义：只有在空间中移动发射器时，才能看到 `spawn per unit` 的生成效果
+
+当前堆栈中可见的相关生成模块：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Per Unit`
+  - `Spawn Burst Instantaneous 001`
+
+`Spawn Per Unit` 右侧 `Details` 当前可见参数：
+
+- `Spawn Spacing = 20.0`
+- `Max Movement Threshold = 5000.0`
+- `Movement Tolerance = 0.5`
+- `Spawn Probability = 0.5`
+
+这张图表达的重点是：`Spawn Per Unit` 依据发射器的位移距离触发生成，而不是只看时间轴。发射器不移动时不会持续出粒子；只有在空间里移动时，系统才会按 `Spawn Spacing` 的距离间隔补发粒子。
+这张图继续在 `Fountain > Spawn Per Unit` 中调速度相关阈值，讲解重点是：如果希望即使移动速度很快也持续生成粒子，就需要把运动阈值设得非常大。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Fountain`
+- 当前选中模块：`Emitter Update > Spawn Per Unit`
+- 当前左侧预览：`0 Particles`
+- 画面字幕含义：如果想不考虑速度而持续创建粒子，需要设置非常大的数值
+
+`Spawn Per Unit` 当前可见参数：
+
+- `Spawn Spacing = 1.0`
+- `Max Movement Threshold = 50000000.0`
+- `Movement Tolerance = 0.5`
+- `Spawn Probability = 0.5`
+
+这张图表达的重点是：当发射器移动很快时，`Spawn Per Unit` 可能因为速度或位移阈值限制而停止正常补点。这里把 `Max Movement Threshold` 提到非常大的值，并把 `Spawn Spacing` 缩小到 `1.0`，目的是尽量让系统无论移动速度多高都继续按距离生成粒子。
+这张图从速度生成模块切回 `Initialize Particle`，重点是配合前面的 `Spawn Per Unit` 结果，重新收紧单个粒子的基础尺寸和外观。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Fountain`
+- 当前选中模块：`Particle Spawn > Initialize Particle`
+- 左侧预览正在 `Compiling...`
+- 中央堆栈中当前仍可见 `Emitter Update > Spawn Rate`，说明当前发射器结构已经从前一张的 `Spawn Per Unit` 示例切回常规生成配置
+
+`Initialize Particle` 当前可见参数：
+
+- `Point Attributes`
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 1.4`
+  - `Lifetime Max = 1.75`
+  - `Color Mode = Direct Set`
+  - `Color = 白色`
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)`
+  - `Mass Mode = Random`
+  - `Mass Min = 0.75`
+  - `Mass Max = 1.25`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Random Uniform`
+  - `Uniform Sprite Size Min = 6.0`
+  - `Uniform Sprite Size Max = 12.0`
+  - `Sprite Rotation Mode = Random`
+  - `Sprite UV Mode = Unset`
+- `Mesh Attributes`
+  - `Mesh Scale Mode = Unset`
+  - `Mesh Renderer Array Visibility Mode = Unset`
+- `Ribbon Attributes`
+  - `Ribbon Width Mode = Unset`
+  - `Ribbon Facing Mode = Unset`
+  - `Ribbon Twist Mode = Unset`
+
+这张图表达的重点是：在调整完按位移生成的节奏后，还需要回到 `Initialize Particle` 控制单粒子的视觉密度。这里把精灵尺寸区间压到 `6.0-12.0`，并启用 `Random` 旋转，使移动过程中补出的粒子更细、更碎，不会因为位移生成而显得过大或过密。
+
+### 00:28:44-00:33:20 关键流程 07
+
+- 本段定位：关键流程 07。
+- 知识点：需要创建空氣模式 没有任何超过流動的东西 轉到自我 这里没有任何物体 我们没有删除物体 需要加删除物体 一顆物体会在 物体起始时创建 这里我们看到设置。
+- 知识点：生命模式 这就是物体在生命前 会长久的时间 在这次情况下 直接设置它会存在 5秒鐘後就消失 它会再次自動重新生存 1秒鐘後就消失 我们要預計它会存在多久。
+- 知识点：这顆物体 也有一个直接设置 和随机模式 通常在创建物体 特别是在 有很多物体 需要的一些变化 我们来看看删除数量 设置它的分別 让它删除5个物体。
+- 知识点：我们来加點随机 我们可观察到 有些物体生命周期 有些少 最少的分別 是选择 每当物体被删除 它会选择 它会选择随机 在0-2的间隙 这是随机模式。
+- 知识点：在我们手上 直接设置它会存在 例如5秒鐘 1秒鐘後 可以设置颜色 它自動重新生存 可以选择最少的 和最高颜色。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`生命周期`、`颜色`。
+
+**关键画面：**
+
+这张图展示的是一个名为 `Empty` 的极简发射器示例：先只生成一颗粒子，再围绕这颗粒子的生命周期和颜色去讲 `Initialize Particle`。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty`
+- 左侧预览：视口中只显示一颗巨大的白色球形精灵
+- 当前选中模块：`Emitter Update > Spawn Burst Instantaneous`
+- 右侧 `Details` 顶部显示 `No running preview...`
+
+当前堆栈中可见的最小结构：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+`Spawn Burst Instantaneous` 当前可见参数：
+
+- `Spawn Count = 1`
+- `Spawn Time = 0.0`
+- `Spawn Probability = 1.0`
+- `Low Count Limit = 1`
+
+这张图表达的重点是：为了单独演示粒子生命周期与颜色等基础属性，先把发射器简化成只在起始时刻爆发生成 `1` 颗粒子，这样视口里只保留一个清晰的测试对象。
+这张图切到 `Empty > Particle Spawn > Initialize Particle`，开始讲粒子寿命的随机区间设置。重点不是固定存在多久，而是让每次生成出的粒子在一个最小值到最大值之间随机取寿命。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty`
+- 当前选中模块：`Particle Spawn > Initialize Particle`
+- 左侧预览：当前无可见粒子
+- 字幕含义：每次生成粒子时，都会按这里的设置重新决定该粒子的属性
+
+当前堆栈中可见结构：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Rate`
+  - `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Add Velocity = Linear`
+- `Particle Update`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+`Initialize Particle` 当前可见参数：
+
+- `Point Attributes`
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 0.1`
+  - `Lifetime Max = 2.0`
+  - `Color Mode = Unset`
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)`
+  - `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Unset`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Unset`
+- `Mesh Attributes`
+  - `Mesh Scale Mode = Unset`
+  - `Mesh Renderer Array Visibility Mode = Unset`
+- `Ribbon Attributes`
+  - `Ribbon Width Mode = Unset`
+  - `Ribbon Facing Mode = Unset`
+  - `Ribbon Twist Mode = Unset`
+
+这张图表达的重点是：在 `Initialize Particle` 里把 `Lifetime Mode` 设成 `Random` 后，每个新生成的粒子都会在 `0.1` 到 `2.0` 秒之间随机获得一个寿命，从而让粒子的消失时间不再完全一致。
+这张图显示 `Empty` 发射器已经运行起来，教程重点从“单颗测试粒子”切回一段持续存在的粒子柱效果。当前能可靠确认的是发射器按单次循环运行 `5` 秒，视口里已经出现紫白色的竖直粒子柱。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty`
+- 左侧预览：可见一列竖直的紫白色半透明粒子柱，当前统计为 `14 Particles`
+- 当前选中模块：`Emitter Update > Emitter State`
+- 底部时间轴中的绿色发射段延伸到约 `5.0` 秒
+
+当前堆栈中可见结构：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Rate`
+  - `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Add Velocity = Linear`
+- `Particle Update`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+`Emitter State` 当前可见参数：
+
+- `Life Cycle Mode = System`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Once`
+- `Loop Duration Mode = Fixed`
+- `Loop Duration = 5.0`
+- `Loop Delay = 0.0`
+- `Scalability Mode = System`
+
+这张图表达的重点是：把发射器设置成 `Once` 且 `Loop Duration = 5.0` 后，它会在单轮的 5 秒窗口内持续生成并显示粒子，最终形成当前看到的紫白色柱状效果。截图没有展开颜色参数面板，因此这里只记录可见结果，不额外推断颜色具体是在哪个模块里设置的。
+
+### 00:33:20-00:35:23 Alpha、透明度
+
+- 本段定位：Alpha、透明度。
+- 知识点：它们选择随机颜色 它们有一个功能 颜色可以 改变 需要开启 蘋果游戏隊 可以在我们制作的时间 我们看到了 有趣的颜色。
+- 知识点：它從我们的物体系统 傳送出这个數據 如果它不在 需要把它当成例子 需要制作一些物体 我不会把它叫它 为了示範 需要使用它 没有背景光 让我加點质感。
+- 知识点：这是它看起来像 颜色是随机选择的 但颜色并不改变 因为它没有影响颜色的一部分 我们需要它 当我们制作物体 我们已经在分辨RGB 我们的颜色。
+- 知识点：也有Alpha 这是我们的透明度 我们也可以在納格拉制作 我们也在分辨透明度 并且将它们分辨成透明度 它的颜色和透明度 是由光线物体。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`系统`、`颜色`、`透明度`。
+
+**关键画面：**
+
+这张图切回 Unreal 编辑器场景视图与内容浏览器，重点不是 Niagara 堆栈，而是在挑选基础形状贴图并观察颜色变化后的实际显示效果。
+
+可确认的界面信息如下：
+
+- 当前关卡：`Level_Stylized`
+- 顶部当前打开页签可见：
+  - `NS_TestNiagara`
+  - `DefaultSpriteMaterial`
+- 右侧 Outliner 中选中对象为 `Gideon_Inquisitor`，场景里角色旁边可见一条竖直的粉紫色发光柱
+- 底部内容浏览器当前路径：
+  - `Content > VFX_Library > Textures > Shapes`
+- 当前纹理库里可见多张基础形状贴图，例如：
+  - `T_Star7`
+  - `T_StarDiamond`
+  - `T_StarFlare001` 到 `T_StarFlare007`
+  - `T_Text_2`、`T_Text_3`、`T_Text_4`、`T_Text_5`
+  - `T_Triangle`
+  - `T_WaterSplash...`
+  - `T_Wave_01`、`T_Wave_02`
+- 字幕含义：这里有一个功能，可以让颜色发生变化
+
+这张图表达的重点是：在做 `Alpha / 透明度` 和颜色表现前，先回到 UE 资源库确认要使用的形状贴图，并直接在场景里观察颜色变化后的精灵表现。这里的可见效果是一条粉紫色半透明发光柱，说明后续讨论的颜色/透明度并不是抽象参数，而是要落到具体贴图与材质显示上。
+这张图进入 Unreal 材质编辑器，展示最基础的精灵材质连接方式：使用一张形状纹理，同时驱动发光颜色和透明度。
+
+材质图可确认的结构如下：
+
+- 当前材质页签：`NewMaterial`
+- 左侧预览：地面上显示一条白色弧形半透明发光形状
+- 当前选中节点：`Texture Sample`
+  - 纹理资源：`T_Flare1`
+  - `Sampler Type = Color`
+- 右侧材质输出节点：`NewMaterial`
+
+节点定义集：
+
+- `Texture Sample(T_Flare1)`
+  - 输出端可见：`RGB`、`R`、`G`、`B`、`A`、`RGBA`
+- `Material Output(NewMaterial)`
+  - 当前可见输入端包括：`Emissive Color`、`Opacity`
+
+连线集：
+
+- `Texture Sample.RGB -> Material Output.Emissive Color`
+- `Texture Sample.A -> Material Output.Opacity`
+
+设置/参数：
+
+- `Texture = T_Flare1`
+- `Sampler Source = From texture asset`
+- `MipValueMode = None (use computed mip level)`
+- `Const Coordinate = 0`
+
+输出/预览：
+
+- 预览窗中显示的是一张白色发光的弧形贴图
+- 该材质结构的含义是：纹理的 RGB 决定发光颜色，Alpha 决定透明度遮罩
+
+这张图表达的重点是：如果希望同一张精灵纹理既决定亮度外观，又决定哪些区域透明，就把 `RGB` 接到 `Emissive Color`，把 `A` 接到 `Opacity`。这样颜色和透明度都直接来自这张贴图本身。
+这张图在上一张的基础上补齐了 Niagara 到材质的颜色/透明度传递：通过 `Particle Color` 节点，把粒子系统中的颜色和 Alpha 一起乘到贴图结果上，再分别送入发光和透明度。
+
+材质图可确认的结构如下：
+
+- 当前材质页签：`NewMaterial`
+- 左侧预览：白色十字形发光精灵
+- 当前可见核心节点：
+  - `Particle Color`
+  - `Texture Sample`（星芒形状纹理）
+  - `Multiply` x2
+  - `Material Output(NewMaterial)`
+
+节点定义集：
+
+- `Particle Color`
+  - 输出端可见：`RGB`、`R`、`G`、`B`、`A`、`RGBA`
+- `Texture Sample`
+  - 输出端可见：`RGB`、`R`、`G`、`B`、`A`、`RGBA`
+- `Multiply_Emissive`
+- `Multiply_Opacity`
+- `Material Output(NewMaterial)`
+
+连线集：
+
+- `Particle Color.RGB -> Multiply_Emissive.A`
+- `Texture Sample.RGB -> Multiply_Emissive.B`
+- `Multiply_Emissive -> Material Output.Emissive Color`
+- `Particle Color.A -> Multiply_Opacity.A`
+- `Texture Sample.R -> Multiply_Opacity.B`
+- `Multiply_Opacity -> Material Output.Opacity`
+
+设置/参数：
+
+- 材质设置面板当前可见：
+  - `Material Domain = Surface`
+  - `Blend Mode = Translucent`
+  - `Shading Model = Unlit`
+- 该设置组合说明这是一个不受光照模型驱动、依赖自发光和透明度的半透明精灵材质
+
+输出/预览：
+
+- 材质预览为白色星芒/十字形发光图案
+- `Particle Color` 的 RGB 会改变最终发光颜色
+- `Particle Color` 的 Alpha 会共同控制最终透明度
+
+这张图表达的重点是：Niagara 里设置的粒子颜色与 Alpha 不会自动生效，必须在材质图中显式接入 `Particle Color`。常用做法是把 `Particle Color.RGB` 与贴图颜色相乘后送到 `Emissive Color`，再把 `Particle Color.A` 与贴图遮罩相乘后送到 `Opacity`，这样粒子系统里的颜色和透明度参数才能真正驱动材质显示。
+
+### 00:36:23-00:41:06 关键流程 09
+
+- 本段定位：关键流程 09。
+- 知识点：在定位模式中 我现在在等待它到某个程度 我们看到这个物体 在我们的模式中所创建的 我把它拉了 它是在中心中所创建的 我们也可以在 Offset中间。
+- 知识点：把它移动 它会继续在中心中间 但将50个物体移动到上方 或是另外50个物体 在X方向中间 我们不想它们移动在同一个方向 如果我们想它们移动在同一个方向。
+- 知识点：可以在同一个方向點擊 在地區空间 它现在直接與这个系统 移动在同一个方向 它们会移动在同一个方向 在未来需要分析 它们的需要 我们不需要它在大体模式中。
+- 知识点：这就是需要有 物体相遇的时刻 我们不需要它现在 在这些物体上 我们先设置这个位置 我们把它留在这里 位置 这里它并不是與物体系统相連 它并不是显示。
+- 知识点：因为它是在0 是0在系统上 在它们與模式相連的情况下 你必须设置这个模式 然后是各种 物体的设置 物体、模型、鋼線 它们有不同的设置 它们的尺寸。
+- 核对对象：`系统`。
+
+**关键画面：**
+
+这张图仍在 `Empty` 发射器的 `Initialize Particle` 面板中，但重点已经从随机寿命切到“先把单颗粒子稳定地留在系统中心，再讨论位置偏移”。当前视口只看到一个粉紫色星芒，说明粒子仍停留在默认生成位置附近。
+
+基于当前图可确认的空间合同：
+
+- `subject`：`Empty` 发射器生成出的单个精灵粒子
+- `dimension`：三维场景中的粒子位置，当前通过视口做二维投影观察
+- `Fsemantic`：教程语义是“粒子相对系统中心的位置是否偏移”
+- `Fread/Fverify`：Niagara `Initialize Particle` 面板中的 `Position Mode/Position Offset` 与左侧预览视口
+- 当前图未提供可靠世界轴依据，因此不把任何具体轴向解释成用户语义方向
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty`
+- 当前选中模块：`Particle Spawn > Initialize Particle`
+- 左侧预览：只显示 `1 Particles`，表现为一颗粉紫色星芒
+
+`Initialize Particle` 当前可见参数：
+
+- `Point Attributes`
+  - `Lifetime Mode = Direct Set`
+  - `Lifetime = 5.0`
+  - `Color Mode = Direct Set`
+  - `Color = 粉紫色`
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)`
+  - `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Unset`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Unset`
+- `Mesh Attributes`
+  - `Mesh Scale Mode = Unset`
+  - `Mesh Renderer Array Visibility Mode = Unset`
+- `Ribbon Attributes`
+  - `Ribbon Width Mode = Unset`
+  - `Ribbon Facing Mode = Unset`
+  - `Ribbon Twist Mode = Unset`
+
+这张图表达的重点是：先把粒子的寿命和颜色固定下来，并让 `Position Offset` 保持为零。这样粒子会先稳定生成在系统的默认生成位置，后面再单独讨论如何通过偏移把它移到别的位置。
+这张图继续停留在 `Empty > Initialize Particle`，但位置语义已经从“跟随系统默认生成点”切到“直接指定位置”。当前图能确认的是位置模式被改成显式写值，同时偏移项仍单独存在。
+
+基于当前图可确认的空间合同：
+
+- `subject`：`Empty` 发射器生成出的单个精灵粒子
+- `dimension`：三维场景位置，经视口投影观察
+- `Fsemantic`：教程语义是“粒子是否使用直接位置写值，以及偏移相对哪个空间生效”
+- `Fread/Fverify`：`Initialize Particle` 面板中的位置字段与左侧预览视口
+- 图中没有给出明确世界/局部轴标签含义，因此不把三个分量直接解释成“上/下/左/右/前/后”
+
+`Initialize Particle` 当前可见参数：
+
+- `Point Attributes`
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 2.0`
+  - `Lifetime Max = 4.0`
+  - `Color Mode = Direct Set`
+  - `Color = 粉紫色`
+  - `Position Mode = Direct Set`
+  - `Position = (0.0, 0.0, 0.0)`
+  - `Position Offset = (0.0, 0.0, 0.0)`
+  - `Position Offset Coordinate Space = Simulation`
+  - `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Unset`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Unset`
+
+当前发射器堆栈仍可见：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Rate`
+  - `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Add Velocity = Linear`
+
+这张图表达的重点是：如果不想让粒子只继承系统默认生成点，可以把 `Position Mode` 切到 `Direct Set`，再单独控制基础位置和值得叠加的偏移。当前截图里 `Position` 与 `Position Offset` 都还是零值，所以视觉上粒子仍停留在中心附近；真正的空间变化要靠后续把这些值改离零。
+这张图仍在 `Empty > Initialize Particle`，但教程焦点已经从“直接指定位置”回到“保持系统位置生成，同时微调精灵尺寸和速度模块形式”。从当前图能确认，位置相关数值仍然没有偏移，但粒子生成后的外观参数已开始变化。
+
+基于当前图可确认的空间合同：
+
+- `subject`：`Empty` 发射器生成出的精灵粒子
+- `dimension`：三维场景位置，经视口投影观察
+- `Fsemantic`：教程语义是“粒子是否继续跟随系统生成点，以及偏移是否生效”
+- `Fread/Fverify`：`Initialize Particle` 的位置字段、左侧预览视口
+- 图中未给出可靠轴向证据，因此不把分量字段解释成具体世界方向
+
+`Initialize Particle` 当前可见参数：
+
+- `Point Attributes`
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 2.0`
+  - `Lifetime Max = 4.0`
+  - `Color Mode = Direct Set`
+  - `Color = 粉紫色`
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)`
+  - `Position Offset Coordinate Space = Simulation`
+  - `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Non-Uniform`
+  - `Sprite Size = (10.0, 10.0)`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Unset`
+
+当前发射器堆栈中额外可确认的结构变化：
+
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Add Velocity = In Cone`
+- `Particle Update`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+这张图表达的重点是：在保持 `Position Offset` 为零的前提下，粒子仍会从系统默认生成位置出现；如果当前不需要位置偏移，可以继续让 `Position Mode` 使用 `Simulation Position`。此时教程开始把注意力转到粒子的尺寸和初速度形态，例如把 `Sprite Size` 设为 `10 x 10`，并把速度模块切回 `In Cone`。
+
+### 00:41:06-00:45:49 Module、Spawn、Spawn Rate
+
+- 本段定位：Module、Spawn、Spawn Rate。
+- 知识点：而不一樣的模式 可以分開操作 50X和在Y方向 我留下10可以同时操作 每个角落都可以 自動移动 如何开启電線 我们可观察到它是多廣的 任何不一樣的模式。
+- 知识点：我们设置每个角落的 最小和最高價值 需要让它们的價值 变小一点 每个角落的尺寸会变大 你可选择100Y 最高價值是50X 它会隨意选择價值。
+- 知识点：这就是需要要介紹的主要點 從最初的 particle module 现在我们談談速度 需要製造新的電線 以一般的物体为例 我認为一般的物体。
+- 知识点：比較显示 我快速设置了它们的 spawn rate 需要设置在5 需要改变它们的尺寸 需要加上一些变動 隨时的尺寸從2到10 也会改变到1至3秒。
+- 知识点：转换模式 转换模式 它会设置转换的速度 從1到7 这里是 sprite rotation mode 可以选择unset 现在所有的角落都在同一方向。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 核对对象：`Particle`、`Spawn Rate`、`Spawn`、`速度`。
+
+**关键画面：**
+
+这张图继续在 `Empty > Initialize Particle` 中调整精灵的形状外观，重点是把 `Sprite Size` 从等宽等高改成横向拉伸的非均匀尺寸。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty`
+- 左侧预览：`1 Particles`，显示为一条横向拉长的粉色星芒
+- 当前选中模块：`Particle Spawn > Initialize Particle`
+
+`Initialize Particle` 当前可见参数：
+
+- `Point Attributes`
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 2.0`
+  - `Lifetime Max = 4.0`
+  - `Color Mode = Direct Set`
+  - `Color = 粉紫色`
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)`
+  - `Position Offset Coordinate Space = Simulation`
+  - `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Non-Uniform`
+  - `Sprite Size = (50.0, 10.0)`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Unset`
+
+当前发射器堆栈仍可见：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Rate`
+  - `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Add Velocity = In Cone`
+
+这张图表达的重点是：只要把 `Sprite Size Mode` 设为 `Non-Uniform`，就可以分别控制两个尺寸分量。这里把尺寸改成 `50 x 10` 后，单个精灵不再是近似圆点，而是直接被拉成横向更宽的星芒形状。
+这张图切到另一个发射器 `Empty001`，教程重点从固定尺寸改成随机尺寸区间，让每次生成出的粒子大小不完全一致。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty001`
+- 左侧预览：当前只可见少量白色小粒子
+- 当前选中模块：`Particle Spawn > Initialize Particle`
+
+`Initialize Particle` 当前可见参数：
+
+- `Point Attributes`
+  - `Lifetime Mode = Direct Set`
+  - `Lifetime = 5.0`
+  - `Color Mode = Unset`
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)`
+  - `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Random Uniform`
+  - `Uniform Sprite Size Min = 2`
+  - `Uniform Sprite Size Max = 10.0`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Unset`
+
+当前发射器堆栈中可见的结构：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+这张图表达的重点是：把 `Sprite Size Mode` 切到 `Random Uniform` 后，每个粒子都会在统一的最小值和最大值之间随机选择一个尺寸。这里的区间是 `2` 到 `10`，因此同一批生成的粒子会出现明显的大小变化。
+这张图继续在 `Empty001 > Initialize Particle` 中调精灵外观，重点从随机尺寸扩展到随机寿命和基于归一化角度的精灵旋转。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty001`
+- 左侧预览切到 `Wireframe` 视图，可见大量粉色线框三角片
+- 当前选中模块：`Particle Spawn > Initialize Particle`
+- 字幕含义：在这里，`0` 到 `1` 等价于 `0` 到 `360` 度
+
+`Initialize Particle` 当前可见参数：
+
+- `Point Attributes`
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 1.0`
+  - `Lifetime Max = 3.0`
+  - `Color Mode = Unset`
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)`
+  - `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Random Uniform`
+  - `Uniform Sprite Size Min = 1.0`
+  - `Uniform Sprite Size Max = 7.0`
+  - `Sprite Rotation Mode = Direct Normalized Angle (0-1)`
+  - `Sprite Rotation Angle = 0.2`
+  - `Sprite UV Mode = Unset`
+
+当前发射器堆栈中可见的结构：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Add Velocity = In Cone`
+- `Particle Update`
+  - `Particle State`
+  - `Solve Forces and Velocity`
+- `Render`
+  - `Sprite Renderer`
+
+这张图表达的重点是：`Sprite Rotation Mode` 可以不用直接填角度值，而是使用 `0-1` 的归一化角度。这里的规则是 `1.0` 对应一整圈 `360°`，因此像 `0.2`、`0.5`、`0.75` 这类值都可以直接作为旋转比例使用；同时粒子寿命区间也收紧到 `1-3` 秒，尺寸区间收紧到 `1-7`。
+
+### 00:45:49-00:50:40 UV、粒子、速度
+
+- 本段定位：UV、粒子、速度。
+- 知识点：0到25度是一樣的 0.5是180度 0.75是270度 它们会改变角度 我们选择随机回復 需要选择一些个案 星星它们会明顯显示 我们选择随机回復。
+- 知识点：它们是随机大小 随机色 这是 sprite uv 模式 它不会觸碰 unset 随机回復 它会把線線 與 x 角度相關 这情况下 作为一个示範 可以测试。
+- 知识点：随机回復 它会把線線 與 x 角度相關 测试 它会把線線 與 x 角度相關 测试 它会把線線 與 y 角度相關 测试 它会把線線 可以用这个来實驗 不设置,它通常会被选择。
+- 知识点：我们来用一个例子,需要用另一个质感 这樣一个 我们现在来看速度 当我加速度 雖然不是,但我们稍後会談論速度。
+- 知识点：这一个模式叫做形状位置 按照標準,它是一顆星,它有一个範圍 我们来看看这个圖 在这个圖的位置,需要有5000个粒子。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 核对对象：`粒子`、`速度`。
+
+**关键画面：**
+
+这张图继续在 `Empty001 > Initialize Particle` 中讲精灵旋转设置，重点不是具体数值，而是 `Sprite Rotation Mode` 提供的几种控制方式。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty001`
+- 左侧预览：`Wireframe` 视图中可见多张竖直排列的矩形精灵线框
+- 当前粒子数量：`9 Particles`
+- 当前选中模块：`Particle Spawn > Initialize Particle`
+
+`Initialize Particle` 当前可见基础参数：
+
+- `Lifetime Mode = Random`
+- `Lifetime Min = 1.0`
+- `Lifetime Max = 3.0`
+- `Color Mode = Unset`
+- `Position Mode = Simulation Position`
+- `Position Offset = (0.0, 0.0, 0.0)`
+- `Sprite Size Mode = Random Uniform`
+- `Uniform Sprite Size Min = 1.0`
+- `Uniform Sprite Size Max = 7.0`
+
+当前展开的 `Sprite Rotation Mode` 选项可见：
+
+- `Unset`
+- `Random`
+- `Direct Angle (Degrees)`
+- `Direct Normalized Angle (0-1)`（当前高亮）
+
+这张图表达的重点是：同一个精灵旋转可以用不同语义来控制。教程在这里明确对比了“随机旋转”“直接填写角度值”“使用 0-1 的归一化角度”三种模式，为后续选择具体旋转输入方式做准备。
+这张图从旋转模式切到 UV 与颜色的变化示例，重点是让同一批粒子在颜色和贴图取样方向上产生随机差异。
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty001`
+- 左侧预览：当前只有 `1 Particles`，可见多块蓝青色碎片状精灵
+- 当前选中模块：`Particle Spawn > Initialize Particle`
+
+`Initialize Particle` 当前可见参数：
+
+- `Point Attributes`
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 1.0`
+  - `Lifetime Max = 3.0`
+  - `Color Mode = Random Range`
+  - `Color Minimum = 青蓝色`
+  - `Color Maximum = 洋红/粉紫色`
+  - `Color Channel Mode = Link RGB / Link A`
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Random Uniform`
+  - `Uniform Sprite Size Min = 5.0`
+  - `Uniform Sprite Size Max = 5.0`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Random X`
+
+当前发射器堆栈中可见的结构：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Add Velocity = In Cone`
+- `Particle Update`
+  - `Particle State`
+  - `Solve Forces and Velocity`
+- `Render`
+  - `Sprite Renderer`
+
+这张图表达的重点是：如果贴图在 X 方向上包含可变朝向或不同分片，就可以用 `Sprite UV Mode = Random X` 让粒子随机选取横向 UV；同时把 `Color Mode` 改成 `Random Range`，就能让粒子在青蓝到粉紫之间随机取色，不再全部保持同一种颜色。
+这张图从 Niagara 参数面板切回材质实例 `MI_Glow_01`，重点是检查粒子材质最终采用哪种透明混合方式，而不是继续改粒子自身的生成参数。
+
+可确认的界面信息如下：
+
+- 当前打开页签：`MI_Glow_01`
+- 左侧预览窗中可见一个模糊发光的白色圆点/光斑
+- 右侧是材质实例的 `Details` 面板
+
+当前材质实例中可见的参数与设置：
+
+- `Global Scalar Parameter Values`
+  - `Depth Fade = 100.0`
+- `Global Texture Parameter Values`
+  - `Main Texture = Glow`
+- `General`
+  - `Parent = M_Glow`
+- `Material Property Overrides`
+  - `Opacity Mask Clip Value = 0.3333`
+  - `Blend Mode` 已启用覆盖，并展开可选列表
+
+`Blend Mode` 下拉列表当前可见选项：
+
+- `Opaque`
+- `Masked`
+- `Translucent`
+- `Additive`
+- `Modulate`
+- `AlphaComposite (Premultiplied Alpha)`
+- `AlphaHoldout`
+
+当前高亮/选中项为：
+
+- `Translucent`
+
+这张图表达的重点是：粒子最终看起来是否透明、发光、叠加，不只取决于 Niagara 里的颜色和 Alpha，也取决于材质实例的 `Blend Mode`。这里教程显式回到材质实例里检查并选择 `Translucent`，说明当前效果使用的是半透明混合而不是完全不透明或纯加法叠加。
+
+### 00:50:40-00:55:24 粒子
+
+- 本段定位：粒子。
+- 知识点：我们有兩个納格,我们来取消它们 在这个粒子的位置,需要有粒子 这个粒子看似很大,可以控制这个粒子。
+- 知识点：我们不需要这个圖案 Direct也不需要 需要考慮它们用更多的例子 在Transform,可以控制这个粒子。
+- 知识点：我可以在这里減少它,增加它的大小 它仍然可以被轉動 现在它是同樣的,從所有的角度来 需要把它增加3次在X的角度 例如需要把它轉動,你。
+- 知识点：可以设置正確的角度 如果我们點擊这个檢查點,它会设置为正確的 这里形成,所有东西都在并列 首先,这个粒子。
+- 知识点：它是很清楚的,它看起来是怎樣的 可以控制它的分別 粒子的高度 和粒子的範圍 可以移动这个粒子的中心。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+这张图从单个发射器参数面板切回关卡场景，重点是查看整个 Niagara 系统在角色周围形成的粒子范围与视觉密度，而不是继续调单个粒子的局部参数。
+
+基于当前图可确认的空间合同：
+
+- `subject`：场景中的 Niagara 系统实例 `NS_TestNiagara2`
+- `dimension`：三维世界中的粒子分布，经当前摄像机视角投影到视口
+- `Fsemantic`：教程语义是“粒子群在角色周围的覆盖范围、中心位置与视觉密度”
+- `Fread/Fverify`：关卡视口、Outliner 选中实例、右侧实例 Details
+- 当前图没有给出可靠坐标轴语义依据，因此只描述“围绕角色分布”“覆盖上方空间”等可见关系，不把数值直接解释成世界方向结论
+
+可确认的界面信息如下：
+
+- 当前关卡：`Level_Stylized`
+- Outliner 中选中对象：`NS_TestNiagara2`
+- 右侧 Details 当前显示的是 `NS_TestNiagara2 (Instance)`
+- `Niagara System Asset = NS_TestNiagara`
+- 组件 `Transform` 可见：
+  - `Location = (34.976, 592.61, 64.896)`（仅记录为实例位置读数，不直接赋予语义方向）
+  - `Rotation = (0.0, 0.0, 0.0)`
+  - `Scale = (1.0, 1.0, 1.0)`
+
+场景结果可见信息：
+
+- 角色 `Gideon_Inquisitor` 旁边出现大面积粒子云
+- 粒子颜色以青蓝、紫色、白色为主
+- 粒子整体围绕角色扩散，并向角色上方与周围空间大范围铺开
+- 单个粒子呈小点或短划线，说明当前粒子尺寸较小但数量很多
+
+底部内容浏览器当前路径与资源选择：
+
+- 路径：`Content > VFX_Library > Materials > Instances`
+- 当前高亮资源：`MI_Glow_01`
+
+这张图表达的重点是：前面在发射器、材质、颜色、尺寸、旋转上做的局部设置，最终会汇总成一个覆盖范围很大的场景级粒子系统。这里的验收对象已经不是单颗粒子，而是整个系统围绕角色形成的空间分布、颜色混合和密度表现。
+这张图切到 `Empty001` 发射器的 `Shape Location` 模块，重点从单个粒子的尺寸/颜色转到“粒子群从什么几何体范围内生成”。当前示例使用的是球体范围，并对该范围做了非均匀缩放。
+
+基于当前图可确认的空间合同：
+
+- `subject`：`Empty001` 发射器的粒子生成区域
+- `dimension`：三维生成体范围，经左侧视口投影观察
+- `Fsemantic`：教程语义是“粒子是否从各个方向看起来一致，以及生成区域的范围和拉伸比例”
+- `Fread/Fverify`：`Shape Location` 参数面板与左侧预览视口
+- 图中没有提供可靠世界语义方向依据，因此只记录 `Non Uniform Scale` 的三个分量，不把它们直接翻译成“向上/向右/向前”
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty001`
+- 当前粒子数量：`2,833 Particles`
+- 当前选中模块：`Particle Spawn > Shape Location`
+- 左侧预览：视口中布满细小亮点，字幕含义是“现在从各个方向看起来都一样”
+
+`Shape Location` 当前可见参数：
+
+- `Shape`
+  - `Shape Primitive = Sphere`
+  - `Sphere Radius = 250.0`
+- `Distribution`
+  - `Sphere Distribution = Random`
+  - `Sphere Surface Distribution = 1.0`
+  - `Hemisphere Distribution = 1.0, 1.0`
+- `Transform`
+  - `Transform Order = Scale / Rotate / Offset`
+  - `Scale Mode = Default`
+  - `Non Uniform Scale = (3.0, 1.0, 1.0)`
+  - `Rotation Mode = Default`
+  - `Rotation Coordinate Space = Local`
+  - `Offset Mode = None`
+  - `Shape Origin = Position`
+
+当前发射器堆栈中可见结构：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Shape Location = Sphere`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+这张图表达的重点是：当粒子需要从一个立体范围内发出，而不是从单个点生成时，可以在 `Shape Location` 里改用 `Sphere`。这里的球体半径是 `250`，同时施加了 `Non Uniform Scale = (3,1,1)`，所以它不再是严格的等比球，而是沿某一个本地分量方向被拉长的球形生成域。
+这张图再次回到关卡级视图，重点是验证粒子生成体积在场景中的最终外观。当前可见结果已经不是围绕角色的自然散点，而是一整块规则的长方体/盒状粒子体积。
+
+基于当前图可确认的空间合同：
+
+- `subject`：关卡中的 Niagara 系统实例 `NS_TestNiagara2`
+- `dimension`：三维场景中的粒子体积，经当前摄像机视角投影到视口
+- `Fsemantic`：教程语义是“粒子云的整体体积、中心位置和外形边界”
+- `Fread/Fverify`：关卡视口、Outliner 当前选中实例、右侧实例 `Transform`
+- 图中没有给出可靠轴语义依据，因此只记录 `Transform` 数值和可见外形，不把某个分量直接解释成具体方向
+
+可确认的界面信息如下：
+
+- 当前关卡：`Level_Stylized`
+- 当前选中对象：`NS_TestNiagara2`
+- 右侧 Details 当前显示的是 `NS_TestNiagara2 (Instance)`
+- `Niagara System Asset = NS_TestNiagara`
+- 组件 `Transform` 当前可见：
+  - `Location = (34.976, 592.61, 530.4)`
+  - `Rotation = (0.0, 0.0, 0.0)`
+  - `Scale = (1.0, 1.0, 1.0)`
+
+场景结果可见信息：
+
+- 视口中央出现一整块由青蓝、紫白粒子组成的高密度体积
+- 该体积的轮廓近似规则长方体/盒状，而不是球形云团
+- 底边与地面平面大致平行，整体形态更像经过范围与中心约束后的粒子容器
+
+底部内容浏览器当前路径与资源选择：
+
+- 路径：`Content > VFX_Library > Materials > Instances`
+- 当前高亮资源：`MI_Glow_01`
+
+这张图表达的重点是：`Shape Location` 和实例 transform 的调整最终会直接改变场景中的粒子总体积与中心位置。这里验收到的结果是一整块规则的盒状粒子区域，说明教程正在从“点/球形发射”过渡到“可控体积发射”的阶段。
+
+### 00:55:24-00:59:59 关键流程 13
+
+- 本段定位：关键流程 13。
+- 知识点：这是一个盒子,需要增加大小 重新设置为1倍,1倍是用来设置的 可以,例如,買1倍,它会变動 我们把它留在中心,让它永遠都在中心 这里可以控制大小。
+- 知识点：例如,我们增加 從盒子变成平行,平行是2D 它没有Z的,它永遠都是平行 接下来是陀螺,像个豆子,这是它的範圍 可以做到很高的亮度 25,所以,最低亮度是15。
+- 知识点：它们会光亮,以示範为例 这里有它们的特定设置 可以改变它的形状 分辨可以改变,它会变成很有趣的形状 控制的分別在这里 这里有很多的控制方式。
+- 知识点：我们看到陀螺有兩种範圍 圆圈的範圍,和第二种範圍 是豆子的範圍 这就是它 如果我把分數设置为1,它们的範圍 只会在邊緣上 接下来是圆圈,像陀螺。
+- 知识点：但它是一个平行圆圈 这里有一个掩蓋的範圍 如果我们把它设置为0,它只会在邊緣上 如果我们设置为1,它会隨意 现在我们可观察到它们的範圍。
+
+**关键画面：**
+
+这张图继续在 `Empty001 > Shape Location` 中切换生成体类型，重点是从球形范围改成盒体/平面类范围。当前示例停留在 `Box` 模式。
+
+基于当前图可确认的空间合同：
+
+- `subject`：`Empty001` 发射器的粒子生成体
+- `dimension`：三维生成范围，经视口投影观察
+- `Fsemantic`：教程语义是“生成范围是否是盒体，以及盒体尺寸与中心位置如何定义”
+- `Fread/Fverify`：`Shape Location` 参数面板与左侧预览视口
+- 图中没有给出可靠轴语义依据，因此只记录盒体尺寸分量和中点分量，不把它们直接翻译成上/下/左/右语义
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty001`
+- 当前粒子数量：`167 Particles`
+- 当前选中模块：`Particle Spawn > Shape Location`
+
+`Shape Location` 当前可见参数：
+
+- `Shape`
+  - `Shape Primitive = Box / Plane`
+  - `Box / Plane Mode = Box`
+  - `Box Size = (100.0, 100.0, 100.0)`
+  - `Box Midpoint = (1.0, 0.5, 0.5)`
+- `Distribution`
+  - `Surface Only Band Thickness = 0.0`
+  - `Surface Expansion Mode = Inside`
+- `Transform`
+  - `Transform Order = Scale / Rotate / Offset`
+  - `Scale Mode = Default`
+  - `Non Uniform Scale = (1.0, 1.0, 1.0)`
+  - `Rotation Mode = Default`
+  - `Rotation Coordinate Space = Local`
+  - `Offset Mode = None`
+  - `Shape Origin = Position`
+
+当前发射器堆栈中可见结构：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Shape Location = Box / Plane`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+这张图表达的重点是：当粒子不再需要从球体里随机生成时，可以把 `Shape Primitive` 改成 `Box / Plane`，并在 `Box` 模式下直接控制长方体范围。这里盒体尺寸是 `100 x 100 x 100`，同时通过 `Box Midpoint` 指定生成体内部的中心参考位置。
+这张图继续在 `Shape Location` 中切换生成原语，当前从盒体切到 `Torus`，即环形/甜甜圈状的粒子生成范围。
+
+基于当前图可确认的空间合同：
+
+- `subject`：`Empty001` 发射器的粒子生成体
+- `dimension`：三维环形生成体，经当前俯视感较强的视口投影观察
+- `Fsemantic`：教程语义是“粒子群围成一个圆环，以及圆环粗细和整体半径如何控制”
+- `Fread/Fverify`：`Shape Location` 参数面板与左侧预览视口
+- 图中没有给出可靠世界方位依据，因此只记录环体半径与分布参数，不把平面朝向解释成具体世界方向
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty001`
+- 当前粒子数量：`29,278 Particles`
+- 当前选中模块：`Particle Spawn > Shape Location`
+- 左侧预览：大量粒子形成规则的空心圆环
+
+`Shape Location` 当前可见参数：
+
+- `Shape`
+  - `Shape Primitive = Torus`
+  - `Torus Mode = Torus`
+  - `Large Radius = 363.693167`
+  - `Handle Radius = 131.113037`
+- `Distribution`
+  - `Torus Distribution Mode = Random`
+  - `Surface Distribution = 0.0`
+  - `U Distribution = 0.0`
+  - `V Distribution = 0.0`
+- `Transform`
+  - `Scale Mode = Default`
+  - `Non Uniform Scale = (1.0, 1.0, 1.0)`
+  - `Rotation Mode = Default`
+  - `Rotation Coordinate Space = Local`
+  - `Offset Mode = None`
+  - `Shape Origin = Position`
+
+当前发射器堆栈中可见结构：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Shape Location = Torus`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+这张图表达的重点是：如果想让粒子围成一圈而不是填满整块体积，可以把 `Shape Primitive` 切到 `Torus`。这里 `Large Radius` 决定整圈的主半径，`Handle Radius` 决定环的厚度，因此当前预览形成的是一个中心空洞明显、厚度适中的圆环粒子带。
+这张图继续在 `Shape Location` 中切换原语，当前从三维环体改到更偏二维的 `Ring / Disc`。教程重点是控制圆环/圆盘的外半径、填充程度，以及形状是否保持等比。
+
+基于当前图可确认的空间合同：
+
+- `subject`：`Empty001` 发射器的粒子生成体
+- `dimension`：以平面圆环/圆盘为主的生成范围，经视口投影观察
+- `Fsemantic`：教程语义是“生成区域是空心圆环还是被填满的圆盘，以及整体是否被拉伸”
+- `Fread/Fverify`：`Shape Location` 参数面板与左侧预览视口
+- 图中没有给出可靠世界方位依据，因此只记录半径、覆盖率和缩放分量，不把它们直接翻译成具体空间方向
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty001`
+- 当前粒子数量：`333 Particles`
+- 当前选中模块：`Particle Spawn > Shape Location`
+
+`Shape Location` 当前可见参数：
+
+- `Shape`
+  - `Shape Primitive = Ring / Disc`
+  - `Ring / Disc Mode = Circle`
+  - 另一个可见选项：`Hexagon`
+  - `Ring Radius = 128.400112`
+- `Distribution`
+  - `Ring / Disc Distribution Mode = Random`
+  - `Disc Coverage = 1.0`
+  - `U Distribution = 0.0`
+- `Transform`
+  - `Transform Order = Scale / Rotate / Offset`
+  - `Scale Mode = Default`
+  - `Non Uniform Scale = (1.394529, 1.0, 1.0)`
+  - `Rotation Mode = Default`
+  - `Rotation Coordinate Space = Local`
+  - `Offset Mode = None`
+  - `Shape Origin = Position`
+
+当前发射器堆栈中可见结构：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Shape Location = Ring / Disc`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+这张图表达的重点是：如果想让粒子从平面圆环或圆盘区域里生成，而不是从三维球体/环体里发出，可以切到 `Ring / Disc`。这里当前使用 `Circle`，`Disc Coverage = 1.0` 说明区域会被完全填满；如果把覆盖率降到更低值，生成会更接近边缘环带。`Non Uniform Scale` 也说明这个圆盘还可以被拉成非等比形状。
+
+### 00:59:59-01:01:21 关键流程 14
+
+- 本段定位：关键流程 14。
+- 知识点：它正在旋轉,可以把它轉向 Y方向 我把形状的角度調到0.5 最後一个是一个角 可以把这个角的长度 和它的延长角度交给你 需要把角度調得非常大。
+- 知识点：它会变成一个很有趣的形状 增加了数量的物質 15000 我增加了数量的物質 这樣它会更容易看到 可以把它的分辨調到0.5。
+
+**关键画面：**
+
+这张图继续在 `Shape Location > Ring / Disc` 中调生成区域的姿态。重点不是再换原语，而是开始旋转这个圆盘/环形区域，并观察它在视口里的方向变化。
+
+基于当前图可确认的空间合同：
+
+- `subject`：`Empty001` 发射器的 `Ring / Disc` 生成区域
+- `dimension`：三维生成平面，经视口投影观察
+- `Fsemantic`：教程语义是“圆盘区域是否被旋转，以及旋转后整体朝向如何变化”
+- `Fread/Fverify`：`Shape Location` 的 transform 参数与左侧预览视口
+- 图中未提供可靠世界语义方向基，因此只记录 `Yaw/Pitch/Roll` 各分量与归一化角度，不把它们直接翻译成具体世界朝向
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty001`
+- 当前选中模块：`Particle Spawn > Shape Location`
+- 左侧预览：粒子分布被压成一条近似竖直的细长带，说明原本的圆盘区域已被转到近乎侧视状态
+
+`Shape Location` 当前可见参数：
+
+- `Shape`
+  - `Shape Primitive = Ring / Disc`
+  - `Ring / Disc Mode = Circle`
+  - `Ring Radius = 128.400112`
+- `Distribution`
+  - `Ring / Disc Distribution Mode = Random`
+  - `Disc Coverage = 1.0`
+  - `U Distribution = 0.0`
+- `Transform`
+  - `Transform Order = Scale / Rotate / Offset`
+  - `Scale Mode = Default`
+  - `Non Uniform Scale = (1.687455, 1.0, 1.0)`
+  - `Rotation Mode = Yaw / Pitch / Roll`
+  - `Yaw / Pitch / Roll = (0.707438, 0.25516, 0.0)`
+  - `Rotation Angle Type = Normalized Angle (0-1)`
+  - `Rotation Coordinate Space = Local`
+  - `Offset Mode = None`
+  - `Shape Origin = Position`
+
+这张图表达的重点是：`Ring / Disc` 不只是一个静止平面，还可以在 `Transform` 中按 `Yaw / Pitch / Roll` 旋转。这里使用的是 `0-1` 归一化角度而不是直接输入度数，因此像 `0.707438`、`0.25516` 这样的值本质上是在表示一整圈旋转中的比例位置。
+这张图继续在 `Shape Location` 中切换生成原语，当前切到 `Cone`，并且是 `Spherical Cone` 模式。重点从平面/环形范围转到锥体角度、长度和张开范围。
+
+基于当前图可确认的空间合同：
+
+- `subject`：`Empty001` 发射器的锥形粒子生成体
+- `dimension`：三维锥形/扇形体积，经视口投影观察
+- `Fsemantic`：教程语义是“粒子群的锥形开口有多大、延伸多长、内部是否掏空”
+- `Fread/Fverify`：`Shape Location` 的 `Cone` 参数面板与左侧预览视口
+- 图中没有给出可靠世界方位依据，因此只记录锥体参数，不把锥体开口解释成具体世界方向
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty001`
+- 当前粒子数量：`9,985 Particles`
+- 当前选中模块：`Particle Spawn > Shape Location`
+- 左侧预览：粒子群形成一个顶部更宽、底部较窄的体积块，符合锥形/截锥投影观感
+
+`Shape Location` 当前可见参数：
+
+- `Shape`
+  - `Shape Primitive = Cone`
+  - `Cone Mode = Spherical Cone`
+  - `Cone Length = 109.706959`
+  - `Cone Angle = 171.236923`
+  - `Cone Inner Angle = 0.0`
+  - `Cone Radial Angle = 360.0`
+  - `Cone Angle Type = Degrees`
+  - `Flatten Endcaps = 关闭`
+- `Distribution`
+  - `Cone Surface Distribution = 0.0`
+- `Transform`
+  - `Transform Order = Scale / Rotate / Offset`
+  - `Scale Mode = Default`
+  - `Non Uniform Scale = (1.0, 1.0, 1.0)`
+  - `Rotation Mode = Default`
+  - `Rotation Coordinate Space = Local`
+  - `Offset Mode = None`
+  - `Shape Origin = Position`
+
+当前发射器堆栈中可见结构：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Shape Location = Cone`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+这张图表达的重点是：如果想让粒子从一个锥形体积中生成，而不是从平面或环体里散布，可以改用 `Cone`。这里的 `Cone Angle` 接近 `171°`，`Cone Inner Angle = 0`，`Cone Radial Angle = 360°`，说明它几乎展开成完整的球锥式范围，而不是一个很窄的喷口。
+这张图继续停留在 `Shape Location = Cone`，但重点从“使用锥体”进一步转到“锥体表面分布和开口角收窄后会形成什么形状”。当前预览已经从较厚的体积块收敛成一个更清晰的穹顶/伞盖状粒子壳。
+
+基于当前图可确认的空间合同：
+
+- `subject`：`Empty001` 发射器的锥形粒子生成体
+- `dimension`：三维锥体/壳层生成范围，经视口投影观察
+- `Fsemantic`：教程语义是“锥体开口收窄后，粒子是填满体积还是集中到表面”
+- `Fread/Fverify`：`Shape Location` 参数面板与左侧预览视口
+- 图中没有给出可靠世界方位依据，因此只记录角度和表面分布参数，不把穹顶朝向解释成具体世界方向
+
+可确认的界面信息如下：
+
+- 当前系统：`NS_TestNiagara`
+- 当前发射器：`Empty001`
+- 当前选中模块：`Particle Spawn > Shape Location`
+- 左侧预览：粒子形成一个半球/伞盖状外壳
+- 字幕含义：增加了粒子数量，以便更清楚地观察形状
+
+`Shape Location` 当前可见参数：
+
+- `Shape`
+  - `Shape Primitive = Cone`
+  - `Cone Mode = Spherical Cone`
+  - `Cone Length = 109.706959`
+  - `Cone Angle = 118.933983`
+  - `Cone Inner Angle = 0.0`
+  - `Cone Radial Angle = 360.0`
+  - `Cone Angle Type = Degrees`
+  - `Flatten Endcaps = 关闭`
+- `Distribution`
+  - `Cone Surface Distribution = 1.0`
+- `Transform`
+  - `Transform Order = Scale / Rotate / Offset`
+  - `Scale Mode = Default`
+  - `Non Uniform Scale = (1.0, 1.0, 1.0)`
+  - `Rotation Mode = Default`
+  - `Rotation Coordinate Space = Local`
+  - `Offset Mode = None`
+  - `Shape Origin = Position`
+
+当前发射器堆栈中可见结构：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Shape Location = Cone`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+这张图表达的重点是：当 `Cone Surface Distribution = 1.0` 时，粒子会更集中在锥体/球锥的表面，而不是填满内部体积；同时把 `Cone Angle` 从前一张的更大角度收窄到约 `118.93°` 后，整体轮廓也更容易看成清晰的穹顶或伞状壳层。
+
+### 01:03:05-01:03:12 关键流程 15
+
+- 本段定位：关键流程 15。
+- 知识点：它会從中间变成一个點 现在它在50度的範圍里 随机地变成了飛行方向。
+
+**关键画面：**
+
+这是场景中的结果验证图，用来说明本段调整飞行方向前的基线效果：
+
+- 当前选中的是场景中的 `NS_TestNiagara2`。
+- 粒子主要聚集在发射器中心附近，画面中的绿色调试箭头从中心位置向外指示一个速度/朝向向量。
+- 结合本段正文“如果没有速度的话，它们会从中心的一个点生成”，这里表达的是：未给粒子明显外向速度时，生成位置会收敛在中心点附近，而不是沿一个张开的角度范围向外散开。
+- 这一张图的重点是“中心单点生成”的初始状态，供后两张对比“加入角度范围和飞行方向”后的变化。
+这是加入半径范围和飞行方向后的场景结果图：
+
+- 结合字幕可确认，本步把生成范围改成了“半径为 `50` 的随机生成”。
+- 粒子不再只堆在中心点，而是在发射器附近形成一个较小的随机散布起始区，然后整体沿同一主方向拉成一束。
+- 字幕明确说明粒子“向上飞行”，因此这里的语义是：生成点在一个半径 `50` 的局部范围内随机化，速度方向则统一朝上。
+- 画面上可见一条从发射器向上延展的粒子柱状轨迹，这正对应“随机起点 + 一致飞行方向”的组合结果。
+这是同一组参数在后续时刻的场景结果帧，继续验证“半径 `50` 的随机生成并向上飞行”：
+
+- 字幕与上一张一致，说明本图没有切换到新的生成规则，仍然是同一组半径与飞行方向设置。
+- 当前画面里发射器附近几乎看不到聚集的粒子，说明粒子生成后已经快速离开中心区域。
+- 这张图强调的不是起始散布范围本身，而是该设置带来的运动结果：粒子不会停留在中心点附近，而会沿统一的上行方向持续离开发射器。
+- 与上一张合并理解，可将本段效果概括为：在发射器局部半径 `50` 的范围内随机出点，然后让粒子整体向上飞出。
+
+## 补充视觉证据
+
+### S01 00:01:58
+
+这是 `NS_TestNiagara` 在 Niagara 编辑器中的补充总览图，左侧是预览结果，右侧是 `Fountain` 发射器的模块栈，可用来核对本页示例的最小系统结构。
+
+模块栈可见项：
+
+- `Emitter State`：状态显示为 `Self / Infinite`。
+- `Emitter Spawn`：包含 `Spawn Rate`。
+- `Particle Spawn`：依次可见 `Initialize Particle`、`Shape Location`（右侧可见类型为 `Sphere`）、`Add Velocity in Cone`。
+- `Particle Update`：依次可见 `Particle State`、`Gravity Force`、`Drag`、`Scale Color`、`Solve Forces and Velocity`。
+- `Render`：使用 `Sprite Renderer`。
+
+输出/预览：
+
+- 左侧预览窗口中，白色精灵粒子从地面附近一小片区域生成后向上喷发，形成细长的喷泉状粒子束。
+- 这与正文前面各步组合后的结果一致：先用 `Shape Location` 控制生成范围，再用 `Add Velocity in Cone` 让粒子沿锥形方向飞出，最终由 `Sprite Renderer` 以白色点状精灵显示。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

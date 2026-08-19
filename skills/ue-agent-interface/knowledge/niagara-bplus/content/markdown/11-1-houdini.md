@@ -1,0 +1,1071 @@
+# 11-1.Houdini血液
+
+# 11-1.Houdini血液
+
+## 关键术语
+
+- `CPU`、`Multiply`、`Add`、`Houdini`、`PS`、`粒子`、`碰撞`、`速度`、`我们快速走一遍血迹效果的模拟直到生成网格`、`Niagara`、`Noise`、`材质`、`系统`、`流体`、`Niagara System`、`Emitter`、`Particle`、`Spawn Rate`
+
+## 分段知识
+
+### 00:00:06-00:04:47 关键流程 01
+
+- 本段定位：关键流程 01。
+- 知识点：我们快速走一遍雪姬效果的模拟直到生成網格。
+- 知识点：取个球体轉成多邊形細分射50左右半徑式,把L值填進去。
+- 知识点：把中心沿外轴往上挪12左右,在Unreal里,點一下就差不多到120。
+- 知识点：從这开始雪就按这麼噴出来的方式做。
+- 知识点：好像可以,加个剪切节点,只在Z轴方向設置其他方向都剪掉。
+- 知识点：因为圆點值影响还得把空隙補上,才能正確計算先轉成体積再用多邊形填充,最後改成單个面片。
+- 知识点：第二个输入要用的噪聲值用驅動噪聲生成用来做位置偏移。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这一步是 `11-1.Houdini血液` 的起始工程状态，作者从一个空的 Houdini 场景开始，准备快速搭出“血液到网格”的基础流程。图中可直接确认：
+
+- 软件环境是 `Houdini Indie Limited-Commercial 20.5.613 - Py3.11`
+- 当前网络层级位于 `/obj`
+- 对象级网络里只有一个默认几何容器：`geo1`
+- 右侧参数面板当前显示的是 `Geometry geo1`
+- `Transform` 参数保持默认值：
+  - `Translate = (0, 0, 0)`
+  - `Rotate = (0, 0, 0)`
+  - `Scale = (1, 1, 1)`
+  - `Uniform Scale = 1`
+- 左侧视口是空白网格场景，说明此时还没有任何血液形体或模拟节点生成结果
+
+这张图对应的起步操作可以整理为：
+
+- 新建或打开一个空的 Houdini 场景
+- 在 `/obj` 层级使用一个默认 `geo1` 作为血液流程容器
+- 保持对象层级变换为默认值
+- 后续所有血液基础几何、体积和噪声构造都从这个 `geo1` 内部开始搭建
+
+结合正文“我们快速走一遍血迹效果的模拟直到生成网格”的说明，这张图的作用是给整个流程定一个干净起点：先从空对象容器出发，再逐步往里加球体、裁切、体积转换和噪声位移，而不是在已有复杂工程里直接改现成节点。
+这一步已经进入 `source` 几何网络，开始从一个球体形状构造血液初始喷发轮廓，并叠加噪声位移。当前图中能可靠转写的结构如下。
+
+节点定义集：
+
+- `sphere1`
+  - 作为初始基础形体，视口里能看到一个椭圆球体
+- `clip1`
+  - 接在 `sphere1` 后，用来沿单一方向裁掉一部分体积
+- `polyfill1`
+  - 接在 `clip1` 后，用来把裁切后的开口补面
+- `attribnoise1`
+  - 从 `polyfill1` 分出一支
+  - 作用是给点属性写入一个名为 `offset` 的向量噪声
+- `attribwrangle1`
+  - 继续接收下游结果，当前节点名称可见，但其内部 VEX 代码在这张图中看不清
+
+连线集：
+
+- 主链路：`sphere1 -> clip1 -> polyfill1`
+- 噪声分支：`polyfill1 -> attribnoise1 -> attribwrangle1`
+
+设置/参数：
+
+- 当前选中节点：`attribnoise1`
+- `Attribute Names`
+  - 类型：`Vector`
+  - 名称：`offset`
+- `Attribute Class = Point`
+- `Noise Along Vector`：未勾选
+- `Noise Value`
+  - `Operation = Multiply`
+  - `Range Values = Positive`
+  - `Amplitude = 1`
+- `Noise Pattern`
+  - `Noise Type = Simplex`
+  - `Location Attribute = P`
+  - `Element Size = 1`
+  - `Offset = 0`
+
+输出/预览：
+
+- 左侧视口当前显示的是经过前期球体构造后的基础形体，整体像一个被稍微拉长的半椭圆团块
+- 这说明此时流程重点仍在“建立可用于喷发的起始血团轮廓”，而不是最终网格细节
+
+结合正文“取个球体”“加个剪切节点，只在 Z 轴方向设置其他方向都剪掉”“第二个输入要用的噪声值用来做位置偏移”的说明，这张图的关键就是先用 `Sphere + Clip + PolyFill` 做出半球/半片状基础体，再通过 `Attribute Noise` 写一个 `offset` 向量属性，为后续 Wrangle 或位移节点提供噪声驱动数据。
+这一步进入 `pointvop1` 的 VEX Builder，用法线方向和噪声强度共同计算喷射/位移向量，让白色区域喷得更远、黑色区域几乎不动。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- `geometryvopglobal1`
+  - 提供输入几何属性，当前使用到的主要是 `N`
+- `normalize1`
+  - 输入为 `N`
+  - 输出为归一化后的方向向量 `nvec`
+- `bind1`
+  - 绑定属性名：`offset`
+  - 提供噪声相关输入值
+- `pow1`
+  - 对 `offset` 值做幂运算调整
+- `parm1`
+  - 参数名显示为 `str`
+  - 用作强度控制输入
+- `multiply2`
+  - 把 `pow1` 的结果与 `parm1(str)` 相乘
+- `multiply1`
+  - 把 `normalize1` 输出的法线方向与 `multiply2` 的强度结果相乘
+- `geometryvopoutput1`
+  - 右侧输出节点，负责把结果写回几何
+
+连线集：
+
+- `geometryvopglobal1.N -> normalize1.vec`
+- `normalize1.nvec -> multiply1.input1`
+- `bind1(offset) -> pow1.val`
+- `pow1.pow -> multiply2.input1`
+- `parm1.str -> multiply2.input2`
+- `multiply2.product -> multiply1.input2`
+- `multiply1.product -> geometryvopoutput1`
+
+设置/参数：
+
+- 当前右侧参数面板选中的是 `multiply1`
+- `multiply1` 的输入操作列表明确显示：
+  - `normalize1.nvec`
+  - `multiply2.product`
+- `bind1` 的标签可读为 `offset`
+- `parm1` 的参数名可读为 `str`
+
+输出/预览：
+
+- 左侧视口仍显示前一步生成的半椭圆血团基础形体
+- 结合字幕“白色部分喷射得更远，黑色部分则几乎不动”，这个 VOP 网络的输出作用不是直接改形，而是为后续喷射方向/幅度生成一个受噪声蒙版调制的向量结果
+
+这张图的关键逻辑可以概括为：先取法线 `N` 的单位方向，再把 `offset` 经过 `pow` 和强度参数 `str` 处理后的结果乘上去，最终得到“沿法线方向、但按噪声明暗决定远近”的位移/速度向量。这样白色区域能沿外法线喷得更远，暗部则基本保持不动。
+
+### 00:04:47-00:09:46 Multiply、Add、PS
+
+- 本段定位：Multiply、Add、PS。
+- 知识点：再加一个Multiply节点,最後命名为Dear。
+- 知识点：这个主要是用来微調最終发射的方向和強度。
+- 知识点：連接上去,需要把它連到这里的Angle上。
+- 知识点：設置數值让粒子沿Z轴彎方向飛得更遠。
+- 知识点：现在得在这写段代碼把Angle值傳進去。
+- 知识点：兩點间拉開的距離就作为移动向量使用最後得轉成速度值。
+- 知识点：把FlipSource導入先用来生成粒子可層參數設为0.04。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`Multiply`、`Add`、`粒子`、`速度`。
+
+**关键画面：**
+
+这一步继续完善 `pointvop1`，把前一张算出的“法线方向位移量”正式加回点位置 `P`，从而真正推动几何形体沿外法线鼓出。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- `normalize1`
+  - 负责输出归一化法线向量
+- `pow1`
+  - 对噪声值做幂运算整形
+- `parm1`
+  - 参数名为 `str`
+  - 提供位移强度
+- `multiply2`
+  - 计算 `pow1 * str`
+- `multiply1`
+  - 计算 `normalize1 * multiply2`
+- `add1`
+  - 把原始位置 `P` 与 `multiply1` 的结果相加
+- `geometryvopoutput1`
+  - 接收最终输出
+
+连线集：
+
+- `normalize1.nvec -> multiply1.input1`
+- `multiply2.product -> multiply1.input2`
+- `multiply1.product -> add1.input2`
+- `geometryvopglobal1.P -> add1.input1`
+- `add1.sum -> geometryvopoutput1.P`
+
+设置/参数：
+
+- 当前右侧参数面板选中的是 `add1`
+- `add1` 的 `Input Operators` 列表当前只明确显示了第一个输入：
+  - `geometryvopglobal1.P`
+- 从图中连线可直接确认第二输入接的是 `multiply1.product`
+
+输出/预览：
+
+- 左侧视口仍显示基础椭圆球体
+- 这说明当前阶段在搭建的是“位置更新逻辑”，而不是单独的可视化材质网络
+
+这一步的关键含义是：前一张只是算出了沿法线方向的偏移量，而这一张把它正式写成 `P + offsetVector`。这样几何点位会根据噪声蒙版和强度参数向外移动，进而形成血液喷溅基础形体中“白色区域更鼓、更远，黑色区域较稳定”的空间差异。
+这一步回到 `source` 的 SOP 网络，用 `attribwrangle1` 拿“未偏移的原始点位”和“已经偏移后的点位”做对比，为后续计算移动向量/速度做准备。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- 主链路：
+  - `sphere1`
+  - `clip1`
+  - `polyfill1`
+- 偏移分支：
+  - `attribnoise1`
+    - 写入 `offset`
+  - `normal1`
+  - `pointvop1`
+    - 用前一步的 VOP 逻辑做位置偏移
+- 对比/脚本节点：
+  - `attribwrangle1`
+    - 同时接收原始主链与偏移分支的结果
+
+连线集：
+
+- 原始输入：`polyfill1 -> attribwrangle1`（第一输入）
+- 偏移输入：`polyfill1 -> attribnoise1 -> normal1 -> pointvop1 -> attribwrangle1`（第二输入）
+
+设置/参数：
+
+- 当前选中节点：`attribwrangle1`
+- `Run Over = Points`
+- 右侧代码面板中当前可明确读到的 VEX 行为：
+
+```c
+vector point2 = point(1, "P", @ptnum);
+```
+
+- 这行代码表示：从第二输入读取当前点号 `@ptnum` 对应的 `P` 位置，并存到变量 `point2`
+
+输出/预览：
+
+- 左侧视口显示的是一个更细长、更向外拉开的血团/喷溅雏形
+- 结合字幕“与未偏移、未移动的原始点位做对比”，可以确认作者此时正在准备比较“原始位置”和“偏移后位置”的差值
+
+这一步的关键意义是：不要直接把偏移后的结果当速度，而是先在 Wrangle 中同时拿到两套位置数据。第一输入保留原始点位，第二输入给出偏移后的点位，然后通过两者差值才可以继续推导移动向量、方向强度或后续粒子发射所需的速度信息。
+这一步把“带速度信息的几何”继续转换为 FLIP 发射源，并把速度属性 `v` 转移到最终要参与流体发射的几何上。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- 上游几何链：
+  - `pointvop1`
+  - `attribwrangle1`
+- 体积/流体链：
+  - `vdbfrompolygons1`
+  - `flipsource1`
+- 属性转移节点：
+  - `attribtransfer1`
+
+连线集：
+
+- `pointvop1 -> attribwrangle1`
+- `attribwrangle1 -> vdbfrompolygons1`
+- `vdbfrompolygons1 -> flipsource1`
+- `flipsource1 -> attribtransfer1`（一条输入）
+- `attribwrangle1 -> attribtransfer1`（另一条输入，虚线显示为额外参考/输入关系）
+
+设置/参数：
+
+- 当前选中节点：`attribtransfer1`
+- `Source Group Type = Primitives`
+- `Destination Group Type = Primitives`
+- 在 `Attributes` 页签中：
+  - 仅 `Points` 行被勾选
+  - 传输属性名明确为：`v`
+- 这说明当前 Attribute Transfer 的目标非常明确：把点级速度属性 `v` 传给目标几何
+
+输出/预览：
+
+- 左侧视口里能看到一个完整球体和一个包围盒线框
+- 左下 Geometry Spreadsheet 已经显示速度字段：
+  - `v[x]`
+  - `v[y]`
+  - `v[z]`
+- 这证明速度向量已经进入当前几何数据表，而不是停留在概念阶段
+
+这一步的关键作用是把前面通过法线、噪声和位置差值得出的运动信息真正落到 FLIP 发射源流程里。先将几何转为 `VDB From Polygons`，再生成 `Flip Source`，最后用 `Attribute Transfer` 把点级 `v` 属性带到目标上，这样后续粒子/流体发射时才能继承正确的初速度方向和强度。
+
+### 00:09:46-00:14:25 粒子
+
+- 本段定位：粒子。
+- 知识点：差不多就是这樣了,其餘刪掉再建一个。
+- 知识点：直接生成初始粒子圆的位置就行。
+- 知识点：差不多了,到这个程度圆基本就齊了。
+- 知识点：差不多了,这里我来加个T让Jitter Seed持续做动画。
+- 知识点：改成粒子廠就行,还要確定怎麼從原粒取粒子。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+这一步开始把前面得到的带速度表面流体链整理成可输出的阶段性结果，并为后续“删掉其余部分、只保留要发粒子的区域”做准备。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- `vdbfrompolygons1`
+- `flipsource1`
+- `attribtransfer1`
+  - 节点下方可见传输属性标记：`v`
+- `OUT_surface`
+  - 一个 `Null` 输出节点
+- `blast1`
+  - 接在 `OUT_surface` 后
+
+连线集：
+
+- `vdbfrompolygons1 -> flipsource1`
+- `flipsource1 -> attribtransfer1`
+- `attribtransfer1 -> OUT_surface`
+- `OUT_surface -> blast1`
+- 同时还能看到一条从上游几何链路虚线接入 `attribtransfer1` 的参考输入关系
+
+设置/参数：
+
+- 当前选中节点：`blast1`
+- 右侧参数面板当前处于 `Blast` 默认界面
+- `Group` 为空
+- 目前没有看到已经填写的删除条件或表达式
+
+输出/预览：
+
+- 左下 `Geometry Spreadsheet` 当前对应节点为 `blast1`
+- 表格里仍然保留速度字段列：
+  - `v[x]`
+  - `v[y]`
+  - `v[z]`
+- 说明到 `OUT_surface` 为止，这条链路已经具备表面几何和速度属性两部分关键信息
+
+这张图的关键作用是把“可用于表面发射的结果”单独收口成 `OUT_surface`，再通过 `blast1` 继续筛掉不需要的部分。结合正文“其余删掉再建一个”“直接生成初始粒子圆的位置就行”，这里的思路不是把整个表面都拿去发粒子，而是先导出一个带 `v` 属性的表面结果，再按需要删选出真正要参与后续粒子生成的区域。
+这一步把 `flipsource1` 正式配置成“只生成初始粒子圆位置”的发射源，并把输出结果拆成表面版和粒子版两条出口。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- 上游仍沿用：
+  - `sphere1`
+  - `clip1`
+  - `polyfill1`
+  - `attribnoise1`
+  - `normal1`
+  - `pointvop1`
+  - `attribwrangle1`
+  - `vdbfrompolygons1`
+- 当前关键节点：
+  - `flipsource1`
+  - `attribtransfer1`
+  - `OUT_surface`
+  - `blast1`
+  - `OUT_particles`
+
+连线集：
+
+- `attribwrangle1 -> vdbfrompolygons1 -> flipsource1 -> attribtransfer1 -> OUT_surface -> blast1 -> OUT_particles`
+- 还能看到从上游链路到 `attribtransfer1` 的附加参考输入
+- `blast1` 下方有一条可见的组表达式标签：`not: @name=particles`
+
+设置/参数：
+
+- 当前选中节点：`flipsource1`
+- `Initialize = Source Flip`
+- `Volume Name = surface`
+- `Shell Thickness = 0.4`
+- `Output Fog VDB = None`
+- `Create Particles`：已勾选
+- `Particle Group = particles`
+- `Particle Separation = 0.04`
+- `Jitter Seed = 1`
+- `Jitter Scale = 1`
+- `Velocity` 选项已勾选，但当前三个分量显示为 `0, 0, 0`
+
+输出/预览：
+
+- 左侧视口显示的是一个由大量点组成的近椭圆粒子团
+- 左下 `Geometry Spreadsheet` 当前对应 `flipsource1`
+- 表格中当前点的 `v[x] / v[y] / v[z]` 仍为 `0.0`，说明这一步主要先建立规则均匀的初始粒子分布
+
+这张图的关键操作可以概括为：
+
+- 在 `flipsource1` 中开启 `Create Particles`
+- 把生成的粒子组命名为 `particles`
+- 将 `Particle Separation` 设为 `0.04`
+- 用 `blast1` 和命名分组把表面与粒子结果拆开
+- 最终分别输出 `OUT_surface` 与 `OUT_particles`
+
+结合正文“直接生成初始粒子圆的位置就行”“差不多到这个程度圆基本就齐了”的说明，这一步重点不是速度，而是先把发射粒子的初始空间分布做匀、做满，形成一团可用于后续 jitter 和速度驱动的基础粒子圆。
+这一步把前面做好的表面发射结果接入 FLIP 的 `dopnet1`，开始设置体积场输入。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- `flipobject1`
+- `flipsolver1`
+- `volumesource1`
+- `merge1`
+- `output`
+
+连线集：
+
+- `flipobject1 -> flipsolver1`
+- `volumesource1 -> flipsolver1`
+- `flipsolver1 -> merge1 -> output`
+
+设置/参数：
+
+- 当前选中节点：`volumesource1`
+- 基础设置：
+  - `Initialize = Initialize`
+  - `Activation = 1`
+  - `Input = SOP`
+  - `SOP Path = /obj/source/OUT_surface`
+  - `Transform = Into This Object`
+- `Volumes` 页签中：
+  - `Create Missing Fields`：已勾选
+  - `Field to Match = density`
+- 当前可见的体积操作条目：
+  - `Activation = 1`
+  - `Clamped to Active Region`：已勾选
+  - `Field Rank = Scalar`
+  - `Source Volume = surface`
+  - `Target Field = surface`
+  - `Source Scale = 1`
+  - `Operation = Minimum`
+  - `Use Vector Length`：未勾选
+  - `Avoid Negatives`：已勾选
+
+输出/预览：
+
+- 左侧视口已经出现一团小型白色流体/粒子簇，说明 `dopnet1` 开始有了初始模拟结果
+- 节点网络名称栏当前位于 `/obj/dopnet1`
+
+这一步的关键作用是把 `source` 里导出的 `OUT_surface` 作为 SOP 输入，注入到 FLIP 动力学网络的 `surface` 字段中。结合正文“改成粒子场就行，还要确定怎么从原粒取粒子”的说明，这一步相当于完成了从 SOP 几何准备阶段到 DOP 流体模拟阶段的桥接：先把表面场送进去，后面才有基础去调 CPU、碰撞和粒子继承逻辑。
+
+### 00:14:25-00:17:19 CPU、碰撞
+
+- 本段定位：CPU、碰撞。
+- 知识点：只对这一針施加这种影响。
+- 知识点：在調表面张力前先加个ID站位。
+- 知识点：空隙部分用过殘樣填補設为3左右。
+- 知识点：体積運動里選这个包圍盒。
+- 知识点：X轴設为175,100Z轴方向稍作拉伸中心點,稍作调整即可。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`CPU`、`材质`、`碰撞`。
+
+**关键画面：**
+
+这一步开始进入 `CPU、碰撞` 段，对 DOP 网络增加只在特定帧生效的流体控制，并准备加入表面碰撞/表面张力相关节点。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- 现有 DOP 节点仍包括：
+  - `flipobject1`
+  - `flipsolver1`
+  - `volumesource1`
+- 当前正在通过 `TAB Menu` 搜索 `surfa`
+- 搜索结果中可明确看到：
+  - `Surface Collision Parameters`
+  - `Gas Surface Snap`
+  - `Gas Surface Tension`
+
+连线集：
+
+- 当前截图中尚未新增这些节点的连接
+- 但它们显然是准备插入 `dopnet1` 的下一步候选项
+
+设置/参数：
+
+- 当前右侧仍选中 `volumesource1`
+- 与上一张不同的是，`Activation` 已被改成表达式：
+  - `$FF == 2`
+- 其他当前仍可确认的关键字段保持为：
+  - `SOP Path = /obj/source/OUT_surface`
+  - `Source Volume = surface`
+  - `Target Field = surface`
+  - `Operation = Minimum`
+
+输出/预览：
+
+- 左侧视口里只出现一小团早期流体结果
+- 结合 `Activation = $FF == 2`，可以推断作者在限制这个注入只对某一帧生效，而不是持续不断地每帧发射
+
+这张图的关键动作可以整理为：
+
+- 把 `volumesource1` 的激活条件改成只在指定帧触发
+- 当前示例使用 `$FF == 2`
+- 在继续调表面张力前，先准备插入与表面碰撞/表面张力相关的 DOP 节点
+
+结合正文“只对这一针施加这种影响”“在调表面张力前先加个 ID 站位”的说明，这一步的核心是先把流体注入时机锁死到单帧触发，再去加后续微求解器或表面参数。这样可以避免源项持续累加，把血液喷发做成一个短促、可控的 CPU 单次事件。
+这一步把碰撞对象和 CPU 求解边界一起接入 `dopnet1`，让小规模血液 FLIP 既能碰地，又被限制在一个较小的体积盒内计算。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- 主 FLIP 链：
+  - `flipobject1`
+  - `flipsolver1`
+  - `merge1`
+  - `merge2`
+  - `output`
+- 碰撞支路：
+  - `groundplane1`
+  - `merge3`
+  - `staticsolver1`
+
+连线集：
+
+- `flipobject1 -> flipsolver1`
+- 右上角源项支路继续接入 `flipsolver1`
+- `flipsolver1 -> merge1 -> merge2 -> output`
+- `groundplane1 -> merge3 -> staticsolver1 -> merge2`
+
+设置/参数：
+
+- 当前选中节点：`flipsolver1`
+- 页面位于 `Volume Motion`
+- 上方当前仍可读到：
+  - `Velocity Transfer = FLIP (Splashy)`
+  - `Force Scale = 1`
+  - `Velocity Smoothing = 0.1`
+  - `Smooth Surface`：已勾选
+  - `Update Surface = Advect`
+  - `Update Velocity = Advect`
+- `Volume Limits` 下：
+  - `Visualize Limits`：已勾选
+  - `Box Size = (140, 75, 100)`
+  - `Box Center = (0, 25, 20)`
+  - `Dynamically Resize Fields`：未勾选
+  - `Fill New Volume`：未勾选
+  - `Use Waterline`：未勾选
+  - `Use Boundary Layer`：未勾选
+
+输出/预览：
+
+- 左侧视口中出现一团小型流体结果，并且可见一个大的线框包围盒
+- 这个线框盒正对应 `Visualize Limits` 打开的体积计算边界
+
+这张图的关键意义是两件事同时成立：
+
+- 给 FLIP 系统加上最简单的碰撞参考：`groundplane1 + staticsolver1`
+- 把 CPU 模拟限制在一个明确的小包围盒内：`140 x 75 x 100`，中心 `(0, 25, 20)`
+
+结合正文“体积运动里选这个包围盒”“X 轴设为 175，100 Z 轴方向稍作拉伸中心点稍作调整即可”的说明，这一步是在建立一个可控的 CPU 小场景：既要让血液能与地面发生碰撞，又要避免无边界求解导致计算范围过大。
+这一步进入 `sopsolver1` 内部，开始用默认的 `DOP Import` 引用方式把当前模拟几何取进 SOP 处理，用于后续在求解过程中继续修改属性或做补充计算。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- `dop_geometry`
+  - 类型为 `DOP Import`
+- `impacts`
+  - `DOP Import Record`
+- `feedbacks`
+  - `DOP Import Records`
+- `OUT`
+  - 输出节点
+
+连线集：
+
+- `dop_geometry -> OUT`
+- `impacts`、`feedbacks` 当前在图中可见，但尚未实际接入 `OUT`
+
+设置/参数：
+
+- 当前选中节点：`dop_geometry`
+- `DOP Network` 使用的是默认相对引用表达式
+- `Objects` 也是默认相对引用表达式
+- `Import Style = Fetch Geometry from DOP Network`
+- `Geometry Data Path` 使用默认相对引用表达式：
+  - 指向由上级参数拼出的 `DATANAME` 路径
+- `Do Not Trigger Simulation`：已勾选
+- `Transform` 区域：
+  - `Transform Geometry With Positions Data`：已勾选
+  - `Transform Geometry With Geometry Data`：已勾选
+  - `Preserve World Space Positions`：已勾选
+  - `Point Velocities = No Point Velocities`
+
+输出/预览：
+
+- 左下 `Geometry Spreadsheet` 当前节点是 `dop_geometry`
+- 表中已能看到模拟后的关键属性列，例如：
+  - `id`
+  - `pscale`
+  - `v[x]`
+- 这说明 `dop_geometry` 已经成功把 DOP 内的粒子/流体点数据导入到 SOP Solver 里
+
+这张图的关键作用是建立一个“在 DOP 里跑、在 SOP 里改”的入口。结合字幕“默认值设成这样就差不多了”“设为相对参考”的说明，这里不需要先手改复杂路径，而是优先保留默认相对引用，让 `sopsolver1` 自动跟随当前 `dopnet1` 与对象关系取数。这样后面无论加 ID、做属性过滤还是补碰撞相关字段，都能直接在 `dop_geometry` 导入后的 SOP 结果上继续处理。
+
+### 00:17:23-00:21:52 速度
+
+- 本段定位：速度。
+- 知识点：的名稱也改为Surface应用即可。
+- 知识点：再連个模糊調成0.1左右让效果順滑一点。
+- 知识点：这邊呢?这邊用T度算出要取的部分提及流的半徑調成0.05。
+- 知识点：这个节点主要負責細節補充無需进行計算。
+- 知识点：僅做Flip模拟也無太大影响这部分主要是微調細節。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`速度`、`颜色`。
+
+**关键画面：**
+
+这一步继续在 `sopsolver1` 内部整理输入，把 `surface` 场单独作为一个 `DOP Import` 取进来，准备在下游把分析结果作为覆盖场使用。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- `dop_geometry`
+  - 仍是主几何导入节点
+- `surface`
+  - 新增的 `DOP Import`
+- `impacts`
+  - `DOP Import Record`
+- `feedbacks`
+  - `DOP Import Records`
+- `OUT`
+  - 当前输出节点
+
+连线集：
+
+- `dop_geometry -> OUT`
+- `surface`、`impacts`、`feedbacks` 当前可见但尚未接入 `OUT`
+
+设置/参数：
+
+- 当前选中节点：`surface`
+- `Import Style = Fetch Geometry from DOP Network`
+- `Geometry Data Path = surface`
+- `Do Not Trigger Simulation`：已勾选
+- `Transform Geometry With Positions Data`：已勾选
+- `Transform Geometry With Geometry Data`：已勾选
+- `Preserve World Space Positions`：已勾选
+- `Point Velocities = No Point Velocities`
+
+输出/预览：
+
+- 左侧视口里可以看到一小团深色几何/点状结果
+- 左下 `Geometry Spreadsheet` 当前节点显示为 `surface`
+- 这说明此时查看的是从 DOP 内单独抓取出来的 `surface` 数据，而不是总几何导入结果
+
+结合字幕“接下来在下方计算，将 analysis 值作为覆盖场”的说明，这张图的关键作用是先把 `surface` 字段单独导入进 SOP Solver。后续不论是提取边缘、生成覆盖层，还是继续推导速度/颜色辅助场，都需要这个单独的 `surface` 入口作为基础输入。
+这一步进入 `sopsolver1/pointvop1` 的 VEX Builder，通过 `Volume Sample File` 从外部体积文件采样数据，并准备把采样值转换成后续速度/颜色调制用的分析量。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- `geometryvopglobal1`
+  - 当前主要使用其 `P` 位置输出
+- `volumesamplefile1`
+  - 使用点位置作为采样位置
+- `abs1`
+  - 接在 `volumesamplefile1` 后，对采样值取绝对值
+- `volumesamplefile2`
+  - 另一条采样支路，当前节点可见但连线细节不完整
+- `volumesamplefile3`
+  - 当前被选中
+
+连线集：
+
+- `geometryvopglobal1.P -> volumesamplefile1.samplepos`
+- `volumesamplefile1.volumevalue -> abs1.val`
+- 图中还能看到 `geometryvopglobal1` 连向下方采样节点的一条长线，说明多个 `Volume Sample File` 节点共用位置采样输入
+- 由于下半区被遮挡/未完全连完，`volumesamplefile2`、`volumesamplefile3` 的完整输出去向在这张图中无法可靠确认
+
+设置/参数：
+
+- 当前选中节点：`volumesamplefile3`
+- `Signature = Primitive Number`
+- `Input = File`
+- `Geometry File = $HH/geo/defgeo.bgeo`
+- `Primitive Number = 0`
+- `Sample Position = (0, 0, 0)` 为当前默认显示值，实际采样位置由左侧连线驱动时会被输入覆盖
+
+输出/预览：
+
+- 左下 `Geometry Spreadsheet` 当前仍保留 DOP 粒子点属性，如 `id`、`pscale`、`v[x]`
+- 说明这组 VOP 采样并不是在空场里做测试，而是直接作用在求解中的点数据上
+
+这张图能确认的关键做法是：在 `pointvop1` 中用多个 `Volume Sample File` 节点读取外部体积数据，并先对至少一路采样值做 `abs` 处理。结合正文“这边用 T 度算出要取的部分”“这个节点主要负责细节补充无需进行计算”的说明，这一步属于分析辅助场的搭建阶段，用采样体积值去影响后续速度、颜色或覆盖层细节，而不是直接修改主模拟流程。
+这一步把速度与颜色的核心控制网络基本拼完整了：上半部分用采样值驱动颜色 ramp，下半部分用采样值、取反和速度参数驱动向内速度。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- 上半颜色链：
+  - `geometryvopglobal1`
+  - `volumesamplefile1`
+  - `abs1`
+  - `fit1`
+  - `ramp1`
+    - 节点标签显示为 `rampCd`
+- 下半速度链：
+  - `volumesamplefile2`
+  - `volumesamplefile3`
+  - `volumesamplefile4`
+  - `floattovec1`
+  - `negate1`
+  - `parm1`
+    - 参数名显示为 `speed`
+  - `multiply1`
+- 汇总节点：
+  - `add1`
+
+连线集：
+
+- 颜色链可确认：
+  - `volumesamplefile1 -> abs1 -> fit1 -> ramp1`
+- 下半速度链可确认：
+  - 若干 `Volume Sample File` 输出进入 `floattovec1`
+  - `floattovec1 -> negate1`
+  - `parm1(speed) -> multiply1`
+  - `negate1` 也接入 `multiply1`
+- `ramp1` 与下方链路都继续向右接到后续节点，其中 `ramp1` 明确参与了 `add1`
+- 由于画面右侧被裁掉，`add1` 和 `multiply1` 后续最终输出去向在这张图中无法完整确认
+
+设置/参数：
+
+- 当前选中节点：`ramp1`
+- 参数面板可明确确认：
+  - `Name = rampCd`
+  - `Ramp Type = RGB Color Ramp`
+  - `Color Type = RGB`
+  - `Default Interpolation = Linear`
+- `Ramp Default` 当前是黑到白的线性渐变
+- `parm1` 的标签可明确读到：`speed`
+
+输出/预览：
+
+- 左下 `Geometry Spreadsheet` 已经开始出现颜色相关字段：
+  - `Cd[r]`
+  - `Cd[g]`
+  - `Cd[b]`
+- 当前表里这些值还是 `0.0`，说明作者此时仍在搭建控制网络，还没把最终颜色调到位
+
+这张图的关键逻辑可以概括为两部分：
+
+- 用采样值经过 `abs + fit + rampCd` 映射出颜色分布
+- 用另一路体积采样经 `floattovec -> negate -> speed` 生成向内拉回的速度向量
+
+结合正文“现在显示为黑色，我们把颜色设为奇典绿色，其余部分为红色”“速度先设为 1.25”“可以理解为例子的 Negate 值被反转从而获得向内拉拽的速度”的说明，这张图已经把颜色和速度的控制思路明确拆开：颜色看的是覆盖/边缘渐变，速度看的是体积采样后向内收缩的方向与强度。
+
+### 00:21:52-00:26:34 PS、粒子、速度
+
+- 本段定位：PS、粒子、速度。
+- 知识点：现在显示为黑色我们把颜色設为奇典綠色,其餘部分为紅色。
+- 知识点：速度先設为1.25。
+- 知识点：先打開实时預覽再把FPS調一下。
+- 知识点：越往內側遠離邊緣颜色,由紅鍵变为綠,清晰可見。
+- 知识点：的体積場通过提取邊緣并調用覆蓋層信息进行處理。
+- 知识点：可以理解为例子的Nigate值被反轉從而獲得向內拉拽的速度。
+- 知识点：之所以用体積場導入是因为預模拟本身也是基於体積場運算的,儘管我们用的是粒子系统。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`系统`、`速度`、`颜色`。
+
+**关键画面：**
+
+这一步从 `pointvop1` 里退出到 SOP Solver 主网络，补上两条“体积分析 + 模糊”支路，再统一送进 `pointvop1` 做最终粒子颜色/速度处理。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- 输入节点：
+  - `dop_geometry`
+  - `surface`
+- 分析支路一：
+  - `volumeanalysis1`
+  - `volumeblur1`
+- 分析支路二：
+  - `volumeanalysis2`
+  - `volumeblur2`
+- 汇总处理：
+  - `pointvop1`
+  - `OUT`
+
+连线集：
+
+- `dop_geometry -> pointvop1`
+- `surface -> volumeanalysis1 -> volumeblur1 -> pointvop1`
+- `surface -> volumeanalysis2 -> volumeblur2 -> pointvop1`
+- `pointvop1 -> OUT`
+
+设置/参数：
+
+- 当前选中节点：`pointvop1`
+- `Run Over = Points`
+- 右侧参数面板当前可明确看到两个对外暴露参数：
+  - `Speed = 0`
+  - `Curvature Display`：一个线性黑白 ramp
+
+输出/预览：
+
+- 左侧视口中显示的是一团较密的深色点状粒子
+- 左下 `Geometry Spreadsheet` 仍能看到 `Cd[r] / Cd[g] / Cd[b]` 等颜色属性列，说明 `pointvop1` 的结果会直接写回粒子点属性
+
+这张图的关键意义是：后续的颜色和速度不是只靠单一路采样，而是先对 `surface` 做两路体积分析，再各自模糊平滑后输入 `pointvop1`。结合正文“通过提取边缘并调用覆盖层信息进行处理”的说明，这两条 `volumeanalysis + volumeblur` 支路就是为边缘、覆盖层和内部区域提供不同的连续控制场，供最终粒子属性混合使用。
+这一步是在实时结果上直接调 `pointvop1` 的速度和颜色映射，让喷溅内部与边缘出现明显的绿红分层。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- 仍沿用上一张的主结构：
+  - `dop_geometry`
+  - `surface`
+  - `volumeanalysis1 -> volumeblur1`
+  - `volumeanalysis2 -> volumeblur2`
+  - `pointvop1`
+  - `OUT`
+
+连线集：
+
+- `dop_geometry -> pointvop1`
+- `surface -> volumeanalysis1 -> volumeblur1 -> pointvop1`
+- `surface -> volumeanalysis2 -> volumeblur2 -> pointvop1`
+- `pointvop1 -> OUT`
+
+设置/参数：
+
+- 当前选中节点：`pointvop1`
+- `Speed = 0.25`
+- `Curvature Display` ramp 已被改成明确的颜色渐变：
+  - 左端为亮绿色
+  - 右端为红色
+- 右下当前选中的 ramp 控制点颜色可确认是纯红：
+  - `Color = (1, 0, 0)`
+- `Interpolation = Linear`
+
+输出/预览：
+
+- 左侧视口里，喷溅粒子已经显示为高对比度热区图：
+  - 内部/中部大面积偏绿或黄绿
+  - 外缘和尖刺状分支更多偏黄、橙到红
+- 左下 `Geometry Spreadsheet` 中颜色字段已出现非零值，例如：
+  - `Cd[r]` 在若干点上为 `1.0`
+  - `Cd[g]` 在不同点上出现 `0.11`、`0.23`、`0.84` 等渐变值
+  - `Cd[b]` 仍接近 `0.0`
+
+这张图表达的核心操作是：
+
+- 先开实时预览观察整体喷溅分布
+- 把 `pointvop1` 的 `Speed` 调到当前示例值 `0.25`
+- 用 `Curvature Display` 的 RGB ramp 把内部和边缘区分成绿色到红色的连续过渡
+
+结合正文“现在显示为黑色我们把颜色设为奇典绿色，其余部分为红色”“先打开实时预览再把 FPS 调一下”“越往内侧远离边缘颜色由红变为绿”的说明，这一步已经把辅助显示调成了可读性很强的速度/曲率热图，便于直接看出哪些区域会被判定为边缘、哪些区域属于内侧主体。
+这一步切到 `/obj/mesh`，开始把 DOP 粒子结果拿出来做缓存压缩和流体表面化检查，用于确认最终网格形状是否成立。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- `dopimport1`
+- `fluidcompress1`
+- `particlefluidsurface1`
+
+连线集：
+
+- `dopimport1 -> fluidcompress1 -> particlefluidsurface1`
+
+设置/参数：
+
+- 当前选中节点：`particlefluidsurface1`
+- `Surfacing` 页签中可确认：
+  - `Method = Average Position`
+  - `Particle Separation = 0.1`
+  - `Voxel Scale = 0.75`
+  - `Influence Scale = 3`
+  - `Droplet Scale = 1`
+  - `Union Compressed Fluid Surface`：已勾选
+  - `Erosion Scale = 0.8`
+- `Output` 区域中：
+  - `Convert To = Particles`
+  - `Transfer Attributes`：已勾选
+  - `Visualize = Velocity`
+  - `Velocity Range = 0 -> 10`
+  - 下方速度 ramp 为深蓝到浅青的渐变
+
+输出/预览：
+
+- 左侧视口里当前看到的是一小块深色块状/团状结果，说明作者正在先看大体形状是否合理
+- 左下 `Geometry Spreadsheet` 当前仍有 `Cd[r] / Cd[g] / Cd[b]`，且可见这些值都接近 `1.0`
+- 这说明前一阶段做好的颜色/辅助属性仍被带到了当前表面化检查链中
+
+这张图的关键操作是：
+
+- 从 DOP 中导入粒子结果
+- 先通过 `fluidcompress1` 做缓存/压缩整理
+- 用 `particlefluidsurface1` 做粒子流体表面化预检查
+- 先保持 `Convert To = Particles`，边看速度可视化边判断整体形状是否正确
+
+结合字幕“先缓存一下看看形状对不对”的说明，这一步不是最终出网格参数定稿，而是一个中间验收：先把模拟结果带进 `mesh` 流程，快速检查表面化趋势是否正确，再决定后续是否继续细调粒子间距、体素尺度、影响半径和网格化参数。
+
+### 00:26:34-00:29:56 粒子
+
+- 本段定位：粒子。
+- 知识点：血液效果呈现,血液飛濺效果已初步實现。
+- 知识点：这次特意強化了飛濺效果,是为了更清晰地展示VH資源的应用部分。
+- 知识点：由於部分区域需用VH資源表现,因此飛濺效果被適当強化。
+- 知识点：关键點太多的話,关键點太多反而不好拿来当優質的VH資源用。
+- 知识点：最好盡量簡化一开始做模拟,就该这麼想。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`粒子`、`流体`。
+
+**关键画面：**
+
+这一步进入最终缓存导出阶段，在 `/obj/mesh` 里把表面化结果接到 `filecache1`，准备按帧写盘检查血液喷溅形状。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- `dopimport1`
+- `fluidcompress1`
+- `particlefluidsurface1`
+- `filecache1`
+
+连线集：
+
+- `dopimport1 -> fluidcompress1 -> particlefluidsurface1 -> filecache1`
+
+设置/参数：
+
+- 当前选中节点：`filecache1`
+- `File Path = Constructed`
+- `Time Dependent Cache`：已勾选
+- `Base Name = $HIPNAME.$OS`
+- `Base Folder = $HIP/geo`
+- 输出扩展名：`bgeo.sc`
+- `Version = 1`
+- `Evaluate As = Frame Range`
+- `Simulation`：已勾选
+- `Start/End/Inc = 1 / 100 / 1`
+- `Substeps = 1`
+- `Load = All Geometry`
+- 缓存路径预览可见为：
+  - `$HIPNAME.$OS_v1.$F4.bgeo.sc`
+
+附加保存信息：
+
+- 左上 `Save As` 对话框当前显示 HIP 文件保存位置：
+  - `F:/Houdini/Coloso_Resource/Part_07/Tutorial/`
+- 目录中可见：
+  - `backup`
+  - `export`
+  - 旧文件 `Ex_01_Statue_Destruction.hiplc`
+- 当前准备保存的新文件名前缀可见为：`Ex_02_B...hiplc`
+
+输出/预览：
+
+- 左下 `Geometry Spreadsheet` 仍保留颜色字段 `Cd[r] / Cd[g] / Cd[b]`
+- 说明缓存输出并不只是裸几何，还会把前面构建的辅助属性一起带出
+
+这张图的关键操作是：
+
+- 把最终表面化节点接到 `filecache1`
+- 使用基于 `$HIPNAME` 和 `$OS` 的规范命名输出缓存
+- 将缓存范围设为 `1-100` 帧
+- 先写盘一版，再检查喷溅形状是否适合作为 VH/VAT 之类资源的后续使用基础
+
+结合正文“血液飞溅效果已初步实现”“最好尽量简化一开始做模拟”的说明，这一步不是继续堆复杂求解，而是先把当前版本稳定缓存下来，确认它是否已经达到“适合拿去做后续资源”的形态。
+这一步是在缓存链上直接检查血液喷溅形态是否成立。图中可直接确认：
+
+- 当前工程文件已经保存为：`Ex_02_Blood_01.hiplc`
+- `/obj/mesh` 中仍保持：
+  - `dopimport1 -> fluidcompress1 -> particlefluidsurface1 -> filecache1`
+- 当前选中节点是 `particlefluidsurface1`
+- 右侧参数仍保持上一张的关键表面化设置：
+  - `Method = Average Position`
+  - `Particle Separation = 0.1`
+  - `Voxel Scale = 0.75`
+  - `Influence Scale = 3`
+  - `Droplet Scale = 1`
+  - `Erosion Scale = 0.8`
+  - `Convert To = Particles`
+  - `Visualize = Velocity`
+  - `Velocity Range = 0 -> 10`
+- `filecache1` 的输出命名预览已经变成：
+  - `Ex_02_Blood_01.filecache1_v1.$F4.bgeo.sc`
+
+输出/预览：
+
+- 左侧视口中的喷溅已经形成大量细长外射的触须和中心较密的主团
+- 颜色/速度可视化呈现：
+  - 主体大面积是浅青到白色
+  - 局部低速或边缘区域出现深蓝色小块
+  - 飞散小点数量较多，外围有不少独立粒子
+- 左下 `Geometry Spreadsheet` 里的 `Cd` 字段也已出现明显非零值，例如：
+  - `Cd[g]` 接近 `0.9`
+  - `Cd[b]` 有 `0.03`、`0.14`、`0.26` 等差异
+
+这张图反映的是一次形态验收结论：当前版本的血液喷溅已经具备“中心主团 + 向外拉伸的长触须 + 少量飞散点”的整体轮廓，适合继续作为 VH/VAT 或后续资源的候选结果。结合正文“血液效果呈现，血液飞溅效果已初步实现”“这次特意强化了飞溅效果”的说明，这里强调的是观感验证，而不是再去做底层求解改造。
+这一步在缓存结果基础上再做一层更适合资源制作的表面化简化，把粒子结果真正转成可用于后续 BAT/VAT 资源的网格形态。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- `dopimport1`
+- `fluidcompress1`
+- `particlefluidsurface1`
+- `filecache1`
+- `particlefluidsurface2`
+
+连线集：
+
+- `dopimport1 -> fluidcompress1 -> particlefluidsurface1 -> filecache1 -> particlefluidsurface2`
+
+设置/参数：
+
+- 当前选中节点：`particlefluidsurface2`
+- `Surfacing` 页签中可确认：
+  - `Method = Average Position`
+  - `Particle Separation = 0.03`
+  - `Voxel Scale = 0.75`
+  - `Influence Scale = 3`
+  - `Droplet Scale = 1`
+  - `Union Compressed Fluid Surface`：已勾选
+  - `Erosion Scale = 0.8`
+- `Output` 区域中：
+  - `Convert To = Surface Polygon Soup`
+  - `Isovalue = 0`
+  - `Adaptivity = 0.005`
+  - `Transfer Attributes`：已勾选
+  - 传输属性名可明确读到：
+    - `v`
+    - `vorticity`
+    - `rest`
+    - `rest2`
+  - `Attribute Radius = 2`
+  - `Attribute Samples = 10`
+  - `Visualize = None`
+
+输出/预览：
+
+- 左侧视口中已经不再是纯点云，而是连续的灰色液体表面网格
+- 网格保持了中心团块与外放长触须，但整体比上一张的粒子显示更干净、更一体化
+- 左下 `Geometry Spreadsheet` 当前重点变成速度字段：
+  - `v[x]`
+  - `v[y]`
+  - `v[z]`
+- 说明网格化后仍然保留了关键运动属性
+
+这张图的关键结论是：为了后续资源制作，应该把喷溅形状适度简化成连续表面，而不是保留过多零散高频细点。结合字幕“把形状稍作简化，做 BAT 资源时会更顺手”的说明，这一步就是把“好看但过碎的粒子结果”转成“更适合后续资源化处理的表面网格版本”。
+
+## 补充视觉证据
+
+### S02 00:08:41
+
+这是一张 `S02 00:08:41` 的补充参数截图，用来补清 `flipsource1` 在较早阶段的发粒设置版本。当前图中可直接确认：
+
+- 当前链路位于 `/obj/source`
+- 可见的主节点顺序是：
+  - `attribnoise1`
+  - `normal1`
+  - `pointvop1`
+  - `attribwrangle1`
+  - `vdbfrompolygons1`
+  - `flipsource1`
+- 当前选中节点：`flipsource1`
+- `Initialize = Source Flip`
+- `Volume Name = surface`
+- `Voxel Size = 0.1`
+- `Create Particles`：已勾选
+- `Particle Group = particles`
+- `Particle Separation = 0.1`
+- `Jitter Seed = 1`
+- `Jitter Scale = 1`
+- `Velocity`：当前未启用填写值
+
+输出/预览：
+
+- 左侧视口仍是一个基础球状/椭圆状体积
+- 左下 `Geometry Spreadsheet` 可见一列分组字段：
+  - `group:particles`
+- 其中当前点值显示为 `1`，说明这时已经把生成点归入 `particles` 组
+
+这张补充图补充的是 `flipsource1` 的初版粒子生成参数：在正式调到 `Particle Separation = 0.04` 之前，作者先以 `0.1` 的更稀疏粒子间距建立基础发粒版本。结合主流程里后续的更密配置，这里可以理解为一个更早、更粗的发射密度基线，用于先确认分组和发粒流程本身是通的。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

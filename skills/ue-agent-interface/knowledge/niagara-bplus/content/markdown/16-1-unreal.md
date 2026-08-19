@@ -1,0 +1,697 @@
+# 16-1-Unreal火焰技能特效制作
+
+# 16-1-Unreal火焰技能特效制作
+
+## 关键术语
+
+- `Velocity`、`Alpha`、`UV`、`Texture`、`Smoke`、`Fire`、`Mesh`、`材质`、`粒子`、`Niagara`、`Emitter`、`Particle`、`Spawn Rate`、`Spawn`、`Particle Spawn`、`Lifetime`、`Niagara System`、`Initialize Particle`
+
+## 分段知识
+
+### 00:00:05-00:04:28 Smoke、Fire、材质
+
+- 本段定位：Smoke、Fire、材质。
+- 知识点：需要先设置好需要的文件夹,然后 粒子效果也需要。
+- 知识点：首先我第一次做这个包装器的时候,就是我得先拿第一个纹理。
+- 知识点：先放两张,就是FIRE技能相关的 序列纹理,就是两张。
+- 知识点：是我们上次用那种方式制作的,我带来的纹理。
+- 知识点：之前做爆炸效果时,我提供的灰尘纹理。
+- 知识点：还有镜头玩家纹理和这个网络玩家纹理。
+- 知识点：这个网络玩家纹理,在我们制作幻想效果时, 会以网格效果的方式,将两种元素合合使用。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`粒子`、`序列`、`火焰`。
+
+**关键画面：**
+
+这张图是 Unreal Editor 中的开场准备画面，用于确认本节火焰技能工程与关卡已经打开，而不是具体的 Niagara 或材质节点设置。
+
+可确认的界面状态：
+
+- 当前工程窗口标题显示为 `Signature_Course`
+- 已打开关卡资源 `Ex_04`
+- 视口处于 `Perspective / Lit`
+- 场景中是一个简单的灰色测试场地，中心有 `PlayerStart`
+- World Outliner 中可见顶层对象分组：
+  - `Block01`
+  - `Block02`
+  - `Block03`
+  - `Cylinder`
+  - `Lighting`
+  - `Playground`
+  - `PlayerStart`
+- `Lighting` 组下可见：
+  - `DirectionalLight`
+  - `ExponentialHeightFog`
+  - `PostProcessVolume`
+  - `SkyAtmosphere`
+  - `SkyLight`
+  - `SM_SkySphere`
+  - `VolumetricCloud`
+- 底部 Content Browser 当前路径为 `Content/Signature/Course_05/Level`
+
+这一步的意义是确认教程在上一节完成的测试关卡基础上继续工作，后续要放入的 `Smoke`、`Fire`、材质与 Niagara 资源都会在这个关卡和目录结构下组织。
+当前画面位于 Unreal Editor 的纹理资源查看器，打开的是一个火焰序列贴图资源页签，界面顶部还能看到相邻资源页签 `FireSkill_01*` 与当前页签 `FireSkill_02*`。中央主视图显示一张黑底火焰序列图集：同一团火焰从底部小火苗逐渐长成上升火焰，再逐步衰减，按行列排成完整的 Flipbook/Sprite Sheet。
+
+当前图中可直接确认的纹理资源信息：
+- 资源查看器当前页签：`FireSkill_02*`
+- 贴图预览通道按钮可见：`R`、`G`、`B`、`A`
+- 视图缩放栏显示当前为 `Fit (20%)`
+- 右侧 `Details` 面板可见：
+  - `Imported = 4096 x 4096`
+  - `Displayed = 4096 x 4096`
+  - `Max In-Game = 4096 x 4096`
+  - `Has Alpha Channel = True`
+  - `Source Alpha Detected = True`
+  - `Format = DXT5`
+  - `Combined LOD Bias = 0`
+  - `Number of Mips = 13`
+- `Level Of Detail` 中可见：
+  - `Mip Gen Settings = FromTextureGroup`
+  - `LOD Bias = 0`
+  - `Texture Group = World`
+- `Compression Settings = Default (DXT1/5, BC1/3 on DX11)`
+- `sRGB` = 开启
+- `X-axis Tiling Method = Wrap`
+- `Y-axis Tiling Method = Wrap`
+
+这一步的作用是确认教程使用的火焰资源不是单张静态贴图，而是一张带 Alpha 的高分辨率序列图集。结合正文“网络玩家纹理……会以网格效果的方式，将两种元素结合使用”可知，后续材质/粒子阶段会把这类序列贴图作为火焰动态源来驱动网格或粒子表现；本图本身只展示资源内容与纹理基础设置，还没有进入材质连接或 SubUV 播放参数。
+这一帧回到 Unreal Editor 主场景，内容浏览器当前定位到教程工程的材质目录，作者正在说明现成素材/材质的工程版本兼容问题。中央视口只是一个简单测试场景，真正的关键信息在下方 `Content Browser` 的路径和资源列表。
+
+当前图中可直接确认的工程/目录信息：
+- 顶部当前工程窗口标题可见：`Ex_04`
+- `Content Browser` 当前路径：
+  - `Content > Signature > Course_05 > Material`
+- 左侧目录树可见 `Course_05` 下至少包含：
+  - `Level`
+  - `Material`
+  - `Mesh`
+  - `Particles`
+  - `Texture`
+- 当前 `Material` 文件夹中可见一个材质资源：
+  - `M_Mesh_...`（名称后半被缩略，无法从图上完整确认）
+
+右侧 `Outliner` 当前可见的测试场景结构包括：
+- `Block01`
+- `Block02`
+- `Block03`
+- `Cylinder`
+- `Lighting`
+- `Playground`
+- `PlayerStart`
+
+结合字幕“现在从 5.5 版本的包里拿的材料，所以现在导入不了”可知，这一步是在说明素材迁移/导入时会遇到版本不兼容问题。也就是说，教程并不是要求直接把高版本现成材质原样导入当前工程，而是先确认材质资源目录和现有素材位置，再根据实际版本情况决定是否重建或替换。当前图没有打开具体材质编辑器，因此还看不到节点连接或混合模式设置。
+
+### 00:04:28-00:09:13 UV、Smoke、材质
+
+- 本段定位：UV、Smoke、材质。
+- 知识点：还有smoke-1的那个材质, 然后路径可能会出错。
+- 知识点：只有这个纹理部分会出错。
+- 知识点：这个纹理, 只要放入这个纹理, 用我们带来的arrow-ceter文件替换, 再保存就不会出错了。
+- 知识点：这个材质的构成, 其实和上次爆炸势力中用的那个材质有点相似。
+- 知识点：就比如说, 还有上次用过的材质, 命名可能会重复。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`贴图`、`发射器`、`颜色`。
+
+**关键画面：**
+
+这一帧进入 `00:04:28-00:09:13 UV、Smoke、材质` 段，但画面仍停留在 Unreal Editor 主场景与内容浏览器，用来定位需要修复的材质资源目录。中央视口没有打开粒子或材质节点，当前有效信息仍集中在内容浏览器路径和目录结构上。
+
+当前图中可直接确认的信息：
+- 工程窗口标题：`Ex_04`
+- `Content Browser` 当前路径：
+  - `Content > Signature > Course_05 > Material`
+- 左侧目录树可见：
+  - `Course_05`
+  - `Level`
+  - `Material`
+  - `Mesh`
+  - `Particles`
+  - `Texture`
+- 当前 `Material` 文件夹中仅可见一个材质资源卡片：
+  - `M_Mesh_...`（名称后半被缩略，无法从图上完整确认）
+
+右侧 `Outliner` 当前仍是测试关卡 `Ex_04` 的基础场景对象：
+- `Block01`
+- `Block02`
+- `Block03`
+- `Cylinder`
+- `Lighting`
+- `Playground`
+- `PlayerStart`
+
+结合本段正文“smoke-1 的材质路径可能会出错”“只有纹理部分会出错”可知，这一步是在先定位材质目录与已有材质资源，准备进入具体材质做纹理路径替换。当前截图本身还没有展开材质图，因此只能确认“修复工作从 `Course_05/Material` 目录里的现成材质入口开始”，不能从该图直接读出出错的纹理槽名或替换对象名称。
+这一帧仍在 Unreal Editor 的 `Course_05/Material` 目录，但与上一张相比，内容浏览器中的资源卡片已经完整展开，能直接看到本段要处理的 Smoke 相关材质与配套资源。
+
+当前图中可直接确认的目录与资源清单：
+- 当前路径：
+  - `Content > Signature > Course_05 > Material`
+- 该文件夹内当前可见 4 个资源：
+  - `M_Mesh_...`（名称后半被缩略）
+  - `M_Smoke_...`（名称后半被缩略）
+  - `MPC_Blur`
+  - `PP_Zoom ...`（名称后半被缩略，副标题可见 `Material`）
+
+其他可确认的信息：
+- 左侧目录树除 `Level`、`Material`、`Mesh`、`Particles`、`Texture` 外，还可见 `Test`
+- 右侧 `Outliner` 仍是 `Ex_04` 测试关卡的基础场景
+
+结合字幕“这种编号我会改一下，命名上”和本段正文“上次用过的材质，命名可能会重复”可知，这一步是在对现成材质资源做整理与辨认，避免 Smoke 材质、后处理材质或参数集合在迁移后因为命名冲突而难以区分。当前图还没有打开 `M_Smoke` 材质图，因此只能确认需要优先检查/整理的资源集合已经定位出来，尚不能从图上直接读出材质内部的纹理替换连接。
+这一帧从 `Material` 目录切换到了 `Texture` 目录，作者开始明确指出材质修复时实际会涉及哪些纹理资源。中央视口仍是测试场景，但关键信息已经转到内容浏览器中的纹理列表。
+
+当前图中可直接确认的路径与纹理资源：
+- 当前路径：
+  - `Content > Signature > Course_05 > Texture`
+- 当前文件夹中可见 8 个纹理资源：
+  - `Arial_Exp_...`
+  - `FireSkill_...`
+  - `FireSkill_m`
+  - `Flare_01`
+  - `T_Beam_...`
+  - `T_Color_01`
+  - `T_Soft_...`
+  - `T_Voronoi_...`
+
+其他可确认信息：
+- 左侧目录树高亮停留在 `Texture`
+- 右侧 `Outliner` 与主视口仍是 `Ex_04` 测试关卡的基础布景
+
+结合本段正文“只有这个纹理部分会出错”“把我们带来的文件替换后再保存就不会出错了”可知，这一步是在把 Smoke/火焰材质真正依赖的纹理源找出来，为后续替换出错的贴图引用做准备。当前截图本身还没有显示具体是哪一张纹理被拖入哪个材质槽，因此这里只能确认待检查的纹理资源集合，而不能从图上直接断定最终被替换的是哪一个 Texture Sample 节点。
+
+### 00:09:13-00:13:45 Niagara、UV、Texture
+
+- 本段定位：Niagara、UV、Texture。
+- 知识点：这样放你的dual spark text 和现在circle。
+- 知识点：总共10张texture和4种butter, 还有2种mesh, 都传给你了。
+- 知识点：因为这里需要制作并使用粒子。
+- 知识点：还需要制作并使用粒子。
+- 知识点：请用系统制作一个MATX 04 UV Brick。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Niagara`、`Texture`、`材质`、`粒子`、`系统`、`蒙太奇`、`生命周期`。
+
+**关键画面：**
+
+这张图打开的是材质 `M_Additive_01` 的 Material Graph，当前重点是修复一个丢失纹理引用的加法材质，而不是直接制作 Niagara 发射器。
+
+可确认的材质基础设置：
+
+- `Material Domain = Surface`
+- `Blend Mode = Additive`
+- `Shading Model = Unlit`
+- `Two Sided` 未启用
+- `Use Material Attributes` 未启用
+
+图中可见的节点链路为：
+
+- `Diff`：`TextureSampleParameter2D`
+  - 当前显示 `ERROR!`
+  - 参数名为 `Diff`
+- `Desaturation`：`ScalarParameter`
+  - 默认值 `0.0`
+- `Desaturation` 节点
+- `Pow`：`ScalarParameter`
+  - 默认值 `1.0`
+- `Power` 节点
+- `Str`：`ScalarParameter`
+  - 默认值 `1.0`
+- `Multiply`
+- `Particle Color`
+- 右侧还有两个 `Multiply` 节点接向材质输出
+
+当前可确认的连线关系：
+
+- `Diff` 的颜色输出进入 `Desaturation`
+- `Desaturation` 的结果进入 `Power.Base`
+- `Pow` 参数进入 `Power.Exp`
+- `Power` 结果与 `Str` 参数进入一个 `Multiply`
+- 该 `Multiply` 结果分别与 `Particle Color` 的颜色/Alpha 分支继续相乘，再送往右侧输出
+
+鼠标悬停提示框明确显示丢失引用的目标纹理是 `Flare_01 (Texture)`，位于 `/Game/Signature/Course_05/Texture`，其关键信息包括：
+
+- `Format = DXT1`
+- `Dimensions = 1024 x 512`
+- `Has Alpha Channel = False`
+- `X-axis Tiling Method = Wrap`
+- `Y-axis Tiling Method = Wrap`
+
+因此，这张图的核心操作不是改节点结构，而是把 `Diff` 参数重新指回 `Flare_01`，修复因路径或资源缺失导致的材质采样报错。
+这一张回到 Unreal 场景视口，并且已经进入 `Play In Editor` 状态。教程此时不再只看材质资源，而是开始为实际角色准备粒子挂载和测试目标。
+
+可确认的界面状态：
+
+- 当前世界标题变为 `Ex_04 (Play In Editor)`
+- 场景中已出现一个第三人称角色实例
+- World Outliner 中新增并可见：
+  - `BP_ThirdPersonGameMode10`
+  - `GameNetworkManager0`
+  - `GameSession0`
+  - `GameStateBase0`
+  - `HUD0`
+- 底部 Content Browser 当前路径切到 `Content/ParagonPhase/Characters/Heroes/Phase`
+
+当前目录下可见的资源/子目录包括：
+
+- `Animation...`
+- `Materials`
+- `Meshes`
+- `Skins`
+- `Sounds`
+- `Textures`
+- `Animation... Level`
+- `Phase_... Animation...`
+- `Phase_... Blueprint Cl...`
+
+这一步的核心不是修改节点参数，而是先定位一个实际可用的角色资源包 `ParagonPhase`，以便后续把火焰/烟雾 Niagara 效果接到角色动画或蓝图上进行测试。
+这张图打开的是材质实例 `M_Additive_01_Ins_01`，用于把前面修好的加法材质参数正式固化成可复用的实例资源。左侧预览球已经显示出一张中心高亮、十字形 flare 的结果，说明贴图引用已经恢复正常。
+
+右侧 Details 面板中可确认的实例参数为：
+
+- `Global Scalar Parameter Values`
+  - `Desaturation = 0.0`
+  - `Pow = 1.0`
+  - `Str = 1.0`
+- `Global Texture Parameter Values`
+  - `Diff = Flare_01`
+
+实例基础信息还可确认：
+
+- `Parent = M_Additive_01`
+- `Blend Mode = Additive`
+- `Shading Model = Unlit`
+
+左上角统计信息显示该材质当前大致为：
+
+- `Base pass shader without light map: 150 instructions`
+- `Base pass vertex shader: 230 instructions`
+- `Texture samplers: 2/16`
+- `Texture Lookups (Est.): VS(3), PS(1)`
+
+因此，这一步不是继续编辑材质图，而是创建并检查一个可直接给粒子或 Niagara 使用的材质实例：它继承 `M_Additive_01`，并把 `Diff` 绑定到 `Flare_01`，形成当前章节要用的基础发光形状材质。
+
+### 00:13:45-00:18:33 材质、颜色
+
+- 本段定位：材质、颜色。
+- 知识点：通过静态开关参数来选择是否使用。
+- 知识点：可以把参数拿出来一边使用。
+- 知识点：但从低版本到高版本导入应该没问题。
+- 知识点：看那个扩展铭的记事本文件编码内容。
+- 知识点：这些路径中只要有一个不匹配就会断裂。
+- 知识点：因为这个文件是一个材质。
+- 知识点：我们刚才做的那个原型发光形状文件。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`颜色`。
+
+**关键画面：**
+
+这张图回到父材质 `M_Additive_01` 的 Material Graph，重点是在现有加法发光材质上补一条单独的透明度控制链，用于实现淡入淡出。
+
+当前仍可确认的材质基础设置：
+
+- `Material Domain = Surface`
+- `Blend Mode = Additive`
+- `Shading Model = Unlit`
+
+图中可见的关键节点与连线关系：
+
+- 左侧已有的发光结果进入上方一个 `Multiply`
+- `Particle Color.RGB` 接入该 `Multiply`，其结果送到材质输出的 `Emissive Color`
+- `Particle Color.A` 另走一条下方分支
+- 下方分支中有一个 `Multiply`
+- 一个常量/标量节点：
+  - `Value = 1.0`
+  - 当前接入下方 `Multiply` 或其后续分支
+- 下方分支最终送到材质输出的 `Opacity`
+
+左侧预览球上也能看到一条较细的橙色发光条带，而不再只是纯 flare 中心亮点，说明当前材质正在被调整成更适合拖尾/粒子条带的表现。结合字幕“我会加一个淡入淡出”，这一步的核心是把透明度从单纯依赖 `Particle Color.A`，扩展为再乘一个可调的强度值，为后续实例化或 Niagara 动态控制 Alpha 留出入口。
+这张图打开的是 Niagara System `Ex_04_FireSkill`，当前系统里只有一个发射器 `Empty`，正在通过 `Initialize Particle` 配置基础粒子形态，用来承载前面准备好的加法材质。
+
+当前系统概览可确认：
+
+- System 名称：`Ex_04_FireSkill`
+- 发射器：`Empty`
+- `Emitter State = Self Once`
+- `Spawn Burst Instantaneous` 已存在
+- `Initialize Particle` 已启用
+- `Sprite Renderer` 已存在
+
+右侧 `Initialize Particle` 面板中可确认的参数为：
+
+- `Lifetime Mode = Direct Set`
+- `Lifetime = 0.35`
+- `Color Mode = Unset`
+- `Position Mode = Simulation Position`
+- `Position Offset` 已启用：
+  - `X = 0.0`
+  - `Y = 0.0`
+  - `Z = 100.0`
+- `Position Offset Coordinate = Simulation`
+- `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Size Mode = Uniform`
+- `Uniform Sprite Size = 500.0`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+
+Mesh 和 Ribbon 属性分组当前均未设置。左侧预览窗口里也能看到只有 `1` 个当前粒子，显示为一个中心发光 flare。说明这一步的目标是先做一个最小可用的单粒子发射器：寿命 `0.35` 秒，向上偏移 `100`，并以 `500` 的统一精灵尺寸展示，为后续颜色和材质参数测试提供载体。
+这张图继续在 Niagara System `Ex_04_FireSkill` 中工作，但当前焦点已经从 `Initialize Particle` 转到 `Particle Update` 阶段的 `Scale Color` 模块，用于控制粒子颜色亮度随生命周期衰减。
+
+系统结构上可确认：
+
+- 发射器仍是 `Empty`
+- `Emitter State = Self Once`
+- `Spawn Burst Instantaneous` 已存在
+- `Particle Spawn` 阶段已有：
+  - `Initialize Particle`
+  - `Camera Offset`
+- `Particle Update` 阶段已有：
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+- `Render` 阶段仍是 `Sprite Renderer`
+
+右侧 `Scale Color` 参数可确认：
+
+- `Scale Mode = RGB and Alpha Separately`
+- `Scale RGB` 已启用，模式为 `Multiply Vector by Float`
+- `Vector = (5.0, 2.0, 1.0)`
+- `Float = Float from Curve`
+- 曲线索引使用 `Particles.NormalizedAge`
+- 当前曲线从生命周期开头接近 `1.0`，线性下降到末尾接近 `0.0`
+- `Scale Curve = 1.0`
+- `Scale Alpha` 已启用
+- `Scale Alpha = 1.0`
+
+这意味着当前颜色控制策略不是直接改材质颜色，而是在 Niagara 内把粒子的 RGB 先乘一个暖色向量 `(5,2,1)`，再用 `NormalizedAge` 曲线逐步压低强度，从而实现“只控制颜色的亮度值”的淡出效果。
+
+### 00:18:33-00:23:15 Alpha、UV、颜色
+
+- 本段定位：Alpha、UV、颜色。
+- 知识点：第一个发光完成了。
+- 知识点：需要加入镜头光晕。
+- 知识点：而不是第二个光晕。
+- 知识点：像这种光晕类的这种。
+- 知识点：让渲染的编号提高一些。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`颜色`。
+
+**关键画面：**
+
+这张图继续在 Niagara System `Ex_04_FireSkill` 中工作，但当前查看的是发射器级属性，而不是单个粒子模块。发射器仍只有一个 `Empty`，左侧预览当前没有正在运行的粒子。
+
+右侧 `Emitter Properties` 中可确认：
+
+- `Local Space` 未启用
+- `Determinism` 未启用
+- `Interpolated Spawning` 已启用
+- `Sim Target = CPUSim`
+- `Calculate Bounds Mode = Dynamic`
+- `Requires Persistent IDs` 未启用
+
+`Emitter State` 中可确认：
+
+- `Life Cycle Mode` 处于系统/自管理模式切换界面
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior` 当前选择为 `Once`
+- `Loop Duration Mode = Fixed`
+- `Loop Duration = 1.0`
+
+这一步的重点是把第一个发光粒子的发射器生命周期限定为一次性播放，并允许粒子自然结束后再销毁发射器。结合本段“第一个发光完成了”的语义，这说明基础 flare 发射器已经成型，接下来会在它之上叠加镜头光晕或第二层表现。
+这张图继续在 Niagara System `Ex_04_FireSkill` 中工作，但系统里已经从一个发射器扩展到两个发射器：
+
+- `Empty`
+- `Empty001`
+
+两个发射器都保留了类似的基础结构：
+
+- `Emitter State = Self Once`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Camera Offset`
+- `Particle State`
+- `Scale Sprite Size`
+- `Scale Color`
+- `Sprite Renderer`
+
+当前右侧查看的是发射器的 `Scale Color` 模块，参数可确认：
+
+- `Scale Mode = RGB and Alpha Separately`
+- `Scale RGB` 已启用，模式为 `Multiply Vector by Float`
+- `Vector = (10.0, 1.0, 0.5)`
+- `Float = Curve for Floats`
+- 曲线索引使用 `Particles.NormalizedAge`
+- RGB 曲线从生命周期开始接近 `1.0`，到结束时下降到接近 `0.0`
+- `Scale Alpha` 已启用
+- `Scale Alpha = Float from Curve`
+- Alpha 曲线同样使用 `Particles.NormalizedAge`，并从高值逐步下降到接近 `0.0`
+
+左下角的曲线面板还显示当前选中的另一个曲线是 `Uniform Curve Sprite Size`，其值从约 `0.5` 上升到接近 `2.0`，说明这个阶段不只在调颜色，还同步让精灵尺寸后段变大。结合本段“需要加入镜头光晕，而不是第二个光晕”，可以确认此时是在做第二层发光/光晕发射器的颜色和透明度衰减，使其更偏暖、更亮，并随寿命自然收掉。
+这张图继续在 Niagara System `Ex_04_FireSkill` 中编辑第二个发射器 `Empty001`，但当前重点从颜色切换为精灵尺寸随生命周期的变化。
+
+当前系统结构可确认：
+
+- 发射器 `Empty` 与 `Empty001` 都存在
+- 两个发射器都保留：
+  - `Spawn Burst Instantaneous`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sprite Renderer`
+
+右侧当前选中 `Empty001 -> Scale Sprite Size`，参数可确认：
+
+- `Scale Sprite Size Mode = Uniform Curve`
+- `Uniform Curve Sprite Size = Curve for Floats`
+- 曲线索引使用 `Particles.NormalizedAge`
+- `Uniform Curve Scale = 1.0`
+
+从曲线形状可直接读出：
+
+- 粒子生命周期开始时大小约为 `0.5`
+- 中段快速上升到约 `3.0`
+- 后段再衰减回接近 `0`
+
+左下角时间轴中当前停在约 `0.56` 秒，两个发射器都位于同一条时间线上。结合本段“需要加入镜头光晕”的目标，这一步是在让第二层光晕粒子先迅速放大、形成镜头 flare 的膨胀感，再在寿命末端缩回并消失，而不是始终保持固定尺寸。
+
+### 00:23:15-00:26:56 纹理
+
+- 本段定位：纹理。
+- 知识点：再拉长一点也没关系。
+- 知识点：现在要加点正式的感觉。
+- 知识点：不会单独做火黄油。
+- 知识点：可以直接用做编辑纹理。
+- 知识点：它用这个就简单D。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`。
+
+**关键画面：**
+
+这一张继续编辑 Niagara System `Ex_04_FireSkill` 的第二个发射器 `Empty001`，但当前重点回到 `Initialize Particle`，用于把镜头光晕粒子的初始尺寸改成横向拉伸的纹理表现。
+
+右侧 `Initialize Particle` 中可确认的参数为：
+
+- `Lifetime Mode = Direct Set`
+- `Lifetime = 0.35`
+- `Color Mode = Unset`
+- `Position Mode = Simulation Position`
+- `Position Offset` 已启用：
+  - `X = 0.0`
+  - `Y = 0.0`
+  - `Z = 135.0`
+- `Position Offset Coordinate = Simulation`
+- `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Size Mode = Non-Uniform`
+- `Sprite Size = (150.0, 100.0)`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+
+左下角时间轴中当前停在约 `1.15` 秒，`Empty` 与 `Empty001` 两个发射器都已存在。与前面第一个 flare 发射器使用统一尺寸不同，这一步的关键是把第二层光晕改成非等比精灵，并把位置抬到 `Z=135`，让后续换成横向 flare 纹理后更容易形成拉长的镜头光带。
+这张图继续在 Niagara System `Ex_04_FireSkill` 中扩展层次，系统里已经出现第三个发射器 `Empty002`。当前右侧查看的是 `Empty002` 的 `Sprite Renderer`，说明教程开始为新的纹理/材质层直接指定渲染资源。
+
+当前系统结构可确认：
+
+- 发射器：
+  - `Empty`
+  - `Empty001`
+  - `Empty002`
+- 三个发射器都采用一次性播放的基本结构，并带有 `Sprite Renderer`
+
+右侧 `Empty002 -> Sprite Renderer` 参数中可确认：
+
+- `Material = M_Additive_01_Ins_03`
+- `Material User Param Binding = None`
+- `Source Mode = Particles`
+- `Alignment = Automatic`
+- `Facing Mode = Automatic`
+- `Macro UVRadius = 0.0`
+- `Default Pivot in UV Space = (0.5, 0.5)`
+- `Remove HMD Roll` 未启用
+- `Pixel Coverage Mode = Automatic`
+- `Pixel Coverage Blend = 1.0`
+- `Min Facing Camera Blend Distance = 0.0`
+- `Max Facing Camera Blend Distance = 0.0`
+- `Sort Mode = None`
+- `Renderer Visibility = 0`
+- `Cast Shadows` 已启用
+- `Sort Order Hint = 30`
+- `Motion Vector Setting = Auto Detect`
+
+这一步的作用是为第三层 sprite 单独挂接一个新的材质实例 `M_Additive_01_Ins_03`，并把渲染排序抬到 `30`。结合本段“现在要加点正式的感觉”，可以确认教程正在叠加第三层纹理/材质表现，使整体火焰或光晕不再只靠前两层 flare。
+这张图继续编辑第三个发射器 `Empty002`，当前从 `Sprite Renderer` 切回 `Initialize Particle`，说明教程开始为这层正式纹理粒子设置更自然的随机初值，而不是固定 flare 参数。
+
+右侧 `Empty002 -> Initialize Particle` 中可确认：
+
+- `Lifetime Mode = Random`
+- `Lifetime` 当前数值未完整显示，不能可靠抄写
+- `Color Mode = Unset`
+- `Position Mode = Simulation Position`
+- `Position Offset` 已启用：
+  - `X = 0.0`
+  - `Y = 0.0`
+  - `Z = 100.0`
+- `Position Offset Coordinate = Simulation`
+- `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Size Mode = Random Non-Uniform`
+- `Sprite Size` 当前具体随机范围未完整显示，不能可靠抄写
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+
+左侧状态区可见：
+
+- `Empty` 为 `Complete`
+- `Empty001` 为 `Complete`
+- `Empty002` 当前有 `1 Current, 1 Max (est.)`，状态为 `Inactive`
+
+因此，这一步的关键不是新增一个固定尺寸的发光层，而是把 `Empty002` 改成随机寿命、随机非等比尺寸的正式纹理粒子层，并保持较低的 `Z=100` 偏移，让它能比前面的固定 flare 更自然地参与整体火焰装饰。
+
+### 00:27:00-00:30:16 Velocity、粒子、速度
+
+- 本段定位：Velocity、粒子、速度。
+- 知识点：似乎还有一些这样不安的问题并不完美。
+- 知识点：而且每次更新时好像有些地方会有点变化。
+- 知识点：因为需要以Shape Location的形式向周围散布。
+- 知识点：而且不是随机生成,而是直接生成。
+- 知识点：以相同间隔带缓上生成。
+- 知识点：接下来,需要用Velocity Align来操作。
+- 知识点：用ReverveVolcity 然后用ReverveVolcity来定一个点。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`Velocity`、`粒子`、`速度`。
+
+**关键画面：**
+
+这张图继续编辑第三个发射器 `Empty002` 的 `Initialize Particle`，当前把之前未完全看清的随机寿命与随机尺寸范围补全了。系统中仍保留三个发射器：`Empty`、`Empty001`、`Empty002`。
+
+右侧 `Empty002 -> Initialize Particle` 中可确认：
+
+- `Lifetime Mode = Direct Set`
+- `Lifetime = Random Range Float`
+  - `Minimum = 1.0`
+  - `Maximum = 1.2`
+- `Color Mode = Unset`
+- `Position Mode = Simulation Position`
+- `Position Offset` 已启用：
+  - `X = 0.0`
+  - `Y = 0.0`
+  - `Z = 0.0`
+- `Position Offset Coordinate = Simulation`
+- `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Size Mode = Random Non-Uniform`
+- `Sprite Size Min = (5.0, 5.0)`
+- `Sprite Size Max = (10.0, 10.0)`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+
+左侧状态区显示：
+
+- `Empty` 为 `Complete`
+- `Empty001` 为 `Complete`
+- `Empty002` 当前有 `1 Current, 1 Max (est.)`，状态为 `Inactive`
+
+这一步的核心是把第三层正式纹理粒子缩小成很轻的小碎片级别，并将其寿命控制在 `1.0-1.2` 秒，同时取消前一版的上移偏置，让它为后续围绕 Shape Location 和 Velocity 的散布型表现做准备。
+这张图继续在第三个发射器 `Empty002` 上工作，当前关键变化有两个：一是在 `Particle Spawn` 阶段新增形状散布模块，二是在 `Sprite Renderer` 中把材质当作序列图使用。
+
+系统结构上可确认 `Empty002` 当前包含：
+
+- `Emitter State = Self Once`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Camera Offset`
+- `Shape Location Ring / Disc`
+- `Particle State`
+- `Scale Sprite Size`
+- `Scale Color`
+- `Sprite Renderer`
+
+右侧当前查看的是 `Empty002 -> Sprite Renderer`，可确认的参数为：
+
+- `Material = M_Additive_01_Ins_03`
+- `Material User Param Binding = None`
+- `Source Mode = Particles`
+- `Alignment = Automatic`
+- `Facing Mode = Automatic`
+- `Macro UVRadius = 0.0`
+- `Default Pivot in UV Space = (0.5, 0.5)`
+- `Pixel Coverage Mode = Automatic`
+- `Pixel Coverage Blend = 1.0`
+- `Sort Mode = None`
+- `Renderer Visibility = 0`
+- `Sub UV Blending Enabled` 未启用
+- `Sub Image Size = (8.0, 8.0)`
+- `Cast Shadows` 已启用
+- `Sort Order Hint = 30`
+- `Motion Vector Setting = Auto Detect`
+
+这说明 `Empty002` 不再只是简单的单张 flare 粒子，而是已经开始使用 `8x8` 的 SubUV/flipbook 纹理。结合中间模块列表中新出现的 `Shape Location Ring / Disc`，可确定本段正在把这层粒子改造成按环形/圆盘区域均匀散布的火焰碎片，而不是随机堆在同一个点上。
+这张图继续在第三个发射器 `Empty002` 上完善速度与动画逻辑。与上一张相比，发射器模块列表已经明显增加，说明这层粒子从“静态散布的贴图”推进到了“按速度方向运动的火焰碎片”。
+
+当前可确认的 `Empty002` 模块结构为：
+
+- `Emitter State = Self Once`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Camera Offset`
+- `Shape Location (Ring/Disc)`
+- `Add Velocity From Point`
+- `Particle State`
+- `Solve Forces and Velocity`
+- `Scale Sprite Size`
+- `Scale Color`
+- `SubUV Animation Curv...`
+- `Sprite Renderer`
+
+右侧当前查看的是 `Spawn Burst Instantaneous`，参数可确认：
+
+- `Spawn Count = 1`
+- `Spawn Time = 0.0`
+- `Spawn Probability = 1.0`
+- `Loop Count Limit = 1`
+
+这说明 `Empty002` 仍然是一次性爆发生成，而不是持续发射。真正的新变化在模块链：加入 `Add Velocity From Point` 和 `Solve Forces and Velocity` 后，粒子将不再停在 `Shape Location` 生成位置，而会从某个参考点向外推开；再配合 `SubUV Animation Curve`，可让每个火焰碎片既有方向速度，又播放自身的火焰序列。结合本段“不是随机生成，而是直接生成”“以相同间隔向外散布”“接下来需要用 Velocity Align”的语义，这一步已经把第三层粒子推进到围绕中心点规则分布、再按速度扩散的火焰碎片阶段。
+
+## 补充视觉证据
+
+### S01 00:00:32
+
+这是教程前置的资源目录准备画面。当前在 Unreal Editor 的关卡 `Ex_04` 中，Content Browser 左侧文件树选中 `Content/Signature/Course_05`，底部资源区当前只看到两个子文件夹：`Level` 与 `Texture`。作者打开左下角 `+ Add` 菜单，准备继续补齐后续制作要用的资源类型。
+
+从展开菜单可确认此处可直接新建或导入本教程后面会用到的基础资产，当前可见的关键入口包括：
+
+- `Import to /Game/Signature/Course_05...`
+- `Blueprint Class`
+- `Level`
+- `Material`
+- `Niagara System`
+
+可把这一步理解为“先在 `Course_05` 根目录下建立 Niagara 与材质相关资源的承载目录/资产入口”，方便后续继续创建材质、Niagara System 以及导入贴图资源。右侧 Outliner 仍显示测试关卡中的基础场景对象，说明这一步只是在内容浏览器内整理资源结构，还没有进入具体的 Niagara 节点或材质参数编辑。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

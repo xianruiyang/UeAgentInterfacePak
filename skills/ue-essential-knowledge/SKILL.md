@@ -15,20 +15,22 @@ description: Unreal Engine 重要知识阅读导航。用于在分析、设计�
 4. 如果涉及空间、方向、坐标、transform、屏幕/世界/局部坐标，必须同时遵守 `understand-space` skill 的空间合同原则。
 5. 如果涉及 UAI 结构化 JSON 的实现细节，优先读取本地项目代码、正式 UAI 文档和实测记录；本 skill 只提供背景与阅读路由。
 
-## 目录结构
+## 阅读入口
 
-- `references/00-reading-guide/`：阅读总则，用于不确定应读取哪类知识时先定位。
-- `references/01-core-concepts/`：UE 对象、世界、组件、反射、生命周期等核心概念。
-- `references/02-editor-assets-content/`：Content Browser、资产、包、引用、导入导出、保存与重定向器。
-- `references/03-blueprint-nodegraph/`：Blueprint、K2 节点、Pin、Graph、UMG/AnimBlueprint 节点查询。
-- `references/04-materials-shaders/`：Material、Material Function、Shader、参数、UV、编译和着色问题。
-- `references/05-niagara-vfx/`：Niagara System、Emitter、Module、Renderer、Event、Ribbon 和属性输入。
-- `references/06-animation-controlrig/`：Skeleton、Animation Sequence、Control Rig、IK、Retarget、Sequencer 动画。
-- `references/07-world-level-rendering/`：Level、Actor、Lighting、Camera、Post Process、Lumen、Nanite 和渲染视图。
-- `references/08-performance-debugging/`：编译、日志、崩溃、性能、GPU/CPU profiling 和验证方法。
-- `references/09-cpp-plugins-api/`：UE C++、Editor module、Plugin、反射宏、源码定位和 API 使用边界。
-- `references/10-uai-authoring-workflow/`：UAI 命令、结构化 authoring、apply/readback、节点与模块查询流程。
-- `references/11-ui-umg-authoring/`：UI/UMG 布局、容器、组件归属、空间验收和反复编辑流程。
+每个主题目录的正式入口是 `index.md`。读取时按下面的文件路径打开，不要把目录路径当作文件入口，也不要依赖通配符展开。
+
+- `references/00-reading-guide/index.md`：阅读总则，用于不确定应读取哪类知识时先定位。
+- `references/01-core-concepts/index.md`：UE 对象、世界、组件、反射、生命周期等核心概念。
+- `references/02-editor-assets-content/index.md`：Content Browser、资产、包、引用、导入导出、保存与重定向器。
+- `references/03-blueprint-nodegraph/index.md`：Blueprint、K2 节点、Pin、Graph、UMG/AnimBlueprint 节点查询。
+- `references/04-materials-shaders/index.md`：Material、Material Function、Shader、参数、UV、编译和着色问题。
+- `references/05-niagara-vfx/index.md`：Niagara System、Emitter、Module、Renderer、Event、Ribbon 和属性输入。
+- `references/06-animation-controlrig/index.md`：Skeleton、Animation Sequence、Control Rig、IK、Retarget、Sequencer 动画。
+- `references/07-world-level-rendering/index.md`：Level、Actor、Lighting、Camera、Post Process、Lumen、Nanite 和渲染视图。
+- `references/08-performance-debugging/index.md`：编译、日志、崩溃、性能、GPU/CPU profiling 和验证方法。
+- `references/09-cpp-plugins-api/index.md`：UE C++、Editor module、Plugin、反射宏、源码定位和 API 使用边界。
+- `references/10-uai-authoring-workflow/index.md`：UAI 命令、结构化 authoring、apply/readback、节点与模块查询流程。
+- `references/11-ui-umg-authoring/index.md`：UI/UMG 布局、容器、组件归属、空间验收和反复编辑流程。
 
 ## 输出要求
 

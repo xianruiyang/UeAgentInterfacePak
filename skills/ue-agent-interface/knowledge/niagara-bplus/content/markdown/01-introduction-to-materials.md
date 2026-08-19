@@ -1,0 +1,740 @@
+# 01 Introduction To Materials
+
+# 01 Introduction To Materials
+
+## 关键术语
+
+- `Alpha`、`Material`、`Substance`、`Substance Designer`、`透明度`、`液体`、`Niagara`、`颜色`、`Niagara System`、`Emitter`、`Particle`、`Spawn Rate`、`Spawn`、`Initialize Particle`、`Lifetime`、`Color`、`Opacity`、`Renderer`
+
+## 分段知识
+
+### 00:00:04-00:04:48 Substance、Substance Designer、颜色
+
+- 本段定位：Substance、Substance Designer、颜色。
+- 知识点：我们先谈谈材料的主要成本和出口, 基本的材料,混合模式。
+- 知识点：我们也谈谈材料和色彩的分别, 被驱离的, 记得,材料和色彩。
+- 知识点：因为通常是对的, 但如果,例如,你听到说色彩的词, 就认为它和游戏中的一样, 它们经常会被材料和色彩混合。
+- 知识点：它们在做什么? 可以用材料来管理物件, 可以加上色彩, 可以改变物件的颜色, 可以改变灯光模式, 可以改变透明性, 可以改变色彩。
+- 知识点：通常,在创造材料时, 需要用材料编辑在 Unreal Engine, 这是它们的样子。
+- 知识点：加, 编辑, 有些混合, 类型, 颜色, 在未来,后续会认为更多的细节, 有些意味, 有些混合, 很简单, 没有任何困难, 只是这种视觉部分。
+- 知识点：我们有这样一部分, 后续会它们通过到我们的 input, 例如, 颜色和透明性。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Substance Designer`、`颜色`。
+
+**关键画面：**
+
+这是本页教程开场标题图，用来明确当前章节的主题是 `Materials` 与 `Shaders`，对应正文中“材质的主要输入与输出、基础概念、混合模式”的总览介绍。
+
+当前画面可直接确认的信息：
+
+- 章节标题：`Материалы (Materials)`、`Шейдеры (Shaders)`
+- 本段范围聚焦在：
+  - 材质的输入与输出
+  - 材质的基本概念
+  - 混合模式
+- 字幕同步说明本段会先讲：
+  - `main inputs and outputs of materials`
+  - `basic concepts of materials`
+  - `mixing modes`
+
+这张图的作用不是提供节点或参数，而是给后续三类内容定边界：一是材质系统本身的输入输出；二是颜色、透明度这类常见材质属性；三是混合模式对最终视觉结果的影响。阅读本页后续所有截图时，都应把它们理解为这三个主题下的实例展开。
+这张图是在介绍 `Unreal Engine Material Editor` 的标准界面组成，重点不是某个具体材质效果，而是让读者先认识材质编辑器里各个功能区分别负责什么。
+
+图中给出的界面分区编号与含义如下：
+
+- `1`：`Menu Bar`
+- `2`：`Toolbar`
+- `3`：`Viewport Panel`
+- `4`：`Details Panel`
+- `5`：`Material Graph Panel`
+- `6`：`Stats Panel`
+- `7`：`Palette Panel`
+
+结合左侧示意图，可以对应理解各区域的用途：
+
+- `Viewport Panel`：显示材质球预览，用来观察材质在模型上的实时结果。
+- `Details Panel`：查看当前材质或节点的属性，如材质域、混合模式、着色模型等。
+- `Material Graph Panel`：材质节点网络的主工作区，用来连接纹理采样、常量、数学节点和材质输出。
+- `Stats Panel`：显示纹理采样数量、指令数等统计信息，用于判断材质复杂度。
+- `Palette Panel`：按分类列出可添加的材质节点。
+
+底部附带的第二张示例图说明材质编辑器的核心工作方式是：在图形网络里对纹理和数值做加减、混合、调色，再把结果接入材质输出。也就是说，这一页的关键不是记某个节点，而是先建立“材质编辑器由预览、参数、图表、统计和节点库几部分协同工作”的整体认知。
+这张图是 `Physically based rendering (PBR)` 的概念总览，目的在于说明 Unreal 材质并不是只靠一张颜色贴图决定外观，而是通过一组物理属性输入共同决定金属感、反射、高光、粗糙度、发光和法线等表现。
+
+右侧材质输出节点 `M_BaseOperation` 当前可见的主要输入口包括：
+
+- `Base Color`
+- `Metallic`
+- `Specular`
+- `Roughness`
+- `Anisotropy`
+- `Emissive Color`
+- `Opacity`
+- `Opacity Mask`
+- `Normal`
+- `Tangent`
+- `World Position Offset`
+- `Ambient Occlusion`
+- `Refraction`
+- `Pixel Depth Offset`
+
+中间与左侧示例图表达的要点如下：
+
+- 同样的基础形体，在不同 `Roughness`、`Specular`、`Metallic` 条件下，会呈现截然不同的反射和高光分布。
+- 图中一组不同材质球展示了从非金属到金属、从粗糙到光滑的常见外观差异。
+- 左下角色球条带用 `0.0` 到 `1.0` 的数值变化演示参数连续调节时的视觉过渡，强调这些输入很多都不是开关，而是连续区间。
+- 底部字幕同步指出现实里存在透明、不透明、金属、非金属等不同材料，因此 PBR 材质需要多通道配合才能逼近真实。
+
+按图理解这一页时，可以把 `PBR` 看成“材质输入通道和现实物理属性之间的映射关系”：`Base Color` 决定主体颜色，`Metallic`/`Specular`/`Roughness` 共同决定反射表现，`Opacity`/`Opacity Mask` 负责透明与裁切，`Normal` 和 `World Position Offset` 负责表面细节与形体偏移。后续所有关于颜色、透明度和液体的示例，本质上都是在这些输入通道上做不同组合。
+
+### 00:04:48-00:09:32 颜色、透明度
+
+- 本段定位：颜色、透明度。
+- 知识点：在《Epic Games Team》中, 他们也有提供了这种概念, 但在电子画面中, 它叫PBR, 在这三个材料中 为了制造某些物质, 可以用这些材料 去创造光线的反射。
+- 知识点：有些是透明的物质, 我们也有不同的材料, 可以被更换。
+- 知识点：我们有铁链, 这就是它们之间的不同。
+- 知识点：在前面的视频中, 我们的材料 总是有某些材料。
+- 知识点：可观察到 很多不同的材料, 后续会全部分析。
+- 知识点：底色是主体颜色, 这里可观察到 颜色的结构。
+- 知识点：它们被基础色 转换到底色, 我们可观察到, 在这个物质上 向这个物件显示了某些圆形。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`、`透明度`。
+
+**关键画面：**
+
+这张图继续讲 `PBR` 材质输入如何影响最终观感，但相比上一段的总览，它更强调“参数是连续数值，并且这些数值会直接改变反射与材质识别”的概念，为后面的颜色和透明度讨论打基础。
+
+当前画面可确认的核心信息：
+
+- 右侧材质输出节点仍展示常见 `PBR` 输入口：
+  - `Base Color`
+  - `Metallic`
+  - `Specular`
+  - `Roughness`
+  - `Emissive Color`
+  - `Opacity`
+  - `Opacity Mask`
+  - `Normal`
+  - `Ambient Occlusion`
+- 左下参数示意条明确给出：
+  - `metallic`：从 `0.0` 到 `1.0`
+  - `specular`：从 `0.0` 到 `1.0`
+- 中间多组材质球示例用于对比不同参数组合下的反射差异：
+  - 黑色高光球与哑光球
+  - 金色金属球与偏塑料质感球
+  - 一组不同金属/粗糙度表现的球体排布
+
+这张图想表达的是：`PBR` 并不是给材质贴一个“金属”或“非金属”的标签，而是通过 `metallic`、`specular`、`roughness` 这些连续参数，模拟材料在现实中的反光方式。理解这一点后，后续看到颜色或透明度示例时，就不能只把它们当成贴图颜色修改，而要同时考虑这些物理属性输入会如何改变表面反射和视觉层级。
+这张图是 `Specular` 的单独示例，用一个非常简单的材质网络演示“在非金属材质上，高光/镜面反射项会如何影响表面观感”。
+
+当前材质图里可直接确认的输入关系为：
+
+- 材质输出节点：`M_BaseOperation`
+- `Base Color`：接入一个 `Constant3Vector`
+  - `X = 0.0`
+  - `Y = 0.162857`
+  - `Z = 0.550857`
+  - 预览颜色是蓝色
+- `Metallic`：接入 `Scalar = 0.0`
+- `Specular`：接入 `Scalar = 1.0`
+- `Roughness`：接入 `Scalar = 0.0`
+
+左侧预览球体的结果特征：
+
+- 球体主体是高饱和蓝色
+- 表面高光非常集中且明亮
+- 环境倒影清晰可见，镜面感很强
+
+按这张图复建时，可以把它理解成一个“高光最强的非金属光滑球”示例：`Metallic = 0` 说明它不是金属工作流里的金属表面，`Roughness = 0` 让表面尽量光滑，而 `Specular = 1` 把镜面反射强度推到很高。教程在这里想说明的是，`Specular` 不是在改物体本身的底色，而是在改它如何把环境光和高光反射到视线里。
+这张图演示的是 `Emissive Color` 材质做法：使用一张黑白纹理作为发光形状遮罩，再乘上颜色参数和亮度参数，把结果接到材质的 `Emissive Color` 输入。
+
+节点定义集：
+
+- `Texture Sample`
+  - 预览纹理是黑底白色 `U4` 标志
+  - 作用：提供发光图案遮罩
+- `EmissiveColor`
+  - 节点类型：颜色参数
+  - 标注：`Param (1, 0.555, 0.1)`
+  - 预览色为亮黄色
+  - 作用：控制发光颜色
+- `EmissiveBrightness`
+  - 节点类型：标量参数
+  - 标注：`Param (6)`
+  - 作用：控制发光强度
+- `Multiply` × 2
+  - 第一个用于“纹理遮罩 × 发光颜色”
+  - 第二个用于“上一步结果 × 发光强度”
+- 材质输出：`M_Emissive`
+  - 当前接入的是 `Emissive Color`
+
+连线集：
+
+- `Texture Sample` 输出接到第一个 `Multiply`
+- `EmissiveColor` 接到第一个 `Multiply`
+- 第一个 `Multiply` 输出接到第二个 `Multiply`
+- `EmissiveBrightness` 接到第二个 `Multiply`
+- 第二个 `Multiply` 输出接到 `M_Emissive.Emissive Color`
+
+设置/参数：
+
+- 发光颜色参数约为橙黄色：`(1, 0.555, 0.1)`
+- 发光亮度参数：`6`
+- 黑白纹理决定哪里发光、哪里不发光
+
+输出/预览：
+
+- 左侧平面预览上，`U4` 图案和外圈环形区域发出强烈黄光
+- 发光区域外扩出明显的泛光晕圈
+- 由于遮罩是黑白分离的，未被纹理选中的区域不会参与发光
+
+按图复建时，关键思路是把“形状、颜色、强度”拆成三个独立控制项：纹理决定形状，`EmissiveColor` 决定色相，`EmissiveBrightness` 决定能量。这样后续无论做符文、UI、特效贴片还是能量标记，都可以复用同一条发光材质逻辑，只替换遮罩和参数即可。
+
+### 00:09:32-00:14:05 液体
+
+- 本段定位：液体。
+- 知识点：可以把光线 lightweight time passa 路需页面来调 路需页面 这是物体上的光线。
+- 知识点：而光线同时 在对怎么调干到光线, 包括这里 有时候全都取决于模式 如果比如说材料是透明的 没有光线模式 那么很多的进入都会失去 铁面模式就会消失。
+- 知识点：护膜 护膜和护膜的分别是什么 各种混合模式 比如说没有护膜 这里是护膜 如果护膜是关闭的 这是护膜混合模式 后续会谈论它 这种液体是从这里出现的。
+- 知识点：它们是由黑色和白色混合 我们把一条分别的铁面模式 如果护膜可以从0到1 它们可以轻易转移 护膜不能轻易转移 它们很快就会把色彩切掉。
+- 知识点：这就很明显了 它们之间没有这么轻易的转移 它们很快就会把光线切掉 这是什么? 这是一般的模式 这是它们的样子 它是这么蓝色的 它通常会生成。
+- 知识点：它会做什么? 它会准备光线的光线 它可以把色彩切掉 这条视频显示了 它可以把色彩切掉 它可以把色彩切掉 可以做出这种模式 比如说 这个模式没有任何用途。
+- 知识点：如果我们把环境和环境混合模式 我们通常不会用环境混合模式 这是只是以理解 环境混合模式 这是色彩 在某些位置,物件开始被色彩 这个色彩本身特别是在特殊计划里做的。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+
+**关键画面：**
+
+这张图讲的是 `Opacity` 的基本用法：把一张纹理遮罩和渐变一起送入材质的 `Opacity`，从而控制物体哪些地方可见、哪些地方逐渐透明。
+
+左侧主示例节点定义集：
+
+- `TexCoord`
+- `Texture Sample`
+  - 预览纹理为黑白 `U4` 标志
+- `LinearGradient`
+  - 可见输出：`UGradient`、`VGradient`
+- `Subtract`
+- 常量颜色节点：`(1,1,1)`
+- 材质输出：`M_Opacity`
+
+左侧主示例连线集：
+
+- `TexCoord` 连接到 `Texture Sample.UVs`
+- `LinearGradient.VGradient` 连接到 `Subtract.A`
+- `Texture Sample` 的黑白遮罩输出连接到 `Subtract.B`
+- `Subtract` 输出连接到 `M_Opacity.Opacity`
+- 常量颜色 `1,1,1` 连接到 `M_Opacity.Base Color`
+
+左侧主示例输出/预览：
+
+- 一个带 `U4` 标志的立方体阵列
+- 前后多个立方体透明程度不同
+- 透明变化沿着模型表面发生渐变，而不是整块一起消失
+
+右侧补充示例当前能确认的信息：
+
+- 一个蓝色 `Constant3Vector` 接入 `Multiply`
+- 一个圆形渐变 `Texture Sample` 同时参与 `Multiply`，并直接接入 `Opacity`
+- `Multiply` 的结果接入 `Emissive Color`
+- 左侧预览是一个发蓝光的软圆斑
+
+按图复建时，关键理解是：
+
+- `Opacity` 决定“有没有被看到”和“透明过渡到什么程度”
+- 黑白纹理负责定义形状边界
+- 渐变负责让透明过渡更平滑
+- 如果同时把同一张遮罩参与 `Emissive Color`，就能得到“既会发光、又会按遮罩透明”的特效贴片
+这张图讲的是 `Normal` 输入的作用：即使模型本身几何不变，也可以通过法线贴图改变光照响应，让表面看起来拥有更多凹凸细节。
+
+右侧简化材质示例当前能确认的节点关系：
+
+- 材质输出：`M_BaseOperation`
+- 一个蓝色 `Constant3Vector`
+  - 数值约为 `(0.0, 0.313151, 0.8)`
+  - 连接到 `Base Color`
+- `Scalar = 1.0`
+  - 连接到 `Metallic`
+- `Scalar = 0.3`
+  - 连接到 `Roughness`
+- 一个 `Texture Sample`
+  - 预览图是典型蓝紫色法线贴图
+  - 连接到 `Normal`
+
+右侧预览结果：
+
+- 一个蓝色立方体
+- 立方体表面出现圆环状和起伏状明暗变化
+- 这些细节主要来自光照响应变化，而不是模型边界被改形
+
+左下角复杂示例提供的补充信息：
+
+- 一个武器材质网络同时接入：
+  - `Base Color`
+  - `Metallic`
+  - `Roughness`
+  - `Normal`
+  - `Ambient Occlusion`
+- 武器预览图显示，即使在较暗环境里，法线细节仍能让表面裂纹、边缘和起伏更清楚
+
+左上角白模示例强调的结果是：
+
+- 当法线或细节雕刻信息正确参与光照后，物体表面会形成更丰富的阴影与高光断面
+- 这种效果用于模拟裂纹、包裹、雕刻和凹凸，而不一定需要增加真实面数
+
+按图复建时，可以把 `Normal` 理解成“改变每个像素朝向”的输入。它不会直接改 `Base Color`，也不负责透明度，而是影响光线如何在表面散射和反射，因此特别适合做液体波纹、石头裂痕、武器雕刻和特效贴片上的假体积细节。
+这张图展示的是材质 `Blend Mode` 选项所在位置，以及 Unreal 常见混合模式的下拉列表。它的作用是说明：同样一张材质图，最终是完全不透明、硬裁切透明、柔和半透明还是纯叠加发光，首先取决于 `Blend Mode` 的选择。
+
+当前画面可直接确认的面板位置：
+
+- `Material Domain`：`Surface`
+- `Blend Mode`：当前选中 `Opaque`
+- `Blend Mode` 位于材质 `Details > Material` 区域
+
+下拉列表当前可见的模式包括：
+
+- `Opaque`
+- `Masked`
+- `Translucent`
+- `Additive`
+- `Modulate`
+- `AlphaComposite (Premultiplied Alpha)`
+- `AlphaHoldout`
+
+按这张图理解各模式的用途边界：
+
+- `Opaque`：完全不透明，不参与透明度过渡。
+- `Masked`：按阈值裁切，可见或不可见是硬边界，常配合 `Opacity Mask`。
+- `Translucent`：支持连续透明度过渡，适合玻璃、雾、软边特效。
+- `Additive`：颜色叠加到背景上，常用于光效、火花、能量片。
+- `Modulate`：通过乘算影响背景颜色，适合特殊叠色效果。
+- `AlphaComposite`：预乘 Alpha 工作流，适合更稳定地合成半透明内容。
+- `AlphaHoldout`：用于挖空或保留遮挡区域的特殊合成场景。
+
+这张图和前面 `Opacity` 的关系是：`Opacity`、`Opacity Mask` 这些输入口只有在合适的 `Blend Mode` 下才真正生效。也就是说，先决定材质属于 `Opaque`、`Masked` 还是 `Translucent`，再去调透明度输入，才会得到预期的可见性结果。
+
+### 00:14:05-00:18:09 颜色
+
+- 本段定位：颜色。
+- 知识点：是他们正确的控制 它是一个完全透明的物件 没有其他物件能够被看到 这是一个透明的物件 我们有一个面具 我们刚刚看到的 当我们把面具模式关掉。
+- 知识点：我们把抛光器关掉 然后把抛光器关掉 我们能够把颜色扣上来 如果有白色的 我们有透明的 如果有黑色的 它被切掉了 这就是没有透明的 这里有一个质量。
+- 知识点：在物件的模式里 有一个质量叫 抛光器的面具 是一种显示 如果我们转移 例如是一种光线 它会很轻松 这里可以把质量 在它会被切掉的地方 它会很轻松。
+- 知识点：从0到1 在这种圈子中 有时候它会被切掉 因为黑色的质量 它开始被切掉了 这里可观察到一个例子 这里有一个意义 这里我们问 从0到1 大概是0.5。
+- 知识点：它会被抛光到0.5 其他地方都会是白色的 黑色的地方它会被切掉 有各种显示模式 可以选择不同的物件 在哪里显示 可以选择一个平行 或者一个平行的圈子。
+- 知识点：可以选择一个圈子 可以选择一个室子 一个圈子 或者自己的3D物件 这是一个例子 在室子里 后面的部分 是不见得见的 物件是在3D物件上超过了。
+- 知识点：在哪里是黑色的地方 它是最平行的 这里是平行的圈子 这是一个室子 它可以轻易移动 这里我们没有移动任何平行的圈子 这里我们只是移动了0.5的一个圈子。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这是 `Opaque` 混合模式的结果示例图，用来建立“完全不透明材质”的显示基线。画面里只有一个完整材质球，没有任何被裁切或透视到背后背景的区域，因此它和前面讲的 `Opacity` / `Masked` / `Translucent` 形成对照。
+
+当前画面可直接确认的信息：
+
+- 模式标题：`Opaque`
+- 预览对象：一个球形材质球
+- 球体表面带有黄白色月面/石质纹理
+- 球体整体轮廓完整连续，没有缺口、软边透明或局部裁切
+- 背景墙面和地面不会透过球体显示到前面
+
+这张图对应的理解重点是：
+
+- `Opaque` 表示材质像普通实体一样完全遮挡背景。
+- 即使材质表面有亮区、暗区、纹理变化，也只影响外观，不影响可见性。
+- 当教程后面再讲 `Masked`、`Translucent` 或其他透明相关模式时，都应以这张图作为参照：`Opaque` 的本质是“只负责表面外观，不提供透明通道”。
+这张图讲的是 `Masked` 混合模式。它的核心不是连续透明，而是利用黑白遮罩和裁切阈值，让材质在某些位置完全显示、某些位置完全消失，形成清晰硬边。
+
+主示例节点定义集：
+
+- 材质输出：`BlendModes`
+- `Constant3Vector`
+  - 颜色约为橙色：`(0.802, 0.177, 0)`
+  - 接到 `Base Color`
+- `TexCoord[0]`
+- `Texture Sample`
+  - 纹理是水平黑白条纹
+  - 接到 `Opacity Mask`
+
+主示例连线集：
+
+- `TexCoord[0] -> Texture Sample.UVs`
+- `Texture Sample` 遮罩输出 -> `BlendModes.Opacity Mask`
+- 橙色常量 -> `BlendModes.Base Color`
+
+主示例输出/预览：
+
+- 左侧是一组橙色平面条带
+- 右侧球体被裁成一层层水平条纹
+- 不显示的位置是彻底空掉的，背景直接透出来
+- 可见位置边缘干脆，没有半透明羽化
+
+下方补充示例说明：
+
+- 另一个 `ClipMask` 材质用圆形渐变纹理接 `Opacity Mask`
+- 细节面板里可见 `Opacity Mask Clip Value = 0.05`
+- 立方体表面因此被挖出多个圆孔
+
+右下灰度条表达的含义是：
+
+- 黑到白的遮罩值会和 `Opacity Mask Clip Value` 比较
+- 低于阈值的区域被完全切掉
+- 高于阈值的区域被完整保留
+
+按图复建时，关键理解是：`Masked` 更像“裁剪”而不是“透明”。它适合做树叶、镂空图案、打孔物体、硬边贴片等效果；如果需要柔和过渡，则应改用 `Translucent` 而不是继续提高 `Opacity Mask` 的复杂度。
+这张图讲的是 `Additive` 混合模式。它的关键特征不是遮挡背景，而是把颜色和亮度叠加到背景上；当多个对象互相重叠时，重叠区域会变得更亮。
+
+左上条纹球示例当前可确认的信息：
+
+- 材质图名称：`AdditiveMasked`
+- 一个青绿色 `Constant3Vector` 连接到 `Multiply`
+- 条纹 `Texture Sample` 连接到 `Multiply`
+- 一个 `Scalar` 参数约为 `0.7`
+- `Multiply` 输出连接到 `Emissive Color`
+- 输出节点上可见 `Opacity` 输入存在，但当前主要强调的是发光叠加
+- 预览结果是一个由发光条带构成的半球/球体
+
+右上平面发光示例当前可确认的信息：
+
+- 材质图名称：`M_BlendModes`
+- 一个绿色 `Constant3Vector` 与一张圆形渐变 `Texture Sample` 进入 `Multiply`
+- `Multiply` 输出接 `Emissive Color`
+- 同一张圆形渐变还直接连接到 `Opacity`
+- 左侧预览得到一个绿色发光软斑
+
+左下结果示例表达的核心现象：
+
+- 两个条纹发光球互相重叠
+- 中间交叠区域明显比单独区域更亮
+- 背景墙面仍然能透过球体看到，说明它不是实体遮挡
+
+右下场景示例补充的意思是：
+
+- 教程还通过显示/隐藏多张 `Plane` 来演示多层叠加
+- 当 Additive 物体层数增加时，亮度会继续累加
+
+按图复建时，关键理解是：
+
+- `Additive` 更适合能量、光晕、火花、激光、魔法片等“只想加亮、不想遮挡背景”的特效。
+- 其视觉规律是“越重叠越亮”，因此必须注意层数和强度，否则画面中心很容易过曝。
+- 如果希望保留明确的实体边界或不让重叠区域无限变亮，就不应使用纯 `Additive`，而应考虑 `Masked`、`Translucent` 或其它混合方式。
+
+### 00:18:14-00:22:51 Alpha、颜色
+
+- 本段定位：Alpha、颜色。
+- 知识点：颜色会变成一样 这是加速的意思 它们会变得更轻易 当它们被涂上去 但不幸的是 在加速时 它们不能变得太黑 如果您想把黑色 转成透明色 它们会变得完全透明。
+- 知识点：您不会看到任何东西 在显示 可以把两个都变得光亮 只是显示模式 不像这样 它们会变得更光亮 当物件变得超级透明 这是只在 同样的加速模式上使用的。
+- 知识点：它会变得更透明 通常需要使用 更光亮和淡化的 两种主要的东西 最光亮的 被盖 通常在野地上 很少使用 它经常会使用在創作中 例如 如果我们有叶子。
+- 知识点：需要告诉你 这个意思是什么 可能是镜子 但别忘了 所有的效果 这是什么意思 我们有这种颜色 一个颜色。
+- 知识点：简单的被传达 而这些物件越多 越黑暗 我们不能控制 这个透明性 它能理解 在背景里面的 情况 而它变得 比较黑暗 或比较光亮 相关于这个 如果 同样的物件。
+- 知识点：被超过了 它们会变得 更黑暗 和更黑暗相互 这是Alpha Composite 我们经常使用 但也很少 这是什么意思 它们可以与 传达和淡化的模特。
+- 知识点：混合 可以把不同的 颜色 轻度和颜色 轻度和颜色 轻度和颜色 变成了 它能够 在更黑暗的地方 或在更亮的地方 实际上 如果我们用 传达和淡化的模特。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`颜色`。
+
+**关键画面：**
+
+这张图继续说明 `Additive` 混合模式，但当前强调的重点是：在 `Additive` 里，黑色不会表现为“黑色表面”，而是等价于“不加任何东西”，因此视觉上会直接消失。
+
+当前画面可确认的信息：
+
+- 标题仍为：`Additive`
+- 左上与右上仍分别展示：
+  - 条纹球的 Additive 材质网络
+  - 绿色发光圆斑的 Additive 材质网络
+- 左下两颗条纹球重叠后，中间区域明显更亮
+- 右下场景里只剩一个绿色发光斑点悬在黑暗背景前
+
+这张图能支持的具体结论是：
+
+- `Additive` 的可见区域主要来自亮色/发光值的叠加。
+- 当输入是黑色时，由于对背景没有任何加亮贡献，所以结果会像“完全透明”一样看不见。
+- 当多个 Additive 对象重叠时，亮度会继续相加，因此中心区域会越来越亮。
+
+按图理解这一页时，应该把 `Additive` 想成“只负责往背景上加光”的模式，而不是传统意义上的带颜色半透明材质。也正因为这样，它不适合表现需要保留黑色信息的图像，但非常适合能量球、光晕、魔法粒子、火花等只依赖亮部存在感的特效。
+这张图讲的是 `Alpha Composite`。它和 `Additive` 的区别在于：它不是单纯叠加亮度，而是把颜色/发光和透明度一起参与合成，因此同类对象叠在一起时，结果会逐渐变暗，而不是只会越叠越亮。
+
+左侧简化材质示例可确认的信息：
+
+- 材质当前 `Blend Mode`：`AlphaComposite (Premultiplied Alpha)`
+- 一个绿色 `Constant3Vector` 参与上方的 `Multiply`
+- 一个圆形渐变 `Texture Sample` 直接参与 `Opacity`
+- 另一个颜色/强度节点参与上方发光合成
+- 上方 `Multiply` 输出接到 `Emissive Color`
+- 圆形渐变纹理输出接到 `Opacity`
+
+右侧完整示例拆成两条链：
+
+`EmissiveColor` 链：
+
+- `Particle Color`
+- `Multiply`
+- `Multiply`
+- `Emissive Strength Param(1)`
+- 最后一个 `Multiply`
+- 输出到 `M_Burst.Emissive Color`
+
+`Opacity` 链：
+
+- 一个环形 `Texture Sample`
+- `Multiply`
+- `Multiply`
+- `Opacity Strength`
+- 输出到 `M_Burst.Opacity`
+
+输出/预览结果：
+
+- 左上预览仍然是绿色发光软斑
+- 左下多层 `Plane` 重叠后的结果，外围出现明显变暗的黑圈
+- 字幕直接指出：如果多个相同对象叠加，它们会“越来越暗”
+
+按图复建时，关键理解是：
+
+- `Alpha Composite` 允许同时控制发光和透明度，并且对重叠区域的处理比 `Additive` 更稳定。
+- 当你既想保留亮部发光，又不希望多个粒子叠加后无限过曝时，可以考虑这种模式。
+- 其视觉特征不是“越叠越亮”，而是会把合成结果压回到更可控的范围，因此更适合需要层次感和厚度感的粒子贴片。
+这张图在解释“材质”和“着色器”之间的区别。它不是某个具体混合模式的参数图，而是把底层图形渲染流水线、手写 shader 代码，以及 Unreal 材质编辑器里的输入口放在一起对照。
+
+左侧流程图表达的渲染流水线：
+
+- `Vertex Data[]`
+- `Vertex Shader`
+- `Geometry Shader`
+- `Shape Assembly`
+- `Rasterization`
+- `Fragment Shader`
+- `Tests and Blending`
+
+中间代码面板表达的含义：
+
+- 这里展示的是一段手写 shader / fragment 程序
+- 代码中可见：
+  - 属性定义（如 `Color`、`Amplitude`、`Frequency`）
+  - `#pragma vertex vert`
+  - `#pragma fragment frag`
+  - 顶点输入输出结构
+  - 在顶点或片元阶段计算颜色/位置
+- 说明“着色器”本质上是直接控制 GPU 某些渲染阶段的程序
+
+右侧 Unreal 材质输出节点表达的含义：
+
+- `M_BaseOperation` 提供的是一组高层输入口，例如：
+  - `Base Color`
+  - `Metallic`
+  - `Specular`
+  - `Roughness`
+  - `Emissive Color`
+  - `Opacity`
+  - `Opacity Mask`
+  - `Normal`
+  - `World Position Offset`
+  - `Ambient Occlusion`
+  - `Pixel Depth Offset`
+- 这些输入口本质上是在驱动底层 shader 的常见参数和行为，而不是直接让用户手写完整渲染代码
+
+按图理解时，可以把两者关系概括为：
+
+- `Shader`：更底层，是直接参与渲染流水线执行的程序。
+- `Material`：更高层，是在引擎里通过节点、参数和输入口去配置或生成 shader 的方式。
+- Unreal 的材质编辑器帮用户把大量常见 shader 逻辑封装成了 `Base Color`、`Normal`、`Opacity` 等标准接口，因此艺术制作多数时候操作的是“材质”，而不是直接写 shader 源码。
+
+### 00:22:51-00:24:52 颜色
+
+- 本段定位：颜色。
+- 知识点：之后这些变化模式会跟随 我们想象一下我们有镜子 我们有几个 有红镜子 还有绿色 之类的 如果绿色在前面 它会直接把后面的镜子颜色。
+- 知识点：比如说红 然后怎么混合 它们也混合了透明物件 所以我们有很多变化模式 这是Unity的文件 这是它看起来的 我们为什么不做这个 让我们把所有东西。
+- 知识点：都放在一边 我们有材料 通常在各种混合模式 例如Unreal Engine 甚至是Unity 它们经常叫做Unity Shader 但实际上它们也就是一个材料。
+- 知识点：它们已经是一个白色 和我们的颜色 这里我们也有一个Vertex Shader 我们有一个世界位置的设计 可以使用 来控制我们的颜色。
+- 知识点：后续会在下面说明更深 当然有基础色 我们已经可以管理到 这个环境 就是颜色如何 光的光速如何 所有东西都在这个环境的颜色。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这张图在当前“颜色”小节里，用“材质 vs 着色器”的对照关系回扣一个重点：颜色并不是孤立存在的单一贴图值，而是通过材质输入口驱动底层 shader，在完整渲染流水线里参与最终成像。
+
+左侧图形流水线可确认的阶段：
+
+- `Vertex Data[]`
+- `Vertex Shader`
+- `Geometry Shader`
+- `Shape Assembly`
+- `Rasterization`
+- `Fragment Shader`
+- `Tests and Blending`
+
+中间代码面板表达的含义：
+
+- 这里展示的是一段直接控制顶点/片元处理的 shader 代码
+- 可见：
+  - `Color`
+  - `Amplitude`
+  - `Frequency`
+  - `#pragma vertex vert`
+  - `#pragma fragment frag`
+- 说明颜色、位移或频率这类参数，最终都会进入底层着色程序参与计算
+
+右侧 Unreal 材质输出节点可确认的颜色相关入口包括：
+
+- `Base Color`
+- `Emissive Color`
+- `Opacity`
+- `Opacity Mask`
+- `Normal`
+- `World Position Offset`
+- `Ambient Occlusion`
+
+结合本段“颜色”主题，这张图要表达的结论是：
+
+- 在材质编辑器里调颜色，本质上是在给 shader 提供更高层、可视化的输入。
+- `Base Color` 负责主体表面颜色，`Emissive Color` 负责自发光颜色，而这些结果都会在 `Fragment Shader` 和后续 `Tests and Blending` 阶段被真正合成到屏幕上。
+- 因此，颜色效果不只是“选一个颜色值”，还会和混合模式、法线、透明度、发光以及底层渲染阶段共同决定最后的视觉结果。
+这张图继续用“材质 vs 着色器”的对照来强调一个更具体的点：材质系统里并不只有颜色输入，还存在可用于控制顶点行为的入口，因此材质也能间接参与形体变化。
+
+当前画面里和“控制顶点”直接相关的可确认信息：
+
+- 左侧流水线明确包含：
+  - `Vertex Shader`
+  - `Geometry Shader`
+  - `Shape Assembly`
+- 中间 shader 代码中可见：
+  - `Amplitude`
+  - `Frequency`
+  - 顶点输入结构 `vertex : POSITION`
+  - 在 `vert` 阶段对顶点位置做计算
+- 右侧 Unreal 材质输出节点里可见：
+  - `World Position Offset`
+  - `Pixel Depth Offset`
+  - `Tangent`
+  - `Normal`
+
+这张图在当前语境下支持的结论是：
+
+- 当教程说“可以控制物体的顶点”时，对应的底层概念就是 `Vertex Shader` 会参与顶点位置处理。
+- 在 Unreal 材质工作流里，最直接对应这个能力的高层入口就是 `World Position Offset`。
+- 因此，材质不仅能决定颜色和发光，也能通过顶点偏移去做波动、摆动、膨胀、表面起伏等效果，只是它底层仍然是 shader 在执行。
+
+把这张图和上一张连起来理解，可以得到一个更完整的映射：
+
+- `Base Color` / `Emissive Color` 更偏向片元阶段的颜色输出。
+- `World Position Offset` 更偏向顶点阶段的位置修改。
+- Unreal 材质编辑器实际上把“颜色、透明、法线、顶点偏移”等常见 shader 能力都封装成了可视化输入口。
+这张图仍然在用“材质 vs 着色器”的对照图做收尾说明，但当前字幕把重点落在“哪些输入是基础，哪些高级项暂时不用过度关注”。
+
+当前右侧 `M_BaseOperation` 节点里，能看到一组典型基础输入：
+
+- `Base Color`
+- `Metallic`
+- `Specular`
+- `Roughness`
+- `Emissive Color`
+- `Opacity`
+- `Opacity Mask`
+- `Normal`
+- `World Position Offset`
+- `Ambient Occlusion`
+- `Pixel Depth Offset`
+
+同时也能看到一些更偏扩展或进阶的话题入口：
+
+- `Anisotropy`
+- `Tangent`
+- `Subsurface Color`
+- `Custom Data`
+- `Refraction`
+- `Shading Model`
+- `Surface Thickness`
+
+结合字幕“不要担心各向异性，这是我们的基础”可以得出的结论是：
+
+- 在入门阶段，材质学习重点应先放在最常用的基础输入上，尤其是颜色、金属度、粗糙度、发光、透明和法线。
+- 像 `Anisotropy` 这类更特殊的输入虽然存在，但不是理解材质工作原理的前置条件。
+- 也就是说，当前这一页的收束不是让读者立刻掌握所有输入口，而是先建立一个分层认知：先掌握材质基础输入如何映射到底层 shader，再逐步扩展到更少见的高级特性。
+
+## 补充视觉证据
+
+### DOC 00:13:04
+
+这张补充图展示的是 `Refraction` 材质示例，用一个透明球说明折射既依赖透明度，也依赖法线和折射率输入。
+
+节点定义集：
+
+- 材质输出：`M_BaseOperation`
+- `Scalar` 常量 `1.0`
+  - 连接到 `Base Color`
+- `Scalar` 常量 `0.25`
+  - 连接到 `Opacity`
+- `Texture Sample`
+  - 预览图是蓝紫色法线贴图
+  - 连接到 `Normal`
+- `Fresnel`
+  - `ExponentIn = 1.0`
+  - `BaseReflectFractionIn = 0.04`
+- `Lerp (1,1.33,)`
+  - `A = 1.0`
+  - `B = 1.33`
+  - `Alpha` 由 `Fresnel` 驱动
+  - 输出连接到 `Refraction (Index Of Refraction)`
+
+连线集：
+
+- `1.0 -> M_BaseOperation.Base Color`
+- `0.25 -> M_BaseOperation.Opacity`
+- `Texture Sample -> M_BaseOperation.Normal`
+- `Fresnel -> Lerp.Alpha`
+- `Lerp(1,1.33) -> M_BaseOperation.Refraction (Index Of Refraction)`
+
+设置/参数：
+
+- 左下 `Refraction` 面板可见：
+  - `Refraction Method = Index Of Refraction`
+  - `Refraction Coverage Mode` 已启用某个覆盖模式
+  - `Refraction Depth Bias = 0.0`
+- 折射率插值范围从 `1.0` 到 `1.33`
+  - `1.0` 接近空气
+  - `1.33` 对应更接近玻璃/液体类折射感
+
+输出/预览：
+
+- 左侧主预览是一个半透明球体
+- 球体后方建筑线条通过球体时产生明显扭曲和偏移
+- 球体边缘折射感比中心更强，符合 `Fresnel` 控制的边缘增强逻辑
+- 右上、右下小图提供了不同视角下的同一透明球效果
+
+按图复建时，关键思路是把折射拆成三部分：`Opacity` 决定能否看穿，`Normal` 决定折射扰动细节，`Refraction` 输入决定背景被弯折的强度。这里用 `Fresnel` 去驱动 `1.0 -> 1.33` 的折射率变化，可以让球体边缘更像真实玻璃/液体外壳，而不是整颗球均匀失真。
+
+### S04 00:17:18
+
+这张补充图的文件名和锚点指向 `S04 00:17:18 parameter`，但当前实际画面内容并不是单独参数面板特写，而是与主段 `Additive` 示例高度一致的综合讲解页，因此图文归属存在不一致，需要当前帧未确认。
+
+当前仅能确认的画面事实：
+
+- 标题：`Additive`
+- 左上是 `AdditiveMasked` 材质图
+  - 青绿色常量颜色
+  - 条纹 `Texture Sample`
+  - `Multiply`
+  - 连接到 `Emissive Color`
+- 右上是绿色发光软斑的材质示例
+  - 绿色常量颜色
+  - 圆形渐变 `Texture Sample`
+  - `Multiply`
+  - 输出到 `Emissive Color`
+- 左下是两个条纹发光球体重叠后的结果
+  - 中心重叠区域更亮
+- 右下是多张 `Plane` 叠加的场景示例
+
+当前无法可靠确认的点：
+
+- 为什么文件名标注为 `parameter`
+- 这张图是否原本应当对应某个单独参数面板截图
+- 它与 `S04` 主段中的哪一帧是一一对应关系
+
+因此这条只能作为 `Additive` 模式综合示例的补充存在性证据，不能进一步宣称它提供了某个独立参数值或额外面板设置。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

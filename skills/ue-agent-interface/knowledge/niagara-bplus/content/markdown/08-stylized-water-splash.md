@@ -1,0 +1,1381 @@
+# 08 Stylized Water Splash
+
+# 08 Stylized Water Splash
+
+## 关键术语
+
+- `System`、`Module`、`Spawn`、`Update`、`Spawn Rate`、`Spawn Burst`、`Lifetime`、`Velocity`、`Color`、`Scale Color`、`Material`、`UV`、`Niagara`、`Emitter`、`Normalized Age`、`Curve`、`Niagara System`、`Particle`
+
+## 分段知识
+
+### 00:00:06-00:02:51 外部资产制作与导入
+
+- 本段定位：外部资产制作与导入。
+- 知识点：大家好,我们现在来进行在Photoshop中的刷新的规划 首先,需要展示一下我们的效果 我们看看形状,我们看到这是一个现实的效果。
+- 知识点：我们需要一些简单的,很简单的,需要用这种 这里有很强的形状 这是一个完全不同的方式刷新的规划 我稍后会展示给你们 我们需要这种东西。
+- 知识点：我们去Photoshop,我们刷了1024和1024 我们刷了新的颜色 我们拿出Lasso 我们开始刷主体形状,这里用选择 需要再验证效果,大概是不太合适。
+- 知识点：形状变得很有趣,我刷了Ctrl D,这是我们适当调整的 现在我们要调整它,它的表现 但不要软化 这里是,我们需要什么? 我们加一点详细,这里需要刷反面。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Photoshop`、`颜色`。
+
+**关键画面：**
+
+这一张不是 Photoshop 操作界面，而是作者在开始画新贴图前整理的水特效参考板，用来区分写实水与风格化水的形态差异，并确定本页要绘制的 splash 方向
+
+- 版面结构
+  - 顶部大标题：`Water`
+  - 左侧分区标题：`Stylized`
+  - 右侧分区标题：`Realistic`
+- 左侧 `Stylized` 参考
+  - 多张俯视或斜视的风格化 splash、圆形波纹、蓝色球形水体和法术型水冲击示例
+  - 中间偏左有一张 `Watersplash Explanation` 讲解图，展示风格化 splash 的拆解思路
+  - 可见来源署名包括
+    - `https://www.artstation.com/alfie_jrf`
+    - `https://www.artstation.com/thomas_corvee`
+    - `https://www.artstation.com/silveryuan`
+    - `https://www.artstation.com/cool_cat_vfx`
+- 右侧 `Realistic` 参考
+  - 多张写实水爆、旋涡、水球落地、水柱与喷溅 alpha 参考
+  - 可见来源署名包括
+    - `https://www.artstation.com/nsxjj`
+    - `https://twitter.com/gakumoriya`
+    - `https://www.artstation.com/sophieedqvist`
+  - 右下角可见 `ACTIONVFX` 与 `MORE VFX ACADEMY` 标识
+- 教程意图
+ - 作者在这里强调先“看形态”，比较写实参考与风格化参考
+  - 后续 Photoshop 不是直接临摹写实水爆，而是从这些参考中提炼出更简洁、更强轮廓的风格化 splash 主体与外围圆形层
+这一张正式进入 Photoshop 起稿，作者先在黑色背景上用白色细线勾出 splash 主体的轮廓，而不是一开始就涂满颜色
+
+- 画布与图层
+  - 文档标签显示：`Untitled-1 @ 128% (Layer 1, RGB/16)`
+  - 画布尺寸可见为 `1024 px x 1024 px`
+  - 当前有两个图层
+    - `Layer 1`
+    - `Background`，填充为黑色
+- 当前绘制内容
+  - 画布中央偏上有一条长而不规则的主轮廓线
+  - 主轮廓顶部尖细，向下逐渐膨胀成较厚的水体块状
+  - 左下方还有一条较短的次级轮廓线，像是旁边的辅助 splash 分支
+  - 轮廓整体是细白线，没有填色，没有软边，没有发光
+- 界面状态
+  - 左侧是颜色轮与笔刷面板
+  - 右侧 `Layers` 面板里当前选中 `Layer 1`
+  - 右上 `Properties` 当前显示像素图层基础属性
+
+这张图对应正文里“我们去 Photoshop”“拿出 Lasso”“开始刷主体形状”的第一步：作者先确定 splash 主体的大轮廓和分支走向，用黑底白线快速检查形状是否成立，再决定后续是否继续填色和增加细节
+这一张说明作者已经从轮廓草稿进入形体填充阶段，把主 splash 直接做成高对比白色剪影，并开始测试局部软边亮块
+
+- 画布与图层
+  - 文档标签显示：`Untitled-1 @ 248% (Layer 1, RGB/16)`
+  - 画布仍是黑色背景上的单层白色主体
+  - `Layers` 面板里可见
+    - `Layer 1`
+    - `Background`
+- 当前主体形状
+  - 画布右侧主体已被填成纯白大块
+  - 顶部形成一根最高的主尖峰
+  - 主尖峰两侧分出多个高低不同的小尖峰和弯曲分支
+  - 底部仍是宽厚主体，没有被切成细碎喷点
+- 当前细节测试
+  - 主体左侧单独刷出一团软边白色亮斑
+  - 这团亮斑边缘模糊、中心更亮，明显不是硬边选区
+  - 左下 `Brush Settings` 可见当前在用较软的笔刷进行试刷
+
+这张图对应正文里“这里用选择”“形状变得很有趣”“现在我们要调整它，但不要软化”的过渡步骤：作者先用硬轮廓建立主体，再局部试刷柔软亮斑，判断哪些部分应该保持利落剪影，哪些部分需要后续加软边和内部层次
+
+### 00:03:08-00:08:05 关键流程 02
+
+- 本段定位：关键流程 02。
+- 知识点：水形状,这里也 我们可能会刷一点,这样可以更清楚 需要刷一点,这是正常的 可以加点详细,有些转向 有些软,有些软 我现在在刷不上一个画面的标志。
+- 知识点：可能你们没有,需要用一个鼠 用一个画面的标志会更好 会更加小心 这都要看你花多少时间和你很棒的表现 因为我不是很棒地刷,需要加点详细。
+- 知识点：加点有趣的形状,然后我们就完成了 我们来拿出沉浴材 需要给你们示范的一个有趣的东西 哦,这里没刷得很好,我们把它软化 更为强调的形状都完成了,这里也可以刷。
+- 知识点：这都要看你,你喜欢的,需要刷软的表面 我们需要把这两个颜色混合,这样需要有一个黑色的背景。
+- 知识点：我们把它们混合在一起,然后就去这里 现在可以移动它,控制各种详细。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这一张继续停留在 Photoshop 主体贴图制作阶段，作者已经不再试软边亮斑，而是专注于把 splash 主体修成干净的高对比白色剪影
+
+- 画布与图层
+  - 文档标签显示：`Untitled-1 @ 248% (Layer 1, RGB/16)`
+  - 仍是黑底加单层白色主体的结构
+  - `Layers` 面板里可见
+    - `Layer 1`
+    - `Background`
+- 当前主体形状
+  - splash 主体占据画布右侧大部分区域
+  - 顶部保留一根最长的中间尖峰
+  - 左右两侧各有数根高低不同的次级分支
+  - 底部是宽大的根部块面，没有被切碎
+- 当前笔刷状态
+  - 左下 `Brush Settings` 显示当前笔刷尺寸约 `10 px`
+  - `Hardness = 100%`
+  - `Spacing = 5%`
+  - 当前是在用硬边笔刷修轮廓，而不是柔化边缘
+
+这张图对应正文里“这样可以更清楚”“更为强调的形状都完成了”的阶段：作者把 splash 的主体先做成清晰、利落的白色 silhouette，确保大形成立后，再决定哪些边缘需要软化，哪些尖峰和转折要继续强化
+这一张继续是同一张 Photoshop 主体贴图的精修阶段，作者开始用更小的硬边笔刷收紧边缘，让各个水舌的形体更利落
+
+- 画布与缩放
+  - 文档标签显示：`Untitled-1 @ 263% (Layer 1, RGB/16)`
+  - 当前视图裁切得更近，聚焦 splash 主体上半段和左右分支
+- 当前主体形状
+  - 中央最高主尖峰仍保持最强垂直冲势
+  - 左右两侧的小分支顶端被修成更圆、更清楚的水滴头部
+  - 右上还有一个向内卷的弯钩形分支
+  - 左下和右下两侧的外扩分支也被拉得更细更长
+- 当前笔刷状态
+  - 左下 `Brush Settings` 显示当前笔刷尺寸约 `5 px`
+  - `Hardness = 100%`
+  - `Spacing = 5%`
+  - 说明作者是在用更小的硬边笔刷逐段修边，而不是用模糊工具统一软化
+
+这张图对应正文里“可以加点详细”“有些转向，有些软”“需要更小心”的阶段：主体大形已经成立，当前重点变成清理局部轮廓、补出小水舌和水滴头部，让这个风格化 splash 的剪影在缩小后依然能读得清楚
+这一张说明作者已经把白色 splash 主体送进 Photoshop 的 `Liquify`，用液化工具整体推形，而不是只靠笔刷一点点重画
+
+- 当前界面
+  - 顶部标题可见：`Liquify (Untitled-1 @ 160%)`
+  - 左侧是 Liquify 工具栏
+  - 右侧是 `Properties` 面板
+- 当前主体形状
+  - 白色主 splash 仍保留一根最高中心尖峰
+  - 左右两侧有多根较短的分支与圆头滴状突起
+  - 底部是宽大的主块面，边缘已经比前两张更流畅
+- Liquify 可见参数
+  - `Brush Tool Options`
+    - `Size = 60`
+    - `Density = 50`
+    - `Pressure = 100`
+    - `Rate = 0`
+  - `View Options`
+    - `Show Image` 已启用
+    - `Show Backdrop` 已启用
+    - `Opacity = 100`
+  - `Preview` 已启用
+- 当前操作意图
+  - 光标圈停在右上分支附近，说明作者正在推这个局部尖峰和水滴头部的弯曲关系
+  - 这一阶段不是加颜色，而是让整体 silhouette 更自然、更有流动感
+
+这张图对应正文里“把它们混合在一起，然后现在可以移动它，控制各种详细”的步骤：作者用 Liquify 整体调整 splash 轮廓的张力、弯曲和分支方向，比单纯硬笔描边更快地获得有流动感的风格化水形
+
+### 00:08:05-00:13:01 UV
+
+- 本段定位：UV。
+- 知识点：这样可以控制它,这里你还是可以玩 加点暗影,或者,例如,改变传染 在我们的情况下,这不是必须改变传染 而是改变黑色 让它有点黑,但用柔软的刷子。
+- 知识点：加点黑,但需要保持一样的样子 回归原刷 需要伸直一点,但黑色已经消失了,我们再刷一个颜色。
+- 知识点：可以加一点点的暗影 再刷一个暗影,用暗影的刷子,加一个暗影在顶部 非常好,把它复制,Ctrl J 加一点暗影,再改变它为加满 我们有一个暗影的颜色,但既然它是加满,它就会是光。
+- 知识点：可以刷出不同的变化,它们可以看起来完全不同,需要停在这里 首先,需要改变它为浮沉,然后也改变它为8个颜色。
+- 知识点：可以在这里 export 画像 去 Unreal,把这些颜色丢掉 按下拢,可以在 Photoshop 里去做不同的变化 像我所示的,把各种变化都做出来。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Photoshop`、`颜色`。
+
+**关键画面：**
+
+这一张继续在 Photoshop 的 `Liquify` 中推形，但已经从局部小尖峰转向整体比例调整，重点放在 splash 主体下半段和底部弧线
+
+- 当前界面
+  - 顶部标题：`Liquify (Untitled-1 @ 160%)`
+  - 左侧是 Liquify 工具栏
+  - 右侧仍是 `Properties`
+- 当前主体形状
+  - 白色 splash 主体保持一根最高中心尖峰
+  - 两侧仍保留多个圆头小分支
+  - 主体下半段宽厚，底部边缘形成一条向下弯的弧线
+  - 左右两侧外扩水舌比中段更细、更长
+- Liquify 可见参数
+  - `Brush Tool Options`
+    - `Size = 150`
+    - `Density = 50`
+    - `Pressure = 100`
+    - `Rate = 0`
+  - `Show Image`、`Show Mask`、`Show Backdrop` 已启用
+  - `Preview` 已启用
+- 当前操作焦点
+  - 大号刷圈停在底部中央弧线外侧
+  - 说明作者正在整体推底部轮廓，而不是只修局部尖端
+
+这张图对应正文里“可以控制它”“现在可以移动它，控制各种详细”的阶段：作者用更大的 Liquify 笔刷统一调整主体的重心、下缘弯曲和整体外轮廓，让这张 splash 贴图从局部细节修正过渡到整体形体定稿
+这一张从纯白剪影推进到内部明暗塑形阶段。作者不再只修 silhouette，而是开始用涂抹/软边处理给边缘加模糊，并在主体内部压入黑色渐变
+
+- 画布与图层
+  - 文档标签显示：`Untitled-1 @ 221% (Layer 1, RGB/16)`
+  - `Layers` 面板里现在可见
+    - `Layer 1`
+    - `Layer 2`
+  - 当前主体仍位于黑色背景之上
+- 当前主体变化
+  - 白色 splash 外轮廓仍保持主尖峰和多根侧向分支
+  - 内部中央从上到下出现一大片黑灰渐变区域
+  - 边缘不再是纯硬边，而是被拉出一圈柔和过渡
+  - 底部弧线处也开始出现被拖开的模糊边
+- 当前工具与参数
+  - 画面字幕直接提示：`Take the smudge tool, add a blur for the edges.`
+  - 顶部工具栏可见当前工具强度约 `22%`
+  - 左下 `Brush Settings`
+    - `Size = 30 px`
+    - `Hardness = 0%`
+    - `Spacing = 25%`
+- 当前操作意图
+  - 光标位于底部边缘附近，说明作者正在沿轮廓把硬白边向外或向内拖开
+
+这张图对应正文里“用柔软的刷子加点黑”“保持一样的样子”“加一点点暗影”的阶段：作者通过软边涂抹和内部压暗，让白色剪影开始具备水体厚薄变化，而不是停留在单纯的二值蒙版状态
+这一张是在缩远视图下检查当前 splash sprite 的整体读形，确认加完软边和内部暗部之后，小尺寸预览是否仍然成立
+
+- 画布与视图
+  - 文档标签显示：`Untitled-1 @ 66.8% (Layer 0, RGB/8)`
+  - 说明当前已经切到更低缩放比，并且文档状态与前几张略有整理
+  - 画面中央只有一个较小的黑底贴图预览区域
+- 当前 sprite 结果
+  - 中间是白色 splash 主体
+  - 顶部保留一根最长中心尖峰与几根较短侧向分支
+  - 底部和主体内部已经出现明显的黑灰过渡
+  - 外轮廓边缘带有柔和的白色羽化，不再是纯硬切边
+  - 缩小后仍能读出主尖峰、左右分支和中心厚度
+- 当前工具状态
+  - 左下 `Brush Settings`
+    - `Size = 175 px`
+    - `Hardness = 0%`
+    - `Spacing = 25%`
+  - 顶部可见当前 `Opacity` 约为 `23%`
+  - 当前更像是在用大软刷做整体氛围和最终检查，而不是修微小尖端
+
+这张图对应正文里“可以刷出不同的变化，它们可以看起来完全不同”的验证阶段：作者把视图缩小，检查这张 splash 贴图在实际使用尺寸下是否仍然清楚，同时确认软边、暗影和主体轮廓之间已经达到一个可接受的平衡
+
+### 00:13:01-00:17:44 关键流程 04
+
+- 本段定位：关键流程 04。
+- 知识点：可以把这个材料放到其他地方,可以把它当作一个基础,它会为我们作出更多的加满 可以把它当作主体,主体的基础 需要用一些颜色的面具,以便它们消失。
+- 知识点：从下面需要加上阻值 这是这个 它会在底部更黑,更亮的在上面 阻值是被传达成分的,这不必要 我们还需要调节,需要是0.7 我们需要加上一点动作,调节,一点到旁边和上去。
+- 知识点：可能太强了,需要放0.5或0.4 我们不需要调节 我们改名字 然后我们就把这个变化的系统改成 MAKE Water Ring 我们改名字。
+- 知识点：我们已经制作了一个新的传辑,我们立刻把它转移到这里 可以用颜色的面具,或者我们不能用它。
+- 知识点：在这个面具里面,先选择一次 第二,某些洞会随意从12到17下降 生命值应该会被减少,因为它们会随时消失 我们来拿一些颜色。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`系统`、`速度`、`颜色`。
+
+**关键画面：**
+
+这一张从 Photoshop 返回 Unreal，开始把新制作的 splash 贴图纳入工程纹理库，并为后续材质实例选择基础贴图
+
+- 当前界面状态
+  - 上方仍是 `Stylized_WaterSplash` 关卡视口
+  - 视口中央可见一团柔和的蓝色椭圆地面亮核
+  - 下方 `Content Browser` 已切到纹理目录浏览
+- 当前目录
+  - 路径：`VFX_Library > Textures > Shapes`
+- 当前可见纹理资源
+  - 多个 `T_Splash*` 纹理缩略图
+  - 可见一张竖向 splash 纹理，标签开头为 `T_Splash...`
+  - 还可见
+    - `T_Spiral19`
+    - 多张块状/喷点型 splash alpha
+    - `T_Square`
+    - `T_SquareBlurry`
+- 当前选中资源
+  - 顶部标签可见选中纹理名为 `T_Splash_Vertical_01`
+- 教程意图
+ - 字幕说明接下来要“继续处理材质”，并“以任意材质为基础，做成 additive”
+  - 这一步是在把新画好的竖向 splash 贴图正式放进 `Shapes` 纹理库，准备作为材质和 Niagara Sprite 的输入资源
+这一张回到 Niagara System，作者已经基于新的 splash 贴图/材质开始创建一个新的发射器，用于承载新的水环或主 splash 层
+
+- 当前可见发射器
+  - 左侧保留一个现有发射器 `GroundWaves`
+  - 中间新增一个发射器，标题可见为 `WaterRi...`
+- 新发射器可见模块
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Burst Instantaneous 001`
+  - `Initialize Particle`
+  - `Initial Mesh Orientation`
+  - `Particle State`
+  - `Scale Mesh Size`
+  - `Scale Color`
+  - `Dynamic Material Parameters`
+  - `Mesh Renderer`
+- 当前选中对象
+  - 新发射器的 `Emitter State`
+- 可见参数
+  - `Life Cycle Mode = Self`
+  - `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+  - `Loop Duration = 1.0`
+  - `Loop Delay = USER.Delay`
+  - `Spawn Burst Instantaneous`
+    - `Spawn Count = 1`
+    - `Spawn Time = 0.0`
+  - `Spawn Burst Instantaneous 001`
+    - `Spawn Count = 1`
+    - `Spawn Time = 0.2`
+- 系统上下文
+  - 时间线查看位置约 `2.67s`
+  - `USER.Delay = 2.4`
+  - 左侧预览里当前只显示一个简化版蓝色竖向 splash 和其下方单独元素
+
+这张图对应正文里“我们已经创建了一个新的发射器”“把这个变化的系统改成 MAKE Water Ring”的阶段：作者正式拉出一条新的网格/环形发射器，用两次 Burst 和 `USER.Delay` 来控制新贴图或水环层的出现节奏
+这是 `S04` 末尾的关卡结果图，用来检查新贴图/新发射器接入后，主 splash 在实际时间轴中的可见形态
+
+- 画面结果
+  - 中央是一束较小的亮青蓝色竖向 splash
+  - 底部有一团亮蓝色发光核心
+  - splash 顶部有几根短小尖峰
+  - 上方沿垂直方向还能看到少量向下落的细小滴点
+  - 外围没有大面积地面圆环，视线主要集中在中心主体
+- Sequencer
+  - 当前时间约为 `2.52s`
+  - 可见轨道仍是 `CameraActor` 与 `NS_StylizedWaterSplash`
+- 与本段正文的对应关系
+  - 这张图说明新做的贴图与材质接回系统后，当前能成功生成一层更加定义明确的竖向 splash 主体
+  - 相比前面主要围绕地面圆形层和水环层的画面，这里已经回到“主体基础”验证，方便继续在后续步骤上叠加颜色、面具和更多变体
+
+### 00:17:44-00:22:36 关键流程 05
+
+- 本段定位：关键流程 05。
+- 知识点：首先,您需要改变调节 请留下它们的旋转 因为它们是一个洞,需要让它们在旁边上变化 我们看看它们 水 洞 洞 在旁边 目标是它们能变化 我们现在在哪里?。
+- 知识点：有些原因,它们现在不见了 100,这里它们 它们没有速度,您需要提升它,提升速度 您需要提升它们的光度 尺寸小,但我们稍后会调整 首先,需要让它们在旁边变化。
+- 知识点：我们需要拿一个弧度 和一般的弧度,200,300 它们会在Z边变化 它们会飞向上方 您看到它们飞向上方,它们也飞向上方 这里您可以提升速度。
+- 知识点：再次提升速度 从1到2 在哪里会失去它们? 主要的地方是在弧度上显示它们 这里我们要提升速度。
+- 知识点：现在它们在旁边,这是我们的弧度 如果我把它们调到0 它们将在这弧度上均衡 如果我把它们调到10度 需要调整它们的分别 现在需要示范 这里它们不见了。
+- 核对对象：`速度`。
+
+**关键画面：**
+
+这一张进入 `关键流程 05` 的 Niagara 调整阶段，作者开始把前面新做的 splash 贴图材质接到 `Empty` 发射器的 Sprite 层
+
+- 当前可见发射器
+  - `WaterRing`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Spawn Burst Instantaneous 001`
+    - `Initialize Particle`
+    - `Initial Mesh Orientation`
+    - `Particle State`
+    - `Scale Mesh Size`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Mesh Renderer`
+  - `Empty`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Solve Forces and Velocity`
+    - `Particle State`
+    - `Scale Sprite Size by Speed`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Empty > Sprite Renderer`
+- `Sprite Renderer` 可见设置
+  - `Material = MI_Splash_01`
+  - `Material User Param Binding = None`
+  - `Source Mode = Particles`
+  - `Alignment = Velocity Aligned`
+  - `Facing Mode = Automatic`
+  - `Macro UVRadius = 0.0`
+  - `Default Pivot in UV Space = (0.5, 0.5)`
+  - `Sort Mode = None`
+  - `Render Visibility = 0`
+- 系统上下文
+  - 时间线查看位置约 `3.04s`
+  - `USER.Delay = 2.4`
+  - 左侧预览中当前主要可见一层贴地的蓝色水环
+
+这张图对应正文里“首先需要改变调节”“保持轴心不变”的操作：作者把新材质 `MI_Splash_01` 接到 sprite 发射器，同时保持 UV Pivot 在中心，不去偏移贴图轴心，方便后续再单独调旋转、速度和侧向分布
+这一张继续扩展 Niagara 结构，作者新增了一条专门负责侧向 splash 的 sprite 发射器，并用速度驱动尺寸变化
+
+- 当前可见发射器
+  - `WaterRing`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Spawn Burst Instantaneous 001`
+    - `Initialize Particle`
+    - `Initial Mesh Orientation`
+    - `Particle State`
+    - `Scale Mesh Size`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Mesh Renderer`
+  - `Water_Splashes_Side`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity in Cone`
+    - `Particle State`
+    - `Solve Forces and Velocity`
+    - `Scale Sprite Size by Speed`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Water_Splashes_Side > Scale Sprite Size by Speed`
+- 可见参数
+  - `Min Scale Factor = (1.0, 1.5)`
+  - `Max Scale Factor = (2.0, 5.0)`
+  - `Velocity Threshold = 1000.0`
+  - `Sample Scale Factor By Curve` 未启用
+- 系统上下文
+  - 时间线查看位置约 `3.04s`
+  - `USER.Delay = 2.4`
+  - 左侧预览画面当前几乎空白，说明这一层还在调发射逻辑或速度方向
+
+这张图对应正文里“它们没有速度，需要提升它”“尺寸小，但稍后会调整”“首先需要让它们在旁边变化”的步骤：作者用 `Add Velocity in Cone` 给侧向 splash 初速度，再用 `Scale Sprite Size by Speed` 让粒子速度越高时尺寸越大，从而把两侧甩开的水舌做得更有冲击感
+这一张继续细化两侧 splash 发射器的基础粒子属性，当前焦点从速度缩放切回 `Initialize Particle`
+
+- 当前可见发射器
+  - `Water_Splashes_Sides`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity in Cone`
+    - `Particle State`
+    - `Solve Forces and Velocity`
+    - `Scale Sprite Size by Speed`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Water_Splashes_Sides > Initialize Particle`
+- `Initialize Particle` 可见参数
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 0.5`
+  - `Lifetime Max = 1.0`
+  - `Color Mode = Direct Set`
+  - `Color` 为蓝青色
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 100.0)`
+  - `Position Offset Coordinate Space = Simulation`
+  - `Mass Mode = Unset / (Mass of 1)`
+  - `Mesh Scale Mode = Random Uniform`
+  - `Mesh Uniform Scale Min = 200.0`
+  - `Mesh Uniform Scale Max = 300.0`
+- 系统上下文
+  - 时间线查看位置约 `3.04s`
+  - 左侧预览当前几乎为空，说明此时主要在调初始参数而不是看最终成片
+
+这张图对应正文里“需要拿一个弧度”“200、300”“它们会在 Z 边变化”“会飞向上方”的调参阶段：作者先把侧向 splash 的生命周期控制在 `0.5-1.0` 秒，再把生成位置整体抬高 `100` 个单位，并把初始统一缩放随机到 `200-300`，用于做出更大、更高、更短命的两侧飞溅基础形态
+
+### 00:22:36-00:27:35 Color、Scale Color、Add
+
+- 本段定位：Color、Scale Color、Add。
+- 知识点：非常好 需要提升速度 需要提升速度 目标是它们可以调整到100度 不是100度 是100度 目标是它们能调整到100度 目标是它们能调整到100度。
+- 知识点：它们在这弧度上 相当之快 但这和它们的弧度不一样 它们是在0.2秒 它们在0.2秒 它们是 0.2秒 它们是0.2秒 它们是0.2秒 它们是0.2秒。
+- 知识点：本段围绕 `Gravity Force` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Color`、`Scale Color`、`Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Curve` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Color`、`Scale Color`、`Curve`、`Gravity Force`、`Add`、`速度`。
+
+**关键画面：**
+
+这一张进入 `关键流程 06` 的继续调速阶段，作者在两侧 splash 发射器里额外叠加一个线性速度模块，用来把粒子进一步向上拉起
+
+- 当前可见发射器
+  - `WaterRing`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Spawn Burst Instantaneous 001`
+    - `Initialize Particle`
+    - `Initial Mesh Orientation`
+    - `Particle State`
+    - `Scale Mesh Size`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Mesh Renderer`
+  - `Water_Splashes_Side`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity in Cone`
+    - `Add Velocity 001`
+    - `Particle State`
+    - `Solve Forces and Velocity`
+    - `Scale Sprite Size by Speed`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Water_Splashes_Side > Add Velocity 001`
+- `Add Velocity 001` 可见设置
+  - `Velocity Mode = Linear`
+  - `Velocity = (0.0, 0.0, 50.0)`
+  - `Velocity Speed Scale = 1.0`
+  - `Rotation` 分组已展开，但具体输入还未设置完成
+  - `Rotation Mode = Default`
+  - `Rotation Coordinate Space = Local`
+- 当前界面状态
+  - 右侧动态输入选择器处于打开状态，搜索框中输入了 `ra`
+  - 建议列表出现 `RandomRangeVector.RandomRangeVector`，提示作者准备给某个向量输入接随机范围
+  - 时间线位置约 `3.04s`
+  - `USER.Delay = 2.4`
+  - 左侧预览当前几乎空白，说明此时重点仍是调发射参数
+
+这张图对应正文里“需要提升速度”“它们会飞向上方”的继续细化步骤：在原有锥形初速度之外，再叠加一个 `Z=50` 的线性速度，把两侧 splash 持续推向上方，同时开始为后续随机向量输入做准备
+这一张继续编辑 `Water_Splashes_Side` 的第二个加速度模块，作者把固定向上的线性速度改成随机范围，让每个 splash 的抬升高度不同
+
+- 当前可见发射器
+  - `WaterRing`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Spawn Burst Instantaneous 001`
+    - `Initialize Particle`
+    - `Initial Mesh Orientation`
+    - `Particle State`
+    - `Scale Mesh Size`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Mesh Renderer`
+  - `Water_Splashes_Side`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity in Cone`
+    - `Add Velocity 001`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Solve Forces and Velocity`
+    - `Scale Sprite Size by Speed`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Water_Splashes_Side > Add Velocity 001`
+- `Add Velocity 001` 可见设置
+  - `Velocity Mode = Linear`
+  - `Velocity = Random Range Vector`
+  - `Minimum = (0.0, 0.0, 50.0)`
+  - `Maximum = (0.0, 0.0, 100.0)`
+  - `Velocity Speed Scale = 1.0`
+  - `Rotation Mode = Default`
+  - `Rotation Coordinate Space = Local`
+- 系统上下文
+  - 时间线位置约 `3.04s`
+  - `USER.Delay = 2.4`
+  - 左侧预览已能看到蓝白色 splash 从地面向上炸开
+  - 字幕说明当前目的为“先上升，再逐渐下落”
+
+这张图对应正文里“目标是它们可以调整到 100”“相当之快”的细化步骤：作者把额外上抬速度改成 `Z=50-100` 的随机范围，使同批粒子不会以完全相同的高度抛起，为后续借助重力让水花回落做准备
+这一张切到 `Water_Splashes_Side` 的颜色与衰减控制，作者已经把重力、阻力和 `Scale Color` 补进更新栈，用曲线控制水花从亮到暗、从实到淡的消退过程
+
+- 当前可见发射器
+  - `WaterRing`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Spawn Burst Instantaneous 001`
+    - `Initialize Particle`
+    - `Initial Mesh Orientation`
+    - `Particle State`
+    - `Scale Mesh Size`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Mesh Renderer`
+  - `Water_Splashes_Side`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity in Cone`
+    - `Add Velocity 001`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Gravity Force`
+    - `Drag`
+    - `Solve Forces and Velocity`
+    - `Scale Sprite Size by Speed`
+    - `Scale Color`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Water_Splashes_Side > Scale Color`
+- `Scale Color` 可见设置
+  - `Scale Mode = RGB and Alpha Separately`
+  - `Scale RGB = Vector from Float`
+  - `Value = Float from Curve`
+  - `FloatCurve` 的 `CurveIndex = PARTICLES.NormalizedAge`
+  - 亮度曲线可见为随年龄递减，起点约在 `20` 附近，末端关键点显示 `Time = 1.0`、`Value = 1.0`
+  - `Scale Alpha = Float from Curve`
+  - `Scale Alpha` 同样使用 `Curve for Floats`
+  - Alpha 曲线也按 `PARTICLES.NormalizedAge` 向下衰减
+- 系统上下文
+  - 时间线位置约 `3.04s`
+  - `USER.Delay = 2.4`
+  - 左侧预览可见地面蓝色主环外加向外甩开的细长 splash
+
+这张图对应正文里 `Color`、`Scale Color`、`Curve` 的处理步骤：作者让两侧 splash 在生命周期前段保持较亮的蓝白色，随后随着 `NormalizedAge` 递减 RGB 强度与 Alpha，使粒子在飞起后自然变淡、收尾，不会一直保持同样亮度停在画面里
+
+### 00:27:35-00:32:24 Spawn、Lifetime、UV
+
+- 本段定位：Spawn、Lifetime、UV。
+- 知识点：Lifetime 决定粒子存活时间，需要和 Spawn 数量、速度以及透明度曲线一起调。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Curve` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Noise` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Spawn`、`Curve` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Particle`、`Spawn`、`Lifetime`、`Alpha`、`Opacity`、`Texture`、`Curve`、`Noise`。
+
+**关键画面：**
+
+这一张是在关卡视口里直接预览 `NS_StylizedWaterSplash` 的整体播放效果，重点不是节点参数，而是确认水花在镜头中的亮起和消失节奏
+
+- 当前界面
+  - 编辑器停留在关卡视口而不是 Niagara Stack 详情页
+  - 底部打开 `Sequencer`
+  - 可见轨道只有 `Camera Cuts`、`CameraActor`、`NS_StylizedWaterSplash`
+  - 播放头位于约 `2.25s`
+- 关卡对象
+  - Outliner 中当前场景为 `Stylized_Wat...`
+  - 选中对象包含 `CameraActor`
+  - 画面里可见 `NS_StylizedWaterSplash` 实例
+- 画面结果
+  - 中央偏下位置是一小团蓝白色高亮水花
+  - 上方还能看到一道更远处的亮点，说明画面里存在向上抛起的次级水花
+  - 背景整体较暗，用来突出水花的高亮发光
+  - 字幕提示当前目标是“Bright and disappears”，即先亮起再消失
+
+这张图对应本段 `Spawn`、`Lifetime`、`Alpha` 的验收视角：作者离开 Niagara 参数面板，直接在关卡里检查粒子是否先爆亮、随后快速衰减并淡出，确认生命周期和透明度曲线在镜头中成立
+这一张继续在关卡视口里检查 `NS_StylizedWaterSplash` 的中段峰值状态，能看到主 splash 已经展开成完整的上冲水柱，同时周围伴有散落的小型飞溅粒子
+
+- 当前界面
+  - 仍在关卡视口与 `Sequencer` 联合预览
+  - 可见轨道仍为 `Camera Cuts`、`CameraActor`、`NS_StylizedWaterSplash`
+  - 播放头位于约 `2.78s`
+- 画面结果
+  - 中央是一团高亮蓝白色主 splash，形态类似向上竖起的水柱
+  - 主 splash 底部有更圆润的贴地水团
+  - 主 splash 周围分布多枚小型飞溅点，说明侧向粒子和辅助粒子已经一起参与显示
+  - 画面中的发光强度明显高于上一张，属于效果最亮、最饱满的阶段
+- 关卡与对象上下文
+  - 视口中仍能看到 `CameraActor` 的变换轴
+  - Outliner 保持在当前场景对象树，说明作者是在镜头环境下直接验收 Niagara 节奏
+
+这张图对应本段 `Spawn` 与 `Lifetime` 的中段检查：作者确认粒子在生成后能迅速堆叠到最亮的峰值状态，主水花、贴地底盘和四周小飞溅会在同一时刻共同成立，而不是只剩单一层级的 sprite 或 mesh
+当前截图可确认的信息如下
+
+- 当前可见发射器
+  - 左侧可见 `Water_Splashes_Side`
+  - 右侧当前选中 `Water_Splashes_Center`
+- 当前选中对象
+  - `Water_Splashes_Center > Add Velocity in Cone`
+- `Add Velocity in Cone` 可见设置
+  - `Velocity Mode = In Cone`
+  - `Velocity Speed = Random Range Float`
+  - `Minimum = 200.0`
+  - `Maximum = 300.0`
+  - `Distribution Along Cone = 0.5`
+  - `Speed Falloff From Cone = 0.7`
+  - `Cone Axis = (0.0, 0.0, 1.0)`
+  - `Cone Angle = 15.0`
+  - `Inner Cone Angle = 20.0`
+  - `Cone Angle Mode = Degrees`
+  - `Rotation Mode = Default`
+  - `Rotation Coordinate Space = Local`
+- 系统上下文
+  - 时间线位置约 `3.04s`
+  - `USER.Delay = 2.4`
+  - 左侧预览只有贴地蓝色水团，未显示完整爆发形态
+
+不确定点
+
+- 字幕写的是“设置 Sprite UV 模式，并将其沿 X 轴设置”，但当前截图实际显示的是 `Add Velocity in Cone` 速度参数，而不是 `Sprite Renderer` 或材质/UV 面板
+- 仅凭当前图片无法可靠确认本条是否同时承担 `UV`、`Sprite Renderer`、`Texture` 或 `Opacity/Alpha` 相关设置
+- 需要人工结合相邻视频帧或原始工程再次核对，这张图究竟应记录 `中心 splash 的锥形速度参数`，还是应替换为另一个真正显示 `Sprite UV mode` 的画面
+
+### 00:32:24-00:37:17 System、Spawn、Spawn Rate
+
+- 本段定位：System、Spawn、Spawn Rate。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle`、`Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Lerp` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：使用 Spawn Burst Instantaneous 创建一次性爆发，并用粒子数量控制瞬时强度。
+- 知识点：使用 Spawn Rate 连续生成粒子，并根据效果密度调整每秒生成数量。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`Particle`、`Spawn Rate`、`Spawn Burst`、`Spawn`、`Lerp`、`Add`、`粒子`。
+
+**关键画面：**
+
+这一张是在关卡视口里直接看 `NS_StylizedWaterSplash` 的瞬时爆发密度，用来判断 `Spawn Burst Instantaneous` 的一次性出粒是否足够把主水花撑起来
+
+- 当前界面
+  - 编辑器停留在关卡视口
+  - 底部 `Sequencer` 已打开
+  - 可见轨道仍是 `Camera Cuts`、`CameraActor`、`NS_StylizedWaterSplash`
+  - 播放头位于约 `2.57s`
+- 画面结果
+  - 中央出现一团高亮蓝白色爆发水花
+  - 多条长而尖的水舌从中心同时向两侧和上方张开
+  - 贴地位置仍保留一层较小的底盘亮斑，说明底层 splash 与主爆发同时存在
+  - 整体轮廓比前一段更偏“瞬间炸开”，而不是单纯向上拉成长柱
+- 关卡与对象上下文
+  - Outliner 中仍保持 `Stylized_Wat...` 场景树
+  - 视口内能看到选中对象的变换轴，说明作者仍在镜头环境里直接验收粒子显示
+
+这张图对应本段 `Spawn Burst` 的结果检查：作者关注一次性爆发的粒子数量是否足够在极短时间内同时生成多条外甩的水舌，从而做出明显的“啪”一下炸开的形态
+这一张回到 Niagara Stack，作者开始单独调整 `Empty` 发射器的一次性出粒数量，为后续按执行序号分配尺寸做准备
+
+- 当前可见发射器
+  - `Water_Splashes_Cent`
+    - `Emitter State = Self`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity in Cone`
+    - `Add Velocity 001`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Gravity Force`
+    - `Drag`
+    - `Solve Forces and Velocity`
+    - `Scale Sprite Size by Speed`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Sprite Renderer`
+  - `Empty`
+    - `Emitter State = Self / Infinite`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Particle State`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Empty > Spawn Burst Instantaneous`
+- `Spawn Burst Instantaneous` 可见设置
+  - `Spawn Count = 15`
+  - `Spawn Time = 0.0`
+  - `Spawn Probability = 1.0`
+  - `Loop Count Limit = 1`
+- 系统上下文
+  - 时间线位置约 `3.04s`
+  - `USER.Delay = 2.4`
+  - 左侧预览里当前仅剩一个地面小亮点，说明此时重点是调 burst 数量而不是看完整爆发
+  - 字幕提到“take this lerp, size from 1 to 15, return normalized execution index”，说明接下来会用归一化执行序号把这 15 个粒子分配到不同尺寸或分布
+
+这张图对应本段 `Spawn Burst Instantaneous` 的基础设置：作者先把 `Empty` 发射器固定为一次生成 `15` 个粒子，再以这批粒子的执行顺序为输入，继续做后续的 `Lerp` 尺寸或分布控制
+这一张继续编辑 `Empty` 发射器的 `Initialize Particle`，作者用 `Return Normalized Exec Index` 作为插值因子，把同一批 burst 粒子沿 Z 轴和尺寸做成有序渐变
+
+- 当前可见发射器
+  - `Water_Splashes_Cent`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity in Cone`
+    - `Add Velocity 001`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Gravity Force`
+    - `Drag`
+    - `Solve Forces and Velocity`
+    - `Scale Sprite Size by Speed`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Sprite Renderer`
+  - `Empty`
+    - `Emitter State = Self / Infinite`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Particle State`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Empty > Initialize Particle`
+- `Initialize Particle` 可见设置
+  - `Lifetime Mode = Direct Set`
+  - `Lifetime = 5.0`
+  - `Color Mode = Unset`
+  - `Position Mode = Simulation Position`
+  - `Position Offset = Make Vector`
+    - `X = 0.0`
+    - `Y = 0.0`
+    - `Z = Lerp Float`
+      - `A = 200.0`
+      - `B = 0.0`
+      - `Alpha = Return Normalized Exec Index`
+  - `Position Offset Coordinate Space = Simulation`
+  - `Mass Mode = Unset / (Mass of 1)`
+  - `Sprite Size Mode = Uniform`
+  - `Uniform Sprite Size = Lerp Float`
+    - `A = 1.0`
+    - `B = 15.0`
+    - `Alpha = Return Normalized Exec Index`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Unset`
+- 系统上下文
+  - 时间线位置约 `1.52s`
+  - 左侧预览出现一列从下到上排列的白色圆点，说明粒子已按执行顺序被排成竖向梯度
+  - `USER.Delay = 2.4`
+
+这张图对应本段 `Lerp`、`Particle`、`Spawn` 的核心做法：同一批 `15` 个 burst 粒子并不是完全相同，而是利用 `Normalized Execution Index` 让前后粒子获得不同的 `Z` 偏移与 sprite 尺寸，从而排出一条由大到小、由低到高的有序分布
+
+### 00:37:17-00:41:19 Spawn、Velocity、Color
+
+- 本段定位：Spawn、Velocity、Color。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle`、`Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：通过 Add Velocity 或速度范围控制粒子运动方向和力度，必要时给最小/最大值增加随机性。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 核对对象：`Particle`、`Spawn`、`Velocity`、`Color`、`Scale Color`、`Drag`、`Add`、`粒子`。
+
+**关键画面：**
+
+这一张在 `Water_Splashes_Center` 发射器的 `Initialize Particle` 里统一设置中心 splash 粒子的基础属性，重点是寿命、颜色、尺寸、旋转和 UV 随机化
+
+- 当前可见发射器
+  - `Water_Splashes_Cent`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Gravity Force`
+    - `Drag`
+    - `Solve Forces and Velocity`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Water_Splashes_Cent > Initialize Particle`
+- `Initialize Particle` 可见设置
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 0.5`
+  - `Lifetime Max = 1.0`
+  - `Color Mode = Direct Set`
+  - `Color` 为青蓝色
+  - `Position Mode = Unset`
+  - `Mass Mode = Unset / (Mass of 1)`
+  - `Sprite Size Mode = Random Non-Uniform`
+  - `Sprite Size Min = (150.0, 450.0)`
+  - `Sprite Size Max = (200.0, 600.0)`
+  - `Sprite Rotation Mode = Direct Angle (Degrees)`
+  - `Sprite Rotation Angle = Lerp Float`
+    - `A = -5.0`
+    - `B = 5.0`
+    - `Alpha = Return Normalized Exec Index`
+  - `Sprite UV Mode = Random X`
+- 系统上下文
+  - 时间线位置约 `1.52s`
+  - `USER.Delay = 2.4`
+  - 左侧预览当前几乎空白，说明此时主要在调粒子属性而不是看最终爆发
+  - 字幕提示当前操作是在设置“rotation like this”
+
+这张图对应本段 `Particle`、`Velocity`、`Color` 的中心 sprite 基础设置：作者让中心 splash 使用 `0.5-1.0` 秒随机寿命、青蓝色直设颜色、纵向更高的非等比尺寸，并通过 `Normalized Exec Index` 把旋转角度分配在 `-5` 到 `5` 度之间，再用 `Random X` 打散贴图横向取样
+这一张继续设置 `Water_Splashes_Center` 的附加线性速度，让中心 splash 在锥形初速度之外，再额外获得一段随机向上的抬升量
+
+- 当前可见发射器
+  - `Water_Splashes_Cent`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity in Cone`
+    - `Add Velocity 001`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Gravity Force`
+    - `Drag`
+    - `Solve Forces and Velocity`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Water_Splashes_Cent > Add Velocity 001`
+- `Add Velocity 001` 可见设置
+  - `Velocity Mode = Linear`
+  - `Velocity = Random Range Vector`
+  - `Minimum = (0.0, 0.0, 50.0)`
+  - `Maximum = (0.0, 0.0, 100.0)`
+  - `Velocity Speed Scale = 1.0`
+  - `Rotation Mode = Default`
+  - `Rotation Coordinate Space = Local`
+- 系统上下文
+  - 时间线位置约 `1.52s`
+  - `USER.Delay = 2.4`
+  - 左侧预览当前仍接近空白，说明此时主要在参数编辑阶段
+
+这张图对应本段 `Velocity` 的继续补强：作者在中心 splash 的主锥形速度之外，再叠加一段 `Z=50-100` 的随机线性速度，让不同粒子抬升高度不完全一致，避免整束水花以同样高度移动
+这一张在 `Water_Splashes_Center` 中加入 `Sprite Facing and Alignment` 模块，用来手动固定 sprite 的朝向与对齐轴，避免它再受其他默认朝向规则影响
+
+- 当前可见发射器
+  - `Water_Splashes_Cent`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity in Cone`
+    - `Add Velocity 001`
+    - `Sprite Facing and Alignment`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Gravity Force`
+    - `Drag`
+    - `Solve Forces and Velocity`
+    - `Scale Sprite Size by Speed`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Water_Splashes_Cent > Sprite Facing and Alignment`
+- `Sprite Facing and Alignment` 可见设置
+  - `Sprite Facing = (1.0, 0.0, 0.0)`
+  - `Sprite Alignment = (0.0, 0.0, 1.0)`
+  - `Alignment Coordinate Space = Simulation`
+- 系统上下文
+  - 时间线位置约 `1.52s`
+  - `USER.Delay = 2.4`
+  - 左侧预览当前仍接近空白，说明此时还是定向规则的编辑阶段
+  - 字幕说明当前目的为“让它不受影响，也不依赖于它”
+
+这张图对应本段 `Particle` 和 `Spawn` 之后的朝向修正步骤：作者显式指定 sprite 面朝 `X` 方向、对齐 `Z` 轴，并把对齐空间放在 `Simulation`，从而让中心 splash 的贴图朝向不再依赖默认相机或其他隐式 facing 规则
+
+### 00:41:26-00:46:22 Module、Spawn、Update
+
+- 本段定位：Module、Spawn、Update。
+- 知识点：本段围绕 `Color`、`Scale Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：蓝图 Actor 用于封装 Niagara 生成、位置、参数传入和生命周期控制。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：Lifetime 决定粒子存活时间，需要和 Spawn 数量、速度以及透明度曲线一起调。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Niagara`、`Particle`、`Spawn`、`Lifetime`、`Color`、`Scale Color`、`Add`、`粒子`。
+
+**关键画面：**
+
+这一张在 `Water_Splashes_Center` 的更新栈里设置 `Scale Color`，用生命周期曲线控制中心 splash 的亮度和透明度衰减
+
+- 当前可见发射器
+  - `Water_Splashes_Cent`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity in Cone`
+    - `Add Velocity 001`
+    - `Sprite Facing and Alignment`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Gravity Force`
+    - `Drag`
+    - `Solve Forces and Velocity`
+    - `Scale Sprite Size by Speed`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Water_Splashes_Cent > Scale Color`
+- `Scale Color` 可见设置
+  - `Scale Mode = RGB and Alpha Separately`
+  - `Scale RGB = Vector from Float`
+  - `Value = Float from Curve`
+  - RGB `FloatCurve` 使用 `Curve for Floats`
+  - `CurveIndex = PARTICLES.NormalizedAge`
+  - `Scale Curve = 1.0`
+  - RGB 曲线从前段约 `20` 左右逐渐下降，到尾端接近 `0`
+  - `Scale Alpha = Float from Curve`
+  - Alpha `FloatCurve` 同样使用 `Curve for Floats`
+  - `CurveIndex = PARTICLES.NormalizedAge`
+  - `Scale Curve = 1.0`
+  - Alpha 曲线从接近 `1.0` 逐步下降，到尾端接近 `0`
+- 系统上下文
+  - 时间线位置约 `1.52s`
+  - `USER.Delay = 2.4`
+  - 左侧预览当前接近空白，说明处于参数编辑阶段而非完整播放阶段
+
+这张图对应本段 `Color`、`Scale Color` 的更新控制：作者让中心 splash 在生命周期前段保持较亮的发光强度和较高可见度，随后随着 `NormalizedAge` 逐步把 RGB 与 Alpha 一起压低，使粒子自然淡出
+这一张同时展示了关卡预览结果和 Niagara 参数编辑，作者在 `Water_Splashes_Center` 上增加 `Camera Offset`，让粒子生成后逐渐向镜头中心收拢
+
+- 当前可见发射器
+  - `Water_Splashes_Center`
+    - `Emitter State`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity in Cone`
+    - `Add Velocity 001`
+    - `Sprite Facing and Alignment`
+    - `Particle Update`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Camera Offset`
+    - `Gravity Force`
+    - `Drag`
+    - `Scale Sprite Size by Speed`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Water_Splashes_Center > Camera Offset`
+- `Camera Offset` 可见设置
+  - 偏移值由 `Float from Curve` 驱动
+  - 曲线使用 `Curve for Floats`
+  - `CurveIndex = PARTICLES.NormalizedAge`
+  - `Scale Curve = 100.0`
+  - 曲线从接近 `1.0` 逐步下降到更低值，表示偏移量会随生命周期递减
+- 系统上下文
+  - 左侧关卡视口与 `Sequencer` 同时打开
+  - 播放头约在 `1.62s`
+  - 画面中可见一团高亮蓝色粒子位于上方，并有更弱的中心亮斑
+  - 字幕说明当前结果是“生成后开始向中心移动”
+
+这张图对应本段 `Module` 与 `Update` 的运动修正：作者把 `Camera Offset` 放进更新栈，并用 `NormalizedAge` 曲线逐步减小偏移量，使中心 splash 在出现后朝画面中心靠拢，而不是始终停留在更外侧的位置
+这一张回到系统总览，作者同时展开 `WaterRing`、`Water_Splashes_Side` 和 `Water_Splashes_Center` 三条发射器，用来对齐中心 splash 的初始化参数，避免与另外两层效果脱节
+
+- 当前可见发射器
+  - `WaterRing`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Spawn Burst Instantaneous 001`
+    - `Initialize Particle`
+    - `Initial Mesh Orientation`
+    - `Particle State`
+    - `Scale Mesh Size`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Mesh Renderer`
+  - `Water_Splashes_Side`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity in Cone`
+    - `Add Velocity 001`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Gravity Force`
+    - `Drag`
+    - `Solve Forces and Velocity`
+    - `Scale Sprite Size by Speed`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Sprite Renderer`
+  - `Water_Splashes_Cent`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Add Velocity in Cone`
+    - `Add Velocity 001`
+    - `Sprite Facing and Alignment`
+    - `Camera Offset`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Gravity Force`
+    - `Drag`
+    - `Solve Forces and Velocity`
+    - `Scale Sprite Size by Speed`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `Water_Splashes_Cent > Initialize Particle`
+- `Initialize Particle` 当前可见设置
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 0.5`
+  - `Lifetime Max = 1.0`
+  - `Color Mode = Direct Set`
+  - `Color` 为青蓝色
+  - `Position Mode = Unset`
+  - `Mass Mode = Unset / (Mass of 1)`
+  - `Sprite Size Mode = Random Non-Uniform`
+  - `Sprite Size Min = (150.0, 450.0)`
+  - `Sprite Size Max = (200.0, 600.0)`
+  - `Sprite Rotation Mode = Direct Angle (Degrees)`
+  - `Sprite Rotation Angle = Lerp Float`
+    - `A = -5.0`
+    - `B = 5.0`
+    - `Alpha = Return Normalized Exec Index`
+  - `Normalized Index Scale = 1.0`
+  - `Normalized Index Includes One` 已启用
+  - `Sprite UV Mode = Random X`
+- 系统上下文
+  - 时间线位置约 `1.52s`
+  - `USER.Delay = 2.4`
+  - 左侧预览只剩中心一圈较弱蓝色痕迹，说明当前在比对参数而不是看高亮爆发阶段
+
+这张图对应本段 `Spawn` 与 `Particle` 的收尾复核：作者把中心 splash 的寿命、随机非等比尺寸、按执行序号插值的旋转和 `Random X` UV 方案与其他两层发射器放在同一视图下对照，确认三层水花的初始化逻辑已经统一
+
+### 00:46:22-00:51:09 Color
+
+- 本段定位：Color。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 核对对象：`Color`。
+
+**关键画面：**
+
+这一张是在关卡视口里直接检查最终颜色表现，作者关注的是水花主爆发阶段的蓝白发光层次是否成立
+
+- 当前界面
+  - 编辑器停留在关卡视口
+  - 底部 `Sequencer` 已打开
+  - 可见轨道仍为 `Camera Cuts`、`CameraActor`、`NS_StylizedWaterSplash`
+  - 播放头位于约 `2.62s`
+- 画面结果
+  - 中央是一团高亮青蓝色主 splash
+  - 顶部与外缘有更亮、更接近白色的发光水舌
+  - 底部保留一层较圆的蓝色水团底盘
+  - 四周零散的细小飞溅点仍可见，但整体视觉焦点明显集中在中心主喷发
+- 关卡上下文
+  - Outliner 中当前选中 `Floor`
+  - 场景仍为暗背景，用来强化水花发光和颜色对比
+
+这张图对应本段 `Color` 的结果验收：作者离开 Niagara 细节面板，直接在镜头里检查中心 splash 是否呈现“底部偏蓝、主体青蓝、边缘近白”的层次，从而确认颜色设置在真实镜头下读起来足够亮且足够干净
+这一张切到 `MeshWaterSplash` 发射器，作者开始压缩主 mesh 水花的存活时间，避免大块水舌在画面里停留过久
+
+- 当前可见发射器
+  - `MeshWaterSplash`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Spawn Burst Instantaneous 001`
+    - `Initialize Particle`
+    - `Initial Mesh Orientation`
+    - `Particle State`
+    - `Scale Mesh Size`
+    - `Scale Color`
+    - `Dynamic Material Parameters`
+    - `Mesh Renderer`
+  - `GroundGlow`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Sprite Facing and Alignment`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Scale Color`
+    - `Sprite Renderer`
+  - `GroundDark`
+    - `Emitter State = Self / Once`
+    - `Spawn Burst Instantaneous`
+    - `Initialize Particle`
+    - `Sprite Facing and Alignment`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Scale Color 001`
+    - `Dynamic Material Parameters`
+    - `Sprite Renderer`
+- 当前选中对象
+  - `MeshWaterSplash > Initialize Particle`
+- `Initialize Particle` 可见设置
+  - `Lifetime Mode = Direct Set`
+  - `Lifetime = 2.0`
+  - `Color Mode = Unset`
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)`
+  - `Mass Mode = Unset / (Mass of 1)`
+  - `Sprite Size Mode = Unset`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Unset`
+  - `Mesh Scale Mode = Non-Uniform`
+  - `Mesh Scale = (2.0, 2.0, 0.5)`
+  - `Mesh Renderer Array Visibility Mode = Unset`
+- 系统上下文
+  - 时间线位置约 `2.64s`
+  - `USER.Delay = 2.4`
+  - 左侧预览里当前主 mesh 水花仍处于高亮喷发状态
+  - 字幕说明“these splashes live too long”
+
+这张图对应本段 `Color` 前的时长修正：作者认为主 mesh 水花停留时间过长，于是把 `MeshWaterSplash` 的生命周期控制在 `2.0` 秒，并在保持当前非等比 mesh 缩放的同时，缩短主水舌在镜头中的存在时长
+这一张进入颜色微调阶段，作者一边在关卡视口里看最终爆发效果，一边用颜色选择器直接校正当前水花的发光蓝色
+
+- 当前界面
+  - 左侧为关卡视口与 `Sequencer`
+  - 播放头位于约 `2.52s`
+  - 右侧打开 `Color Picker`
+- 画面结果
+  - 中央主 splash 呈现高亮蓝白色
+  - 爆发中心接近白色，外缘和底部带有更明显的蓝色倾向
+  - 整体发光强度较高，说明当前不仅在调色相，也在调发光值
+- `Color Picker` 当前可见数值
+  - `R = 0.0`
+  - `G = 1.51647`
+  - `B = 5.0`
+  - `A = 1.0`
+  - `H = 221.802353`
+  - `S = 1.0`
+  - `V = 5.0`
+  - 当前启用 `sRGB`
+- 关卡上下文
+  - Outliner 中当前仍选中 `Floor`
+  - 暗背景继续用于判断高亮蓝色在镜头中的可读性
+
+这张图对应本段 `Color` 的最终校色步骤：作者把颜色推到强饱和的蓝色区间，并把亮度值拉高到超出常规 `0-1` 范围的发光级别，使水花在镜头里既有蓝色倾向，又能在中心爆发时接近白色发光效果
+
+### 00:51:09-00:55:47 UV、Add、Normal
+
+- 本段定位：UV、Add、Normal。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Blender` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`Opacity`、`Texture`、`Add`、`Panner`、`Emissive`、`Blender`、`材质`。
+
+**关键画面：**
+
+这一张是在关卡视口里查看材质阶段调整后的整体效果，重点不是节点细节，而是确认新的 UV/材质处理后水花轮廓是否仍然集中、干净
+
+- 当前界面
+  - 编辑器停留在关卡视口
+  - 底部 `Sequencer` 已打开
+  - 可见轨道仍为 `Camera Cuts`、`CameraActor`、`NS_StylizedWaterSplash`
+  - 播放头位于约 `2.63s`
+- 画面结果
+  - 中央主 splash 维持高亮青蓝色
+  - 两侧外甩水舌仍清晰可见，但整体比前几段更收拢，不像最早爆发阶段那样完全炸开
+  - 底部圆形水团较完整，说明地面层和上冲层仍保持叠加关系
+  - 暗背景下水花边缘轮廓清楚，没有明显糊成一团
+- 关卡上下文
+  - Outliner 当前选中 `Floor`
+  - 场景仍使用暗环境来观察材质的亮边、透明度和边缘读感
+
+这张图对应本段 `UV`、`Add`、`材质` 的结果检查：作者先在镜头里确认材质改动后主 splash 的轮廓没有被破坏，亮边和中心发光仍然能分开读出来，再继续回到材质或模块细调
+这一张切到 Blender 的 `UV Editing` 工作区，作者正在为水花网格整理 UV，目的是让材质在圆台形 splash 上分布更可控
+
+- 当前软件与工作区
+  - 软件为 `Blender 3.6.0`
+  - 当前标签为 `UV Editing`
+  - 左侧是 UV 编辑窗口
+  - 右侧是 3D 视图，当前对象为 `Cylinder`
+- 3D 视图中的模型
+  - 模型是一个上宽下窄的圆台/截锥体水花壳
+  - 处于编辑模式，可见顶点与边线
+  - 上口一圈顶点被选中
+- UV 视图中的展开结果
+  - 整个侧面 UV 被展开成一个近矩形的大壳
+  - UV 内部由密集竖向边和若干横向环线组成
+  - 顶部边界一整排顶点处于选中状态
+  - UV 壳目前保持比较规则，没有明显扭曲或重叠
+- 右侧属性区
+  - 当前对象名为 `Cylinder`
+  - 主要显示对象数据面板，如 `Vertex Groups`、`Shape Keys`、`UV Maps` 等
+- 操作语义
+  - 字幕说明“G-scale to enlarge this part, but leave it as it is”，表明作者正在局部放大某段 UV 或几何比例，同时尽量维持整体结构不变
+
+这张图对应本段 `UV` 和材质准备步骤：作者先把圆台水花网格的侧面展开成规则 UV 壳，再针对顶部区域做局部比例调整，方便后续把贴图、渐变或法线细节更稳定地铺到水花表面
+这一张继续在 Blender 里检查网格形体本身，而不是 UV 平铺。作者把视角切到模型编辑/建模视图，用来确认改完后的 splash 截面轮廓是否自然
+
+- 当前软件与工作区
+  - 软件为 `Blender 3.6.0`
+  - 顶部当前工作区为 `Modeling`
+  - 视图模式显示为 `Object Mode`
+- 当前对象
+  - Outliner 中同时可见 `Cylinder` 和 `Cylinder.001`
+  - 当前选中对象为 `Cylinder.001`
+  - 右侧属性栏当前提供 `Add Modifier`
+- 视图中的模型状态
+  - 模型从上方斜视角观察，轮廓近似不规则多边形圆盘
+  - 顶面并非完全规则圆形，边缘存在轻微起伏和不均匀外扩
+  - 左上角统计显示
+    - `Objects = 1/1`
+    - `Vertices = 55`
+    - `Edges = 99`
+    - `Faces = 44`
+    - `Triangles = 88`
+- 操作语义
+  - 这类视图通常用于确认几何改形后，顶面轮廓是否有足够的不规则感，避免 splash 看起来过于机械圆整
+
+这张图对应本段 `Normal` 与材质配套的几何检查：作者不是只改贴图或 UV，而是同时检查水花网格的顶面轮廓，让模型本身保留轻微破碎和不对称感，后续法线、高光和透明贴图叠加时会更像真实爆开的水面
+
+### 00:55:47-00:58:42 System、Color、Material
+
+- 本段定位：System、Color、Material。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：角色或镜头演示需要导入 FBX/骨骼/动画，并用 Sequencer 校准触发时机。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Particle`、`Color`、`Alpha`、`Opacity`、`Material`、`Texture`、`Sequencer`、`Panner`。
+
+**关键画面：**
+
+这一张继续在 Blender 里检查 `Cylinder.001` 的几何外形，重点是观察水花壳体边缘是否有足够自然的高低起伏
+
+- 当前软件与工作区
+  - 软件为 `Blender 3.6.0`
+  - 工作区仍停留在 `UV Editing`
+  - 左侧编辑窗口当前为空白网格视图，未显示具体贴图内容
+  - 右侧为 3D 视图
+- 当前对象
+  - Outliner 中当前选中 `Cylinder.001`
+  - 右侧对象数据面板显示 `Cylinder.001` 的 `Vertex Groups`、`Shape Keys`、`UV Maps` 等区块
+- 3D 视图中的模型状态
+  - 视角贴近模型侧上方，便于观察边缘轮廓
+  - 模型顶部边缘不是规则圆，而是由多个高低起伏的段落组成
+  - 侧壁向下逐渐收拢，形成 splash 壳体的外翻与回收关系
+  - 当前主要是在看外轮廓，而不是法线贴图或材质节点
+
+这张图对应本段 `Material` 与几何配套检查：作者先确认水花壳体的边缘本身已经有不规则起伏，这样后续无论叠加颜色、透明度还是材质流动效果，轮廓都会更像真实爆开的水面，而不是过于工整的机械圆台
+这一张继续在 Blender 的 `UV Editing` 里检查贴图映射质量，作者把测试纹理铺到 `Cylinder.001` 内壁上，用来判断 UV 是否拉伸、扭曲或方向错乱
+
+- 当前软件与工作区
+  - 软件为 `Blender 3.6.0`
+  - 当前工作区为 `UV Editing`
+  - 左侧是 UV 编辑窗口
+  - 右侧是 3D 视图中的 `Cylinder.001`
+- 3D 视图中的材质/测试图案
+  - 圆台内壁贴有高对比度的灰白环带
+  - 其上叠加多种彩色十字与短线标记
+  - 标记从中心到底边按环带展开，便于观察方向和缩放是否一致
+  - 视角从壳体内部向中心看，能直接检查整圈内壁的分布
+- UV 编辑窗口中的对应状态
+  - 左侧可见竖向展开的 UV 壳局部
+  - 当前正在拖动/调整左边界附近的一列顶点
+  - UV 内部依旧保持规则的纵向分段和横向环线
+- 操作语义
+  - 彩色十字和线段通常用于检查
+    - 纹理是否被拉伸
+    - UV 朝向是否翻转
+    - 不同区域密度是否过于不均
+
+这张图对应本段 `UV`、`Texture` 与 `Material` 的关键校验：作者并不是只看几何轮廓，而是把测试纹理实际投到水花壳体内壁，确认环向和纵向的纹理分布足够均匀，后续做流动、法线或透明材质时不会出现明显的拉伸破相
+这一张回到 Unreal Editor，作者用镜头预览当前 splash 成片效果，同时在内容浏览器里确认本页刚做好的几种网格资产已经进入工程，作为后续纹理制作的基础
+
+- 当前界面
+  - 上方为关卡视口，中央显示 `NS_StylizedWaterSplash`
+  - 右侧 Outliner 当前仍选中 `Floor`
+  - 底部打开 `Content Browser`
+- 当前预览效果
+  - 中央可见高亮青蓝色主 splash
+  - 整体形状比前面更接近细长向上的喷发柱
+  - 底部仍带有圆形水团底盘，说明新网格与现有 Niagara 结构已经能够共同工作
+- 内容浏览器上下文
+  - 当前路径为 `Content > VFX_Library > Meshes`
+  - 左侧目录显示 `WaterSplash`、`Textures`、`Trails` 等资源分类
+  - 当前可见并可辨认的网格包括
+    - `SM_Circle_01`
+    - `SM_Cone_01`
+    - `SM_Cylinder_01`
+    - `SM_Cylinder Bowl_01`
+    - `SM_Cylinder Height...`
+    - `SM_TorusHigh Poly_01`
+  - 当前选中资源为 `SM_Cylinder Bowl_01`
+- 操作语义
+  - 字幕说明“下一支视频会为它们创建纹理”，表示本节主要完成网格/UV 基础，纹理制作尚未开始
+
+这张图对应本段 `System`、`Material` 的阶段收尾：作者先验证新做的 bowl/cylinder 等 splash 网格已经能在 UE 中正常使用，并把它们收纳进 `VFX_Library/Meshes`，随后才进入下一部分的纹理与材质制作流程
+
+## 补充视觉证据
+
+### S01 00:02:02
+
+这是一张补充视觉证据图，用于说明本页水花贴图/形状参考的二维轮廓来源，而不是 Niagara 模块参数
+
+- 当前软件界面
+  - 软件为 `Photoshop`
+  - 中央画布为一张黑底方形图像
+  - 左侧可见颜色环、滑条和笔刷面板
+  - 右侧图层区可见
+    - `Layer 1`
+    - `Background`
+- 画布内容
+  - 黑色背景上绘制了一条白色单线轮廓
+  - 轮廓整体呈单侧拉长的 splash/火焰状外形
+  - 顶部有多个高低不一的尖峰和回勾
+  - 左下方向有一条较长的下垂尾部
+  - 右侧中段附带一个很小的闭合小环/小突起
+- 可确认语义
+  - 这类线稿更像是在定义一张 splash 遮罩、轮廓贴图或手绘形状参考
+  - 它提供的是二维外轮廓语言：哪里需要尖、哪里需要回卷、哪里需要拖尾
+  - 仅凭当前截图无法确认后续是否直接作为 alpha、mask、selection path 或贴图底稿使用
+
+这张补充图的作用是给前面 UE/Blender 中出现的水花轮廓提供一个更原始的二维形状依据：作者先在 2D 软件里确定“尖峰 + 回卷 + 下垂尾部”的外形语言，再把这种轮廓感转回网格、UV 或后续纹理制作里
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

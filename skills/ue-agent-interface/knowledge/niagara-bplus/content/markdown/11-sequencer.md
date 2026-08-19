@@ -1,0 +1,546 @@
+# 11设置字符Sequencer
+
+# 11设置字符Sequencer
+
+## 关键术语
+
+- `Spawn`、`Actor`、`Sequencer`、`PS`、`Mesh`、`粒子`、`发射器`、`纹理`、`曲线`、`Niagara`、`Emitter`、`Particle`、`Spawn Rate`、`Lifetime`、`Normalized Age`、`序列`、`Niagara System`、`Initialize Particle`
+
+## 分段知识
+
+### 00:00:05-00:04:46 Actor、Sequencer、PS
+
+- 本段定位：Actor、Sequencer、PS。
+- 知识点：你好,第11课再次问候你 这次是第二个例子制作的第一步 我们来一起设置一项序列器,然后结束 然后现在打开的关卡是我们第一例子用的 Xn4G。
+- 知识点：Sprite X10 在这里用保存当前关卡另存为一个不同名字 开始吧 可观察到这里新保存的关卡出现了 序列器文件也一样 再复制一个就是名字不一样。
+- 知识点：就Garps有个名字 我就会把序列文件放在这里 然后需要先打开对应资源序列文件 哪不要的都删掉 然后我也会选择这个部分把Shake删掉 现在Bluer的情况是。
+- 知识点：因为这里也会用到就是 所以就是把数值降低到0 是的这样图有点奇怪 然后所以需要先用这个设置开始 最重要的是先拿重要角色吧 第二个要用的角色是。
+- 知识点：奇美拉 然后这个设置现在用的角色是奇美拉 然后入上锁数 需要先拿Mesh 是的 拖进来后会在中心出现 这里要用的动作是我们我搜索一下RMB。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`序列`。
+
+**关键画面：**
+
+这一帧展示第二个例子开始时的关卡基础设置界面。当前打开的关卡是 `Ex_01_SpriteExp`，内容浏览器定位在 `Content/Signature/Course_03/Level`，说明教程先从复制和整理新的关卡场景开始。
+
+图中可直接确认的信息：
+
+- 当前关卡/关卡资源名：`Ex_01_SpriteExp`
+- 右侧 Outliner 中可见主要对象：
+  - `Lighting`
+  - `DirectionalLight`
+  - `SkyLight`
+  - `SM_SkySphere`
+  - `Ex_01_SpriteExp`
+  - `Floor`
+  - `PlayerStart`
+  - `PostProcessVolume`
+- 当前选中对象：`Floor`
+- `Floor` 的关键变换：
+  - `Location = (0.0, 0.0, -0.5)`
+  - `Rotation = (0.0, 0.0, 0.0)`
+  - `Scale = (10.0, 10.0, 10.0)`
+- `Static Mesh = SM_Template_Map_...`
+- `Materials / Element 0 = MI_ProcGrid`
+
+这张图的实际作用是建立第二个例子的默认舞台：一个带网格材质的大平面测试场景，后续再往其中放角色、动作和 Sequencer。复建时可先新建或复制一个关卡，并确保场景至少包含同类的地面平面、基础光照和后处理体积。
+这一帧已经切到第二个例子的 Sequencer 设置界面。当前打开的序列资源是 `Ex_02_DecalExp`，教程正在整理要保留的轨道，并确认镜头和角色所需的基础项。
+
+图中可直接确认的 Sequencer 内容：
+
+- 当前序列：`Ex_02_DecalExp`
+- 时间轴帧率：`30 fps`
+- 当前时间指针位于约 `0014` 帧附近
+- 已添加的主要轨道：
+  - `Camera Cuts`
+  - `MPC_Blur_Ctrl01`
+    - 子轨道 `Blur_Str`
+  - `Cine Camera Actor`
+    - `CameraComponent`
+    - `Camera Shake`
+    - `Current Aperture = 2.8`
+    - `Current Focal Length = 25.0`
+    - `Manual Focus Distance = 100000.0`
+    - `Spawned` 已启用
+    - `Transform`
+
+时间轴上还能看到：
+
+- `Blur_Str` 轨道有多个关键帧，用于控制模糊强度变化。
+- `Cine Camera Actor` 存在整段生效区间，表示镜头从序列开头就参与控制。
+
+左下内容浏览器当前定位在 `Content/ParagonKhaimera`，其中可见 `Characters` 和 `FX` 文件夹，对应正文里“第二个要用的角色是奇美拉”的上下文。复建时可先复制第一例子的序列，再只保留需要的 `Camera Cuts`、镜头和模糊控制轨道，避免把不需要的 Shake 或旧轨道一起带入。
+这一帧继续在 `Ex_02_DecalExp` 的 Sequencer 中设置角色轨道，当前已经把 `Khaimera` 放进序列，并为它指定了动画片段。
+
+图中可直接确认的内容：
+
+- 仍在编辑序列：`Ex_02_DecalExp`
+- 关键轨道现在包括：
+  - `Camera Cuts`
+  - `MPC_Blur_Ctrl01`
+    - `Blur_Str`
+  - `Cine Camera Actor`
+    - `CameraComponent`
+    - `Camera Shake`
+    - `Current Aperture = 2.8`
+    - `Current Focal Length = 25.0`
+    - `Manual Focus Distance = 100000.0`
+    - `Spawned`
+    - `Transform`
+  - `Khaimera`
+    - `Animation`
+    - `Spawned`
+    - `Transform`
+
+时间轴区域可以看到：
+
+- `Khaimera` 的 `Animation` 轨道上已经放入一个动画片段，标签显示为 `RME_60fps`。
+- 当前播放头在约 `0016` 帧附近，角色动画片段从前段开始持续一段时间。
+
+右侧 Outliner 中也能看到 `Khaimera` 已经作为场景对象存在，并被当前序列使用。右下详情面板显示的是 `Khaimera` 的基础属性，当前可见：
+
+- `Location = (0.0, 0.0, 0.0)`
+- `Rotation = (0.0, 0.0, 0.0)`
+- `Scale = (1.0, 1.0, 1.0)`
+- `Animation Mode = Use Custom Mode`
+
+复建时可按这张图先把角色 Actor 拖入 Sequencer，再为其新增 `Animation` 轨道并放入对应动作片段；镜头、模糊控制和角色动画三部分一起就构成了第二个例子的最小可播放序列基础。
+
+### 00:04:48-00:08:44 PS、粒子、纹理
+
+- 本段定位：PS、粒子、纹理。
+- 知识点：所以这里将从000开始 大约第23针向前推进 大约500的结果值 这周是0值 所以这里 这周将给0值 现在中间有那种抛物线的感觉 就是会有一个位置。
+- 知识点：就是大约12针 添加一个大约2000的高度值 这种话 可以移动一下摄像头看 然后从旁边看 是的 然后这种感觉就可观察到 现在我们输入的关键值在这里。
+- 知识点：是这种曲线形状 然后 是的 看起来有视觉效果 确实这个位置 移动值和动画动作一起进入了 所以更靠谱的是 然后结果就出来了 所以在这个时机配合。
+- 知识点：现在效果就会播放 然后 首先摄像机高度 大约就是这个感觉 先调整一下 大约这个感觉先调整一下 然后现在生存一个粒子。
+- 知识点：会带过来 我们复制了之前用的粒子 好 CAC导入使用 LKN Audio Chippon被导入使用了 LKN Audio Chippon被导入使用了。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`粒子`、`序列`、`曲线`。
+
+**关键画面：**
+
+这一帧是在 `Ex_02_DecalExp` 的 Sequencer 中给角色 `Khaimera` 做位移动画，当前展开的是 `Transform -> Location`，用于配合动作做起跳/位移轨迹。
+
+图中可确认的内容如下：
+
+- 当前序列：`Ex_02_DecalExp`
+- 关键轨道保持为：
+  - `Camera Cuts`
+  - `MPC_Blur_Ctrl01 -> Blur_Str`
+  - `Cine Camera Actor`
+  - `Khaimera`
+    - `Animation`
+    - `Spawned`
+    - `Transform`
+      - `Location`
+        - `X`
+        - `Y`
+        - `Z`
+      - `Rotation`
+      - `Scale`
+
+时间轴上与 `Khaimera` 相关的可见状态：
+
+- `Animation` 轨道上已有一个动画片段，标签中可见 `60fps`。
+- `Location` 下的 `X / Y / Z` 都已经打了关键帧，当前播放头在序列起点附近，三条通道在起点位置都有关键点。
+- 左侧数值栏当前显示 `X = 0.0`、`Y = 0.0`、`Z = 0.0`，说明这是位移动画的初始原点状态。
+
+结合正文“从 000 开始、约第 12 帧给高度值、形成抛物线”的语义，这张图说明教程正在先把角色的 Transform 轨道建好，并在起点写入基础位置，后续再通过中段关键帧把 `Z` 抬高形成抛物线。复建时应先把 `Khaimera` 的 `Transform -> Location` 三轴全部加入 Sequencer，而不是只给单一轴打关键帧。
+这一帧继续调整 `Khaimera -> Transform -> Location`，当前已经开始把角色的水平位移和抛物线高度写进 Sequencer。
+
+图中可直接确认的内容：
+
+- 当前序列仍是 `Ex_02_DecalExp`
+- 时间轴播放头在约 `0023` 帧
+- `Khaimera -> Animation` 使用的动作片段标签清晰显示为 `RMB_60fps`
+- `Khaimera -> Transform -> Location` 三轴都已存在关键帧
+
+当前左侧数值栏显示：
+
+- `X = 0.0`
+- `Y = 500.0`
+- `Z = 0.0`
+
+时间轴中的位移关键帧表现为：
+
+- `X` 与 `Y` 在当前可见关键帧段基本是平直的两点连线，说明这两轴主要用于保持或平移基础位置。
+- `Z` 轨道除了起点和当前点外，还存在一个更早的中间关键点，并且该点在时间轴上的垂直位置与另外两轴不同，说明 `Z` 被单独抬高过，用来形成一段起跳/下落的抛物线。
+
+结合正文“约第 12 帧加一个 2000 左右的高度值”的语义，这张图能可靠说明流程是：
+
+1. 先给角色写基础平移值，当前可见的一个前向位移参考值是 `Y = 500`。
+2. 再在中段单独给 `Z` 增加一个更高的关键帧，让角色动作在序列里形成向上跃起再落回的曲线。
+
+当前帧看不到中间 `Z` 关键帧的具体数值，因此不把 `2000` 直接写成确定值；但复建时应明确把 `Z` 做成独立抬升曲线，而不是线性平移。
+这一帧说明角色序列基础已经设置完，并开始把粒子系统资源带入当前例子。画面中央虽然被保存进度窗口遮住了一部分，但仍能确认 Sequencer、角色位移轨道和待用的 Niagara 资源都已经就位。
+
+图中可直接确认的信息：
+
+- 当前正在保存资源：
+  - `Saving asset /Game/Signature/Course_03/Particles/Ex_02_DecalExp`
+  - 进度约 `76%`
+- Sequencer 仍是 `Ex_02_DecalExp`
+- `Khaimera -> Transform -> Location` 三轴仍可见，当前数值栏显示：
+  - `X = 0.0`
+  - `Y = 500.0`
+  - `Z = 0.0`
+- 时间轴播放头在约 `0036` 帧附近，三轴关键帧已经形成一段完整的位移曲线段。
+
+左下内容浏览器当前定位在：
+
+- `Content/Signature/Course_03/Particles`
+
+并且可见至少三个资源卡片，其中一个蓝色高亮选中的资源名称显示为 `...Exp`，类型可见为 `Niagara System`。这说明教程此时已经切换到粒子资源目录，准备把本例需要的 Niagara System 拖入或绑定到当前序列/场景中。
+
+这张图的关键意义不是新增具体参数，而是流程上的衔接：
+
+1. 先把角色动画和 Transform 曲线保存好。
+2. 再到 `Particles` 目录里选中本例要用的 Niagara System。
+3. 后续再把该系统与当前角色动作/时机对齐。
+
+由于保存窗口遮挡了中间部分，本帧不适合推断更多轨道细节；但“当前序列已保存、角色曲线已建立、粒子系统资源已被选中待用”这一流程关系是明确的。
+
+### 00:08:47-00:11:42 Spawn、粒子、发射器
+
+- 本段定位：Spawn、粒子、发射器。
+- 知识点：也叫表单翻页纹理 也叫表单翻页纹理 制作碎片我们得到了随机的碎片形状 制作碎片我们得到了随机的碎片形状 用工具制作了纹理。
+- 知识点：除了那种随机形状的结果 还打算一起使用竹针播放的 烟雾模拟纹理 在这一部分 那种模拟资源的制作方法 可能在第五部分再学习 这次我只是提供我制作的资源。
+- 知识点：就一起利用一下这个吧 把DAC的DAC放在这里了 这个也得把位置往前调整一下 大概调整到500 帧数的部分调整到23 好的放进去的话会把这个角色抬高。
+- 知识点：调整后接下来给spawn一个键值 现在这样出来了 接下来打开后删除多余的发射器 这中间的东西和 先关掉这个灯也先关掉 要清除的粒子也关掉。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Spawn`、`纹理`、`粒子`、`发射器`、`烟雾`。
+
+**关键画面：**
+
+这一帧仍在 `Ex_02_DecalExp` 的 Sequencer 中，但当前重点已经从角色轨迹转到粒子系统资源准备。左下内容浏览器定位在 `Content/Signature/Course_03/Particles`，并排展示了多个 Niagara System，说明教程正在从已有示例里挑选可复用的粒子系统作为第二个例子的起点。
+
+图中可直接确认的内容：
+
+- 当前序列：`Ex_02_DecalExp`
+- `Khaimera -> Animation` 仍使用 `RMB_60fps`
+- `Khaimera -> Transform -> Location` 仍保持当前可见数值：
+  - `X = 0.0`
+  - `Y = 500.0`
+  - `Z = 0.0`
+- 时间轴播放头在约 `0036` 帧附近，角色位移轨道已经完成一段可用曲线
+
+内容浏览器中可见三个 Niagara System 资源卡片：
+
+- `Ex_01_... Niagara Sy...`
+- `Ex_01_... Niagara Sy...`
+- `Ex_02_... Niagara Sy...`
+
+虽然资源全名被缩略，但可以可靠确认：
+
+- 当前例子不是从空系统开始，而是直接在 `Course_03/Particles` 目录里复用已有 Niagara System。
+- 至少同时参考了第一例子和第二例子的系统资源。
+
+这张图的用途是建立“先把角色/序列轨迹准备好，再把合适的 Niagara System 拿进来”的流程顺序。复建时可先在 `Particles` 目录中准备好待复用系统，再进入下一步的拖入、删减发射器和调整 Spawn。
+这一帧可以明确确认：粒子系统已经被正式加入到 `Ex_02_DecalExp` 的 Sequencer 里，并作为一个独立轨道和镜头、角色动画并行控制。
+
+图中可直接确认的内容：
+
+- 当前序列：`Ex_02_DecalExp`
+- 时间轴播放头在约 `0021` 帧
+- 主要轨道现在包括：
+  - `Camera Cuts`
+  - `MPC_Blur_Ctrl01 -> Blur_Str`
+  - `Cine Camera Actor`
+  - `Ex 02 Decal Exp`
+    - `Spawned`
+    - `Transform`
+  - `Khaimera`
+    - `Animation = RMB_60fps`
+    - `Spawned`
+    - `Transform -> Location`
+
+这说明教程已经把 Niagara System 轨道直接放进 Sequencer，而不是只把资源留在内容浏览器里待用。
+
+当前还能读到 `Khaimera -> Transform -> Location` 的中途数值：
+
+- `X = 0.0`
+- `Y = 489.915356`
+- `Z = 17.430504`
+
+这表示角色在序列前段已经开始离开初始位置，位移曲线不再是单纯的起点值，也说明粒子系统需要和角色运动中的位置而不是静止原点对齐。
+
+复建时可按这张图先把 `Ex 02 Decal Exp` 作为一个独立 Sequencer 轨道加入，再保留其 `Spawned` 与 `Transform`，这样后续就能在时间线上直接控制该系统的出现时机和空间对齐。
+这一帧已经进入 Niagara System 编辑器，直接打开了 `Ex_02_DecalExp`。当前系统正在重新编译，画面能清楚显示本例保留下来的发射器集合，这和正文里“打开后删除多余发射器”完全对应。
+
+图中可直接确认的内容：
+
+- 当前系统：`Ex_02_DecalExp`
+- 系统状态：`Compiling...`
+- 左上编译列表里可见正在编译的发射器：
+  - `Empty`
+  - `Empty002`
+  - `Empty004`
+  - `Empty007`
+  - `Empty008`
+  - `Empty009`
+
+左侧发射器树中同样只保留了这些条目，说明当前系统已经不是原始完整版本，而是经过删减后的工作集。中央 `System Overview` 里也能看到对应的多个发射器卡片：
+
+- `Empty009`
+- `Empty`
+- `Empty004`
+- `Empty002`
+
+其中左起第一个发射器卡片还能辨认出其模块结构大致包括：
+
+- `Emitter Spawn`
+- `Emitter Update`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Shape Location`
+  - `Add Velocity From Point`
+  - `Color`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Scale Velocity`
+  - `Curl Noise Force`
+  - `Drag`
+  - `Solve Forces and Velocity`
+- `Render`
+  - `Sprite Renderer`
+
+这张图的核心结论是：第二个例子的粒子系统不是从头搭建，而是通过复制已有系统后，删掉不需要的发射器，只保留当前这几个 `Empty*` 发射器继续改。复建时应先做同样的系统精简，再逐个处理 Spawn、材质和烟雾纹理，而不是一开始就在完整旧系统里硬改全部发射器。
+
+### 00:11:48-00:14:51 粒子、颜色
+
+- 本段定位：粒子、颜色。
+- 知识点：围绕当前效果继续调整 Niagara 系统，需结合关键画面确认实际节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Particle`、`粒子`、`颜色`。
+
+**关键画面：**
+
+这一帧处在 `Ex_02_DecalExp` 的 Niagara System 编辑器中，当前系统正在等待编译完成，但左上粒子统计已经把本段发射器的启停状态显示得很清楚，适合用来确认“当前只保留哪几层粒子继续调颜色”。
+
+图中可直接确认的内容：
+
+- 当前系统：`Ex_02_DecalExp`
+- 系统状态：`Waiting for compilation to complete`
+- 编译进度：`0%`
+- 中央可见系统级模块：
+  - `User Parameters`
+  - `System Spawn`
+  - `System Update`
+  - `System State`
+
+左上 `Particle Counts` 中各发射器状态如下：
+
+- `Empty`：`1 Current, 1 Max (est.)`，`[Active]`
+- `Empty002`：`0 Current, 1 Max (est.)`，`[Disabled]`
+- `Empty007`：`1 Current, 1 Max (est.)`，`[Active]`
+- `Empty008`：`1 Current, 1 Max (est.)`，`[Active]`
+- `Empty009`：`0 Current, 350 Max (est.)`，`[Disabled]`
+
+左侧发射器树也只列出了：
+
+- `Empty Emitter`
+- `Empty002`
+- `Empty007`
+- `Empty008`
+- `Empty009`
+
+这说明本段调色前，系统已经先做了一次发射器启停筛选：
+
+- 当前真正参与预览的是 `Empty / Empty007 / Empty008`
+- `Empty002` 和 `Empty009` 被临时关闭，不参与当前颜色观察
+
+复建时如果需要单独核对某几层粒子颜色，不必所有发射器一起开着。可以先像图中这样禁用不需要的层，只保留当前要看的发射器，再进行颜色和粒子细调。
+这一帧回到场景播放视图，用来直接观察当前序列时刻下的可见结果。画面中基本只剩角色本体和地面，没有明显可见的粒子或发光层，这说明教程此时正在核对“当前开启的粒子层在这个时刻是否应该可见”，或者某些发射器/颜色强度已经被压到接近不可见。
+
+从当前帧可直接确认的信息：
+
+- 当前关卡/序列仍是 `Ex_02_DecalExp`
+- 画面主视口里只有 `Khaimera` 角色和棋盘格地面
+- 角色脚下、周围和空中都没有明显可辨认的亮点、烟雾、壳层或 decal 纹理
+- 时间轴播放头在约 `0082` 帧附近
+- Sequencer 底部仍保留：
+  - `Camera Cuts`
+  - `MPC_Blur_Ctrl01 -> Blur_Str`
+  - `Cine Camera Actor`
+
+这张图的意义更偏向结果校验而非参数展示：它提醒复建时不要假定粒子效果在整段序列里都持续可见。某些发射器可能只在少数时刻短暂出现，其余时段应当是干净的角色动作画面。若复建后在这个阶段仍然一直有明显粒子残留，通常说明 Spawn、Lifetime 或颜色淡出没有收住。
+这一帧打开的是 `CS_02` 的 Camera Shake 数据蓝图默认值页面。虽然它出现在本段最后一张图里，但当前画面展示的不是粒子参数，而是本例配套使用的相机震动设置，供 Sequencer 里的 `Camera Shake` 轨道调用。
+
+图中可直接确认的参数如下：
+
+- 资源：`CS_02`
+- 页面：`Class Defaults`
+- `Parent class`: `Default Camera Shake Base`
+- `Single Instance`：未勾选
+
+`Camera Shake Pattern`
+
+- `Root Shake Pattern = Perlin Noise Camera Shake Pattern`
+
+`Location`
+
+- `Location Amplitude Multiplier = 8.0`
+- `Location Frequency Multiplier = 7.0`
+
+`X`
+
+- `Amplitude = 1.0`
+- `Frequency = 1.0`
+
+`Y`
+
+- `Amplitude = 1.0`
+- `Frequency = 1.0`
+
+`Z`
+
+- `Amplitude = 1.3`
+- `Frequency = 1.5`
+
+`Timing`
+
+- `Duration = 0.4`
+- `Blend In Time = 0.0`
+- `Blend Out Time = 0.2`
+
+当前画面里 `Rotation` 和 `FOV` 分组没有展开到可读参数，因此不补写未显示的数值。复建时如果需要和教程一致的震屏手感，可先建立一个 `Perlin Noise Camera Shake Pattern`，再按图中这些 `Location` 和 `Timing` 默认值配置。
+
+### 00:14:58-00:16:59 关键流程 05
+
+- 本段定位：关键流程 05。
+- 知识点：只要改这个数值就行了 调整一下 打开不进 大概23帧的 再下滑线2的 确实比我们最开始用的 视力一中的shake 重量感更强了 拿着 再展示 现在我们。
+- 知识点：随便拿来的动作 如果没有这种抖动或效果或后期效果 刚才看的时候只有动作的时候 感觉非常轻的动作 不是那种有立地拍打的感觉 就只是跳跃的程度的动作而已。
+- 知识点：看到这种动作时这个动作 更可心地使用 是效果系的工作 创造更有冲击力的时刻 所以用这种动作 今天有去地工作就好 那么这次就简单进行 毕竟最后我们制作效果的时间。
+- 知识点：会比较长 设置的时间会快点过渡 那么这次也辛苦了 谢谢你。
+
+**关键画面：**
+
+这一帧继续编辑 `CS_02` 的 `Class Defaults`，目标是把 Camera Shake 调得更有落地重量感。与前一段相比，这一帧可见的参数更完整，也能确认 `Z` 向位移震动被进一步加重。
+
+图中可直接确认的参数如下：
+
+- 资源：`CS_02`
+- `Parent class = Default Camera Shake Base`
+- `Single Instance`：未勾选
+- `Root Shake Pattern = Perlin Noise Camera Shake Pattern`
+
+`Location`
+
+- `Location Amplitude Multiplier = 8.0`
+- `Location Frequency Multiplier = 7.0`
+- `X`
+  - `Amplitude = 1.0`
+  - `Frequency = 1.0`
+- `Y`
+  - `Amplitude = 1.0`
+  - `Frequency = 1.0`
+- `Z`
+  - `Amplitude = 2.0`
+  - `Frequency = 1.5`
+
+`Rotation`
+
+- `Rotation Amplitude Multiplier = 0.0`
+- `Rotation Frequency Multiplier = 1.0`
+- `Pitch`
+  - `Amplitude = 1.0`
+  - `Frequency = 1.0`
+- `Yaw`
+  - `Amplitude = 1.0`
+  - `Frequency = 1.0`
+- `Roll`
+  - `Amplitude = 1.0`
+  - `Frequency = 1.0`
+
+当前帧底部 `FOV` 分组尚未展开出可读数值，因此不补写其参数。复建时如果想得到更强的“砸地”感，可优先像图中这样提高 `Location` 尤其是 `Z` 轴的震动强度，而不是单靠旋转抖动。
+这一帧回到 `Ex_02_DecalExp` 的场景播放视图，用来观察相机震动加强后的实际观感。当前画面里仍然只有角色和测试地面，没有明显粒子或后期层，因此这一帧的检查重点完全是动作与镜头本身的冲击感，而不是特效亮度。
+
+从画面可直接确认的结果：
+
+- 场景里可见对象仍然是 `Khaimera`、地面和基础光照。
+- 角色处于下落/收势姿态，身体前倾，武器下垂，动作本身比较“轻”。
+- 当前没有任何显著的发光、烟雾、decal 或粒子覆盖，这意味着教程此时是在隔离特效影响，单看镜头震动是否足够补强动作手感。
+- Sequencer 仍处于播放/编辑状态，时间轴播放头已进入后段，说明这是一段成片里的中后期验收帧。
+
+这张图对应正文里“没有这种抖动或后期效果时，动作会显得非常轻”的判断。复建时可把它当成对照基准：
+
+- 如果只看角色动作本身，画面会偏平、偏轻。
+- 增加合适的 Camera Shake 后，哪怕粒子层暂时不显示，镜头也应能给动作补出更强的落地冲击感。
+这一帧明确展示了 Sequencer 中 `Camera Shake` 的挂接方式：相机轨道里已经放入 `CS_02_C` 片段，用于在特定时间段内给动作增加震动冲击感，而不是让整段镜头持续抖动。
+
+图中可直接确认的内容：
+
+- 当前序列：`Ex_02_DecalExp`
+- 时间轴播放头在约 `0063` 帧
+- `Cine Camera Actor` 轨道下可见：
+  - `CameraComponent`
+  - `Camera Shake`
+  - `Current Aperture = 2.8`
+  - `Current Focal Length = 25.0`
+  - `Manual Focus Distance = 100000.0`
+  - `Spawned`
+  - `Transform`
+
+`Camera Shake` 轨道上的关键可见信息：
+
+- 已插入一个 `CS_02_C` 片段
+- 该片段不是覆盖整段序列，而是位于中后段的一小段时间区间内
+- 这说明震屏是作为“强调某个冲击瞬间”的局部手段使用
+
+画面上方主视口里，角色仍处于空场景测试关卡中，配合下方时间轴可理解为：
+
+1. 先把角色动作和镜头基线排好。
+2. 再在需要强调力度的时间窗口插入 `CS_02_C`。
+3. 通过局部震屏补出动作打击感，而不是让全程都抖。
+
+复建时不要把 Camera Shake 做成长时间常驻效果。更合理的做法是像图中这样，把 `CS_02_C` 作为一段短片段挂到 `Cine Camera Actor -> Camera Shake` 轨道上，只在关键帧附近触发。
+
+## 补充视觉证据
+
+### S01 00:02:21
+
+这张补充图对应 `S01 00:02:21`，作用是补足第二个例子在最初阶段的 Sequencer 基线状态。此时角色轨道尚未加入，序列里只有镜头和模糊控制，适合作为后续添加 `Khaimera` 与 Niagara System 之前的起始模板。
+
+图中可直接确认的内容：
+
+- 当前序列：`Ex_02_DecalExp`
+- 帧率：`30 fps`
+- 当前播放头在约 `0014` 帧
+- 当前只存在以下主轨道：
+  - `Camera Cuts`
+  - `MPC_Blur_Ctrl01`
+    - `Blur_Str = 0.0`
+  - `Cine Camera Actor`
+    - `CameraComponent`
+    - `Camera Shake`
+    - `Current Aperture = 2.8`
+    - `Current Focal Length = 25.0`
+    - `Manual Focus Distance = 100000.0`
+    - `Spawned`
+    - `Transform`
+
+时间轴可见信息：
+
+- `Blur_Str` 轨道已存在前后两个关键帧和一段平直区间。
+- `Cine Camera Actor` 在时间轴上从序列前段就开始生效。
+- 当前还看不到 `Khaimera`、`Animation`、`Transform -> Location` 或 Niagara System 轨道，说明这些内容是在此基线上后续逐步加进来的。
+
+左下内容浏览器当前位于 `Content/Signature/Course_03/Sequencer`，可见资源包括：
+
+- `CS_01`
+- `Ex_01_...`
+- `Ex_02_...`
+
+这张图可以作为 S01 段的“起始模板证据”：复建时应先得到一个只含镜头切换、模糊控制和 Cine Camera 参数的空序列，然后再依次加入角色、动画、位移曲线和粒子系统。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+

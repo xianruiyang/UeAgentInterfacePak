@@ -1,0 +1,611 @@
+# 04Sequencer工具的使用
+
+# 04Sequencer工具的使用
+
+## 关键术语
+
+- `System`、`UV`、`Decal`、`Sequencer`、`材质`、`后期处理`、`粒子`、`系统`、`渲染器`、`Niagara`、`Normalized Age`、`Renderer`、`纹理`、`蓝图`、`序列`、`生命周期`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:05-00:04:42 Sequencer、网格
+
+- 本段定位：Sequencer、网格。
+- 知识点：我们现在将从效果的角度简要地测试和讲解一下需要控制的主要部分。
+- 知识点：首先就得新建一个观察序列,添加观察序列到想要的文件夹中。
+- 知识点：首先重要的要控制的演员是,不管怎样就得有个搜访网格角色。
+- 知识点：最先追加的角色是名叫费茲的女角色。
+- 知识点：可以把这个角色这样拖过来,将这种演员注册到观察序列器的方法。
+- 知识点：我现在是从内容浏览器直接拖到这里的序列器。
+- 知识点：还有一种方法是先把它放到观察上,然后再这样拖过来。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`序列`。
+
+**关键画面：**
+
+这张图是本讲 `Sequencer` 实际使用阶段的工程入口画面。当前还没有进入角色轨道操作，而是先在 `Content Browser` 中定位本讲对应的关卡资源，准备从该关卡开始控制演员。
+
+当前图中可直接确认的界面与路径：
+- `Content Browser` 当前路径：
+  - `Content > Signature > Course_03 > Level`
+- 当前目录下可见 1 个关卡资源：
+  - `Ex_01_SpriteExp`
+- 左侧目录树还能看到同级文件夹：
+  - `Course_01`
+  - `Course_02`
+  - `Course_03`
+    - `Level`
+    - `Material`
+- 目录树中还可见角色相关路径：
+  - `Characters > Global > Heroes > Phase > Materials / Meshes / Textures`
+
+当前场景上下文：
+- 右侧视口仍是默认关卡地面
+- `Outliner` 中保留基础对象与 `PostProcessVolume`
+
+输出/预览：
+- 这一步说明课程会先从具体关卡资源进入，再在该关卡里创建或操作 `Sequencer`
+- 复现时如果要跟上后续演员控制流程，先定位正确关卡文件，比直接在任意空场景里开序列器更稳妥
+这张图展示把角色演员拖入 `Sequencer` 后的结果。当前被加入序列的是 `Phase GDC`，并且序列器已经为该角色生成了常见的基础轨道。
+
+当前图中可直接确认的 `Sequencer` 结构：
+
+```text
+Track Hierarchy
+- Phase GDC
+  - Animation
+  - Spawned
+  - Transform
+```
+
+```text
+Sequencer status
+- Sequence name = NewLevelSequence*
+- 当前播放头在 0032 附近
+- 角色轨道下已有多条彩色区段条，说明该演员已经被成功注册到序列并具备可编辑的子轨道
+```
+
+当前场景上下文：
+- 视口中能看到角色站在地面关卡里
+- 右侧 `Outliner` 同时可见 `Phase GDC` 与 `NewLevelSequence`
+
+与字幕和正文可确认的操作要点：
+- 这是“把演员拖过来，将这种演员注册到观察序列器”的直接结果
+- 也印证了课程说的另一种方法：先把演员放到关卡里，再把它拖到 `Sequencer`
+
+输出/预览：
+- 这一步说明 Sequencer 中控制角色的起点，通常就是先把关卡中的演员注册成顶层轨道
+- 复现时如果打开序列后发现“这里没有演员存在”，就需要先把目标角色拖进 Sequencer，之后才谈得上动画、生成和变换控制
+这张图把重点放回关卡视口，用来说明“先把演员放到观察上/关卡里，再拖到 Sequencer”这种工作方式的结果。当前场景中已经出现两个相同角色实例，表明关卡内演员与序列器注册状态需要区分理解。
+
+当前图中可直接确认的场景与对象状态：
+
+```text
+Viewport
+- 场景中可见两名相同的女角色实例，站位彼此接近
+- 视口里当前选中的是前景角色，带有变换 gizmo
+```
+
+```text
+Outliner
+- Phase_GDC
+- Phase_GDC_1
+- NewLevelSequence
+```
+
+```text
+Sequencer
+- 底部仍打开 Sequencer*
+- 轨道区可见至少一个 Phase GDC 相关顶层轨道
+```
+
+与正文可确认的操作含义：
+- 课程这里在对比两种工作方式：
+  - 从内容浏览器直接拖到 Sequencer
+  - 先把角色放到关卡，再拖到 Sequencer
+- 当前图说明当角色已经存在于关卡时，Outliner 里会出现实际演员实例，而序列器则负责管理这些演员的时间控制
+
+输出/预览：
+- 复现时要区分“关卡里有没有这个演员”和“Sequencer 里有没有注册这个演员轨道”是两件事
+- 如果场景里已经摆好了角色，但序列器里还没有它的轨道，就需要再把该角色关联到 Sequencer，才能进行时间线控制
+
+### 00:04:42-00:09:21 Sequencer、网格、速度
+
+- 本段定位：Sequencer、网格、速度。
+- 知识点：不是每次都要联动,直接放到序列器上,会做很多工作。
+- 知识点：个人工作来说这样更方便,所以会把这个序列器文件放在这里。
+- 知识点：这样保存的话,序列器文件会存在等级上。
+- 知识点：这个序列文件,在这里直接双击打开也可以。
+- 知识点：打开了吗? 这种话,这样放着的话,这里没有演员存在。
+- 知识点：只要把序列文件提升到等级,就可以直接在这里打开。
+- 知识点：基本上是关于生成的选项。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`序列`、`速度`、`曲线`。
+
+**关键画面：**
+
+这张图继续展示已经绑定了角色的 `Sequencer`，强调在个人工作流里，直接把序列文件放在当前关卡/当前工作上下文中会更方便管理和打开。
+
+当前图中可直接确认的 `Sequencer` 结构：
+
+```text
+Track Hierarchy
+- Phase GDC
+  - Animation
+  - Spawned
+  - Transform
+```
+
+```text
+Sequencer status
+- Sequence name = NewLevelSequence*
+- 当前播放头在 0015 附近
+- 角色顶层轨道下有多条彩色区段条
+```
+
+当前场景上下文：
+- 右侧 `Outliner` 中能看到 `Phase_GDC`、`NewLevelSequence` 等对象
+- 场景视口保持默认地面环境，说明当前重点是序列组织方式而不是场景表现
+
+与正文和字幕可确认的要点：
+- 字幕明确表达“个人工作来说这样更方便”
+- 结合正文可知，这里是在强调：把序列文件放在合适位置，并让它直接和当前关卡/演员关联，是日常工作里更高效的做法
+
+输出/预览：
+- 这一步说明序列文件的组织位置会影响后续打开和维护效率
+- 复现时如果是单人长期维护项目，建议尽早确定序列文件与关卡、演员的归属关系，而不是后期到处找资源
+这张图把 `Phase GDC` 轨道展开得更细，已经能看到动画片段名、`Spawned` 开关，以及 `Transform` 下的具体数值。它对应正文里“这个序列文件在这里直接双击打开也可以”“以当前播放头存在的部分为起点”的实际工作状态。
+
+当前图中可直接确认的 `Sequencer` 结构与参数：
+
+```text
+Track Hierarchy
+- Phase GDC
+  - Animation
+    - clip = Ability_E
+  - Spawned = true
+  - Transform
+    - Location
+      - X = 0.0
+      - Y = 0.0
+      - Z = 0.0
+    - Rotation
+      - Roll = -0.0
+      - Pitch = 0.0
+      - Yaw = 0.0
+    - Scale
+      - X = 1.0
+      - Y = 1.0
+      - Z = 1.0
+```
+
+```text
+Timeline
+- 当前播放头在 0004 附近
+- 动画片段 `Ability_E` 从当前附近时间段开始铺开
+- Spawned 与 Transform 相关区段条覆盖了更长的时间范围
+```
+
+输出/预览：
+- 这一步说明当演员轨道被展开后，Sequencer 可以同时管理动画片段、是否生成、以及基础变换参数
+- 复现时如果想让某段角色动作从当前播放头开始生效，就需要像当前图这样把片段和相关生成/变换轨道一起对齐到对应时间点
+这张图把角色、序列器和角色细节面板三者放在同一画面里，是本段最完整的“演员已存在于关卡且已被序列器控制”的示例。它同时展示了角色动画片段、叠加动画片段、权重轨和 `Spawned/Transform` 轨道。
+
+当前图中可直接确认的 `Sequencer` 结构：
+
+```text
+Track Hierarchy
+- Phase GDC
+  - Animation
+    - Animation
+      - clip = Ability_E
+      - Weight = 1.0
+    - Animation
+      - clip = Ability_E_Additive
+      - Weight = 1.0
+  - Spawned = true
+  - Transform
+    - Location
+```
+
+```text
+Timeline
+- 当前播放头在 0027 附近
+- Ability_E 片段先开始
+- Ability_E_Additive 在后方叠加进入
+- Spawned 与 Transform 区段条继续覆盖更大的时间范围
+```
+
+当前场景与对象状态：
+- 视口中 `Phase GDC` 角色被选中，带黄色描边与变换 gizmo
+- 右侧 `Details` 面板当前对象也是 `Phase GDC (Instance)`
+- `Details -> Transform` 可见：
+  - Location = (0.0, 0.0, 0.0)
+  - Rotation = (0.0, 0.0, 0.0)
+  - Scale = (1.0, 1.0, 1.0)
+- `Details -> Animation Mode = Use Custom Mode`
+
+输出/预览：
+- 这一步说明 Sequencer 不仅能驱动一个基础动画片段，还能叠加第二个动画片段并通过 `Weight` 控制混合
+- 复现时如果角色动作需要“主动作 + 叠加修正”这种组合，就可以像当前图这样在同一演员轨道下放多个动画片段，并配合权重轨控制表现
+
+### 00:09:21-00:13:55 Decal、材质、网格
+
+- 本段定位：Decal、材质、网格。
+- 知识点：在现在这样移动后, 可以拿个和这个动作比较的不同。
+- 知识点：但是这个等待值, 这个动画剪辑, 可以设置剪辑的比重。
+- 知识点：这里是0的时候, 这里的等待值是0。
+- 知识点：这个不播放, 更高等待值的动画剪辑, 可观察到播放。
+- 知识点：这样自然地混合有点难, 瞬间完成停止的话, 会是更好的表达。
+- 知识点：这个反过来, 当你给见值, 那么混合会更自然。
+- 知识点：还有大部分这种动画片段是跑动作, 或者这种东西在这种位置上, 有在原地跑的动作。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Decal`、`材质`、`纹理`。
+
+**关键画面：**
+
+这是一个在 `Sequencer` 中调整角色动画衔接的示例画面。场景里选中的是 `Phase GDC` 对应的角色 Skeletal Mesh，右侧 `Details -> Animation` 显示 `Animation Mode = Use Custom Mode`，`Transform` 仍是默认值：`Location = (0,0,0)`、`Rotation = (0,0,0)`、`Scale = (1,1,1)`。
+
+时间轴当前停在约 `0043` 帧。`Phase GDC` 下已经铺了两段动画轨：
+
+- 第一段 `Animation` 的片段名为 `Ability_E`，放在较前的位置，作为主体动作。
+- 第二段 `Animation` 的片段名为 `Ability_E_Additive`，放在后半段并与前一段形成重叠，用于做额外姿态修正或过渡叠加。
+- 两段动画轨下都能看到 `Weight 1.0`，说明这里通过动画片段权重来控制混合。
+- 轨道列表中 `Spawned` 已勾选，角色在该序列内作为可生成对象参与播放。
+
+这张图的关键意思是：在 `Decal / 材质 / 网格` 这段演示开始前，作者先在 Sequencer 里把基础动作 `Ability_E` 和叠加动作 `Ability_E_Additive` 错开并部分重叠，用片段长度和权重来观察动画混合是否自然。
+这张图继续展示 `Phase GDC` 的动画片段混合，但播放头已经移到更靠前的位置，约在 `0010` 帧，用来观察动作刚进入重叠区时的效果。
+
+- 角色对象仍是 `Phase GDC`，右侧 `Details` 中 `Animation Mode = Use Custom Mode` 未变，`Transform` 仍保持默认值。
+- 时间轴上能看到两段 `Animation` 片段前后错开：上方较短的一段从序列开头开始，下面较长的一段从稍后位置接入，并与前一段形成一小段重叠。
+- `Spawned` 轨道已启用，`Transform -> Location` 轨道展开但还没有录入明显位移关键帧，说明这里重点不是移动角色，而是比较两段动画本身的衔接观感。
+- 画面中的角色站姿已经进入抬臂、转身过渡状态，配合教程正文可理解为：作者在用不同的进入时机和重叠长度，测试是否会把角色表现得像“原地跑动”或更自然地切入下一段动作。
+
+这张图强调的不是材质节点，而是 `Sequencer` 里动画剪辑的起止位置与重叠区长度。调整这两个片段的接续关系，会直接影响动作切换时是生硬停住，还是出现较自然的混合过渡。
+这张图展示的是：除了动画片段本身，`Sequencer` 还可以直接驱动角色组件上的布尔属性，用来配合 `Decal` 或材质表现做开关控制。
+
+- 当前对象仍是 `Phase GDC`，`Sequencer` 中展开的是其 `SkeletalMeshComponent0`。
+- 在组件轨道下新增了一条属性轨，名称为 `Receives Decals`，说明作者把“是否接收 Decal”这个选项暴露到了时间轴里。
+- 播放头位于约 `0042` 帧，下面仍能看到两段动画片段：前一段是 `Ability_E`，后一段是 `Ability_A`，它们继续用于角色动作衔接。
+- 右侧 `Details` 面板搜索了 `rec`，定位到组件属性 `Receives Decals`；该复选框当前为勾选状态，对应时间轴中这条属性轨可以被关键帧控制。
+- 场景地面上已经能看到一块较亮的矩形投射区域，表示作者正在把角色、地面 Decal 和序列控制结合起来检查最终效果。
+
+这一步的实际操作含义是：如果某个阶段需要角色或网格暂时不吃地面投射贴花，可以把 `Receives Decals` 加到 `Sequencer`，在指定时间点打关键帧切换开关；这样就能和动画节奏同步控制 Decal 是否生效。
+
+### 00:13:55-00:16:29 材质、颜色
+
+- 本段定位：材质、颜色。
+- 知识点：除了这里, 我们从这里过来看看, 那有夹克标题的材质拿来了。
+- 知识点：果然这里是夹克, 是的,似乎是这个材质导入使用的。
+- 知识点：再按下加号标记, 这里材料现在缺少的参数, 部分可以这样全部获取。
+- 知识点：我们试着获取这些部分, 打开这里这个数值就会出来, 这个数值。
+- 知识点：现在这个角色材料变得非常复杂, 这个参数可能现在不工作, 所以这个角色可能就不能直接完成, 模式和这个建筑的孔。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`序列`、`颜色`。
+
+**关键画面：**
+
+这张图展示的是：在 `Sequencer` 里给角色网格组件添加“按材质槽控制”的轨道，让后续可以直接在时间轴上切换某个材质槽的材质或材质参数。
+
+- 当前对象是 `Phase GDC -> SkeletalMeshComponent0`。
+- 该组件下已经存在 `Receives Decals`、多条 `Animation`、`Spawned` 与 `Transform` 轨道，作者此时继续通过轨道右侧加号给组件增加新的可控项。
+- 弹出的可添加列表位于 `AnimSequencerInstance` 分类下，当前高亮的是 `Slot: m01_jacket_tights`。
+- 鼠标提示明确显示：`Add material slot m01_jacket_tights, index 0`，说明这里要把名为 `m01_jacket_tights` 的材质槽作为可控制轨道加入 Sequencer。
+- 下方还能看到同类条目，例如 `m00_body_head`、`m07_leather_shoes`、`m02_skirt_shoe`、`m03_backpack_purse` 等，表示这个角色网格的多个材质槽都可以被单独暴露出来做时序控制。
+
+这一步的关键操作是：先在 `SkeletalMeshComponent0` 上选择具体的材质槽轨道，再把需要变化的角色材质槽加入 `Sequencer`，为后面的颜色、材质切换或参数控制做准备。
+这张图展示的是：把 `m01_jacket_tights` 材质槽加入 Sequencer 后，继续向下展开到具体参数，并直接给参数打关键帧。
+
+- `Phase GDC -> SkeletalMeshComponent0` 下已经新增 `Material Slot: m01_jacket_tights` 轨道。
+- 该材质槽轨道再向下展开后，当前显示一个可动画化参数 `BrightnessAdjust`。
+- `BrightnessAdjust` 当前数值约为 `67.115682`，并且在播放头所在位置已经出现一个粉色关键帧，说明这个亮度参数正在被 Sequencer 驱动。
+- 时间轴停在约 `0045` 帧；下方仍保留 `Ability_E` 与 `Ability_A` 两段动画轨，表示材质参数变化与角色动作同步进行。
+- 右侧 `Details -> Materials` 可见多个材质实例槽位，当前操作目标是角色服装相关的材质实例，而不是直接修改全局材质球。
+
+这一步的实际做法是：在材质槽轨道下继续暴露出需要控制的材质实例参数，例如亮度、颜色或开关值，然后在关键时间点打关键帧，让角色局部材质效果跟着序列播放发生变化。
+这张图说明：不仅单个浮点参数可以上 Sequencer，材质里的颜色向量参数也可以拆成通道逐项控制。
+
+- 当前仍在 `Phase GDC -> SkeletalMeshComponent0 -> Material Slot: m01_jacket_tights` 下操作。
+- 材质轨道里展开的是颜色参数 `Fabric_Color_A`。
+- 该颜色参数已拆成四个子通道并显示当前值：
+  - `R = 0.1`
+  - `G = 0.078975`
+  - `B = 0.195`
+  - `A = 1.0`
+- 时间轴上可以看到与这些子通道对应的多个粉色关键帧，说明颜色不是静态写死，而是在序列播放过程中按关键帧变化。
+- 播放头位于约 `0052` 帧；下方的 `Ability_E`、`Ability_A` 动画轨仍在，用于和材质颜色变化同步。
+
+这一步表达的重点是：把角色服装材质中的向量颜色参数暴露到 `Sequencer` 后，就可以按 `R/G/B/A` 分量分别打关键帧，从而在特定镜头时间点精确控制服装区域的发光色、染色或透明度变化。
+
+### 00:16:34-00:21:30 Niagara、System、UV
+
+- 本段定位：Niagara、System、UV。
+- 知识点：给提供K值后, 在45点时想关闭生成, 这里角色消失, 这种演出也是可能的。
+- 知识点：几乎所有部分都可以控制, 所以制作小演出时, 使用序列工具限制会越来越少。
+- 知识点：可以制作与游戏无关的内容, 视频也因此更轻松。
+- 知识点：接下来最重要的是我们 确实用了很多关于粒子的部分。
+- 知识点：粒子需要给你一个粒子。
+- 知识点：需要拿在第二部分制作的这个粒子, 作为一个粒子。
+- 知识点：视频内存不够了, 似乎纹理没能正确读取。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Niagara`、`纹理`、`粒子`、`系统`、`序列`。
+
+**关键画面：**
+
+这张图展示的是一个重新整理后的 `Sequencer` 基础状态，用来说明后续不只是材质参数，连对象本身的显隐、生成与变换也都可以打关键帧控制。
+
+- 当前序列对象仍是 `Phase GDC`。
+- 展开的子对象是 `SkeletalMeshComponent0`，其下只保留了最核心的控制轨道：`Animation`、`Spawned`、`Transform`。
+- 播放头位于约 `0015` 帧；时间轴上已经能看到一条较长的动画片段覆盖前半段时长。
+- `Spawned` 轨道处于启用状态，表示该对象在序列播放期间会被生成并参与显示。
+- `Transform` 轨道已挂到时间轴上，但当前未展开到具体通道，说明这里是在强调“位置/旋转/缩放都能继续做关键帧控制”的基础能力。
+- 右侧 `Details -> Materials` 仍能看到该角色的多个材质实例槽位，说明前一段的材质控制并未丢失，只是当前画面把焦点切回到序列对象级控制。
+
+这一步的核心意思是：在 Sequencer 中，角色组件既可以控制动画与材质，也可以同步控制 `Spawned` 和 `Transform` 这类基础属性；后续接入 Niagara 或粒子资源时，也会使用同样的关键帧思路。
+这张图展示的是：粒子或 Niagara 效果已经被放进当前镜头场景，作者开始在 Sequencer 中配合角色动作预览整体效果。
+
+- 场景中央的角色脚下出现一圈发光魔法阵 Decal/贴花图案，角色周围还有一个半球形的能量罩效果，说明此时已经接入了外部特效资源，而不是只看角色本身。
+- `Outliner` 中可以看到一个名称以 `Ex 02 Magi...` 开头的对象，类型列显示为 `Niagara...`，可确认当前场景里已经存在 Niagara 相关效果对象。
+- 序列仍是 `NewLevelSequence`，播放头位于约 `0031` 帧，底部时间轴上同时保留了多条轨道，表示角色和效果是在同一条序列里联动预览。
+- 右侧 `Details` 当前选中的是 `Floor` 的 `StaticMeshComponent0`，`Materials` 下可见 `Element 0` 绑定了一个材质实例，说明地面发光图案是通过地面材质或贴花配合表现出来的。
+- 字幕可确认作者此处在讲 `Particle` 的 `AutoActive`，即选择粒子对象后，可通过自动激活属性决定它进入场景时是否立即播放。
+
+这张图的操作重点是：先把 Niagara/粒子效果放进场景和 Sequencer 里，与角色动作一起预览；如果希望效果一出现就自动播放，需要检查对应粒子对象的 `AutoActive` 一类激活开关。
+这张图展示的是：Niagara 特效对象已经被明确加入 `Sequencer`，并且和角色轨道一起接受时间轴控制。
+
+- `Sequencer` 左侧可以清楚看到一个特效对象，名称为 `Ex 02 Magic Shield`。
+- 该对象下展开了 `NiagaraComponent0`，并挂有一条 `FX System` 轨道；其当前下拉值可见为 `Deactivate`，说明这里可以在时间轴上直接控制特效系统的激活/停用状态。
+- 同一个特效对象下还有 `Spawned` 与 `Transform` 轨道，表示该 Niagara 效果不仅能控制播放状态，也能控制是否生成以及位置变换。
+- 在 `Ex 02 Magic Shield` 下方还能看到另一个条目 `New Niagara System 8`，它同样带有 `Spawned` 和 `Transform` 轨道，说明作者可能同时放入了多个特效对象进行组合。
+- 角色对象 `Phase GDC` 仍保留在序列中，下面依然有 `SkeletalMeshComponent0`、`Animation`、`Spawned`、`Transform` 等轨道，表明角色与特效是并列编排在同一序列里的。
+- 播放头位于约 `0070` 帧；特效对象的主片段大致覆盖从序列开头到中段的位置，说明这一段时间内会参与镜头演出。
+
+这一步的实操含义是：把 Niagara Actor 或其组件拖进 `Sequencer` 后，要至少挂上 `FX System`、`Spawned`、`Transform` 这些基础轨道。这样就能在指定时间点控制特效何时激活、何时隐藏，以及它跟随镜头或角色移动到哪里。
+
+### 00:21:30-00:26:19 粒子、系统、网格
+
+- 本段定位：粒子、系统、网格。
+- 知识点：给生成的箭也可以这样构成。
+- 知识点：在这个区间不生成。
+- 知识点：生成的同时就会立即激活。
+- 知识点：就是现在给你一个小提示。
+- 知识点：尼尔加拉系统生命周期轨迹。
+- 知识点：如果用tick delta time的话。
+- 知识点：有些粒子需要不断贴在这个角色身上移动。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`系统`、`生命周期`。
+
+**关键画面：**
+
+这张图展示的是：两个 Niagara 特效对象已经被并列编入同一个 `Sequencer`，并通过各自的 `FX System` 轨道控制生命周期行为。
+
+- 序列左侧可见两个特效对象：`Ex 02 Magic Shield` 和 `New Niagara System 8`。
+- 两个对象都展开到了 `NiagaraComponent0`，并各自挂有 `FX System`、`Spawned`、`Transform` 轨道。
+- `Ex 02 Magic Shield` 的 `FX System` 当前下拉值为 `Activate`，表示该特效会在对应时间段被明确激活。
+- `New Niagara System 8` 的 `FX System` 当前下拉值为 `Trigger`，说明这个系统更像一次性触发型效果，可在指定时间点触发播放。
+- 两个系统的 `Spawned` 都已勾选，说明它们都被纳入序列生成与显示控制。
+- 角色对象 `Phase GDC` 仍保留在下方，并继续带有 `SkeletalMeshComponent0`、`Animation`、`Spawned`、`Transform` 轨道，用于和特效做同步演出。
+- 播放头位于约 `0030` 帧，顶部能看到一段覆盖中前段时间的主片段区间，说明至少其中一个特效在这一时间范围内处于活动窗口。
+
+这一步的关键用法是：不同 Niagara 系统可以在 `Sequencer` 里使用不同的生命周期控制方式。持续型效果更适合 `Activate/Deactivate`，瞬发型效果更适合 `Trigger`，两者都可以和角色动画共用一条时间线。
+这张图展示的是：对于 `New Niagara System 8`，作者不再只用简单的 `Trigger`，而是改为使用 `System Life Cycle` 轨道按时间段精确驱动系统生命周期。
+
+- 当前关注对象是 `New Niagara System 8 -> NiagaraComponent0`。
+- 在该组件下新增了一条 `System Life Cycle` 轨道，其模式显示为 `Tick Delta Time`。
+- 时间轴中这条轨道表现为一条红色的 `Life Cycle` 区间条，覆盖了从当前播放头附近一直延伸到后面的一段时长，说明这个 Niagara 系统会在这段区间内按序列时间持续推进。
+- 同一对象下仍保留 `Spawned` 与 `Transform` 轨道，因此系统的存在状态、生命周期推进和空间位置是分开控制的。
+- 右侧 `Details` 当前选中的仍是 `New Niagara System 8`，其 `Transform` 数值可见为：`Location = (0, 0, 220)`、`Rotation = (0,0,0)`、`Scale = (1,1,1)`，说明这个特效被抬高到了角色上方，而不是放在地面原点。
+- 下方角色 `Phase GDC` 轨道仍在同一序列里，说明这个悬浮特效会和角色动作同步播放。
+
+这一步的实操意义是：当某个 Niagara 效果需要严格按序列时间推进，而不是单次触发后自己跑完，就可以给它添加 `System Life Cycle` 轨道，并使用 `Tick Delta Time` 这类模式让系统随 Sequencer 时间前进。
+这张图展示的是：为了让粒子跟着角色身体部位移动，作者在 Niagara 对象上继续加入了 `Attach` 轨道，并把它绑定到角色骨骼。
+
+- 当前对象仍是 `New Niagara System 8 -> NiagaraComponent0`。
+- 在 `System Life Cycle` 下面新增了一条 `Attach` 轨道。
+- 时间轴中的附着片段文字可见为 `Phase GDC (FX_Hand_L1)`，说明这个 Niagara 系统被附着到 `Phase GDC` 角色上的一个左手相关骨骼/插槽。
+- `System Life Cycle` 的模式此时显示为 `Desired Age`，不再是上一张图里的 `Tick Delta Time`，表示作者在比较或改用另一种由序列直接指定系统年龄的推进方式。
+- 红色 `Life Cycle` 区间条仍覆盖一段明确时长，说明特效的播放窗口依然由 Sequencer 控制。
+- 该对象下仍保留 `Spawned` 与 `Transform` 轨道，右侧 `Details` 中 `Location = (0, 0, 220)` 依然可见，说明附着之外还可能叠加了偏移量。
+- 下方 `Phase GDC` 角色轨道继续存在，因此当前设置的目标就是让这个 Niagara 效果在角色动作过程中稳定跟随左手部位。
+
+这一步的实际用途是：如果某个粒子必须持续贴在角色手部、武器或身体局部上移动，就要在 Niagara 对象上添加 `Attach`，把它绑定到目标角色和对应骨骼/Socket；再结合 `Life Cycle` 轨道决定它在序列中的具体播放时段。
+
+### 00:26:19-00:31:18 局部空间
+
+- 本段定位：局部空间。
+- 知识点：如果这样拖动填充的话。
+- 知识点：从开始就会出现在这里。
+- 知识点：这个类别现在是爆炸形态。
+- 知识点：但是如果想让这个移动本身跟随手的话。
+- 知识点：但是这种事情在这个世界中会偶尔发生。
+- 知识点：就会有可以附加和不可以附加的东西。
+- 知识点：这种区别就是看上去自然还是不自然。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`局部空间`。
+
+**关键画面：**
+
+这张图展示的是：当 Niagara 效果通过 `Attach` 绑定到角色手部后，作者开始在场景里直接观察“跟随手移动”是否自然。
+
+- 场景视图里角色正处于前倾动作，左手附近可以看到一小团金色粒子/碎光效果，说明这个系统已经实际附着到角色身体局部，而不再是悬浮在固定世界位置。
+- `Sequencer` 左侧仍保留两个特效对象：`Ex 02 Magic Shield` 与 `New Niagara System 8`。
+- 当前重点对象是 `New Niagara System 8 -> NiagaraComponent0`，其下同时存在 `System Life Cycle`、`Attach`、`Spawned`、`Transform` 轨道。
+- `System Life Cycle` 的模式为 `Desired Age`，红色 `Life Cycle` 区间条仍在活动时段内。
+- `Attach` 片段文字仍可见为 `Phase GDC (FX_Hand_L1)`，可确认附着目标还是角色左手相关骨骼/插槽。
+- 右侧 `Details` 中该对象的 `Transform` 当前值显示为 `Location = (0,0,0)`、`Rotation = (0,0,0)`、`Scale = (1,1,1)`，说明这里更强调依赖附着关系本身，而不是额外手动偏移。
+
+这张图的关键意思是：要让粒子自然跟着角色手部运动，不能只把系统放到手附近的世界坐标，还要通过 `Attach` 绑定到对应骨骼，并结合 `Desired Age` 或其他生命周期方式让它在正确的时间段播放。
+这张图把“局部空间/附着跟随”阶段的时间轴结构展示得更完整，重点是 Niagara 系统在 Sequencer 里同时受多类轨道约束。
+
+- `Ex 02 Magic Shield` 这一路的 `FX System` 当前值为 `Deactivate`，说明此时护盾类效果已被安排在这个时间点关闭。
+- `New Niagara System 8 -> NiagaraComponent0` 下面同时存在：
+  - `System Life Cycle`，模式为 `Desired Age`
+  - `Attach`
+  - `Spawned`
+  - `Transform`
+- `Attach` 片段仍显示 `Phase GDC (FX_Hand_L1)`，说明附着目标没有变化，仍然跟随角色左手。
+- `Transform` 已展开到 `Location / Rotation / Scale` 三个分组，表示附着后仍然允许继续给局部偏移、旋转和缩放做关键帧。
+- 角色 `Phase GDC` 下方还能看到两段动画片段 `Ability_E`、`Ability_Q`，说明手部粒子附着效果需要和角色动作切换一起校准。
+- 播放头位于约 `0062` 帧，红色 `Life Cycle` 区间条与附着片段有明确重叠，表示系统只会在附着有效且生命周期开启的时段内跟随播放。
+
+这张图传达的操作重点是：让粒子“自然跟着手走”并不是只加一个附着就结束，还要同时考虑 `Life Cycle` 的生效区间，以及附着后的局部 `Transform` 是否需要继续微调，否则在动作切换时仍可能出现看起来不自然的偏移。
+这张图说明：在确认粒子附着和局部空间行为后，作者开始把镜头也纳入 `Sequencer`，让角色、特效和相机一起进入正式演出编排。
+
+- 时间轴顶部新增了 `Camera Cuts` 轨道，说明当前序列已经开始使用镜头切换。
+- 新加入的对象是 `Cine Camera Actor`，其下展开了 `CameraComponent`，并暴露出多个可动画参数：
+  - `Current Aperture = 2.8`
+  - `Current Focal Length = 35.0`
+  - `Manual Focus Distance = 100000.0`
+- `Cine Camera Actor` 还带有 `Spawned` 和 `Transform` 轨道，并且 `Transform` 下已经打了多组关键帧，说明相机位置或旋转正在被直接动画化。
+- 顶部小预览条中已经能看到多个镜头缩略图片段，表示该相机在不同时间点会拍到角色的不同构图。
+- 下方原有特效轨道仍保留，包括 `Ex 02 Magic Shield` 的 `FX System = Activate`，以及 `New Niagara System 8` 的 `System Life Cycle = Desired Age` 和红色 `Life Cycle` 区间条，说明镜头编排是在既有角色/特效时间线基础上叠加完成的。
+- 右侧 `Details` 当前显示的是 `Camera Actor` 组件信息，可见该相机对象已被正式选中并可继续调参。
+
+这一步的核心意义是：局部空间和附着问题解决后，下一步就是把 `Cine Camera Actor` 放进 `Sequencer`，同时给相机的 `Transform`、焦距、光圈和对焦距离打关键帧，这样角色动作、Niagara 特效和镜头语言才能在同一序列里统一调度。
+
+### 00:31:20-00:35:56 后期处理
+
+- 本段定位：后期处理。
+- 知识点：摄像机看到的场景。
+- 知识点：现在反正摄像机只有一个。
+- 知识点：现在在看相同的视角。
+- 知识点：根据现在看的视角。
+- 知识点：最初创建师会看到那个视角。
+- 知识点：现在打开2号相机。
+- 知识点：我们来拍一下后面。
+- 核对对象：`序列`。
+
+**关键画面：**
+
+这张图展示的是：当前序列里实际上只启用了一个镜头段，作者开始围绕这个单相机视角来检查画面。
+
+- 顶部 `Camera Cuts` 轨道已经建立，但当前时间范围内只对应一段相机片段，说明目前镜头还没有切到第二个相机。
+- 当前相机对象是 `Cine Camera Actor`，其下展开 `CameraComponent`，可见：
+  - `Current Aperture = 2.8`
+  - `Current Focal Length = 35.0`
+  - `Manual Focus Distance = 100000.0`
+- `Spawned` 已启用，`Transform` 下也已经有多组关键帧，表示这个唯一相机的机位动画已经在做。
+- 顶部的小预览缩略图连续显示同一角色画面，符合“现在反正相机只有一个”的说明，即当前看到的都是同一个相机视角。
+- 下方仍然并列保留特效轨道：`Ex 02 Magic Shield -> FX System = Activate`，以及 `New Niagara System 8 -> System Life Cycle = Desired Age` 的红色 `Life Cycle` 条，说明镜头检查是在完整演出时间线上进行的。
+
+这一步的重点是：先确认当前 `Camera Cuts` 里到底由几个相机接管画面。如果只有一个相机，就先把这个主镜头的构图、机位和时间对齐调顺，再去增加第二个或更多镜头切换。
+这张图展示的是：作者准备让相机自动盯住目标，因此在 `Cine Camera Actor` 上添加 `Lookat Tracking Settings` 轨道。
+
+- 当前选中的对象仍是 `Cine Camera Actor`。
+- 在该对象的加轨菜单中，已展开 `Current Settings`，并高亮 `Lookat Tracking Settings -> LookAt`，说明要把相机的注视跟踪设置加入 `Sequencer`。
+- 左侧已有的轨道包括 `Camera Cuts`、`Cine Camera Actor`、`CameraComponent`，以及相机参数 `Current Aperture`、`Current Focal Length`、`Manual Focus Distance`，说明此时是在现有相机控制基础上继续加注视逻辑。
+- 顶部镜头缩略图已经出现多个连续画面片段，表示这个相机正在承担一个更长的镜头段。
+- 右侧 `Details` 可见当前相机 `Transform` 数值大致为：
+  - `Location = (172.8, 480.1, 270.0)`
+  - `Rotation = (0.0, 118.4, -9.7)`
+  - `Scale = (1,1,1)`
+- 右侧还可见 `Lookat Tracking Settings` 分组标题，说明相机本身支持直接在属性层面配置注视目标，与时间轴里的新增轨道相对应。
+
+这一步的实操含义是：如果希望镜头在角色移动或演出过程中始终盯住某个主体，就应给 `Cine Camera Actor` 添加 `Lookat Tracking Settings` 相关轨道，再指定目标对象或目标点，而不是完全手动去补每一帧旋转关键帧。
+这张图展示的是：镜头与序列基本调好后，作者开始进入输出阶段，打开 `Render Movie Settings` 检查渲染导出参数。
+
+- 弹出的窗口是 `Render Movie Settings`。
+- 在 `Capture Settings` 中，`Image Output Format` 当前选择为 `Video Sequence (avi)`。
+- 下拉列表里还能看到其他可选输出类型，包括：
+  - `Custom Render Passes`
+  - `Image Sequence (bmp)`
+  - `Image Sequence (exr)`
+  - `Image Sequence (jpg)`
+  - `Image Sequence (png)`
+  - `Video Sequence (avi)`
+- `Video Settings` 区域里可见 `Use Compression` 已勾选，`Compression Quality` 约为 `75.0`。
+- `General` 区域中能看到 `Output Directory` 和 `Filename Format` 配置项，说明此处可以直接指定导出路径与命名格式。
+- `Cinematic` 区域可见 `Cinematic Engine Scalability` 与 `Cinematic Mode` 被启用，表示渲染时会使用偏电影化的质量与模式设置。
+- 底部序列仍然可见，字幕也明确提到“帧率设为 30”，因此可以确认作者在按 `30 fps` 的时间基准进行当前镜头制作与输出检查。
+
+这一步的实际用途是：完成 Sequencer 编排后，在 `Render Movie Settings` 中确认输出格式、压缩、输出目录和电影模式等参数；如果项目是按 `30 fps` 制作，导出设置也应保持同样的帧率基准，避免镜头节奏和特效生命周期出现偏差。
+
+### 00:35:56-00:39:03 渲染器
+
+- 本段定位：渲染器。
+- 知识点：也可以提取成视频。
+- 知识点：不过最近也是什么。
+- 知识点：录屏软件也要单独使用。
+- 知识点：这种质量真的好多了。
+- 知识点：现在是制作视频内容的时代。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 核对对象：`渲染器`。
+
+**关键画面：**
+
+这张图展示的是：作者继续细看 `Render Movie Settings`，这次把输出帧率和分辨率等核心参数完整展开出来。
+
+- `Image Output Format = Video Sequence (avi)`。
+- `Audio Output Format = No Audio`，说明当前导出只输出视频，不包含音频轨。
+- `Use Custom Frame Rate` 已勾选，`Custom Frame Rate = 30 fps`。
+- `Resolution = 1280 x 720 (16:9)`，说明当前演示采用的是标准 720p 横屏输出。
+- `Use Compression` 已勾选，`Compression Quality = 75.0`。
+- `Output Directory` 指向项目下 `Saved\VideoCaptures` 之类的默认输出目录，`Filename Format` 也可在此定义。
+- `Cinematic Engine Scalability` 与 `Cinematic Mode` 仍为启用状态，说明导出时会沿用电影级质量设置。
+- 右下仍能看到 `Sequencer` 时间轴和镜头缩略图，说明这些渲染参数是直接针对当前这条序列的镜头输出而设定的。
+
+这一步的实操意义是：在正式导出前，应先明确输出格式、是否带音频、自定义帧率和分辨率。若当前序列按 `30 fps` 制作，就应在这里保持 `30 fps`，否则镜头节奏和 Niagara 生命周期可能与预览不一致。
+这张图继续展示 `Render Movie Settings`，但同时也能看出当前序列已经不止一个相机轨道，导出设置需要覆盖完整镜头切换结果。
+
+- `Render Movie Settings` 里的核心参数与上一张一致：
+  - `Image Output Format = Video Sequence (avi)`
+  - `Audio Output Format = No Audio`
+  - `Use Custom Frame Rate = On`
+  - `Custom Frame Rate = 30 fps`
+  - `Resolution = 1280 x 720 (16:9)`
+  - `Use Compression = On`
+  - `Compression Quality = 75.0`
+- 左侧 `Sequencer` 已经能看到两个 `Cine Camera Actor` 相关条目，说明序列中存在多相机或复制出的相机轨，后续导出将以 `Camera Cuts` 的切换结果为准。
+- 顶部镜头缩略图里也能看到不同角色姿态的连续片段，说明当前输出不是单帧截图，而是针对完整镜头段的视频渲染。
+- 底部仍可见角色/特效/相机关键帧轨道，表示渲染窗口只是读取当前序列状态，不会脱离 Sequencer 单独工作。
+- 字幕提到“Movie Render Queue 插件”，结合画面可推断作者在对比或说明使用内置渲染输出与更专业渲染管线时的质量差异。
+
+这张图的重点是：当序列里已经有多个相机轨或多个镜头段时，导出前要确保 `Camera Cuts`、帧率和分辨率都已经稳定，否则最终视频会把所有时间轴问题一起固化到输出文件里。
+这张图展示的是：在完成渲染设置讲解后，作者回到场景视图，对当前镜头最终会拍到的角色与附着效果做一次收尾预览。
+
+- 画面中央是角色近景，姿态为双臂展开，说明当前镜头已经切到更靠近角色主体的取景。
+- 角色右侧附近仍能看到一个被选中的附着/特效对象，带有世界坐标 gizmo，说明前面加入的 Niagara 或附着对象依然留在当前镜头构图里。
+- 右下角出现一个小的 `Cine Camera Actor` 预览窗，这表示用户正在通过相机预览确认最终取景，而不是只看编辑器透视视图。
+- 下方 `Sequencer` 仍停在约 `0044` 帧，`Manual Focus Distance = 100000.0`、`Spawned` 等相机相关轨道依旧可见，说明当前镜头预览仍然建立在前面设置好的相机轨和时间点上。
+- 右侧 `Details` 选中的对象仍属于 `Cine Camera Actor` 体系，因此这张图的关注点是镜头结果，而不是粒子模块或材质节点本身。
+- 字幕内容是收尾性质的表述，可理解为该段 Sequencer、相机与输出设置的演示到这里告一段落。
+
+这一步的意义是：在真正导出前，最好回到相机预览里再检查一次角色、附着特效和镜头构图是否符合预期，确认时间点、焦点与画面占比没有问题，再执行最终渲染输出。
+
+## 补充视觉证据
+
+### S02 00:06:04
+
+这是 `S02 00:06:04` 的补充参数截图，用来明确说明角色对象在早期 Sequencer 设置阶段的基础通道状态。
+
+- 当前对象是 `Phase GDC`。
+- 左侧 `Sequencer` 中，`Phase GDC` 下已经包含三类基础轨道：`Animation`、`Spawned`、`Transform`。
+- `Spawned` 已勾选，说明该角色对象会在序列中被生成并参与播放。
+- `Transform` 已展开，可见三组基础分量：
+  - `Location`
+  - `Rotation`
+  - `Scale`
+- `Rotation` 下进一步展开了欧拉角子通道，当前可见：
+  - `Roll = -0.0`
+  - `Pitch = 0.0`
+  - `Yaw = 0.0`
+- 右侧 `Details -> Transform` 显示对象当前默认值：
+  - `Location = (0,0,0)`
+  - `Rotation = (0,0,0)`
+  - `Scale = (1,1,1)`
+- 右侧 `Animation` 区域还能确认当前 `Animation Mode = Use Animation Blueprint`，说明此时角色仍按动画蓝图模式驱动，而不是后面某些镜头里切换到自定义模式。
+- 播放头位于约 `0015` 帧，图中没有明显的位移或旋转关键帧，重点是说明这些基础参数可以直接在 Sequencer 中映射和控制。
+
+这张补充图的作用是补证：在开始更复杂的动画混合、材质控制或 Niagara 绑定之前，`Phase GDC` 这个角色对象本身已经具备可被 Sequencer 直接控制的 `Spawned` 与 `Transform` 基础通道，且默认姿态参数保持在原点和单位缩放状态。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+

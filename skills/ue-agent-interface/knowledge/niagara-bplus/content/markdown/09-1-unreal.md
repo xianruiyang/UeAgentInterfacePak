@@ -1,0 +1,507 @@
+# 09-1.Unreal场景破坏特效制作
+
+# 09-1.Unreal场景破坏特效制作
+
+## 关键术语
+
+- `Color`、`UV`、`Add`、`Normal`、`Sequencer`、`Static Mesh`、`Houdini`、`PS`、`Smoke`、`Mesh`、`Niagara`、`Emitter`、`Spawn Rate`、`Spawn`、`Lifetime`、`Normalized Age`、`Niagara System`、`Particle`
+
+## 分段知识
+
+### 00:00:05-00:04:46 UV、Houdini、材质
+
+- 本段定位：UV、Houdini、材质。
+- 知识点：大家好啊,屏幕前的朋友们大家好,这次我们来动手实践第一次入门级的Unreal操作 这次课有点学习素材要分享,毕竟是第一次做数量可能有点多。
+- 知识点：这部分呢之前我们已经讲过了,这些材质都已提前制作好为避免重复演示,我们已一并准备好 可以直接使用,材质方面这里。
+- 知识点：复制后,在文件夹试图中 进入Windows文件夹试图找到你的项目路径,我已提前建好文件夹并放好资源 直接粘贴进去就行 资源会直接导入。
+- 知识点：若文里的虚拟文里流失传输已开启请先关闭再全部保存 全部保存就完成了,接下来处理材质。
+- 知识点：我觉得需要导入的是FAT资源 得先导入我们从FBX静态网格体开始导入时请勾选以下选项 顶点颜色设为替换。
+- 知识点：已简单演示过所以请务必确认插件已安装且已勾选SideFX Labs选项 确认无误后接下来是导入文里就按这种方式导入 因为是纯白色所以颜色贴图不导入也没关系。
+- 知识点：这次我们不用颜色贴图 因为我们之前用的就是雕像类资源看 这里设置网格本身就已经带贴图了 连发线都用了这些贴图一起用上 所以颜色贴图这种东西根本没必要再导入完全不用管它。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Houdini`、`材质`、`贴图`、`颜色`、`碰撞`。
+
+**关键画面：**
+
+这一步在 Unreal 工程里确认本节要用到的基础素材目录和场景基底。左侧内容浏览器当前定位在 `Content/Signature/Course_07/Ex_01/Texture`，画面中能直接看到本节已准备好的贴图资源，例如：
+
+- `Arial_Ex...`
+- `Normal_Roc...`
+- `Smoke_Flat_01`
+- `T_Concrete...`
+- `T_StretchSpa...`
+- `Tile_03`
+
+右侧 `Details` 面板当前选中的是场景地面静态网格实例 `SM_Nordic_Beach_Rocky_Ground_...`，说明作者此时正在以现成的 Dark Ruins 场景地表作为本次破坏特效的承载地形。结合正文“这次课有点学习素材要分享”“资源已提前建好文件夹并放好，直接粘贴进去即可导入”的说明，这张图的核心是让读者先把课程配套贴图和网格资源放到统一目录里，并确认场景中已有可用于放置雕像破坏效果的地面区域。
+这一步把内容浏览器切到 `Content/Signature/Course_07/Mesh/Ex_01`，开始准备本节要放入场景的主网格资源。当前这个文件夹里还没有任何内容，浏览器中央直接显示“Drop files here or right click to create content”，说明作者此时是在提醒读者：需要把前面从 Houdini/FBX 准备好的雕像或相关静态网格先放到这个专用网格目录中。
+
+右侧仍然选中场景地面静态网格实例 `SM_Nordic_Beach_Rocky_Ground_...`，表示本节操作还没有开始放置雕像，只是在确认素材放置路径和场景落点。结合正文“复制后进入 Windows 文件夹视图找到项目路径，直接粘贴进去即可”的说明，这张图的重点是为后续网格导入做目录准备，而不是开始处理材质参数本身。
+这一步同时对照了项目外部素材目录和 Unreal 工程内的已导入结果。中央的 Windows 文件夹窗口位于课程资料 `09` 目录，能看到本节素材包的基本结构：
+
+- `data`
+- `geo`
+- `Material`
+- `tex`
+- 以及多张贴图文件，例如 `Arial_Exp_Smoke_01`、`Normal_Rock_03`、`Smoke_Flat_01`、`T_Concrete_DRH`、`T_Concrete_N`、`T_StretchSpark_01`、`Tile_03`
+
+左侧 Unreal 内容浏览器当前定位在 `Content/Signature/Course_07/Mesh/Ex_01`，已经能看到：
+
+- 静态网格 `Ex_01_Statue`
+- 多张 VAT 相关纹理资源
+- 材质 `M_VAT_Statue_01`
+
+这说明本节并不是在从零现场制作所有资源，而是先把课程资料中的网格、材质和贴图复制到项目指定目录，再在 Unreal 中直接使用这些已准备好的资产。结合正文“这部分资料里的数据不是导入得来的”“材质都已提前制作好”的说明，这张图的重点是建立“课程外部素材包”和“工程内实际资产”之间的一一对应关系。
+
+### 00:04:46-00:09:20 UV、材质、网格
+
+- 本段定位：UV、材质、网格。
+- 知识点：可以把它看作是记录这些数值的记事本 直接当记事本用就行 稍后操作时需要再演示一遍 到时候再演示一遍 功能就会出现了 如果插件已安装因为用了钢体。
+- 知识点：能调用钢体动态功能 直接调用钢体动态功能即可 UV最多可扩展到5个自定义通道 记得关闭切线空间 按这个流程操作 接着把刚才用过的十项纹理导入到这里。
+- 知识点：一起来试试 先看看在场景里 把静态网格体拖出来用上 我们先来试试把静态网格体拖出来 发现尺寸太大 记得先缩小比例再用 按编号连接即可再把世界位置对齐一下。
+- 知识点：发现这块我们叫它角度校正混合 相当于一个让发现之间互相融合的节点 就是这个意思 所以现在这个发现和静态网格体会动起来 动起来这两个发现。
+- 知识点：把这两个合并混合后接到发现通道就行 这里这个贴图里看起来像粗糙度的通道 有这个通道就是直接连上 高光或金属度这类就这么用也行 完全没问题。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`贴图`、`颜色`。
+
+**关键画面：**
+
+这一步打开了母材质 `M_VAT_Statue_01` 的 `Material Graph`，开始配置雕像 VAT 网格在 Unreal 中的基础材质属性。图中当前还没有展开具体节点连接，但右侧材质主节点和左下 `Details` 面板已经给出关键初始设置：
+
+- `Material Domain = Surface`
+- `Blend Mode = Opaque`
+- `Shading Model = Default Lit`
+- `Two Sided` 关闭
+
+右侧材质主节点还能确认当前暴露的典型输入槽包括：
+
+- `Base Color`
+- `Metallic`
+- `Specular`
+- `Roughness`
+- `Emissive Color`
+- `Normal`
+- `Tangent`
+- `World Position Offset`
+- `Ambient Occlusion`
+- `Pixel Depth Offset`
+
+结合正文“UV 最多可扩展到 5 个自定义通道”“记得关闭切线空间”“按这个流程操作，把刚才用过的雕像纹理导入到这里”的说明，这张图对应的阶段是先检查母材质的基础着色模式是否适合静态网格 VAT 使用，然后再在后续画面中逐步把位置、旋转、法线和贴图连接补全。
+这一步继续在 `M_VAT_Statue_01` 的 `Material Graph` 中补全 VAT 解码结果与主材质输入的连接，重点是把 Houdini 导出的自定义 UV 和位移信息真正送入材质主节点。根据图中可确认的节点和连线，当前图可以整理为：
+
+- 可见核心节点组：
+  - 一个大的 VAT 解码/材质函数节点组，输出端可见 `Color RGB (PS)`、`Color Alpha (PS)`、`Spare Color RGBA (PS)`、`Normal (Tangent Space Normal Off)`、`World Position Offset`，以及多组 `Customized UV1` 到 `Customized UV5`
+  - 两个 `Texture Sample` 节点：上方是偏粉白的表面纹理，下方是蓝紫色法线纹理
+  - 一个 `BlendAngleCorrectedNormals` 节点
+  - 右侧材质主节点底部可见 `Customized UV0` 到 `Customized UV4`
+
+- 本图能够明确确认的连线关系：
+  - VAT 节点输出的多路 `Customized UV` 分别接入主材质的 `Customized UV0`、`Customized UV1`、`Customized UV2`、`Customized UV3`、`Customized UV4`
+  - VAT 节点的 `World Position Offset` 连接到主材质的 `World Position Offset`
+  - 两路法线来源接入 `BlendAngleCorrectedNormals`
+  - `BlendAngleCorrectedNormals.Result` 连接到主材质的 `Normal`
+
+这张图对应正文里“UV 可扩展到 5 个”“记得关闭切线空间”的具体落地步骤：作者不是只把贴图颜色接到表面，而是先让 VAT 材质函数输出位移与自定义 UV，再用混合法线节点把雕像原有法线和附加法线信息合并，最后统一送入主材质。对复建者来说，关键结论是这类 VAT 雕像材质至少要完成两件事：一是把 `World Position Offset` 接上以驱动网格动画，二是把多路 `Customized UV` 保留下来供 VAT 解码和后续采样使用。
+这一步从母材质图切到材质实例 `M_VAT_Statue_01_Ins...` 的参数面板，开始把 Houdini VAT 运行所需的贴图和播放参数实例化。图中右侧 `Details` 面板可直接确认以下分组与参数：
+
+- `Parameter Groups > Houdini VAT`
+  - `Auto Playback`：已启用
+  - `Game Time at First Frame = 0.0`
+  - `Playback Speed = 1.0`
+  - `Houdini FPS = 30.0`
+  - `Interframe Interpolation`：已启用
+  - `Support Surface Normal Maps`：可见但当前未启用
+  - `Positions Require Two Textures`：可见但当前未启用
+  - `Position Texture`：已勾选覆盖，当前槽位里放入一个黑色 EXR 纹理，名称显示为 `Black_1x1_EXR_Texture`
+  - `Rotation Texture`：已勾选覆盖，当前槽位同样放入 `Black_1x1_EXR_Texture`
+
+- `Houdini VAT - Customization`
+  - `Piece Scales Are in Position Alpha`：选项可见
+  - `Global Piece Scale Multiplier = 1.0`
+  - `Animate First Frame`：选项可见
+
+- 其他可见信息
+  - 底部 `Parent` 指向 `M_VAT_Statue_01`
+  - 预览窗口左上角显示当前材质统计信息，说明实例已可被编译预览
+
+结合前一张图里已经完成的 `World Position Offset`、法线混合和多路 `Customized UV` 连接，这张图对应的工作是把材质函数需要的 VAT 输入资源真正挂到实例参数上，并确认播放速率按 `30 FPS` 运作。当前截图里位置贴图和旋转贴图都还是占位用的 `Black_1x1_EXR_Texture`，因此它更像是在演示实例参数入口和默认值位置：复建时需要在同名槽位替换成雕像对应的 VAT `Position Texture` 与 `Rotation Texture`，否则母材质虽然连线完整，实例层仍无法驱动真实的网格动画。
+
+### 00:09:20-00:14:10 Sequencer、Static Mesh、PS
+
+- 本段定位：Sequencer、Static Mesh、PS。
+- 知识点：围绕当前效果继续调整 Niagara 系统，需结合关键画面确认实际节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`材质`、`贴图`、`粒子`、`系统`、`序列`、`动态参数`。
+
+**关键画面：**
+
+这一步继续编辑材质实例 `M_VAT_Statue_01_Ins...`，把上一张图里临时挂着的黑色占位 EXR 替换成真实的 VAT 贴图资源。右侧 `Houdini VAT` 参数组中现在已经能明确看到：
+
+- `Position Texture` 槽位已启用覆盖，并指定为 `Ex_01_Statue_pos`
+- `Rotation Texture` 槽位已启用覆盖，并指定为 `Ex_01_Statue_rot`
+- `Auto Playback` 仍然启用
+- `Playback Speed = 1.0`
+- `Houdini FPS = 30.0`
+- `Interframe Interpolation` 仍然启用
+
+左侧内容浏览器当前位于 `Content/Signature/Course_07/Mesh/Ex_01`，可见与这套实例配对的资源包括：
+
+- 静态网格 `Ex_01_Statue`
+- 一张白色外观的纹理资源
+- `Ex_01_Statue_pos`
+- `Ex_01_Statue_rot`
+- 母材质 `M_VAT_Statu...`
+- 材质实例 `M_VAT_Statu...`
+
+这张图的关键作用是确认 VAT 实例层不再使用默认占位纹理，而是已经绑定到本节雕像网格实际导出的 `Position` 与 `Rotation` 纹理。对复建来说，母材质图连线完成后，还必须在实例层把这两张纹理放对槽位，否则 `World Position Offset` 和旋转恢复都不会得到有效数据。
+这一步切换到 Niagara System `Ex_01_Statue_Destruction`，开始把前面准备好的雕像静态网格接入系统的网格渲染器。图中当前选中发射器 `Minimal` 的 `Mesh Renderer`，右侧 `Details` 面板可确认的设置为：
+
+- `Meshes`：`1 Array element`
+- `Enable Material Overrides`：关闭
+- `Override Materials`：`0 Array element`
+- `Source Mode = Particles`
+- `Facing Mode = Default`
+- `Sort Mode = None`
+- `Renderer Visibility = 0`
+
+中间 `System Overview` 面板显示该发射器当前的模块顺序大致为：
+
+- `Emitter State`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Particle State`
+- `Sprite Renderer`
+- `Mesh Renderer`
+
+左侧内容浏览器此时定位在 `Content/Signature/Course_07/Particles`，可见系统资源 `Ex_01_Statu...`，说明作者已经新建好本节破坏效果用的 Niagara System，并进入渲染阶段配置。结合正文“在网格体上接入我们导入的静态网格部分”的说明，这张图对应的关键动作是：先给系统添加或启用 `Mesh Renderer`，然后在它的 `Meshes` 数组里指定本节导入的雕像静态网格，让粒子不再只用 Sprite，而能真正渲染出网格破碎体。
+这一步回到材质实例 `M_VAT_Statue_01_Ins...`，继续调整 Houdini VAT 的实例化边界参数，以保证雕像碎片在预览和运行时拥有正确的包围盒范围。右侧 `Details` 面板中当前仍能确认：
+
+- `Position Texture = Ex_01_Statue_pos`
+- `Rotation Texture = Ex_01_Statue_rot`
+- `Playback Speed = 1.0`
+- `Houdini FPS = 30.0`
+- `Interframe Interpolation` 已启用
+
+本图新增展开的是 `Houdini VAT - Instancing` 分组，能直接读到的参数包括：
+
+- `Support Legacy Parameters and I...`：已启用
+- `Bound Max X = 671.967712`
+- `Bound Max Y = 295.4...`（输入中可见 `295.0` 的编辑值，完整显示被浮层部分遮挡）
+- `Bound Max Z = 600.0`
+- `Bound Min X = 0.0`
+- `Bound Min Y = 0.0`
+- `Bound Min Z = 0.0`
+- `Support Instancing with Surface N...`：已启用
+
+预览窗口中央已经能看到被压缩在矩形范围内的雕像碎片图像，说明这些边界数值正在直接影响 VAT 实例的空间解码范围。结合正文“只有输入准确数据才能正确生成动画”“若自行制作模拟并导出资源，数值会不同”的说明，这张图的重点不是新增贴图，而是把 Houdini 导出时对应的边界尺寸精确抄入实例参数。复建时需要把 `Bound Max/Min` 按自己资源的真实导出范围填写；如果继续沿用错误边界，模型会出现挤压、裁切或播放空间错位。
+
+### 00:14:10-00:18:48 材质、生命周期
+
+- 本段定位：材质、生命周期。
+- 知识点：粘贴上去就行 这样就能在这里完成一次合并这些数据 数值,现在 模拟方式不同数值影响很大 只有输入准确数据才能正确生成动画 所以我用的资源。
+- 知识点：数值显示如此 但若您自行制作模拟并导出VT资源 数值就会不一样 取决于使用的资源 所以请根据使用的资源 适当调整这个数据值 那么这里的数值就会按这种形式设置。
+- 知识点：能确认动画效果正常 运行顺畅,运行正常 接下来这里内表面将另建一个材质 用于独立控制 毕竟背景材质通常需要多个材质组合。
+- 知识点：因此建议分射材质槽内表面单独使用更合理 另外当前选项中显示为自动播放循环 当前已启用,请把这个关掉 这样就能自然切换到显示帧模式 这里启用针尖差值勾选后。
+- 知识点：即可使用这个功能,仅适用于钢体材质 效果就是这样 因为我们是用整针烘焙数据以存入纹理 所以中间针的保存效果并不理想 不过钢体的情况不同。
+- 知识点：每针的顶点数始终一致 钢体正因为每针顶点数不变 才能提前计算并填充中间针数据 这个功能就包含在内 包含在内 开启针尖差值后 即使将持续时间大幅拉长。
+- 知识点：也能实现无卡顿的流畅播放效果非常出色 这边动态参数已连接好 这样播放一下看看现在是从0到1 处于这种状态 我们用了100针把这100针填进去。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`材质`、`纹理`、`贴图`、`生命周期`、`颜色`、`动态参数`。
+
+**关键画面：**
+
+这一步回到 Niagara System `Ex_01_Statue_Destruction` 的 `Mesh Renderer`，把雕像静态网格和材质实例真正挂进渲染器，并在预览里验证显示结果。右侧 `Mesh Rendering` 分组当前可以明确读到：
+
+- `Meshes` 数组有 `1 Array element`
+  - `Index [0]` 指定的网格是 `Ex_01_Statue`
+- `Enable Material ...` 已启用
+- `Override Materials` 数组有 `2 Array elements`
+  - `Index [0] > Explicit Mat = M_VAT_Statue_01_Ins_01`
+  - `Index [1] > Explicit Mat = M_VAT_Statue_01_Ins_01`
+- `Source Mode = Particles`
+- `Facing Mode = Default`
+- `Sort Mode = None`
+- `Renderer Visibility = 0`
+
+中间 `System Overview` 仍然显示发射器 `Minimal` 的主流程，其中 `Spawn Burst Instantaneous`、`Initialize Particle`、`Particle State` 与 `Mesh Renderer` 都已就位。左侧预览窗口已经能直接看到一尊拉长状态的白色雕像网格，这说明：
+
+- 粒子系统已经不只是理论上启用了 `Mesh Renderer`
+- 雕像静态网格 `Ex_01_Statue` 已成功被粒子实例化
+- VAT 材质实例 `M_VAT_Statue_01_Ins_01` 已经开始参与渲染
+
+结合本段正文“运行正常后，内表面将另建一个材质，用于独立控制”的说明，这张图的关键是先把外部雕像网格和当前 VAT 材质实例接入 Niagara，形成可播放的基础破碎体；之后如果需要区分内外表面，再在材质覆盖槽中继续分拆不同材质。
+这一步在 Niagara 发射器 `Minimal` 中新增并选中了 `Dynamic Material Parameters` 模块，用来把粒子侧的动态值传进 VAT 材质实例。右侧 `Details` 面板显示的是该模块的参数覆盖界面，当前可确认的信息有：
+
+- 模块名：`Dynamic Material Parameters`
+- 顶部可切换 `Index 0`、`Index 1`、`Index 2`、`Index 3`，当前查看的是 `All`
+- 第一个 `Dynamic Parameter` 分组中：
+  - `Write Parameter Ind...` 已启用
+  - `Param1 = 0.0`
+  - `Param1-0 (Par...) = 0.0`
+  - `Param2-0 (Par...) = 0.0`
+  - `Param3-0 (Par...) = 0.0`
+- 提示浮层明确说明：
+  - 当前字段是“the overridden value for the first dynamic material parameter”
+  - `Name: Param1`
+  - `Type: float`
+- 下方另外三个 `Dynamic Parameter` 分组此时仍保持折叠或未写入状态
+
+中间 `System Overview` 也能看到这个模块已经插入到 `Particle Update` 区段，并且位于 `Mesh Renderer` 之前。左侧预览窗口里，雕像已经呈现出从主体向右侧碎裂散开的效果，说明材质播放和粒子更新至少已经进入可预览阶段。结合正文“动态参数已连接好，现在播放一下看看，是从 0 到 1 的状态”的说明，这张图的核心是为材质暴露一个可由 Niagara 驱动的浮点参数入口；后续通常会用这个值控制 VAT 动画进度、显隐混合或其他随生命周期变化的材质行为。
+这一步新建并编辑了另一个材质 `M_VAT_Statue_02`，用于给雕像破坏体的另一层表面提供独立的外观控制。图中可确认的结构如下：
+
+- 材质基础属性：
+  - `Material Domain = Surface`
+  - `Blend Mode = Opaque`
+  - `Shading Model = Default Lit`
+  - `Two Sided` 关闭
+
+- 可见节点与资源：
+  - 左侧仍接入上一套 VAT 解码节点组，其输出能看到 `Normal (Tangent Space Normal Off)`、`World Position Offset` 以及多路 `Customized UV`
+  - 右上有一个绿色石材外观的 `Texture Sample`
+  - 中上有一个雕像黑白纹理的 `Texture Sample`
+  - 中部还有一个浅粉白色纹理的 `Texture Sample`
+  - 左下有一个蓝色法线纹理 `Texture Sample`
+  - 一个 `BlendAngleCorrectedNormals` 节点
+  - 一个标注为 `Multiply(0.2)` 的乘法节点
+  - 右侧材质主节点 `M_VAT_Stat...`
+
+- 当前图里能明确看到的连接关系：
+  - 雕像黑白纹理的输出先进入 `Multiply(0.2)`，其结果接到主材质的 `Base Color`
+  - 浅色纹理的输出接到主材质的 `Roughness`
+  - 蓝色法线纹理与 VAT 节点输出的法线一起接入 `BlendAngleCorrectedNormals`
+  - `BlendAngleCorrectedNormals.Result` 接到主材质的 `Normal`
+  - VAT 节点输出的 `World Position Offset` 接到主材质的 `World Position Offset`
+  - 底部还能看到多路线缆继续接向主材质的 `Customized UV` 输入
+
+这张图和上一张形成直接承接关系：上一张说明作者准备在 Niagara 中用动态材质参数驱动雕像动画，这一张则说明除了原本的 `M_VAT_Statue_01` 外，还额外做了一套较暗、以黑白遮罩乘 `0.2` 为基底的新材质，用于内表面或另一材质槽的独立表现。复建时至少要保留这几个关键点：VAT 位移和自定义 UV 仍沿用原解码流程，法线仍通过 `BlendAngleCorrectedNormals` 合成，而新的外观差异主要来自另一组颜色/粗糙度贴图与 `Base Color` 的压暗处理。
+
+### 00:18:48-00:23:20 UV、Normal、Houdini
+
+- 本段定位：UV、Normal、Houdini。
+- 知识点：用纹理参数来设置也没问题 所以主材质不用每个都建两个 现在只是测试这里也按同样方式着治好 因为内容基本一致 所以数值已经全部提前记录好了。
+- 知识点：打开插值后第二部分单独记录内部 面会屡带实材质感 叠面层次也更分明了 刚才用的是原来的外表面材质。
+- 知识点：当时混用材质导致视觉上很杂乱 现在整体看起来自然多了 现在整体效果更自然了 至于帧数 大概3.3秒左右 张力程度不同动画方式也会影响结果。
+- 知识点：可根据需要自由调节 大致就是这样 线性模式可以理解为Houdini烘焙的速度 会直接体现出来 如果觉得太快可以设为4秒左右 检查到这个程度。
+- 知识点：差不多就行了 导入VT资源并制作材质 在设置动画过程中 如果模型明显未对齐或动画出现异常 动作僵硬卡顿像被撕裂一样 就会出现这种看起来像被撕裂的动画。
+- 知识点：遇到这种情况要检查起始模型的发现 是否开启 还有Romit Normal和UV Precision这些选项 是否都勾选正确 最好都确认一遍。
+- 知识点：把这些贴图一个个打开 再重新加载一次问题 有失就自己解决了 要是还是不行 可以试试这样操作 重新导入一下 把所有资源重新加载一次 有时候就能恢复正常了。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Houdini`、`材质`、`纹理`、`贴图`、`系统`、`速度`。
+
+**关键画面：**
+
+这一步继续编辑内层材质 `M_VAT_Statue_02`，并把中间那张绿色石材贴图的资源来源明确下来。图中当前被选中的 `Texture Sample` 在左下 `Details` 面板中可直接确认：
+
+- `Texture = T_Concrete_DRH`
+- `Sampler Type = Color`
+- `Const Coordinate = 0`
+- `Const Mip Value = -1`
+- `MipValueMode = None (use computed mip level)`
+- `Sampler Source = From texture asset`
+
+结合画面右侧可见的材质图，本图延续了上一张的结构关系：
+
+- 黑白雕像纹理仍接入 `Multiply(0.2)`，再连到主材质的 `Base Color`
+- 浅粉白纹理仍连接到主材质的 `Roughness`
+- 蓝色法线纹理与 VAT 法线输出仍接入 `BlendAngleCorrectedNormals`
+- `BlendAngleCorrectedNormals.Result` 连接到主材质的 `Normal`
+- VAT 解码输出的 `World Position Offset` 仍连到主材质的 `World Position Offset`
+
+这张图新增的关键证据是：内层材质不是凭空调一个纯色，而是直接复用了场景里的石材贴图 `T_Concrete_DRH` 作为表面颜色来源之一。对复建者来说，这意味着 `M_VAT_Statue_02` 的内层质感应基于现成石材纹理，再叠加黑白遮罩压暗，而不是只靠单一常量颜色去模拟。
+这一步回到 Niagara 发射器 `Minimal` 的 `Dynamic Material Parameters` 模块，把第一个动态材质参数改为按粒子年龄驱动的浮点曲线，而不是固定常量。右侧 `Details` 面板当前可确认的信息为：
+
+- `Dynamic Material Parameters`
+  - `Write Parameter Index`：已启用
+  - `Param1`：模式为 `Float from Curve`
+  - 曲线类型：`Curve for Floats`
+  - `Curve Index = PARTICLES.NormalizedAge`
+  - `Scale Curve = 100.0`
+  - `Param1-0 = 0.0`
+  - `Param2-0 = 0.0`
+  - `Param3-0 = 0.0`
+
+- 曲线编辑器中可见一条红色折线，大致表现为：
+  - 初段保持较低值
+  - 中段随 `NormalizedAge` 上升
+  - 末段抬升后趋于平缓
+
+中间 `System Overview` 仍显示这个模块位于 `Particle Update` 区段，左侧预览窗口中雕像已经出现碎块向右侧拉开的过程，说明该动态参数正在和当前动画阶段一起工作。结合正文“现在是从 0 到 1 的状态，我们用了 100 帧，把这 100 帧填进去”的说明，这张图的核心结论是：作者用 `PARTICLES.NormalizedAge` 去驱动材质里的某个关键浮点参数，并用一条曲线把粒子生命周期映射到 VAT 动画进度或相关过渡值上，而不是线性写死一个固定数。
+这一步再次检查材质实例的 `Houdini VAT` 参数，但这次已经把播放方式从自动循环切换成按帧显示，以便后续用 Niagara 动态参数精确驱动 VAT 动画。右侧 `Details` 面板当前可直接确认：
+
+- `Auto Playback`：关闭
+- `Display Frame = 1.0`
+- `Interframe Interpolation`：启用
+- `Position Texture = Ex_01_Statue_pos`
+- `Rotation Texture = Ex_01_Statue_rot`
+
+`Houdini VAT - Instancing` 分组中此时还能完整读到一组边界值：
+
+- `Bound Max X = 671.967712`
+- `Bound Max Y = 295.0`
+- `Bound Max Z = 600.0`
+- `Bound Min X = -690.0`
+- `Bound Min Y = -1660.0`
+- `Bound Min Z = -50.099998`
+
+左侧预览窗口当前只显示一块近距离石材表面，说明作者此时是在材质实例层面检验贴图、帧显示与边界是否按预期工作，而不是从完整雕像视角观察整体破碎。结合正文“请把自动播放循环关掉，这样就能自然切换到显示帧模式”“开启帧间插值后可以把持续时间大幅拉长”的说明，这张图对应的关键动作是：关闭自动播放，改为由 `Display Frame` 接受外部驱动，并保留 `Interframe Interpolation` 来补足帧间平滑，从而让 Niagara 用生命周期或动态参数精确控制 VAT 播放进度。
+
+### 00:23:20-00:28:03 Color、Add、Smoke
+
+- 本段定位：Color、Add、Smoke。
+- 知识点：阴影已经勾好了 现在把它拖到场景里看看 这个粒子关联的石像 也是临时测试用的先删掉吧 拿出来后是平的就先放这 这里有点弧度大概到这个位置就行。
+- 知识点：尺寸也太大了 尺寸太大了得调小一点 适当精简进度会更好 建议适当精简 只需将尺寸减半即可 调整后动画尺寸也会自动匹配操作 非常便捷 也可能是这里颜色值调的过低所致。
+- 知识点：这部分可以稍作调整 调整为与原色相近的色调 极可这样明暗层次会比之前更自然 色调也更协调接下来 一起添加尘土效果并加入Add Minimum。
+- 知识点：Limiter 我们漏掉了关键步骤 可以在这个位置调整 这些颜色的色调 也会更加自然 这些颜色的色调。
+- 知识点：也会更加自然 我们漏掉了关键步骤 在资源中需将纹理替换为HLDR 该脚本功能是将其转为HDR 以便更精准的计算Idealist 用于精确计算数值。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Color`、`Add`、`材质`、`纹理`、`粒子`、`颜色`、`烟雾`。
+
+**关键画面：**
+
+这一步离开材质和 Niagara 编辑器，直接把雕像静态网格拖进关卡场景里检查落地尺寸和位置。中央视口中当前选中的对象是 `Ex_01_Statue`，外轮廓高亮并显示世界坐标移动手柄，说明作者正在手动摆放它在地表上的位置。
+
+右侧 `Outliner` 和 `Details` 面板可确认：
+
+- 当前选中对象：`Ex_01_Statue`
+- 组件层级：`Ex_01_Statue (Instance)` -> `StaticMeshComponent`
+- `Static Mesh = Ex_01_Statue`
+- `Rotation = (0.0, 0.0, 0.0)`
+- `Scale = (1.0, 1.0, 1.0)`
+- `Mobility = Static`
+- 材质槽中可见已分配的材质实例名称以 `M_VAT_Statue_01_In...` 开头
+
+场景背景仍是 Dark Ruins 的海岸岩地环境，雕像此时被放在一块略带坡度的碎石地面上。结合正文“现在把它拖到场景里看看”“拿出来后是平的就先放这，这里有点弧度大概到这个位置就行”的说明，这张图的作用是先在真实关卡中确认雕像网格的朝向、底部接地关系和大致落点，为后续破碎特效、烟尘和颜色调试提供一个可观察的基准位置。
+这一步继续在关卡视口里检查雕像破碎体的实际落地效果，但已经不再显示选中轮廓或变换手柄，而是直接观察它放进环境后的整体观感。画面中能确认：
+
+- 破碎后的雕像主体位于画面下方中央偏左
+- 碎块沿地面向右侧散开，形成一条明显的破碎拖尾
+- 场景仍是同一片潮湿岩地和海岸背景
+- 左侧内容浏览器当前定位在 `Content/Signature/Course_07/Particles`
+- 右侧 `Details` 面板为空，说明当前没有选中具体 Actor 查看参数
+
+这张图更接近一次纯效果检查：作者在真实环境光照和地形坡度下观察雕像碎裂后的体量是否过大、落点是否合适、碎块散布方向是否符合预期。结合正文“尺寸太大了得调小一点，只需将尺寸减半即可”“颜色值调得过低也会影响观感”的说明，这一步对应的是在场景中用肉眼判断整体尺寸、明暗和破碎扩散范围，再决定后面是优先缩放网格/系统，还是继续调整材质和颜色。
+这一步开始制作或调整破碎后配套的烟雾材质实例 `M_Smoke_02_Ins_01`。中央预览窗口显示的是一整张烟雾序列贴图的排布效果，能看出同一张纹理里包含了多行多列的白色烟团帧，用于后续做 Flipbook 或 SubUV 动画。
+
+右侧 `Details` 面板中当前可明确读取到的实例参数为：
+
+- `Global Scalar Parameter Values`
+  - `Emissive_Pow = 1.0`
+  - `Emissive_Str = 0.0`
+  - `Fade_Str = 20.0`
+  - `Opacity_Pow = 1.0`
+  - `Smoke_Pow = 1.2`
+  - `Smoke_Str = 1.5`
+
+- `Global Texture Parameter Values`
+  - `Smoke_Tex = Smoke_Flat_01`
+
+- `Global Vector Parameter Values`
+  - `Smoke_Color`
+    - `R = 1.0`
+    - `G = 0.95`
+    - `B = 0.9`
+    - `A = 1.0`
+
+- `General`
+  - `Parent = M_Smoke_02`
+
+左侧内容浏览器中也能看到与这一步相关的资源 `Smoke_Flat_01`。结合正文“接下来一起添加尘土效果”“这里的纹理用大一些”“调整这些颜色的色调会更自然”的说明，这张图的关键是：烟尘不是直接复用雕像材质，而是单独建立一个烟雾材质实例，通过 `Smoke_Flat_01` 这张序列贴图和 `Smoke_Color`、`Fade_Str`、`Smoke_Str` 等参数控制烟团的颜色、强度和衰减，为后面的尘土粒子提供独立材质基础。
+
+### 00:28:03-00:29:50 关键流程 07
+
+- 本段定位：关键流程 07。
+- 知识点：用来做出煮烟雾的流动感 这样设置就行一个都够了 建一个就够了 够用了一个就够够 各做一次 总共两个 用两个就足够了 差不多了 本段先加个简单的播放时长试试。
+- 知识点：为了把这里放到中心 我们从侧边选了个参考点 这个点我们已经选好了 为了定位到这里 适当调下偏移值就行 大小方面非均匀缩放 调到350左右。
+- 知识点：角度这块 旋转调到90度左右 接着把subwave值改成8 subwave动画才能跑起来 才行 我先来设置一下用线性方式 这样看起来就像从侧面蹦发出来一样 把起点疏轴点设在底部中心。
+- 核对对象：`烟雾`。
+
+**关键画面：**
+
+这一步回到 Niagara System `Ex_01_Statue_Destruction`，在原来的雕像破碎发射器 `Minimal` 旁边新增了第二个发射器 `Minimal001`，用于承载后续的烟雾效果。图中当前选中的是 `Minimal001` 的 `Spawn Burst Instantaneous` 模块，右侧 `Details` 面板可明确确认：
+
+- `Spawn Count = 1`
+- `Spawn Time = 0.0`
+- `Spawn Probability = 1.0`
+- `Loop Count Limit = 1`
+
+中间 `System Overview` 能看到两个并列发射器：
+
+- 左侧是原来的 `Minimal`，负责雕像碎裂主体
+- 右侧是新的 `Minimal001`
+  - 当前已具备 `Emitter State`
+  - `Spawn Burst Instantaneous`
+  - `Initialize Particle`
+  - `Particle State`
+  - `Sprite Renderer`
+
+左侧预览窗口里，雕像碎裂体仍保持可见，说明作者是在保留原有网格破碎系统的基础上，新增一个 Sprite 发射器来叠加烟雾，而不是把烟雾并到原网格发射器里。结合正文“建一个就够了，各做一次，总共两个，用两个就足够了”的说明，这张图的关键结论是：烟雾效果采用独立发射器，通过一次性 `Burst` 生成，而不是沿用雕像网格发射器的 `Mesh Renderer` 逻辑。
+这一步开始细调烟雾发射器 `Minimal001` 的 `Initialize Particle`，重点是把烟雾出生位置和尺寸摆到雕像破碎点附近。右侧 `Details` 面板当前能直接确认：
+
+- `Lifetime Mode = Direct Set`
+- `Lifetime = 1.5`
+- `Color Mode = Unset`
+- `Position Mode = Simulation Position`
+- `Position Offset` 已启用，当前三轴值为：
+  - `X = 20.0`
+  - `Y = -20.0`
+  - `Z = 120.0`
+- `Position Offset Coordinate Space = Simulation`
+- `Sprite Size Mode = Non-Uniform`
+- `Sprite Size = 350.0, 350.0`
+- `Sprite Rotation Mode = Direct Normalized Angle (0-1)`
+- `Sprite Rotation Angle = 0.0`
+- `Sprite UV Mode = Unset`
+
+中间 `System Overview` 仍显示这个烟雾发射器的基础模块顺序为 `Spawn Burst Instantaneous -> Initialize Particle -> Particle State -> Sprite Renderer`。结合正文“为了把这里放到中心，适当调下偏移值就行”“大小方面非均匀缩放，调到 350 左右”的说明，这张图对应的就是烟雾粒子初始化阶段的定位工作：通过 `Position Offset` 把烟团抬到雕像底部上方附近，再把单张 Sprite 放大到约 `350` 的量级，作为第一层爆散烟尘的基础尺寸。
+这一步继续完善烟雾发射器 `Minimal001`，给 `Sprite Renderer` 增加 `Sub UVAnimation` 模块，让烟雾序列贴图真正按生命周期翻帧播放。右侧 `Details` 面板当前可确认：
+
+- 模块名：`Sub UVAnimation`
+- `SubUV Animation Mode = Linear`
+- `Renderer Type = Sprite`
+- `Sprite Renderer = Sprite Renderer`
+- `Random Start Frame`：关闭
+- `Start Frame Offset = 0`
+- `SubUV Lookup Index = PARTICLES.NormalizedAge`
+- `SubUV Lookup Index Scale = 1.0`
+- `Output Alternate Rend...`：关闭
+- `Start Frame Range = 0`
+- `End Frame Range = 63`
+
+中间 `System Overview` 现在能看到 `Minimal001` 的 `Particle Update` 中新增了 `Sub UVAnimation Linear` 模块，并且位于 `Sprite Renderer` 之前。左侧预览窗口里，雕像碎裂体旁边已经出现了多团白色烟雾，说明这组烟雾 Sprite 已经开始按序列帧播放。结合正文“把 subwave 值改成 8，subwave 动画才能跑起来”“先用线性方式” 的说明，这张图的核心是：烟雾不是静态贴图，而是通过 `Sub UVAnimation` 用 `NormalizedAge` 驱动序列帧索引，从第 `0` 帧线性播放到第 `63` 帧，形成真正的翻页烟团运动感。
+
+## 补充视觉证据
+
+### S01 00:04:06
+
+当前补充图能够确认的信息与正文图注存在明显不一致，因此该条仅记录已确认事实：
+
+- 图像实际内容是关卡场景视口，不是材质图或节点图
+- 右侧 `Outliner` 当前选中的是地表静态网格实例，名称显示为 `SM_Nordic_Beach_Rocky_Ground_...`
+- `Details` 面板中可读到该实例的 `Transform` 数值：
+  - `Location = (-1774.087, -1141.119, 45.255772...)`
+  - `Rotation = (1.174988, 2.823706, -39.78745...)`
+  - `Scale = (2.403754, 2.403754, 2.403754)`
+- 视口中选中轮廓覆盖了一大片前景岩地，说明作者此时是在检查场景地表网格而不是雕像或烟雾发射器
+- 左侧内容浏览器仅能看到当前目录下有一个材质资源 `/AT_Statue`
+
+- `p10.md` 在该处的图注写的是 `supp-S01-graph-00_04_06`，并标注“graph、parameter”，但当前图片并未显示任何可可靠辨认的 Graph 或参数节点
+- 无法从现图可靠判断它是否是截图误放、文件名误标，或原教程中用于说明场景落点/承载地表的补充画面
+
+因此这张补充图暂不能按“节点图/参数图”方式转写，只能确认它展示了雕像特效承载地表所在的场景网格实例及其变换信息，需其与文档标题、用途及前后上下文的对应关系。
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+

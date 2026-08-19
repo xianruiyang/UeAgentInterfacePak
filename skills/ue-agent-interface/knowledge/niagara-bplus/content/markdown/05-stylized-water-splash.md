@@ -1,0 +1,2016 @@
+# 05 Stylized Water Splash
+
+# 05 Stylized Water Splash
+
+## 关键术语
+
+- `Niagara System`、`Emitter`、`System`、`Renderer`、`Spawn`、`Update`、`Spawn Rate`、`Lifetime`、`Color`、`Niagara`、`Particle`、`Normalized Age`、`Alpha`、`Scale Sprite Size`、`Material`、`Texture`、`Initialize Particle`、`Opacity`
+
+## 分段知识
+
+### 00:00:06-00:03:14 Add、WPO
+
+- 本段定位：Add、WPO。
+- 知识点：角色或镜头演示需要导入 FBX/骨骼/动画，并用 Sequencer 校准触发时机。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：蓝图 Actor 用于封装 Niagara 生成、位置、参数传入和生命周期控制。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Niagara`、`Drag`、`Sequencer`、`Add`、`蓝图`、`生命周期`。
+
+**关键画面：**
+
+这是 `Stylized Water Splash` 新一页教程开头的场景基线图，当前在关卡中直接选中了 Niagara Actor `NS_StylizedWaterSplash`，但视口里尚未出现明显的可见水花结果
+
+- `Outliner` 中当前选中对象为 `NS_StylizedWaterSplash`
+- 右侧 `Details` 面板显示该实例的基础状态
+  - `Transform = (0,0,0) / (0,0,0) / (1,1,1)`
+  - `Niagara System Asset = NS_StylizedWaterSplash`
+- 下方内容浏览器位于 `Content/VFX_Library/Materials/MM`
+  - 当前可见 `M_UberMaterial`
+  - 说明教程即将回到材质或系统侧继续搭建
+- 视口中央只有十字准星和空场景，没有明显粒子主体
+  - 这一步强调的是起始状态，而不是某个参数已经生效后的表现
+
+这张图可替换为：在 `Stylized_WaterSplash` 关卡里先选中 `NS_StylizedWaterSplash` Niagara Actor，确认系统实例仍放在原点、材质资源位于 `VFX_Library/Materials/MM`，并记录此时视口中尚未出现明显水花结果，作为后续 `Add` 与 `WPO` 设置前的初始基线
+这是在 Sequencer 中确定观测镜头的截图，教程选中 `CameraActor`，用时间轴和相机轨道先定义“在哪个机位、哪段时间里能看到这个水花效果”
+
+- 当前界面处于 `Sequencer`
+- 左侧轨道区可见
+  - `Camera Cuts`
+  - `CameraActor`
+  - `CameraComponent`
+  - `Field of View`
+  - `Transform`
+- 当前选中轨道对象是 `CameraActor`
+- 时间轴上可见一段已铺开的镜头区间
+  - 播放头位于约 `0.68s`
+  - 说明教程正在检查镜头起始处的取景
+- 右侧 `Details` 面板显示 `CameraActor` 参数
+  - `Location = (-11.0, 89.0, 167.0)`
+  - `Rotation = (0.0, 0.0, 0.0)`
+  - `Scale = (1.0, 1.0, 1.0)`
+  - `Field Of View = 90.0`
+  - `Aspect Ratio = 1.777778`
+- 视口当前使用 `Pilot Actor: CameraActor`
+  - 中央能看到一块较亮的地面区域，作为后续特效出现场景的取景范围
+
+这张图可替换为：在 `LQ_StylizedWaterSplash` 的 Sequencer 中先选中 `CameraActor`，通过 `Camera Cuts` 与相机轨道确定镜头生效区间，并把相机设置到约 `Location(-11, 89, 167)`、`FOV 90`、宽屏比例 `1.777778` 的取景状态，以确保后续 Niagara 水花效果会出现在镜头可见范围内
+这是 `Add、WPO` 小节末尾对镜头位置动画的进一步确认图，教程在 Sequencer 中选中 `CameraActor` 的 `Transform -> Location` 轨道，强调相机位置是通过关键帧动画驱动的
+
+- 当前仍处于 `Pilot Actor: CameraActor` 视角
+- `Outliner` 中当前选中对象已切回 `NS_StylizedWaterSplash`
+  - 但左侧 Sequencer 仍在编辑 `CameraActor` 轨道
+- 左侧轨道结构可见
+  - `Camera Cuts`
+  - `CameraActor`
+  - `CameraComponent`
+  - `Transform`
+  - `Location`
+    - `X`
+    - `Y`
+    - `Z`
+- `Location` 三个轴上都能看到关键帧点
+  - 播放头位于约 `0.58s`
+  - 说明当前镜头位置会随着时间被动画更新
+- 左侧可见当前采样位置数值
+  - `X = -77.0`
+  - `Y = 56.266327`
+  - `Z = 831.134888`
+- 视口画面仍主要是地面区域
+  - 说明教程此时关注的是镜头运动路径，而不是特效本身已经播放出来的具体形状
+
+这张图可替换为：在 Sequencer 中展开 `CameraActor -> Transform -> Location`，分别给 `X/Y/Z` 设置位置关键帧，让镜头位移由时间轴动画驱动；当前示例时刻约 `0.58s`，相机位置约为 `(-77, 56.266327, 831.134888)`，用于把后续水花效果保持在镜头演示范围内
+
+### 00:03:21-00:08:14 Niagara、Niagara System、System
+
+- 本段定位：Niagara、Niagara System、System。
+- 知识点：角色或镜头演示需要导入 FBX/骨骼/动画，并用 Sequencer 校准触发时机。
+- 知识点：本段围绕 `Niagara` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Niagara System`、`Niagara` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Curve` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：Renderer 决定粒子显示方式，Sprite、Mesh 或 Light Renderer 需要分别检查材质、尺寸和排序。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Niagara System`、`Niagara`、`Particle`、`Alpha`、`Opacity`、`Renderer`、`Material`、`Curve`。
+
+**关键画面：**
+
+这是 `Niagara、Niagara System、System` 小节的起始预览图，教程在保持 Sequencer 机位的同时，先把系统效果显示出来，方便后续观察 Niagara 设置对结果的影响
+
+- 当前仍处于 `Pilot Actor: CameraActor` 视角
+- 下方 Sequencer 仍可见
+  - `Camera Cuts`
+  - `CameraActor`
+  - `CameraComponent`
+  - `Transform`
+- 播放头位于时间轴起始附近，约 `-0.07s`
+- `Outliner` 中选中对象是 `NS_StylizedWaterSplash`
+- 右侧 `Details` 显示的仍是该 Niagara Actor 实例基础面板
+
+视口结果：
+
+- 画面上方已出现一个小型青蓝色圆形特效主体
+- 中央原点附近可见三轴 Gizmo
+- 说明系统已经开始在场景中可见，只是此时还处于非常早期、单体预览式的展示状态
+- 当前结果更接近一个带亮边的圆形精灵/水滴核心，用于先确认系统是否成功出图
+
+这张图可替换为：在 Sequencer 相机机位保持不变的前提下，先让 `NS_StylizedWaterSplash` 在场景中显示出一个基础的青蓝色圆形粒子结果，并以此作为后续调 `Niagara System`、`Particle`、`Renderer`、`Material` 和曲线参数时的直接视觉参照
+这是把 Niagara 系统正式接入 Sequencer 生命周期控制的截图，教程在相机轨道之外，又把 `NS_StylizedWaterSplash` 本身加入了序列，并通过 `NiagaraComponent0` 的 `System Life Cycle` 轨道管理系统播放区间
+
+- Sequencer 当前可见轨道
+  - `Camera Cuts`
+  - `CameraActor`
+  - `Transform`
+  - `NS_StylizedWaterSplash`
+    - `NiagaraComponent0`
+    - `System Life Cycle`
+- `System Life Cycle` 的模式显示为 `Desired Age`
+  - 说明系统播放会按序列时间直接驱动，而不是只依赖场景里自然开始/停止
+- 时间轴上 `Life Cycle` 轨道显示为一整条红色区段
+  - 当前播放头位于约 `2.43s`
+  - 代表这个时刻系统已处于激活/播放过程
+
+视口与场景状态：
+
+- 当前选中对象是 `Floor`
+- 视口中央可见一个竖向拉长的青蓝色细条粒子
+- 这说明系统已经不再只是静态圆点，而是进入生命周期中间阶段的可见形态
+
+这张图可替换为：在 Sequencer 中除了保留 `CameraActor` 外，再把 `NS_StylizedWaterSplash` 加入轨道，展开到 `NiagaraComponent0 -> System Life Cycle`，将其生命周期控制模式设为 `Desired Age`，并用整段 `Life Cycle` 区间驱动系统播放，从而让特效在镜头时间轴上可精确预览不同阶段的形态变化
+这是 `Niagara、Niagara System、System` 小节末尾的材质资源切换图，教程回到内容浏览器选择一个发光水材质实例 `MI_GlowWater_01`，准备把它用于当前系统的可见粒子表现
+
+- 当前场景中仍保持 `Pilot Actor: CameraActor` 视角
+- `Outliner` 中当前选中对象是 `Floor`
+- 右侧 `Details` 可见 `Floor` 的材质槽
+  - `Static Mesh = Plane`
+  - `Materials -> Element 0 = MI_BasicMi...`
+  - 说明当前被选中的是地面，而不是 Niagara 节点本身
+- 下方内容浏览器定位在 `VFX_Library/Materials/MM`
+  - 可见资源
+    - `M_UberMaterial`
+    - `MI_GlowWater_01`
+  - 当前高亮并拖拽的是 `MI_GlowWater_01`
+- 视口中央上方只剩一个较亮的小型发光点
+  - 相比前一张更接近纯发光精灵外观
+
+这张图可替换为：在 `VFX_Library/Materials/MM` 中选中材质实例 `MI_GlowWater_01`，作为当前 `NS_StylizedWaterSplash` 下一步要测试或替换到粒子渲染器上的发光水材质资源；此时镜头中可见的粒子结果已经收敛成一个更亮、更纯净的小型发光点，用于预判材质替换后的可见效果方向
+
+### 00:08:14-00:13:10 Color、Alpha、Material
+
+- 本段定位：Color、Alpha、Material。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Curve` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Alpha`、`Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Alpha` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Color`、`Alpha`、`Opacity`、`Material`、`Curve`、`Depth Fade`、`Add`、`Panner`。
+
+**关键画面：**
+
+这是 `MI_GlowWater_01` 材质实例的基础参数设置图，教程开始围绕 `Color`、`Alpha`、`Material` 调整发光水材质，先确认色卡和主纹理资源的使用方式
+
+当前材质实例：
+
+- 资产标签为 `MI_GlowWater_01`
+- 父材质 `Parent = M_UberMaterial`
+
+`Global Scalar Parameter Values`：
+
+- `Premultiply Color?`
+  - 当前数值显示为 `1.0`
+- `Use Colormap?`
+  - 当前数值显示为 `0.0`
+
+`Global Texture Parameter Values`：
+
+- `Colormap` 已启用
+  - 贴图资源为 `VFX_T_ColorMap_Blue_06`
+- `T_Main` 已启用
+  - 贴图资源为 `T_Glow`
+
+材质属性：
+
+- `Blend Mode = Translucent`
+- `Shading Model = Unlit`
+- 其余覆盖项当前大多未开启
+
+视口预览：
+
+- 左侧球体只显示为非常淡的半透明轮廓
+- 整体颜色接近灰白，说明此时仍处于“先把色卡与主纹理挂好”的基础状态
+- 还没有明显的高亮边缘或强烈发光叠加
+
+这张图可替换为：打开 `MI_GlowWater_01`，保持父材质为 `M_UberMaterial`，在全局纹理参数中启用 `Colormap = VFX_T_ColorMap_Blue_06` 与 `T_Main = T_Glow`，并确认材质仍为 `Translucent + Unlit`，先建立发光水材质的基础颜色卡与主纹理输入关系
+这是 `Color、Alpha、Material` 小节里回到 `NS_StylizedWaterSplash` 的关键设置图，教程在现有网格发射器之外，再启用了一个使用 `Sprite Renderer` 的发射器层，并通过 `Scale Sprite Size` 的非均匀曲线去塑造颜色层的外形变化
+
+Niagara 结构：
+
+- 左侧发射器 `WaterSphereMesh`
+  - `Particle Update`
+    - `Particle State`
+    - `Scale Mesh Size`
+    - `Scale Mesh Size 001`
+    - `Update Mesh Orientation`
+    - `Set (PARTICLES) Position`
+    - `Dynamic Material Parameters`
+  - `Render`
+    - `Mesh Renderer`
+- 右侧发射器 `WaterSphereMesh001`
+  - `Particle Update`
+    - `Particle State`
+    - `Scale Sprite Size`
+    - `Set (PARTICLES) Position`
+    - `Dynamic Material Parameters`
+  - `Render`
+    - `Sprite Renderer`
+
+`Scale Sprite Size` 模块设置：
+
+- `Scale Sprite Size Mode = Non-Uniform`
+- `Scale Factor = Make Vector 2D`
+- `X = Float from Curve`
+  - `CurveIndex = PARTICLES.NormalizedAge`
+  - `Scale Curve = 1.0`
+  - 曲线前半段接近 `1`
+  - 后半段逐渐下降到接近 `0`
+- `Y = Float from Curve`
+  - `CurveIndex = PARTICLES.NormalizedAge`
+  - `Scale Curve = 1.0`
+  - 曲线前半段约 `1`
+  - 后半段快速抬升到约 `4`
+
+视口结果：
+
+- 左侧预览中可见一个较大的青蓝色水泡主体
+- 说明此时 Sprite 层已经作为颜色/柔光层叠加到 Mesh 主体外观之上
+- 非均匀缩放会让颜色层在生命周期后段从接近圆形逐渐转为更高、更窄的拉伸形态
+
+这张图可替换为：在 `NS_StylizedWaterSplash` 中新增或启用第二个使用 `Sprite Renderer` 的发射器 `WaterSphereMesh001`，并在其 `Particle Update` 中使用 `Scale Sprite Size` 的 `Non-Uniform` 模式，把 `X` 缩放设为随 `NormalizedAge` 后段逐渐减小、`Y` 缩放设为后段快速增大的两条曲线，从而让颜色层精灵在后期形成更高挑的拉伸外形
+这是 `MI_GlowWater_01` 材质实例在完成颜色卡启用与混合模式调整后的结果图，教程让发光水层从原本较淡的半透明状态，切换成更适合特效叠加的加色发光表现
+
+当前材质实例参数：
+
+- `Global Scalar Parameter Values`
+  - `Premultiply Color? = 1.0`
+  - `Use Colormap? = 1.0`
+- `Global Texture Parameter Values`
+  - `Colormap = VFX_T_ColorMap_Blue_06`
+  - `T_Main = T_Glow`
+- `Parent = M_UberMaterial`
+
+材质属性覆盖：
+
+- `Blend Mode = Additive`
+- `Shading Model = Unlit`
+- 其余覆盖项仍基本未启用
+
+视口预览结果：
+
+- 左侧球体/效果预览已不再是淡灰透明轮廓
+- 现在出现明显的青蓝色发光亮斑与向上的柔和拖尾
+- 说明色卡颜色已经真正参与输出，而且加色混合让高亮区更适合做水花能量层或发光层
+
+这张图可替换为：在 `MI_GlowWater_01` 中启用 `Use Colormap`，保持 `Colormap = VFX_T_ColorMap_Blue_06` 与 `T_Main = T_Glow`，并将材质混合模式切换为 `Additive`、着色模型保持 `Unlit`，从而把原本较淡的透明水层改成更亮、更蓝、带柔和拖尾的发光叠加层
+
+### 00:13:10-00:17:57 Color、Scale Sprite Size、Material
+
+- 本段定位：Color、Scale Sprite Size、Material。
+- 知识点：本段围绕 `Depth Fade`、`Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Depth Fade` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Scale Sprite Size` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Translucent` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Color`、`Alpha`、`Opacity`、`Scale Sprite Size`、`Material`、`Texture`、`Depth Fade`、`Add`。
+
+**关键画面：**
+
+这是 `M_UberMaterial` 材质图里把 `Depth Fade` 纳入透明度控制的关键节点图，教程在已有颜色/透明链上增加一个可参数化的景深淡出控制，用来软化粒子与地面或其他几何体接触处的边缘
+
+节点定义集：
+
+- 标量参数 `Premultiply Color?`
+  - `Default Value = 1.0`
+- 标量参数 `Use Colormap?`
+  - `Default Value = 0.0`
+- 两个 `Lerp`
+  - 用于在颜色/遮罩分支之间切换
+- 两个 `Multiply`
+  - 上方一条连到 `Emissive Color`
+  - 下方一条连到 `Opacity`
+- 标量参数 `Depth Fade`
+  - 当前被选中
+  - `Default Value = 0.0`
+- 材质函数/节点 `DepthFade`
+  - `FadeDistance = 100.0`
+  - 接收一条 `Opacity` 输入
+- 材质输出 `M_UberMaterial`
+  - 当前可见使用的输出口是
+    - `Emissive Color`
+    - `Opacity`
+    - `World Position Offset`
+
+连线集：
+
+- 上游颜色链 -> 上方 `Multiply` -> `Emissive Color`
+- 上游透明度链 -> 下方 `Multiply`
+- 下方 `Multiply` -> `DepthFade.Opacity`
+- `DepthFade` -> 材质输出侧的 `Opacity`
+
+输出/预览：
+
+- 左侧球体仍是淡灰白半透明边缘
+- 说明这里主要是在优化透明过渡逻辑，而不是立即改变主色
+- 引入 `DepthFade` 后，材质会在靠近相交表面时自动衰减透明度，减少硬截边
+
+这张图可替换为：在 `M_UberMaterial` 中新增一个可实例化控制的 `Depth Fade` 标量参数，并将现有透明度链先经过一次 `Multiply`，再送入 `DepthFade` 节点，使用约 `FadeDistance = 100` 的设置后输出到材质 `Opacity`，从而让水体或精灵在靠近地面时获得更柔和的接触淡出效果
+这是在颜色贴图资源库里为发光水特效挑选色卡的截图，教程打开 `VFX_Library/Textures/ColorMaps`，在多组红、黄、青蓝色渐变卡中筛选适合当前水花效果的蓝绿系色卡
+
+资源浏览状态：
+
+- 当前内容浏览器路径为 `VFX_Library/Textures/ColorMaps`
+- 资源网格里可见多组色卡
+  - `VFX_T_ColorMap_Purple_*`
+  - `VFX_T_ColorMap_Red_*`
+  - `VFX_T_ColorMap_Teal_*`
+  - `VFX_T_ColorMap_Turquoise_*`
+  - `VFX_T_ColorMap_Yellow_*`
+- 当前高亮选中的是一个 `VFX_T_ColorMap_Turquoise_*` 资源
+  - 从缩略图可见为深青到亮青白的纵向渐变
+
+界面上下文：
+
+- 顶部同时开着
+  - `MI_GlowWater_01`
+  - `M_UberMaterial`
+  - `MI_Bubble_01`
+- 视口中上方可见一个青蓝色发光粒子
+  - 说明色卡选择会直接影响当前系统中的发光层配色
+
+效果含义：
+
+- 教程此时主要在做颜色方向筛选，而不是调整节点结构
+- 蓝绿/青色系色卡更贴近清澈水花或能量水滴的观感
+- 通过切换色卡，可以快速比较同一材质在不同渐变颜色上的最终输出差异
+
+这张图可替换为：在 `VFX_Library/Textures/ColorMaps` 中浏览不同渐变色卡，并优先选择 `VFX_T_ColorMap_Turquoise_*` 一类的青蓝色卡用于 `MI_GlowWater_01`，以便让当前粒子的发光层保持清澈水感而不是偏红或偏黄的能量色调
+这是 `M_UberMaterial` 中主纹理滚动与色卡叠色的核心节点图，教程把 `T_Main` 的 UV 做成可滚动、可缩放的链路，再用 `Colormap` 参与颜色混合，用于统一控制水体发光层的主形状和配色
+
+节点定义集：
+
+- `TexCoord[0]`
+- 向量参数 `Main (Scale|Scroll)`
+  - 黄色参数块
+- 两个 `Append`
+  - 上方一个参与 UV 缩放
+  - 下方一个参与滚动速度输入
+- `Multiply`
+  - 位于 `TexCoord` 与 `Panner` 之间
+- `Panner`
+  - 端口可见 `Coordinate`、`Time`、`Speed`
+- 纹理采样 `T_Main`
+- `Multiply(0.99)`
+  - 用于处理 `Colormap` 采样前的一条支路
+- 纹理采样 `Colormap`
+- `Lerp`
+  - `A = 1.0`
+  - `Alpha` 来自另一条颜色控制链
+- 标量参数 `Premultiply Color?`
+  - `Default Value = 1.0`
+- 标量参数 `Use Colormap?`
+
+连线集：
+
+- `TexCoord[0] -> Multiply.A`
+- `Main (Scale|Scroll)` 的上半组通道 -> 上方 `Append`
+- 上方 `Append -> Multiply.B`
+- `Multiply -> Panner.Coordinate`
+- `Main (Scale|Scroll)` 的下半组通道 -> 下方 `Append`
+- 下方 `Append -> Panner.Speed`
+- `Panner -> T_Main.UVs`
+- `T_Main` 输出一条支路 -> `Multiply(0.99)` -> `Colormap.UVs`
+- `T_Main` 另一条支路 -> `Lerp` 输入
+- `Colormap` 输出参与后续颜色混合
+
+设置/参数：
+
+- 左下材质属性当前可见
+  - `Material Domain = Surface`
+  - `Blend Mode = Translucent`
+  - `Shading Model = Unlit`
+
+输出/预览：
+
+- 左侧预览球体仍较淡，说明此图重点是颜色与 UV 逻辑本身
+- 这条链的目的不是立刻改变形状，而是确保主纹理会滚动、色卡会跟着主纹理坐标被采样并参与颜色插值
+
+这张图可替换为：在 `M_UberMaterial` 中使用 `Main (Scale|Scroll)` 参数同时控制主纹理的 UV 缩放与滚动速度，具体做法是 `TexCoord -> Multiply -> Panner -> T_Main` 形成主纹理流动链，再从 `T_Main` 的采样结果派生一条坐标支路去采 `Colormap`，并通过 `Lerp`、`Premultiply Color?` 与 `Use Colormap?` 参数决定是否把色卡叠加到最终发光颜色中
+
+### 00:17:57-00:20:51 Color、Add、Base Color
+
+- 本段定位：Color、Add、Base Color。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：dissolve dissolve. Everything is fine here. 100 材料 所以需要有一个基础 这也就是基础 那很酷。
+- 知识点：我们的Dissolve 差不多是Dissolve 啊,这里他们正在找两个基础的Dissolve 不是Dissolve,是Distortion。
+- 知识点：对不起 Distortion 所有东西都加进了Numetro 指示 这是Distortion 那就是了,很酷,我们的Distortion。
+- 知识点：准备好了 这里我们只会加进去,我们需要加进去 我们把所有的Distortion 加进去 再加进去 这里 那我们还需要哪里的Distortion 呢。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Color`、`Alpha`、`Opacity`、`Texture`、`Add`、`Panner`、`Emissive`、`材质`。
+
+**关键画面：**
+
+这是 `M_UberMaterial` 中基础纹理子图的整理图，教程把主纹理 UV 缩放与滚动链整体框进一个名为 `Base` 的注释区域，明确这部分专门负责生成“基础发光纹理”
+
+节点定义集：
+
+- 注释框 `Base`
+- `TexCoord[0]`
+- 向量参数 `Main (Scale|Scroll)`
+  - 黄色参数块
+  - 作为基础纹理的统一缩放/滚动控制入口
+- 两个 `Append`
+  - 上方用于拼出 UV 缩放向量
+  - 下方用于拼出滚动速度向量
+- `Multiply`
+  - 接收 `TexCoord` 与上方 `Append`
+- `Panner`
+  - 端口 `Coordinate / Time / Speed`
+- 纹理采样 `T_Main`
+
+连线集：
+
+- `TexCoord[0] -> Multiply.A`
+- `Main (Scale|Scroll)` 的上半组通道 -> 上方 `Append`
+- 上方 `Append -> Multiply.B`
+- `Multiply -> Panner.Coordinate`
+- `Main (Scale|Scroll)` 的下半组通道 -> 下方 `Append`
+- 下方 `Append -> Panner.Speed`
+- `Panner -> T_Main.UVs`
+
+设置/参数：
+
+- 当前视图重点不是单个数值，而是结构归类
+- 教程把这一整段定义为“Base Texture”生成链
+
+输出/预览：
+
+- 左侧球体预览仍较淡
+- 说明这一步主要是在组织和说明材质结构，而不是立即调出更强的最终表现
+- `T_Main` 在这一阶段承担主形状、主亮度分布和基础滚动节奏的来源
+
+这张图可替换为：在 `M_UberMaterial` 中将 `TexCoord -> Multiply -> Panner -> T_Main` 与 `Main (Scale|Scroll)` 控制链整体整理成一个 `Base` 注释区域，明确这部分只负责生成基础纹理层，其中上半组参数控制 UV 缩放，下半组参数控制滚动速度，最终由 `T_Main` 提供基础亮斑/底纹
+这是在 `M_UberMaterial` 中补出扭曲纹理子图的结构图，教程将用于基础层的 `Base Texture` 保留在右侧，同时在左侧新建一条独立的 `Distortion` 采样链，专门负责流体折射/扰动感
+
+节点定义集：
+
+- 右侧注释框 `Base Texture`
+  - 保留上一张的基础纹理链
+- 左侧一组新的扭曲链节点
+  - `TexCoord[0]`
+  - 向量参数 `Distortion (Scale|Scroll)`
+  - 两个 `Append`
+  - `Multiply`
+  - `Panner`
+  - 纹理采样 `T_Distortion`
+  - `Multiply(1)`
+  - 一个标量参数，标题开头可见为 `Dis...`
+    - `Default Value = 0.0`
+
+连线集：
+
+- `TexCoord[0] -> Multiply.A`
+- `Distortion (Scale|Scroll)` 的上半组通道 -> 上方 `Append`
+- 上方 `Append -> Multiply.B`
+- `Multiply -> Panner.Coordinate`
+- `Distortion (Scale|Scroll)` 的下半组通道 -> 下方 `Append`
+- 下方 `Append -> Panner.Speed`
+- `Panner -> T_Distortion.UVs`
+- `T_Distortion` 输出 -> `Multiply(1)`
+- `Dis...` 标量参数位于这条扭曲链附近，作为后续控制项
+
+设置/参数：
+
+- `Distortion (Scale|Scroll)` 与 `Main (Scale|Scroll)` 分离
+  - 说明扭曲层拥有独立的缩放与滚动节奏
+- 当前选中的 `Dis...` 标量参数
+  - `Default Value = 0.0`
+  - 用于后续控制 Distortion 强度或参与量
+
+输出/预览：
+
+- 左侧球体预览依然较淡
+- 说明此图的重点仍是子图结构的搭建，不是最终预览强度
+- 通过把 `Base Texture` 与 `Distortion Texture` 拆开，后续可以分别控制主体亮斑和内部扰动
+
+这张图可替换为：在 `M_UberMaterial` 中除了保留右侧 `Base Texture` 子图外，再单独建立一条 `Distortion` 子图，使用 `Distortion (Scale|Scroll)` 参数分别控制 `T_Distortion` 的 UV 缩放和滚动速度，具体链路同样是 `TexCoord -> Multiply -> Panner -> T_Distortion`，并预留一个 `Dis...` 标量参数用于后续控制 Distortion 强度
+这是 `Base Texture` 子图里开始整理“基础颜色/基础结果”输出的截图，教程在主纹理链中插入 `Add(1)`，并打开命名路由搜索，准备把当前结果组织成可复用的 `Base Color`、`Dissolve`、`Distortion` 一类通道
+
+节点定义集：
+
+- 注释框 `Base Texture`
+- `TexCoord[0]`
+- 向量参数 `Main (Scale|Scroll)`
+- `Add(1)`
+  - 当前被选中
+  - 左下细节面板可见
+    - `Const A = 0.0`
+    - `Const B = 1.0`
+- `Multiply`
+- `Panner`
+- `T_Main`
+- 一个搜索弹窗
+  - 处于命名路由/节点搜索状态
+  - 当前可见候选
+    - `Base Color`
+    - `Dissolve`
+    - `Dissolve`
+    - `Distortion`
+
+连线集：
+
+- `TexCoord[0] -> Add(1)`
+- `Add(1) -> Multiply`
+- `Multiply -> Panner`
+- `Panner -> T_Main`
+- `Main (Scale|Scroll)` 仍作为这条基础纹理链的参数输入来源
+
+设置/参数：
+
+- `Add(1)` 的默认常量设置显示教程正在用加法对坐标或基础结果做偏移/基值处理
+- 搜索 `Base Color / Dissolve / Distortion` 说明材质开始进入“把不同子结果命名并路由出去”的组织阶段
+
+输出/预览：
+
+- 左侧球体预览变化不明显
+- 说明本图的重点不是直接可见差异，而是为后续多个材质结果层建立更清晰的输出结构
+
+这张图可替换为：在 `Base Texture` 子图中把 `TexCoord` 与主纹理链之间加入 `Add(1)` 作为基础偏移/基值处理节点，并开始通过命名路由方式整理子结果，准备把当前主纹理链输出分别归入 `Base Color`、`Dissolve`、`Distortion` 等后续会复用的材质通道
+
+### 00:20:55-00:23:54 Color、Alpha、Multiply
+
+- 本段定位：Color、Alpha、Multiply。
+- 知识点：应该在底层的基础里,只有这些 接下来,我们需要创造一个Mask 所以我们也会把所有的东西都加进去 这就是我们要的,只有我们不需要Distortion。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle`、`Color`、`Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Alpha` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle`、`Color`、`Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Particle`、`Color`、`Alpha`、`Opacity`、`Texture`、`Multiply`、`Add`、`Panner`。
+
+**关键画面：**
+
+当前截图处于 `M_UberMaterial` 材质图界面，但节点区几乎为空白，无法可靠辨认正在复制的是哪一组节点、复制后放置到哪里、以及具体连线关系
+
+已确认信息：
+
+- 当前活动页签包含
+  - `MI_GlowWater_01`
+  - `M_UberMaterial`
+  - `MI_Bubble_01`
+  - `M_WaterBubble`
+- 当前主界面是 `M_UberMaterial > Material Graph`
+- 左下材质属性可见
+  - `Material Domain = Surface`
+  - `Blend Mode = Translucent`
+  - `Shading Model = Unlit`
+- 视口左侧仍是淡灰白的球体预览
+- 字幕仅能辅助确认教程此时在执行“复制过来”的操作
+
+不确定点：
+
+- 被复制的具体节点组不可见
+- 无法确认是 `Base Texture`、`Distortion` 还是其他颜色/透明度链被复制
+- 无法确认复制后的新节点名称、位置与连线
+这是把 `Base Color` 路由正式接入色卡混合链的节点图，教程将前面整理出的基础结果命名输出到 `Base Color`，再用它驱动 `Colormap` 的采样与后续 `Lerp` 混色
+
+节点定义集：
+
+- 命名路由/参数节点 `Base Color`
+- `Multiply(0,0.99)`
+  - 当前显示其中一个常量输入为 `0.0`
+- 纹理采样 `Colormap`
+- 下方一个 `Lerp(1,1)`
+  - `A = 1.0`
+  - `B = 1.0`
+- 右侧主 `Lerp`
+
+连线集：
+
+- `Base Color -> Multiply(0,0.99)`
+- `Multiply(0,0.99) -> Colormap.UVs`
+- `Colormap` 输出 -> 主 `Lerp` 的一个颜色输入
+- `Lerp(1,1)` 输出 -> 主 `Lerp` 的另一输入
+- 还有一条来自下方的链路进入主 `Lerp.Alpha`
+
+结构含义：
+
+- `Base Color` 不再只是命名占位
+- 它现在作为一条明确的基础坐标/基础结果输入，驱动色卡采样
+- `Colormap` 与常量化的 `Lerp(1,1)` 共同构成颜色混合的上层结构
+- 主 `Lerp` 会根据下方 Alpha 链决定最终使用多少色卡颜色、多少基础颜色
+
+输出/预览：
+
+- 左侧预览变化仍不明显
+- 说明此图的价值在于说明颜色链连接关系，而不是数值调完后的最终观感
+
+这张图可替换为：将前面整理出的 `Base Color` 结果作为一条显式命名路由输出，并把它送入一个 `Multiply` 后接到 `Colormap.UVs`，再让 `Colormap` 采样结果与一个常量 `Lerp(1,1)` 一起输入到主 `Lerp`，从而把“基础纹理结果”真正转化为可被色卡控制的最终颜色混合链
+这是把 `Use Colormap?` 正式作为颜色混合开关接入主 `Lerp` 的节点图，教程用一个标量参数直接控制是否启用色卡混合，再把混合结果送往后续乘法链
+
+节点定义集：
+
+- 左侧一条来自 `Colormap` 的颜色输出支路
+- 主 `Lerp`
+  - `A`
+  - `B`
+  - `Alpha`
+- 标量参数 `Use Colormap?`
+  - `Default Value = 0.0`
+- `Multiply(0,1)`
+  - 当前被选中
+  - 左下细节面板可见
+    - `Const A = 0.0`
+    - `Const B = 1.0`
+
+连线集：
+
+- 左侧颜色支路 -> 主 `Lerp` 的一个颜色输入
+- 另一条下方颜色支路 -> 主 `Lerp` 的另一个颜色输入
+- `Use Colormap? -> 主 Lerp.Alpha`
+- 主 `Lerp` 输出准备继续接到右侧的 `Multiply(0,1)` 与后续颜色链
+
+设置/参数：
+
+- `Use Colormap?` 默认值为 `0.0`
+  - 表示在默认状态下不启用色卡混合
+- 当该值切到 `1` 时，主 `Lerp` 会切换到色卡分支
+
+输出/预览：
+
+- 左侧预览没有明显变化
+- 说明当前图的核心是控制逻辑：把色卡是否参与最终颜色，抽象成一个独立的实例参数开关
+
+这张图可替换为：在 `M_UberMaterial` 的颜色链中，使用 `Use Colormap?` 标量参数直接驱动主 `Lerp.Alpha`，让材质实例可以在“原始基础颜色输出”和“采样过的 Colormap 颜色输出”之间一键切换，再将该 `Lerp` 结果继续送入后续乘法或发光强度链
+
+### 00:24:04-00:27:07 System、Color、Alpha
+
+- 本段定位：System、Color、Alpha。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle`、`Color`、`Alpha` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle`、`Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Depth Fade` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`Particle`、`Color`、`Alpha`、`Opacity`、`Material`、`Texture`、`User Parameter`、`Depth Fade`。
+
+**关键画面：**
+
+这是 `M_UberMaterial` 的分组总览图，教程把此前逐步搭好的多个颜色/透明度/纹理子图拉开排布，作为“独立组”来整理材质结构，方便后续继续在系统侧联动 `Color` 与 `Alpha`
+
+已确认的结构信息：
+
+- 当前界面是 `M_UberMaterial > Material Graph`
+- 视图缩放很远，能看到多个被注释框包裹的独立子图
+  - 左上与左下各有较小分组
+  - 中间有一个较大的主分组
+  - 右侧可见一组靠近材质输出的结果链
+- 当前选中的是标量参数 `Use Colormap?`
+  - 左下细节面板可见
+    - `Parameter Name = Use Colormap?`
+    - `Default Value = 0.0`
+    - `Slider Min = 0.0`
+    - `Slider Max = 1.0`
+    - `Group = Base Texture`
+
+可确认的含义：
+
+- `Use Colormap?` 已经被归类到 `Base Texture` 参数组中
+- 教程此时的重点不是新增单个复杂节点，而是把已有逻辑拆成更清楚的独立模块
+- 右侧材质输出链已经与这些分组相连，说明后续系统端传值会依赖这种更清晰的结构组织
+
+不确定点：
+
+- 因为缩放较远，无法可靠辨认每个分组内部的全部节点名与精确连线
+- 只能确认这是已有子图的整理总览，而不是适合逐节点抄写的近景图
+
+这张图可替换为：将 `M_UberMaterial` 里已经完成的基础纹理、色卡、透明度与输出链拆成多个独立注释组统一排版，并把 `Use Colormap?` 这样的控制参数明确归入 `Base Texture` 参数组，便于后续在 Niagara 系统里通过颜色与透明度参数稳定驱动材质表现
+这是 `M_UberMaterial` 中把 `Color` 与 `Alpha` 分开处理的近景节点图：颜色直接送发光，透明度则由 `Particle Alpha`、贴图遮罩和 `Depth Fade` 共同控制
+
+节点定义集：
+
+- `Particle Alpha`
+- 命名路由 `Base Color`
+- `Mask`
+  - 画面可确认其作用是从 `Base Color` 提取单通道遮罩
+- 三个串联的 `Multiply`
+  - 第一个 `Multiply` 用来把 `Particle Alpha` 与遮罩结果相乘
+  - 后两个 `Multiply` 继续放大或叠乘透明度结果
+- 命名路由或参数 `Color`
+- `DepthFade`
+- 材质输出
+  - `Emissive Color`
+  - `Opacity`
+
+连线集：
+
+- `Base Color -> Mask`
+- `Particle Alpha -> 第一个 Multiply`
+- `Mask` 输出 -> 第一个 `Multiply`
+- 第一个 `Multiply` 输出依次经过后面两个 `Multiply`
+- 乘法链结果 -> `DepthFade`
+- `DepthFade` 输出 -> `M_UberMaterial.Opacity`
+- `Color -> M_UberMaterial.Emissive Color`
+
+设置/参数：
+
+- 当前截图右键菜单打开在一个中间蓝色节点上
+  - 可见菜单项包括 `Select Named Route Declaration`、`Convert to Reroute`、`Stop Previewing Node`、`Enable Realtime Preview`
+- 这说明图中至少有一处采用命名路由或重定向式整理，便于在较长材质链里复用颜色或遮罩数据
+
+输出/预览：
+
+- 左侧预览为纯白发光平面
+- 该图表达的核心不是预览差异，而是材质输出职责拆分
+  - `Color` 单独负责发光颜色
+  - `Particle Alpha + 遮罩 + Depth Fade` 负责透明度软化
+
+这张图可替换为：在 `M_UberMaterial` 中，不直接把颜色链拿去当透明度，而是先从 `Base Color` 提取单通道遮罩，再与 `Particle Alpha` 相乘，并继续经过额外的乘法调制后送入 `Depth Fade`，最终输出到 `Opacity`；同时把独立的 `Color` 参数直接连接到 `Emissive Color`，从而把发光颜色控制与透明度衰减控制明确分离
+这是材质实例 `MI_Bubble_01` 的参数面板截图，用来验证前面在 `M_UberMaterial` 中整理出的 `Base Texture`、`Dissolve`、`Distortion` 和全局透明度控制，已经能在实例层直接驱动最终气泡外观
+
+参数分组与已确认设置：
+
+- `Base Texture`
+  - `Colormap`
+    - 已启用
+    - 资源为 `VFX_T_ColorMap_Turquoise_04`
+  - `Main (Scale/Scroll)`
+    - 存在
+    - 当前值在截图中不可可靠辨认
+  - `Mask (Scale/Scroll)`
+    - 存在
+    - 当前值在截图中不可可靠辨认
+  - `Premultiply Color? = 1.0`
+  - `T_Main`
+    - 已启用
+    - 资源为 `T_Water_Bubble_01`
+  - `T_Mask`
+    - 未启用
+    - 可见默认白色纹理槽，名称无法完全确认
+  - `Use Colormap? = 1.0`
+- `Dissolve`
+  - `T_Dissolve`
+    - 未启用
+    - 槽位中显示噪声贴图，名称看起来像 `T_Noise111`
+    - 资源名不够清晰，需以工程内实际名称为准
+  - `Dissolve (Scale/Scroll)`
+    - 存在
+    - 当前值不可可靠辨认
+  - `Smoothness = 0.1`
+- `Distortion`
+  - `Distortion (Scale/Scroll)`
+    - 存在
+    - 当前值不可可靠辨认
+  - `Distortion Influence = 0.0`
+  - `T_Distortion`
+    - 已启用
+    - 资源名看起来像 `T_Voronoise002`
+- `Global Scalar Parameter Values`
+  - `Depth Fade = 100.0`
+- `Material Property Overrides`
+  - `Blend Mode = Translucent`
+
+输出/预览：
+
+- 视口中显示一个半透明蓝绿色球形气泡
+- 气泡中心有更亮的发光核心
+- 边缘存在较柔和的透明衰减，符合前一张图里 `Depth Fade` 参与 `Opacity` 的结果
+
+这张图可替换为：在材质实例 `MI_Bubble_01` 中，启用 `Colormap` 与 `T_Main`，把 `Use Colormap?` 设为 `1.0`，`Premultiply Color?` 设为 `1.0`，并保持 `Blend Mode = Translucent`、`Depth Fade = 100.0`、`Distortion Influence = 0.0`，从而得到一个带蓝绿色渐变、中心发光、边缘柔和衰减的透明气泡效果；`T_Dissolve` 与 `T_Mask` 在该截图中未启用
+
+### 00:27:09-00:30:07 Emitter、Spawn、Lifetime
+
+- 本段定位：Emitter、Spawn、Lifetime。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Curve` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：Lifetime 决定粒子存活时间，需要和 Spawn 数量、速度以及透明度曲线一起调。
+- 知识点：本段围绕 `Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Emitter`、`Particle`、`Spawn`、`Lifetime`、`Alpha`、`Opacity`、`Texture`、`Curve`。
+
+**关键画面：**
+
+这是材质实例 `MI_Bubble_01` 的继续调参截图，仍在实例层验证气泡材质，但本张图的重点从基础颜色切到 `Distortion` 扰动控制
+
+参数分组与已确认设置：
+
+- `Base Texture`
+  - `Colormap`
+    - 已启用
+    - 资源为 `VFX_T_ColorMap_Turquoise_04`
+  - `T_Main`
+    - 已启用
+    - 资源为 `T_Water_Bubble_01`
+  - `Use Colormap? = 1.0`
+- `Dissolve`
+  - `T_Dissolve`
+    - 未启用
+    - 纹理槽中仍显示噪声贴图预览
+  - `Smoothness = 0.1`
+- `Distortion`
+  - `Distortion (Scale/Scroll)`
+    - 已启用
+  - `Distortion Influence = 0.1`
+    - 当前输入框被选中
+  - `T_Distortion`
+    - 未启用
+    - 槽位里可见一张类似 `T_Voronoise002` 的噪声纹理预览
+- `Global Scalar Parameter Values`
+  - `Depth Fade = 100.0`
+- `Material Property Overrides`
+  - `Blend Mode = Translucent`
+
+输出/预览：
+
+- 视口中仍是一个半透明蓝绿色气泡
+- 与前一张相比，截图强调的是边缘和表面轻微折射扰动，而不是颜色本身的变化
+
+这张图可替换为：继续在 `MI_Bubble_01` 中保留 `Colormap` 与主纹理设置，同时把 `Distortion Influence` 调到 `0.1`，用于给透明气泡增加轻微表面扰动；`Blend Mode` 仍保持 `Translucent`，`Depth Fade` 仍为 `100.0`，因此最终外观依旧是中心发光、边缘柔和衰减的蓝绿色气泡，只是在折射层面加入了更明显的变化
+这是回到 Niagara System `NS_StylizedWaterSplash` 的系统总览图，教程在已有 `WaterSphereGlow`、`WaterSphereMesh` 之外，新建了一个名为 `Empty` 的发射器，并先配置它的 `Emitter State`
+
+Stack 结构：
+
+- System Overview 中可见至少三个发射器轨道
+  - `Empty`
+  - `WaterSphereGlow`
+  - `WaterSphereMesh`
+- 当前选中的是 `Empty`
+- `Empty` 的可见模块顺序为
+  - `Emitter State`
+  - `Initialize Particle`
+  - `Particle State`
+  - `Sprite Renderer`
+
+`Emitter State` 已确认参数：
+
+- `Life Cycle Mode = System`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Infinite`
+- `Loop Duration Mode = Fixed`
+- `Loop Duration = 1.0`
+- `Scalability Mode = System`
+
+界面操作状态：
+
+- 鼠标停在 `Emitter Update` 右侧加号上，提示为 `Add a new Module to this group`
+- 说明教程下一步准备继续往 `Emitter Update` 里添加控制生成节奏或生命周期的模块
+
+输出/预览：
+
+- 左侧预览仍显示一个蓝绿色半透明球体
+- 时间轴中 `Empty` 轨道已存在并参与系统播放
+
+这张图可替换为：在 `NS_StylizedWaterSplash` 中新增一个空发射器 `Empty`，保留基础的 `Initialize Particle`、`Particle State` 和 `Sprite Renderer`，并先把 `Emitter State` 设为 `Life Cycle Mode = System`、`Inactive Response = Complete (Let Particles Finish then Kill Emitter)`、`Loop Behavior = Infinite`、`Loop Duration Mode = Fixed`、`Loop Duration = 1.0`，为后续在该发射器上单独搭建 Spawn 与 Lifetime 逻辑做准备
+这是 `Empty` 发射器的 `Initialize Particle` 设置图，教程开始为这个新发射器定义基础粒子生命周期和 Sprite 尺寸范围
+
+Stack 位置：
+
+- 当前选中 `Empty > Particle Spawn > Initialize Particle`
+- 右侧详情面板顶部显示 `5 Particles`
+
+`Initialize Particle` 已确认参数：
+
+- `Lifetime Mode = Direct Set`
+- `Lifetime = 5.0`
+- `Color Mode = Unset`
+- `Position Mode = Simulation Position`
+- `Position Offset = (0.0, 0.0, 0.0)`
+- `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Size Mode = Random Uniform`
+- `Uniform Sprite Size Min = 25.0`
+- `Uniform Sprite Size Max = 55.0`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+- `Mesh Scale Mode = Unset`
+- `Mesh Renderer Array Visibility Mode = Unset`
+- `Ribbon Width Mode = Unset`
+- `Ribbon Facing Mode = Unset`
+- `Ribbon Twist Mode = Unset`
+
+输出/预览：
+
+- 左侧预览画面中暂时看不到明显粒子图像
+- 时间轴停在大约 `0.31` 秒位置，说明此时更关注初始化参数本身，而不是最终渲染效果
+
+这张图可替换为：在 `Empty` 发射器的 `Initialize Particle` 中，把粒子寿命设为 `5.0` 秒，位置模式设为 `Simulation Position`，并把 Sprite 尺寸模式改为 `Random Uniform`，尺寸范围设为 `25.0` 到 `55.0`；其余颜色、旋转、UV、Mesh 和 Ribbon 相关模式保持未设置状态，先建立一个只负责基础生成与寿命控制的 Sprite 粒子模板
+
+### 00:30:19-00:33:48 Color、Scale Sprite Size
+
+- 本段定位：Color、Scale Sprite Size。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Scale Sprite Size` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 核对对象：`Color`、`Scale Sprite Size`。
+
+**关键画面：**
+
+这是 `Empty` 发射器继续搭建粒子尺寸动画的界面图，教程准备在 `Particle Update` 中加入 `Scale Sprite Size`，用来在粒子生命周期内二次缩放已经初始化好的 Sprite 尺寸
+
+Stack 结构：
+
+- 当前发射器为 `Empty`
+- 已可见模块顺序为
+  - `Emitter State`
+  - `Spawn Rate`
+  - `Initialize Particle`
+  - `Particle Update`
+  - `Sprite Renderer`
+- 鼠标停在 `Particle Update` 组中的待添加模块位置
+  - 提示文字为 `Takes the initial particle scale as set in the spawn script, and scales it by a scale factor.`
+
+右侧当前仍显示的 `Initialize Particle` 已确认参数：
+
+- `Lifetime = 5.0`
+- `Sprite Size Mode = Random Uniform`
+- `Uniform Sprite Size Min = 25.0`
+- `Uniform Sprite Size Max = 55.0`
+
+输出/预览：
+
+- 左侧预览中可见一个较小的蓝色球形 Sprite
+- 时间轴停在大约 `4.63` 秒，说明粒子已进入生命周期后段，适合观察后续尺寸缩放模块的影响
+
+这张图可替换为：在 `Empty` 发射器中先保持 `Initialize Particle` 的基础尺寸设置不变，再准备在 `Particle Update` 中添加 `Scale Sprite Size` 模块。该模块的作用不是重新定义初始尺寸，而是读取 Spawn 阶段已经生成的 Sprite 大小，并在粒子存活期间按额外缩放因子继续放大或缩小
+这是 `Empty` 发射器在 `Particle Update` 中新增模块时打开模块库搜索的界面图，教程正在筛选可用于粒子尺寸或缩放控制的 Niagara 模块
+
+界面状态：
+
+- 当前发射器仍是 `Empty`
+- 鼠标停在 `Particle Update` 组右侧加号位置
+  - 提示为 `Add a new Module to this group`
+- 已弹出 `Add new Module` 面板
+
+模块库筛选状态：
+
+- `Source Filtering`
+  - `Niagara` 已启用
+  - `Library Only` 已启用
+- 搜索框内已输入筛选字符
+  - 从画面可辨认出是以 `sc` 开头的搜索
+  - 精确完整字符串无法可靠确认
+
+当前可见候选项：
+
+- `Attribute Reader`
+  - `Update Particles from Other Emitter`
+- `Camera`
+  - `Maintain in Camera Particle Scale`
+  - `Recreate Camera Projection`
+- `Force`
+  - `Aerodynamic Drag`
+  - `Mesh Rotation Force`
+- `Kill`
+  - `Kill Particles`
+- `Location`
+  - `Locate Around Point`
+- `Mass`
+  - `Calculate Mass and Rotational Inertia by Volume`
+  - `Calculate Size and Rotational Inertia by Mass`
+
+不确定点：
+
+- 这张图只展示了模块库搜索阶段，尚未看到最终被选中的模块名
+- 因此不能在本条里提前断定已经完成了 `Scale Sprite Size` 的添加
+
+这张图可替换为：在 `Empty` 发射器的 `Particle Update` 组点击加号打开 `Add new Module`，保持 `Niagara` 与 `Library Only` 过滤条件，并通过搜索框输入以 `sc` 开头的关键字缩小候选范围，准备从 Niagara 标准库里添加与粒子缩放相关的更新模块；此时仍处于搜索和筛选阶段，还没有完成最终模块选择
+这是 `Empty` 发射器在补齐多个 `Particle Update` 模块后的系统总览图。虽然右侧当前选中的是 `Rotate Around Point`，但左侧堆栈已经能确认 `Scale Sprite Size` 和 `Scale Color` 都已加入到更新阶段
+
+Stack 结构：
+
+- 当前发射器为 `Empty`
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Rotate Around Point`
+- `Render`
+  - `Sprite Renderer`
+
+当前选中模块：`Rotate Around Point`
+
+已确认参数：
+
+- `Rotation Phase`
+  - 类型为 `Random Range Float`
+  - `Minimum = 0.0`
+  - `Maximum = 1.0`
+  - `Evaluation Type = Spawn Only`
+- `Rotation Rate`
+  - 类型为 `Float from Curve`
+  - 曲线索引为 `Particles.NormalizedAge`
+- `Scale Curve`
+  - 类型为 `Random Range Float`
+  - `Minimum = 0.6`
+  - `Maximum = 1.0`
+  - `Evaluation Type = Spawn Only`
+- `Setup`
+  - `Set Particle Position` 已启用
+- `Radius`
+  - 类型为 `Multiply Float`
+  - `A` 为 `Random Range Float`
+    - `Minimum = 50.0`
+    - `Maximum = 75.0`
+    - `Evaluation Type = Spawn Only`
+  - `B = 1.0`
+- `Rotation Center = (0.0, 0.0, 350.0)`
+- `Derive the Rotation Axis` 已启用
+- `X Axis = (1.0, 0.0, 0.0)`
+- `Y Axis = (0.0, 1.0, 0.0)`
+
+输出/预览：
+
+- 左侧预览中当前几乎看不到明显粒子形状
+- 时间轴停在约 `1.19` 秒
+- 这张图的重点是模块结构已经成型，而不是预览结果本身
+
+这张图可替换为：在 `Empty` 发射器的 `Particle Update` 中，先后加入 `Scale Sprite Size`、`Scale Color` 和 `Rotate Around Point`。其中 `Rotate Around Point` 使用 `Particles.NormalizedAge` 驱动旋转速率曲线，`Rotation Phase` 在 `0.0-1.0` 间随机初始化，`Scale Curve` 在生成时随机取 `0.6-1.0`，并让粒子围绕 `(0, 0, 350)` 附近、半径约 `50-75` 的范围旋转分布，从而把基础 Sprite 粒子进一步组织成带尺寸变化与环绕运动的效果层
+
+### 00:33:51-00:36:45 关键画面
+
+- 本段定位：关键画面。
+- 知识点：围绕当前效果继续调整 Niagara 系统，需结合关键画面确认实际节点和参数。
+
+**关键画面：**
+
+这是 `Empty > Particle Update > Rotate Around Point` 的参数编辑图，教程在该模块的某个浮点输入位上打开动态输入菜单，准备把固定值改成可选的 Niagara 浮点表达式或随机输入
+
+当前模块上下文：
+
+- 左侧堆栈保持不变
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Rotate Around Point`
+- 右侧仍是 `Rotate Around Point` 详情面板
+  - `Rotation Phase` 为 `Random Range Float`
+  - `Rotation Rate` 为 `Float from Curve`
+  - `Scale Curve` 为 `Random Range Float`
+  - `Radius` 为 `Multiply Float`
+
+动态输入菜单状态：
+
+- 画面右侧弹出了浮点输入选择菜单
+- `Source Filtering`
+  - `Niagara` 已启用
+  - `Library Only` 已启用
+- 搜索框为空
+- 当前可见的 `Suggested` / 通用候选包括
+  - `Distance Between Positions`
+  - `Float from Curve`
+  - `Lerp Float`
+  - `Multiply Float`
+  - `Multiply Float by Int`
+  - `Random Range Float`
+  - `Return Normalized Exec Index`
+  - `Select Float from Array`
+  - `Waveform`
+- 下方还能看到通用入口
+  - `Dynamic Inputs`
+  - `Link Inputs`
+  - `Make`
+  - `New Expression`
+  - `New Local Value`
+  - `New Scratch Dynamic Input`
+
+可确认含义：
+
+- 教程此时不再只是调现有数值，而是在把 `Rotate Around Point` 中的某个数值槽切换成动态输入
+- 这样后续可以把半径、缩放或其他浮点项改为曲线、随机范围或表达式驱动
+
+这张图可替换为：在 `Rotate Around Point` 模块的浮点参数上打开动态输入菜单，保持 `Niagara` 与 `Library Only` 过滤条件，然后从标准浮点输入节点中选择新的驱动方式，而不是只填一个常量值。可选项包括 `Random Range Float`、`Float from Curve`、`Multiply Float`、`Lerp Float` 等，说明本步骤是在把当前轨道中的某个核心参数改造成更灵活的程序化输入
+这是 `Empty > Particle Update > Rotate Around Point` 的进一步细化图，教程把旋转半径和旋转中心都改成更动态的表达式，让粒子环绕分布不再固定在完全一致的位置
+
+当前模块：`Rotate Around Point`
+
+已确认参数结构：
+
+- `Scale Curve`
+  - 类型为 `Random Range Float`
+  - `Minimum = 0.6`
+  - `Maximum = 1.0`
+  - `Evaluation Type = Spawn Only`
+- `Setup`
+  - `Set Particle Position` 已启用
+- `Radius`
+  - 顶层类型为 `Multiply Float`
+  - `A`
+    - 类型为 `Random Range Float`
+    - `Minimum = 50.0`
+    - `Maximum = 75.0`
+    - `Evaluation Type = Spawn Only`
+  - `B`
+    - 类型为 `Float from Curve`
+    - 曲线资源显示为 `Curve for Floats`
+    - `CurveIndex = Emitter.Age`
+    - `Scale Curve = 1.0`
+- `Rotation Center`
+  - 顶层类型为 `Add Vector to Position`
+  - `Position = (0.0, 0.0, 350.0)`
+  - `Vector`
+    - 类型为 `Make Vector`
+    - `X = 0.0`
+    - `Y = 0.0`
+    - `Z`
+      - 类型为 `Random Range Float`
+      - `Minimum = -25.0`
+      - `Maximum = 25.0`
+      - `Evaluation Type = Spawn Only`
+- `Derive the Rotation Axis` 已启用
+- `X Axis = (1.0, 0.0, 0.0)`
+- `Y Axis = (0.0, 1.0, 0.0)`
+
+可确认含义：
+
+- `Radius` 不再只是固定随机半径，而是“生成时随机半径”再乘一个随 `Emitter.Age` 变化的曲线值
+- `Rotation Center` 也不是绝对固定在 `Z=350`，而是在这个基准高度附近再给每个粒子一个 `-25` 到 `25` 的随机 Z 偏移
+
+这张图可替换为：在 `Rotate Around Point` 中，把 `Radius` 设为 `Random Range Float(50-75)` 乘以一个基于 `Emitter.Age` 的 `Float from Curve`，让环绕半径随发射器时间整体变化；同时把 `Rotation Center` 改为 `Add Vector to Position`，以 `(0, 0, 350)` 为基准，再叠加一个 `Z` 方向 `-25` 到 `25` 的随机偏移，从而让粒子围绕点的高度产生轻微层次变化，而不是全部锁死在同一圆环平面
+这是该环绕气泡发射器整理后的系统总览图。可确认它已经从原来的临时名 `Empty` 改成一个以 `Bubbles_` 开头的新名称，同时开始把 `Spawn Rate` 改为随时间变化的曲线驱动
+
+Stack 结构：
+
+- 当前选中的发射器是原 `Empty` 重命名后的版本
+  - 名称以 `Bubbles_` 开头
+  - 截图中文字末尾被截断，完整拼写无法百分百确认
+- 发射器内可见模块顺序为
+  - `Emitter State`
+  - `Spawn Rate`
+  - `Initialize Particle`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Rotate Around Point`
+  - `Sprite Renderer`
+
+`Emitter State` 已确认参数：
+
+- `Life Cycle Mode = System`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Infinite`
+- `Loop Duration Mode = Fixed`
+- `Loop Duration = 1.0`
+
+`Spawn Rate` 已确认参数：
+
+- `SpawnRate`
+  - 类型为 `Float from Curve`
+  - 曲线资源显示为 `Curve for Floats`
+- `CurveIndex`
+  - 类型为 `Multiply Float`
+  - `A = Emitter.Age`
+  - `B = 0.7`
+- `Scale Curve = 20.0`
+- `Spawn Probability = 1.0`
+
+可确认含义：
+
+- 生成速率不再是固定常量，而是读取一条曲线
+- 该曲线的横轴输入不是直接用 `Emitter.Age`，而是先乘以 `0.7`
+  - 等价于放慢曲线采样推进速度
+- 再通过 `Scale Curve = 20.0` 放大最终生成数量
+
+输出/预览：
+
+- 左侧预览当前仍接近空白
+- 这张图的重点是发射器结构整理与 `Spawn Rate` 驱动方式的变化，不是即时可视结果
+
+这张图可替换为：将原先临时搭建的 `Empty` 发射器重命名为一个正式的气泡环绕发射器，并保留此前完成的 `Scale Sprite Size`、`Scale Color` 与 `Rotate Around Point` 结构；随后把 `Spawn Rate` 从常量改为 `Float from Curve`，以 `Emitter.Age * 0.7` 作为曲线输入，再用 `Scale Curve = 20.0` 放大生成密度，这样就能让粒子生成节奏随发射器时间变化，而不是始终以固定速率均匀刷出
+
+### 00:37:05-00:39:56 Spawn、Spawn Rate、Lifetime
+
+- 本段定位：Spawn、Spawn Rate、Lifetime。
+- 知识点：Lifetime 决定粒子存活时间，需要和 Spawn 数量、速度以及透明度曲线一起调。
+- 知识点：使用 Spawn Rate 连续生成粒子，并根据效果密度调整每秒生成数量。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。；User Parameter 要保持命名和类型稳定，便于蓝图、材质或系统级控制复用。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Alpha` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`Spawn Rate`、`Spawn`、`Lifetime`、`Color`、`Alpha`、`Opacity`、`Material`、`Texture`。
+
+**关键画面：**
+
+这是重命名后的环绕气泡发射器 `Bubbles_AroundSphere` 的继续调参图，教程仍在微调 `Spawn Rate`，让该层的生成密度更高
+
+Stack 结构：
+
+- 当前发射器名称已完整可见为 `Bubbles_AroundSphere`
+- 可见模块顺序为
+  - `Emitter State`
+  - `Spawn Rate`
+  - `Initialize Particle`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Rotate Around Point`
+  - `Sprite Renderer`
+
+`Spawn Rate` 已确认参数：
+
+- `SpawnRate`
+  - 类型为 `Float from Curve`
+  - 曲线资源显示为 `Curve for Floats`
+- `CurveIndex`
+  - 类型为 `Multiply Float`
+  - `A = Emitter.Age`
+  - `B = 0.7`
+- `Scale Curve = 35.0`
+- `Spawn Probability = 1.0`
+
+与前一张相比可确认的变化：
+
+- 发射器正式命名已确认
+- `Scale Curve` 从前一张的 `20.0` 提高到了 `35.0`
+  - 说明教程在保持曲线形状不变的前提下，直接增大曲线输出倍率，以提升单位时间内的粒子生成数量
+
+输出/预览：
+
+- 左侧预览已能看到一个较小的蓝色气泡粒子
+- 说明当前生成数量开始足以在预览中稳定出现这一层的可见粒子
+
+这张图可替换为：把该发射器正式命名为 `Bubbles_AroundSphere`，保留 `SpawnRate = Float from Curve` 与 `CurveIndex = Emitter.Age * 0.7` 的时间驱动方式，同时把 `Scale Curve` 提高到 `35.0`，以在不改曲线走势的情况下进一步增加环绕气泡层的总体生成密度
+这是在系统里复制出第二个环绕气泡发射器后的总览图。当前选中的是 `Bubbles_AroundSphere001`，说明教程开始通过复制现有发射器来叠加第二层相近但参数不同的气泡环绕效果
+
+系统层结构：
+
+- 时间轴和 System Overview 中可见两个同类发射器
+  - `Bubbles_AroundSphere`
+  - `Bubbles_AroundSphere001`
+- 当前选中的是 `Bubbles_AroundSphere001`
+- 该复制发射器沿用了与原发射器相同的主模块结构
+  - `Emitter State`
+  - `Spawn Rate`
+  - `Initialize Particle`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Rotate Around Point`
+  - `Sprite Renderer`
+
+`Emitter State` 已确认参数：
+
+- `Life Cycle Mode = System`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Infinite`
+- `Loop Duration Mode = Fixed`
+- `Loop Duration = 2.0`
+- `Scalability Mode = System`
+
+`Spawn Rate` 已确认信息：
+
+- `SpawnRate = Float from Curve`
+- 仍然使用一条 `Curve for Floats`
+- 曲线形状与前一张不同，当前明显从左高右低，表示生成速率会随时间递减
+- 画面下方还能确认 `CurveIndex` 仍是 `Multiply Float`
+  - 更细的 `A/B` 数值在本张图中被截断，不宜臆写
+
+可确认含义：
+
+- 第二个发射器不是从零重搭，而是复制已有结构后单独调参
+- `Loop Duration` 从 `1.0` 改到 `2.0`
+  - 说明这一层的发射周期被拉长
+- `Spawn Rate` 曲线也被重新塑形，用于让复制层与原层在时间节奏上错开
+
+这张图可替换为：复制 `Bubbles_AroundSphere` 得到第二个发射器 `Bubbles_AroundSphere001`，保留原有的 `Spawn Rate`、`Initialize Particle`、`Scale Sprite Size`、`Scale Color`、`Rotate Around Point` 和 `Sprite Renderer` 结构，再把 `Emitter State` 的 `Loop Duration` 改为 `2.0`，并重新调整 `Spawn Rate` 的曲线走势，使这一层环绕气泡拥有更长的循环周期和不同于原层的生成节奏
+这是回到关卡编辑器后的效果核对图。教程暂时离开 Niagara 编辑器，转而在内容浏览器里查看 `StylizedWaterSplash` 相关材质实例，并同时观察场景中当前的发光球效果
+
+已确认界面状态：
+
+- 顶部当前打开的资源页签包括
+  - `NS_StylizedWaterSplash`
+  - `MI_GlowWater_01`
+  - `M_UberMaterial`
+  - `MI_Bubble_01`
+  - `M_WaterBubble`
+- 内容浏览器定位到
+  - `Content > VFX_Library > Materials > Instances > StylizedWaterSplash`
+- 该目录下当前可见 4 个实例资产
+  - `MI_Bubble_01`
+  - `MI_GlowWater_01`
+  - `MI_WaterBubble_01`
+  - `MI_GlowWater_02`
+
+场景/关卡状态：
+
+- 视口中可见一个蓝色发光球体效果，周围带少量细小亮点
+- Outliner 中能看到 `NS_Stylized...` 的 Niagara Actor 已放入关卡
+- 当前是在真实关卡环境中检查，而不是只看 Niagara 预览面板
+
+可确认含义：
+
+- 教程此时在核对该效果所依赖的材质实例资源是否齐备
+- 同时确认这些材质实例驱动出的最终关卡观感是否符合预期
+- 这一步更偏向资产组织和场景验证，而不是继续改某一个具体模块参数
+
+这张图可替换为：回到关卡编辑器，在 `VFX_Library/Materials/Instances/StylizedWaterSplash` 目录下检查该效果对应的材质实例资源，确认至少包含 `MI_Bubble_01`、`MI_GlowWater_01`、`MI_WaterBubble_01` 和 `MI_GlowWater_02`，并同时在场景中观察 `NS_StylizedWaterSplash` 的实际显示结果。此时视口里已经能看到一个蓝色发光球体及其周围的细小亮点，说明前面为气泡层和发光层配置的材质与 Niagara 发射器已经开始在真实关卡环境中共同生效
+
+### 00:40:02-00:42:57 Color、Alpha、Material
+
+- 本段定位：Color、Alpha、Material。
+- 知识点：本段围绕 `Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Curve`、`Depth Fade`、`Translucent` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Alpha` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Particle`、`Color`、`Alpha`、`Opacity`、`Material`、`Texture`、`Curve`、`Depth Fade`。
+
+**关键画面：**
+
+这是材质实例 `MI_GlowAlpha_01` 的参数面板截图，教程在这一段开始单独调发光 Alpha 层所用的材质实例，用来控制更亮、更轻的叠加发光表现
+
+参数分组与已确认设置：
+
+- 当前实例：`MI_GlowAlpha_01`
+- 父材质：`M_UberMaterial`
+- `Base Texture`
+  - `Colormap`
+    - 已启用
+    - 资源为 `VFX_T_ColorMap_Blue_06`
+  - `Premultiply Color? = 0.0`
+  - `T_Main`
+    - 已启用
+    - 资源为 `T_Glow`
+  - `T_Mask`
+    - 未启用
+    - 槽位中显示默认白纹理
+  - `Use Colormap? = 0.0`
+- `Dissolve`
+  - `T_Dissolve`
+    - 未启用
+    - 纹理槽中显示一张噪声贴图
+  - `Smoothness = 0.1`
+- `Distortion`
+  - `Distortion Influence = 0.0`
+  - `T_Distortion`
+    - 未启用
+    - 槽位里显示类似 `T_Voronoise002` 的噪声贴图
+- `Global Scalar Parameter Values`
+  - `Depth Fade = 100.0`
+- `Material Property Overrides`
+  - `Blend Mode = Additive`
+
+输出/预览：
+
+- 左侧视口中可见一团非常亮的白色发光斑，边缘较软
+- 这与 `T_Glow + Additive` 的组合相符，说明该实例更偏向纯发光叠加，而不是半透明气泡本体
+
+这张图可替换为：创建或调整发光层材质实例 `MI_GlowAlpha_01`，使用 `M_UberMaterial` 作为父材质，在 `Base Texture` 中启用蓝色渐变 `VFX_T_ColorMap_Blue_06` 和主纹理 `T_Glow`，同时关闭 `Use Colormap?` 与 `Premultiply Color?`，保留 `Depth Fade = 100.0`，并把 `Blend Mode` 改为 `Additive`。这样材质会更偏向生成一团柔和、亮度高的叠加发光形状，而不是带明显实体边界的透明泡体
+这是回到 `NS_StylizedWaterSplash` 后新增点状环绕层的系统总览图。教程已经在原有气泡层之外加入 `Dots_AroundSphere` 与 `DotsDark_AroundSphere` 两个点粒子发射器，当前选中的是较暗点层 `DotsDark_AroundSphere`
+
+系统层结构：
+
+- 时间轴和 System Overview 中当前可见至少 5 个发射器
+  - `Bubbles_AroundSphere`
+  - `Dots_AroundSphere`
+  - `DotsDark_AroundSphere`
+  - `WaterSphereGlow`
+  - `WaterSphereMesh`
+- 当前选中的是 `DotsDark_AroundSphere`
+- 该发射器已具备与前面环绕层相似的结构
+  - `Emitter State`
+  - `Spawn Rate`
+  - `Initialize Particle`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Rotate Around Point`
+  - `Sprite Renderer`
+
+`Initialize Particle` 已确认参数：
+
+- `Lifetime Mode = Random`
+- `Lifetime Min = 0.75`
+- `Lifetime Max = 1.0`
+- `Color Mode = Random Range`
+- `Color Minimum`
+  - 画面可见为偏深色/较低亮度的 RGBA 值
+  - 精确数值不可可靠辨认
+- `Color Maximum`
+  - 同样是偏深色范围
+  - 精确数值不可可靠辨认
+- `Color Channel Mode = Link RGB / Link A`
+- `Position Mode = Simulation Position`
+- `Position Offset = (0.0, 0.0, 0.0)`
+- `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Size Mode = Random Uniform`
+- `Uniform Sprite Size Min = 5.0`
+- `Uniform Sprite Size Max = 10.0`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+
+输出/预览：
+
+- 左侧视口里已经能看到围绕蓝色主球分布的细小亮点
+- 与主气泡层相比，这一层粒子更小、更碎，明显承担周围漂浮点缀的角色
+
+这张图可替换为：在 `NS_StylizedWaterSplash` 中新增点状环绕发射器，至少包括 `Dots_AroundSphere` 与 `DotsDark_AroundSphere` 两层；对当前选中的 `DotsDark_AroundSphere`，在 `Initialize Particle` 中把生命周期设为随机 `0.75-1.0` 秒，颜色模式设为随机颜色范围并保持 `Link RGB / Link A`，位置模式保持 `Simulation Position`，再把 Sprite 尺寸范围缩小到 `5.0-10.0`。这样这一层会生成更小、更短命、颜色偏暗的点状粒子，用来补充主球周围的细碎环绕细节
+这是 `Bubbles_AroundSphere > Particle Update > Rotate Around Point` 的再次细化图。教程在已有环绕旋转逻辑上继续调整缩放曲线范围，并微调旋转轴，让气泡环绕不再完全沿标准正交轴匀速转动
+
+当前模块：`Rotate Around Point`
+
+已确认参数：
+
+- `Scale Curve`
+  - 类型为 `Random Range Float`
+  - `Minimum = 0.6`
+  - `Maximum = 1.2`
+  - `Evaluation Type = Spawn Only`
+- `Setup`
+  - `Set Particle Position` 已启用
+- `Radius`
+  - 顶层类型为 `Multiply Float`
+  - `A`
+    - 类型为 `Random Range Float`
+    - `Minimum = 50.0`
+    - `Maximum = 75.0`
+    - `Evaluation Type = Spawn Only`
+  - `B`
+    - 类型为 `Float from Curve`
+    - 曲线资源为 `Curve for Floats`
+    - `CurveIndex = Emitter.Age`
+    - `Scale Curve = 1.0`
+- `Rotation Center`
+  - 类型为 `Add Vector to Position`
+  - `Position = (0.0, 0.0, 350.0)`
+  - `Vector`
+    - 类型为 `Make Vector`
+    - `X = 0.0`
+    - `Y = 0.0`
+    - `Z`
+      - 类型为 `Random Range Float`
+      - `Minimum = -25.0`
+      - `Maximum = 25.0`
+      - `Evaluation Type = Spawn Only`
+- `Derive the Rotation Axis` 已启用
+- `X Axis = (1.0, 0.0, -0.14)`
+- `Y Axis = (0.0, 1.0, 0.14)`
+
+可确认含义：
+
+- `Scale Curve` 上限从之前的 `1.0` 提高到 `1.2`
+  - 允许部分粒子在生成时获得更大的旋转尺度或轨迹缩放因子
+- 旋转轴不再是完全水平的标准 `XY` 轴
+  - `X/Z` 与 `Y/Z` 分量被轻微倾斜
+  - 这样环绕轨迹会带一点翻斜感，而不是完全规则的平面圆环
+
+这张图可替换为：继续优化 `Bubbles_AroundSphere` 的 `Rotate Around Point`，保持半径仍由 `Random Range Float(50-75)` 乘 `Emitter.Age` 曲线控制、旋转中心仍以 `(0,0,350)` 加 `Z` 向随机 `-25~25` 偏移构成，同时把 `Scale Curve` 的随机范围扩展到 `0.6-1.2`，并将旋转轴改成 `X=(1,0,-0.14)`、`Y=(0,1,0.14)` 这种轻微倾斜的组合，让围绕主球运动的气泡轨迹更自然、更不对称
+
+### 00:43:06-00:45:59 System、Color、Material
+
+- 本段定位：System、Color、Material。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Curve` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Particle`、`Color`、`Alpha`、`Opacity`、`Material`、`Texture`、`Curve`、`Add`。
+
+**关键画面：**
+
+这是 `NS_StylizedWaterSplash` 的系统总览图，教程此时把视图重新拉回到核心主层，重点对比 `WaterSphereMesh` 与 `WaterSphereGlow` 两个基础发射器在系统中的职责分工
+
+系统结构：
+
+- 左侧可见系统根节点 `NS_StylizedWaterSpla...`
+  - 包含 `User Parameters`
+  - `System Spawn`
+  - `System Update`
+  - `System State`
+- 当前画面中主要展示两个核心发射器
+  - `WaterSphereMesh`
+  - `WaterSphereGlow`
+
+`WaterSphereMesh` 可确认的模块结构：
+
+- `Emitter State`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Particle State`
+- `Scale Mesh Size`
+- `Scale Mesh Size 001`
+- `Update Mesh Orientation Rotation Rate`
+- 一条 `Set ... Position` 类的位置写入模块
+  - 文字被截断，无法可靠辨认完整模块名
+- `Dynamic Material Parameters`
+- `Mesh Renderer`
+
+`WaterSphereGlow` 可确认的模块结构：
+
+- `Emitter State`
+- `Spawn Burst Instantaneous`
+- `Initialize Particle`
+- `Particle State`
+- `Scale Sprite Size 001`
+- `Scale Sprite Size`
+- 一条 `Set ... Position` 类的位置写入模块
+  - 同样能确认其作用是写入粒子位置
+- `Scale Color`
+- `Sprite Renderer`
+
+可确认含义：
+
+- `WaterSphereMesh` 负责主球体的 Mesh 层
+  - 包含 Mesh 尺寸、Mesh 朝向和动态材质参数控制
+- `WaterSphereGlow` 负责外围发光 Sprite 层
+  - 以 Sprite 尺寸和颜色缩放为主
+- 两层都使用 `Spawn Burst Instantaneous`
+  - 说明它们偏向一次性生成主形，再通过 Update 模块持续演化
+
+这张图可替换为：在 `NS_StylizedWaterSplash` 中，将主效果明确拆成 `WaterSphereMesh` 与 `WaterSphereGlow` 两个核心发射器。前者使用 `Mesh Renderer`，并配合 `Scale Mesh Size`、`Update Mesh Orientation Rotation Rate` 与 `Dynamic Material Parameters` 控制主球体体积、朝向和材质输入；后者使用 `Sprite Renderer`，以 `Scale Sprite Size`、位置写入和 `Scale Color` 构成外围发光层。两者都通过 `Spawn Burst Instantaneous` 一次性生成，再在 `Particle Update` 中持续调整
+这是回到关卡编辑器后的实例资产检查图。教程继续在 `StylizedWaterSplash` 目录里整理材质实例，并在视口中同步观察当前主球体的发光表现
+
+已确认界面状态：
+
+- 顶部当前打开的资源页签包括
+  - `NS_StylizedWaterSplash`
+  - `MI_GlowWater_01`
+  - `M_UberMaterial`
+  - `MI_Bubble_01`
+  - `M_WaterBubble`
+  - `MI_GlowAlpha_01`
+  - 一个以 `MI_WaterBubble_01` 开头的实例页签
+- 内容浏览器定位到
+  - `Content > VFX_Library > Materials > Instances > StylizedWaterSplash`
+- 当前目录下可见 5 个实例资产
+  - `MI_Bubble_01`
+  - `MI_GlowAlpha_01`
+  - `MI_GlowWater_01`
+  - `MI_WaterBubble_01`
+  - 一个名称末尾显示为 `_02` 的发光类实例
+    - 缩略图下文字被裁切，完整名称在缩略图中不可完全确认
+
+场景状态：
+
+- 视口中仍可见悬浮在上方的蓝色发光球体
+- 当前是在真实关卡环境下做材质实例与最终效果的对应检查
+
+可确认含义：
+
+- 相比前一轮，目录里已经增加了 `MI_GlowAlpha_01`
+- 同时还存在第二个发光实例 `_02`，说明教程在把主球、外层 Glow、Alpha Glow 等不同层级拆成多个独立材质实例来分别驱动
+
+这张图可替换为：在 `VFX_Library/Materials/Instances/StylizedWaterSplash` 目录中继续整理效果用材质实例，确认目录里已同时包含泡体实例、基础发光实例、Alpha 发光实例以及至少一个第二套发光实例 `_02`。这样 Niagara 不同发射器层就可以分别引用不同材质实例，而不必共用同一套发光参数；同时在关卡视口中持续观察蓝色主球的最终显示，确保材质分层后的整体视觉仍然成立
+这是在现有主球、Glow 和点状环绕层之外，新增 `WaterDrips` 发射器的起始配置图。教程开始加入一层独立的水滴粒子，用来补充从主球周围散开的滴落或碎滴细节
+
+系统层结构：
+
+- 时间轴里当前可见的发射器至少包括
+  - `Bubbles_AroundSphere`
+  - `Dots_AroundSphere`
+  - `DotsDark_AroundSphere`
+  - `WaterDrips`
+  - `WaterSphereGlow`
+  - `WaterSphereMesh`
+- 当前选中的是 `WaterDrips`
+
+`WaterDrips` 当前可确认的模块结构：
+
+- `Emitter State`
+- `Spawn Rate`
+- `Initialize Particle`
+- `Particle Update`
+- `Particle State`
+- `Sprite Renderer`
+
+`Spawn Rate` 已确认参数：
+
+- `SpawnRate = 10.0`
+- `Spawn Probability = 1.0`
+
+界面操作状态：
+
+- 鼠标停在 `Emitter Update` 组右侧加号位置
+  - 提示为 `Add a new Module to this group`
+- 说明教程下一步准备继续给 `WaterDrips` 增加更新逻辑，而当前只是把这层先以基础发射器形式放进系统
+
+可确认含义：
+
+- `WaterDrips` 还处于初始搭建阶段
+- 与前面的环绕球层不同，这一层暂时没有展示复杂的旋转、颜色或曲线设置
+- 先用固定 `Spawn Rate = 10.0` 建立持续产出，再逐步补充 Update 模块，是一种更直接的滴落层搭建方式
+
+这张图可替换为：在 `NS_StylizedWaterSplash` 中新增一个独立的 `WaterDrips` 发射器，并先保留最基础的 `Emitter State`、`Spawn Rate`、`Initialize Particle`、`Particle State` 和 `Sprite Renderer` 结构；把 `Spawn Rate` 先设为常量 `10.0`，`Spawn Probability` 保持 `1.0`，然后准备继续在 `Emitter Update` 中添加专门控制水滴运动或形态的模块。这样系统就从“主球 + 发光 + 环绕点”进一步扩展出一层独立的水滴细节
+
+### 00:46:11-00:49:32 System、Spawn、Spawn Rate
+
+- 本段定位：System、Spawn、Spawn Rate。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Color`、`Alpha`、`Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Particle`、`Spawn Rate`、`Spawn`、`Color`、`Alpha`、`Multiply`。
+
+**关键画面：**
+
+这是 `WaterDrips` 发射器继续调生成节奏的界面图。教程把原来固定值的 `Spawn Rate` 改成了曲线驱动，让水滴层的生成密度可以随发射器时间变化
+
+当前发射器：`WaterDrips`
+
+当前可见模块结构：
+
+- `Emitter State`
+- `Spawn Rate`
+- `Initialize Particle`
+- `Particle Update`
+- `Particle State`
+- `Sprite Renderer`
+
+`Spawn Rate` 已确认参数：
+
+- `SpawnRate`
+  - 类型为 `Float from Curve`
+  - 曲线资源为 `Curve for Floats`
+- `CurveIndex`
+  - 类型为 `Multiply Float`
+  - `A = Emitter.Age`
+  - `B = 0.7`
+- `Scale Curve = 30.0`
+- `Spawn Probability = 1.0`
+
+曲线形状与含义：
+
+- 当前曲线整体呈从左低到右高的趋势
+- 说明 `WaterDrips` 在发射器生命周期后段会拥有更高的生成速率
+- 与固定 `SpawnRate = 10.0` 相比，这种做法能让水滴层从较弱逐步增强
+
+这张图可替换为：把 `WaterDrips` 的 `Spawn Rate` 从固定常量改成 `Float from Curve`，并使用 `Emitter.Age * 0.7` 作为曲线采样输入，再以 `Scale Curve = 30.0` 放大曲线结果。这样水滴层的生成量就不再全程恒定，而是能随着发射器时间逐渐增加，为后续出现更多滴落和破碎细节预留节奏空间
+这是 `WaterDrips` 发射器的 `Initialize Particle` 近景设置图，同时左侧总览也能确认该发射器已经补齐了更完整的更新模块链
+
+当前发射器结构：
+
+- `Emitter State`
+- `Spawn Rate`
+- `Initialize Particle`
+- `Shape Location Sphere`
+- `Particle State`
+- `Gravity Force`
+- `Solve Forces and Velocity`
+- `Scale Sprite Size by Speed`
+- `Sprite Renderer`
+
+`Initialize Particle` 已确认参数：
+
+- `Lifetime Mode = Random`
+- `Lifetime Min = 1.0`
+- `Lifetime Max = 1.5`
+- `Color Mode = Random Range`
+- `Color Minimum`
+  - `Red = 1.0`
+  - `Green = 1.0`
+  - `Blue = 1.0`
+  - `Alpha = 0.025`
+- `Color Maximum`
+  - `Red = 0.321282`
+  - `Green = 0.913057`
+  - `Blue = 1.0`
+  - `Alpha = 0.05`
+- `Color Channel Mode = Link RGB / Link A`
+- `Position Mode = Simulation Position`
+- `Position Offset` 已启用
+  - `(0.0, 0.0, 350.0)`
+- `Position Offset Coordinate Space = Simulation`
+- `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Size Mode = Random Uniform`
+- `Uniform Sprite Size Min = 6.0`
+- `Uniform Sprite Size Max = 12.0`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+
+输出/预览：
+
+- 左侧视口中蓝色主球旁边已经出现若干小型亮点和拖尾式碎滴
+- 字幕也说明这一层“立刻就能显现出来”，说明这些基础初始化值已足以让水滴层可见
+
+这张图可替换为：在 `WaterDrips` 的 `Initialize Particle` 中，把寿命设为随机 `1.0-1.5` 秒，颜色设为随机范围，其中最小颜色接近白色透明（`RGBA = 1,1,1,0.025`），最大颜色偏蓝青色并把 Alpha 提到 `0.05`；位置模式保持 `Simulation Position`，并启用 `Position Offset = (0,0,350)` 让水滴从主球高度附近生成，再把 Sprite 尺寸随机范围设为 `6.0-12.0`。与此同时，在更新阶段加入 `Shape Location Sphere`、`Gravity Force`、`Solve Forces and Velocity` 与 `Scale Sprite Size by Speed`，让这层粒子开始具备更像水滴的生成位置、受力和速度缩放行为
+这是 `WaterDrips` 发射器的 `Emitter State` 调整图。教程在完成滴落层的基础生成、位置和受力设置后，继续修改发射器整体生命周期参数，让该层的循环节奏更适合水滴表现
+
+当前发射器：`WaterDrips`
+
+左侧可确认的完整模块结构：
+
+- `Emitter State`
+- `Spawn Rate`
+- `Initialize Particle`
+- `Shape Location Sphere`
+- `Particle State`
+- `Gravity Force`
+- `Solve Forces and Velocity`
+- `Scale Sprite Size by Speed`
+- `Sprite Renderer`
+
+`Emitter State` 已确认参数：
+
+- `Life Cycle Mode = System`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Infinite`
+- `Loop Duration Mode = Fixed`
+- `Loop Duration = 2.5`
+- `Scalability Mode = System`
+
+可确认含义：
+
+- `WaterDrips` 并不是只喷一小段就结束，而是会无限循环
+- 但每次循环周期被定为 `2.5` 秒
+  - 相比此前一些 1 秒或 2 秒循环的层，这一层节奏更慢
+  - 更适合承载受重力影响、需要一点下落时间的水滴层
+
+输出/预览：
+
+- 左侧视口中主球周围能看到一些更明显的细小滴点
+- 结合 `Gravity Force` 和更长的 `Loop Duration`，可推断这层开始承担向外或向下散落的细节补充
+
+这张图可替换为：在 `WaterDrips` 发射器中保留 `Shape Location Sphere`、`Gravity Force`、`Solve Forces and Velocity` 与 `Scale Sprite Size by Speed` 等滴落逻辑后，把 `Emitter State` 设为 `Life Cycle Mode = System`、`Loop Behavior = Infinite`、`Loop Duration Mode = Fixed`、`Loop Duration = 2.5`。这样水滴层会以较慢的固定周期持续循环，为主球效果提供更从容的滴落和散逸节奏
+
+### 00:49:36-00:52:30 System、Multiply、Add
+
+- 本段定位：System、Multiply、Add。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Curve` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 核对对象：`Particle`、`Curve`、`Multiply`、`Add`。
+
+**关键画面：**
+
+这是 `WaterDrips` 发射器继续补充生成位置逻辑的界面图。教程在 `Particle Spawn` 中加入 `System Location`，让滴落层不仅依赖球形位置分布，还能明确继承系统本体的空间基准
+
+当前发射器：`WaterDrips`
+
+当前可确认模块结构：
+
+- `Emitter State`
+- `Spawn Rate`
+- `Initialize Particle`
+- `Shape Location Sphere`
+- `System Location`
+- `Particle State`
+- `Gravity Force`
+- `Solve Forces and Velocity`
+- `Scale Sprite Size by Speed`
+- `Sprite Renderer`
+
+当前选中模块：`System Location`
+
+已确认参数：
+
+- `Offset = (0.0, 0.0, 0.0)`
+- `Offset Coordinate Space = Local`
+
+可确认含义：
+
+- 在 `Particle Spawn` 中增加 `System Location` 后，粒子的初始位置会显式参考系统所在位置
+- 当前 `Offset` 仍为零，说明这一步的重点不是再做额外偏移，而是先建立“以系统位置为基准”的位置写入关系
+- 配合已有 `Shape Location Sphere`，可以理解为
+  - 先取得系统位置
+  - 再在该基准附近按球形分布生成水滴
+
+这张图可替换为：在 `WaterDrips` 的 `Particle Spawn` 阶段加入 `System Location` 模块，并保持 `Offset = (0,0,0)`、`Offset Coordinate Space = Local`。这样水滴层会先继承 Niagara 系统的本地位置，再叠加后续的球形分布或其他位置逻辑，从而保证整层滴落粒子始终围绕效果主体生成，而不会脱离系统原点
+这是 `WaterDrips > Particle Spawn > System Location` 的进一步调整图。教程不再只使用零偏移，而是把系统位置偏移改成“固定基准位置 + 曲线驱动的 Z 偏移”，让水滴生成高度能随发射器时间发生变化
+
+当前模块：`System Location`
+
+已确认参数结构：
+
+- `Offset`
+  - 顶层类型为 `Add Vector`
+  - `A = (0.0, 0.0, 350.0)`
+  - `B`
+    - 类型为 `Make Vector`
+    - `X = 0.0`
+    - `Y = 0.0`
+    - `Z`
+      - 类型为 `Float from Curve`
+      - 曲线资源为 `Curve for Floats`
+- `CurveIndex`
+  - 类型为 `Multiply Float`
+  - `A = Emitter.Age`
+  - `B = 0.3`
+- `Scale Curve = -900.0`
+- `Offset Coordinate Space = Local`
+
+可确认含义：
+
+- `System Location` 的基础位置仍然锚在 `(0,0,350)`
+- 但额外叠加了一条只作用于 `Z` 轴的曲线偏移
+- `Scale Curve = -900.0`
+  - 说明这条曲线最终会把位置往下方强烈拉动
+- 结合字幕“we change the order”
+  - 可以确认教程同时在调整 `System Location` 与其他 Spawn 模块的先后顺序，以得到正确的滴落初始分布
+
+输出/预览：
+
+- 左侧视口中主球周围可见更多亮点和滴落碎片
+- 说明这条随时间变化的高度偏移已经开始影响水滴的生成区域
+
+这张图可替换为：在 `WaterDrips` 的 `System Location` 中，把 `Offset` 改成 `Add Vector`，其中基准位置为 `(0,0,350)`，再额外叠加一个只作用在 `Z` 轴上的 `Float from Curve`。该曲线以 `Emitter.Age * 0.3` 作为输入，并通过 `Scale Curve = -900.0` 转换成向下的高度偏移。这样水滴层不会一直从完全固定的高度开始，而是会随着发射器时间逐步把生成位置向下推进，更符合“水滴从球体表面脱离并下落”的节奏；同时需要把 `System Location` 放在合适的 Spawn 顺序中，确保位置写入先于后续运动逻辑生效
+这是 `WaterDrips > Particle Spawn > System Location` 的继续微调图，教程在确认模块顺序后，进一步调整曲线采样速度，让水滴生成高度的下移节奏更快一些
+
+当前发射器结构中与本图直接相关的顺序：
+
+- `Initialize Particle`
+- `System Location`
+- `Shape Location Sphere`
+- `Particle State`
+
+这说明 `System Location` 已经明确放在 `Shape Location Sphere` 之前，用来先写入系统基准位置，再叠加球形分布
+
+当前模块：`System Location`
+
+已确认参数：
+
+- `Offset`
+  - 类型为 `Add Vector`
+  - `A = (0.0, 0.0, 350.0)`
+  - `B`
+    - 类型为 `Make Vector`
+    - `X = 0.0`
+    - `Y = 0.0`
+    - `Z = Float from Curve`
+- `CurveIndex`
+  - 类型为 `Multiply Float`
+  - `A = Emitter.Age`
+  - `B = 0.4`
+- `Scale Curve = -900.0`
+- `Offset Coordinate Space = Local`
+
+与前一张相比可确认的变化：
+
+- `CurveIndex.B` 从 `0.3` 调整到 `0.4`
+- 其余核心结构保持不变
+
+可确认含义：
+
+- 曲线输入推进速度提高了
+  - 因为 `Emitter.Age` 被乘上更大的系数
+- 在 `Scale Curve = -900.0` 不变的情况下，这会让向下位移的节奏更早、更快地体现出来
+- 适合让水滴更迅速从主球上方或表面区域脱离并下落
+
+这张图可替换为：保持 `WaterDrips` 的 `System Location` 仍采用“`(0,0,350)` 基准位置 + Z 轴曲线偏移”的写法，并继续放在 `Shape Location Sphere` 之前执行；随后把 `CurveIndex` 中的时间系数从 `0.3` 提高到 `0.4`，在 `Scale Curve = -900.0` 不变的前提下加快生成高度随时间下移的速度。这样水滴会更快离开主球附近的上层区域，整体滴落节奏更明确
+
+### 00:52:52-00:54:34 Add
+
+- 本段定位：Add。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 核对对象：`Particle`、`Add`。
+
+**关键画面：**
+
+这是回到关卡编辑器并打开 Sequencer 后的时间轴核对图。教程此时不再只看 Niagara 系统内部，而是在镜头时间线上检查 `NS_StylizedWaterSplash` 的整体播放位置与画面呈现
+
+已确认界面状态：
+
+- 当前处于关卡编辑器视口
+- 下方打开了 `LQ_StylizedWaterSplash` 的 Sequencer 时间轴
+- 当前可见轨道包括
+  - `Camera Cuts`
+  - `CameraActor`
+  - `NS_StylizedWaterSplash`
+- 播放头大约停在 `2.48` 秒位置
+
+场景表现：
+
+- 视口中央上方可见一串细小的滴状亮点向下分布
+- 中央还有一个变换/位置控制手柄
+- 当前镜头下更容易观察到水滴层的时序，而不是主球整体外观
+
+可确认含义：
+
+- 教程开始从“模块是否搭对”切换到“放在镜头时间里是否按预期出现”
+- `NS_StylizedWaterSplash` 已被放进 Sequencer 轨道中，说明该效果需要结合镜头节奏验证
+- 当前画面里的细碎滴点可以视作前面 `WaterDrips` 层在真实播放时间点上的直接结果
+
+这张图可替换为：在关卡编辑器中打开 `LQ_StylizedWaterSplash` 的 Sequencer，并把 `NS_StylizedWaterSplash` 放入时间轴，与 `CameraActor` 同步检查。在大约 `2.48` 秒处，视口中已经能看到一串向下分布的细小水滴亮点，说明 `WaterDrips` 这类依赖时间曲线和生命周期设置的发射器，不仅在 Niagara 预览里成立，在镜头实际播放节点上也开始按预期出现
+这是同一条 Sequencer 时间线上的另一帧画面，用来确认主球与水滴层在镜头播放中的实际相对位置和节奏
+
+已确认界面状态：
+
+- 仍处于关卡编辑器 + `LQ_StylizedWaterSplash` Sequencer
+- 可见轨道仍是
+  - `Camera Cuts`
+  - `CameraActor`
+  - `NS_StylizedWaterSplash`
+- 播放头停在约 `2.17` 秒
+
+场景表现：
+
+- 视口上方能清楚看到蓝色主球体
+- 主球下方可见一串向下延伸的细小滴点
+- 中央仍有场景中的控制手柄
+
+可确认含义：
+
+- 与上一张相比，这一帧更直接展示了“主球在上，滴落轨迹在下”的层次关系
+- 说明 `WaterDrips` 层的生成位置和向下运动已经与主球本体产生明确的空间分离
+- 在实际镜头时间里，这些水滴并不是随机悬浮，而是围绕主球后继续向下脱落
+
+这张图可替换为：在 `LQ_StylizedWaterSplash` 的 Sequencer 播放到约 `2.17` 秒时，检查 `NS_StylizedWaterSplash` 的真实镜头表现。此时蓝色主球位于上方，而一串更小的亮点从其下方向下排列，说明 `WaterDrips` 已经不再只是主球附近的噪点装饰，而是形成了可读的下落水滴链条。这个时间点可以作为验证 `System Location`、重力和生命周期参数已经协同生效的直接视觉证据
+这是同一条 `LQ_StylizedWaterSplash` Sequencer 时间线更早位置的回看图，用来检查效果在播放起始阶段的可见性是否符合预期
+
+已确认界面状态：
+
+- 仍是关卡编辑器中的 Sequencer 视图
+- 当前可见轨道保持为
+  - `Camera Cuts`
+  - `CameraActor`
+  - `NS_StylizedWaterSplash`
+- 播放头停在约 `0.33` 秒
+- 右侧 Details 当前显示的是场景中的 `Floor` 物体信息
+  - 说明这张图的重点完全是时间点与画面结果，而不是某个 Niagara 模块参数
+
+场景表现：
+
+- 视口中上方只剩一个很小、较弱的蓝色发光痕迹
+- 与前一张在 `2.17` 秒看到的明显主球和滴落链相比，这一帧的可见元素明显更少
+
+可确认含义：
+
+- 效果在更早的时间点还处于较弱或尚未完全展开的状态
+- 这与前面多个发射器依赖 `Emitter.Age`、`Spawn Rate` 曲线和位置/下落曲线逐步增强的做法一致
+- Sequencer 核对证明该效果不是从第一帧就满强度出现，而是会在镜头中逐步建立
+
+这张图可替换为：将 `LQ_StylizedWaterSplash` 的 Sequencer 播放头回退到约 `0.33` 秒，检查 `NS_StylizedWaterSplash` 在镜头起始阶段的可见性。此时画面中只出现一个较弱的小型蓝色发光痕迹，远未发展成后续更完整的主球与滴落结构，说明该效果确实会随着时间逐步增强，而不是一开始就以完整强度直接出现。这一帧可作为验证时间曲线、生成速率和生命周期设置共同影响整体出场节奏的早期证据
+
+## 补充视觉证据
+
+### S01 00:01:32
+
+这是一个用于补强时序上下文的 Sequencer 操作证据图，重点不是 Niagara 模块本身，而是说明该效果在关卡中如何通过 `CameraActor` 与时间轴进行控制
+
+已确认界面状态：
+
+- 当前位于关卡编辑器
+- 下方打开了 `LQ_StylizedWaterSplash` 的 Sequencer
+- 视口右侧弹出一个 `CameraActor` 预览框
+- Outliner 中当前选中的是 `CameraActor`
+- 右侧 Details 显示的是 `CameraActor` 的变换与相机设置
+  - `Location = (-11.0, 89.0, 167.0)`
+  - `Rotation = (0.0, 0.0, 0.0)`
+  - `Field Of View = 90.0`
+  - `Aspect Ratio = 1.777778`
+- 时间轴播放头大约停在 `0.43` 秒
+
+可确认含义：
+
+- 该教程不仅在 Niagara 资产内部调发射器，还明确依赖 Sequencer 驱动镜头与效果同播
+- `CameraActor` 已经被纳入 Sequencer 进行控制
+- 右侧小预览框和下方时间线共同说明：后续看到的主球、滴落与发光节奏，都是在具体镜头条件下被验证的，而不是脱离关卡镜头单独预览
+
+这张图可替换为：在 `LQ_StylizedWaterSplash` 的 Sequencer 中，把 `CameraActor` 作为可控对象加入时间轴，并在约 `0.43` 秒的位置检查相机状态。当前镜头使用 `FOV = 90`、`Aspect Ratio = 1.777778`，相机位置约为 `(-11, 89, 167)`。这张图提供的补充证据是：本教程对 `NS_StylizedWaterSplash` 的验证不是孤立资产预览，而是结合关卡镜头与 Sequencer 时间控制来完成，因此前面所有关于出场节奏、滴落时机和可见层次的判断都应以实际镜头播放结果为准
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

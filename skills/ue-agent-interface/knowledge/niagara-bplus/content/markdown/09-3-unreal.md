@@ -1,0 +1,289 @@
+# 09-3.Unreal场景破坏特效制作
+
+# 09-3.Unreal场景破坏特效制作
+
+## 关键术语
+
+- `Velocity`、`Color`、`Alpha`、`Scale Color`、`Add`、`VAT`、`材质`、`粒子`、`发射器`、`系统`、`碰撞`、`Niagara`、`Emitter`、`Particle`、`Spawn Rate`、`Spawn`、`Niagara System`、`Particle Spawn`
+
+## 分段知识
+
+### 00:00:00-00:04:50 粒子、发射器、精灵
+
+- 本段定位：粒子、发射器、精灵。
+- 知识点：差不多了,这儿得把可体定位关掉 那样的话,摄像机偏移值也不必太强 太强没必要,大概5就行 另外,尺寸也不能太大 这里,持续时间摄围2随机范围控制在2.5左右。
+- 知识点：从200开始随机值摄围约150 接下来调整大小初期不用太大 可以先摄围较小的精灵尺寸 可以设置成逐渐变大的效果 建议不要从零开始,而是从略小一点的初始值起步。
+- 知识点：再逐步放大这样设置更自然 重力强度可直接沿用 但建议调低色彩饱和度,避免画面显得压抑 若想更精细的构建 可以将这些飞向远处的碎片 为当前的元素才使用。
+- 知识点：那些10块碎片是不是 把粒子碎片单独拿出来再加一个发射器 再适当增加一些数量,让粒子更密集些。
+- 知识点：效果会更好 另外前面集中坠落的大块碎片 也可以再加强表现 也可以加个特效来增强表现 这部分可以用现有的额外发射器喷射出来。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`粒子`、`发射器`。
+
+**关键画面：**
+
+这一步继续微调辅助碎片发射器 `Minimal005`，当前重点放在 `Camera Offset`，并且粒子数量已经明显提升。右侧 `Details` 面板当前可明确确认：
+
+- 当前发射器：`Minimal005`
+- 当前粒子数：`164 Particles`
+- 当前模块：`Camera Offset`
+- `Camera Offset Amount = 30.0`
+
+中间 `System Overview` 还能看到：
+
+- 左侧保留了模板发射器 `Source`
+- `Minimal005` 当前已经包含
+  - `Sample Particles from Other Emitter`
+  - `Camera Offset`
+  - `Gravity Force`
+  - `Collision`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sprite Renderer`
+
+左侧预览窗口中，碎片和烟尘已经形成一大片沿右侧拖尾的密集层。结合正文“摄像机偏移值也不必太强，大概 5 就行”“那些 10 块碎片可以单独拿出来再加一个发射器，再适当增加一些数量”的说明，这张图对应的是辅助碎片层的继续强化阶段：一方面粒子数量被显著拉高，另一方面通过 `Camera Offset` 控制它们在视角上的前后层次，避免碎片全部贴在同一平面上。
+这一步切回关卡场景视口，直接检查增加了密度后的综合破坏效果。当前画面可确认：
+
+- 雕像主体位于前景中央偏左
+- 雕像周围被一大片白灰色烟尘覆盖
+- 同时有较多深色小碎片从烟尘中向右侧和前方飞散
+- 前景中央的坠落区域比前一页更密，既有烟雾也有碎片叠加
+- 右侧 `Details` 面板为空，当前是纯效果观察状态
+
+字幕中直接出现“让粒子更密集些，效果会更好”“前面集中坠落的大块碎片也可以再加强表现”，这与正文中“适当增加一些数量，让粒子更密集些”“前面集中坠落的大块碎片也可以再加强表现”的要求一致。对复建来说，这张图的重点是结果层面的验证：密度提高后，辅助碎片不应只是零星点缀，而要与主体烟尘一起在前景形成明显的聚集坠落区，从而让爆裂中心更有重量感。
+这一步继续在场景视口中检查辅助碎片层和烟尘层的后段表现。当前画面可确认：
+
+- 雕像残骸仍位于前景中央偏左
+- 前景中部保留一片较淡的白灰色烟尘
+- 相比上一张，烟尘更薄、更贴近地面，碎片感也更弱
+- 远处左侧岩石附近仍有一团环境烟雾作为背景层次
+- 右侧 `Details` 面板为空，当前依然是纯效果观察
+
+结合正文“尺寸初期不用太大”“可以设置成逐渐变大的效果，建议不要从零开始，而是从略小一点的初始值起步，再逐步放大”的说明，这张图的重点是结果趋势：辅助粒子层在后段不应一直维持爆发时的高密度和高对比，而应逐渐变淡、变散，贴回地面环境中。对复建来说，这说明尺寸和透明度的时间变化要让特效有自然衰减过程，而不是始终维持同样的饱和度和体积。
+
+### 00:04:50-00:09:35 Velocity、Color、Scale Color
+
+- 本段定位：Velocity、Color、Scale Color。
+- 知识点：多加点尘埃可以自己试 适当调整效果也没问题 最后假设是爆炸一起把火花也加进去 这样就差不多了 这里看看 用它,这么做吧 毕竟有些地方得让粒子像弹射一样飞出去。
+- 知识点：在材质里新建一个Editive Instance 就这样用就行 颜色太红了 这里用加子材质。
+- 知识点：删掉就行 数量,数量多点毫一百个左右就够了 存活时间设得短一点 炸完就消失才显得自然 15左右不用太较真 所以随机改用均匀分布 35左右设成一组。
+- 知识点：用轨迹线 接下来是阴影位置20 左右所有参数都会用上Add Velocity 也将在角落位置使用 会持续使用一般设在100左右最高可达500。
+- 知识点：从0.1开始 不如直接减去重力值来用这样 更方便 这里调整发散效果 所以这样就不需要碰撞检测了 改用缩放弹射来增强数值效果 记得切换到世界坐标。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Velocity`、`Color`、`Scale Color`、`Add`、`材质`、`粒子`、`颜色`、`曲线`。
+
+**关键画面：**
+
+这一步进入新的碎片/火花层配置阶段。系统中已经出现一个新的模板发射器 `Source001`，当前选中它的 `Spawn Burst Instantaneous`，用于直接拉高一次性爆发数量。右侧 `Details` 面板可明确确认：
+
+- 当前发射器：`Source001`
+- 当前粒子数：`50 Particles`
+- `Spawn Count = 50`
+- `Spawn Time = 0.0`
+- `Spawn Probability = 1.0`
+- `Loop Count Limit = 1`
+
+中间 `System Overview` 当前可见：
+
+- 左侧是已有的 `Source`
+- 中间是 `Minimal005`
+- 新增的 `Source001` 位于左侧并承担新的爆发模板职责
+
+左侧预览窗口里，碎片和烟尘仍组成一片向右拖尾的混合层。结合正文“数量多点，一百个左右就够了”“存活时间设得短一点，炸完就消失才显得自然”“35 左右设成一组”的说明，这张图对应的关键动作是：为新模板发射器建立较大的 Burst 基数，让后续的弹射碎片或火花可以一次性成批生成，而不是依赖连续 Spawn Rate 慢慢累积。
+这一步继续搭建新的加法型弹射粒子模板 `Source002`。从顶部标签和左侧内容浏览器可以确认，作者此时已经打开并选中了 `M_Additive_01_Ins_01` 这一类加法材质实例资源，同时在系统里调 `Source002` 的 `Add Velocity`。右侧 `Details` 面板当前可明确确认：
+
+- 当前发射器：`Source002`
+- 当前模块：`Add Velocity`
+- `Velocity Mode = In Cone`
+- `Velocity Speed = Random Range Float`
+  - `Minimum = 250.0`
+  - `Maximum = 500.0`
+- `Speed Falloff Fro... = 0.7`
+- `Cone Axis = (-0.3, -3.0, 1.0)`
+- `Cone Angle = 30.0`
+- `Inner Cone Angle = 10.0`
+- `Cone Angle Mode = Degrees`
+- `Rotation Mode = Default`
+- `Rotation Coordinate Space = Local`
+
+中间 `System Overview` 可见：
+
+- 左侧保留 `Minimal005`
+- 右侧新增 `Source002`
+- `Source002` 已包含 `Initialize Particle`、`Sub UVAnimation Random`、`Shape Location Sphere`、`Add Velocity In Cone`、`Gravity Force`、`Collision`、`Solve Forces and Velocity`、`Particle State`、`Sprite Rotation Rate`、`Scale Sprite Size`、`Scale Color`、`Sprite Renderer`
+
+结合正文“最后假设是爆炸一起把火花也加进去”“在材质里新建一个 Additive Instance”“一般设在 100 左右最高可达 500”的说明，这张图的关键是：这一层不再只是 Rock 碎屑，而是切到加法材质思路的高能弹射层，通过 `In Cone` 方向喷射和 `250-500` 的大随机速度，把粒子从爆点快速打出去，用来补火花或亮屑类效果。
+这一步继续强化 `Source002` 的弹射层，在速度喷射之外新增 `Curl Noise Force`，让粒子运动轨迹更乱、更有爆散感。右侧 `Details` 面板当前选中的是 `Curl Noise Force`，可明确确认：
+
+- `Noise Strength = Random Range Float`
+  - `Minimum = 2000.0`
+  - `Maximum = 2500.0`
+  - `Evaluation Type = Spawn Only`
+- `Noise Frequency = 20.0`
+- `Noise Quality / Cost = Baked (Medium)`
+- `Pan Noise Field = (0.0, 0.0, 0.0)`
+- `Bias Noise Field = (0.0, 0.0, 0.0)`
+- `Mask Curl Noise`：关闭
+
+中间 `System Overview` 显示 `Source002` 的 `Particle Update` 区段此时已经包含：
+
+- `Scale Velocity`
+- `Curl Noise Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Sprite Rotation Rate`
+- `Scale Sprite Size`
+- `Scale Color`
+- `Sprite Renderer`
+
+左侧预览窗口里，主碎裂体与烟尘仍然向右形成拖尾，说明这组加法弹射层正在作为整体爆发的补充。结合正文“这里调整发散效果，所以这样就不需要碰撞检测了”“改用缩放弹射来增强数值效果”“记得切换到世界坐标”的说明，这张图的关键是：除了用锥形初速度把粒子推出去，还叠加一层高强度 `Curl Noise` 来打乱轨迹，使亮屑/火花不只是整齐飞散，而会在飞行过程中产生更自然的扰动和弧线偏移。
+
+### 00:09:35-00:14:12 Alpha、粒子、系统
+
+- 本段定位：Alpha、粒子、系统。
+- 知识点：现在用Float调整下亮度就行了 差不多了Alpha也一起加上 就这样基本搞定效果太炸了 看起来像是受这个影响 因为这里连着Io Dampian节点。
+- 知识点：虽然连上了 但数值一调到一效果就特别强 头一回见这种状况 好像还真有点服务其方面的原因 感觉是这么回事 这颜色可能我之前在项目设置里调过。
+- 知识点：才这样 根据你现在的项目情况调下颜色色调就行 差不多了 现在我已经调到0.1左右了 这个程度够用了 接下来新建一盏灯 为了让效果更自然就这样改一下。
+- 知识点：用爆炸粒子生成加个瞬间闪光感 让光效跟爆炸位置同步 得跟上爆炸位置才行 然后把点光源关掉 切到灯光渲染 把介质调大一点 再大一点 用微光效果适当提亮一点。
+- 知识点：因为是金属碰撞时炸开的 把Alpha和亮度混合 缩放颜色就用这个 这里场景的光照值很高 我记得数值得色的很高 按这种感觉做了配置 给到约五十万。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Alpha`、`粒子`、`系统`、`颜色`、`碰撞`。
+
+**关键画面：**
+
+这一步开始收束 `Source002` 的亮度与透明度控制，当前选中的是 `Scale Color`。右侧 `Details` 面板可明确确认：
+
+- `Scale Mode = RGB and Alpha Separately`
+- `Scale RGB = Multiply Vector by Float`
+  - `Vector = (10.0, 2.0, 1.0)`
+  - `Float = Float from Curve`
+  - `FloatCurve = Curve for Floats`
+  - `CurveIndex = PARTICLES.NormalizedAge`
+  - `Scale Curve = 1.0`
+- `Scale Alpha = 1.0`
+
+图中的红色曲线从左上角逐步下降到右下角接近 `0`，表示随着生命周期推进，亮度缩放值会逐渐降低。中间 `System Overview` 也能看到 `Source002` 的 `Particle Update` 中当前包含：
+
+- `Scale Velocity`
+- `Curl Noise Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Sprite Size`
+- `Scale Color`
+- `Sprite Renderer`
+
+结合正文“现在用 Float 调整下亮度就行了”“Alpha 也一起加上”“现在我已经调到 0.1 左右了，这个程度够用了”的说明，这张图的关键动作是：把加法弹射层的颜色缩放改成随 `NormalizedAge` 衰减的曲线控制，避免加法亮屑从头到尾都过亮。对复建来说，这一步决定了亮屑从爆发瞬间到消散阶段的能量下降节奏。
+这一步继续细化 `Source002 > Scale Color`，把 Alpha 也并入和亮度相同的生命周期曲线控制中。右侧 `Details` 面板当前仍能确认：
+
+- `Scale Mode = RGB and Alpha Separately`
+- `Scale RGB = Multiply Vector by Float`
+  - `Vector = (10.0, 2.0, 1.0)`
+  - `Float = Float from Curve`
+  - `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 0.1`
+- `Scale Alpha = Float from Curve`
+  - `FloatCurve = Curve for Floats`
+  - `CurveIndex = PARTICLES.NormalizedAge`
+  - `Scale Curve = 1.0`
+
+图中可以直接看到两条相似的衰减曲线：
+
+- 上方曲线控制亮度缩放
+- 下方曲线控制 Alpha
+- 两者都从较高值随生命周期逐步下降到接近 `0`
+
+同时，中间画布上弹出的右键菜单停在 `Add lightweight emitter` 选项，说明作者在完成这一层的亮度/透明度收束后，正准备继续新增更轻量的发射器。结合正文“Alpha 也一起加上”“用爆炸粒子生成加个瞬间闪光感”“把 Alpha 和亮度混合，缩放颜色就用这个”的说明，这张图的关键是：加法粒子不仅亮度要衰减，透明度也要同步随时间收缩，这样强闪光不会在后段残留成不自然的硬边发亮贴片。
+这一步切回场景视口，直接验证加法弹射层收束后的实际观感。当前画面可确认：
+
+- 雕像残骸位于前景中央偏左
+- 残骸前方和右侧只保留了一层较薄的白灰色烟尘/亮雾
+- 前景中仍有少量碎片散落，但整体不再像前几张那样强烈爆发
+- 远处左侧岩石附近保留环境烟雾，整体场景亮度仍然较高
+- 右侧 `Details` 面板为空，当前是纯效果观察
+
+结合正文“现在我已经调到 0.1 左右了，这个程度够用了”“效果太炸了”“根据你现在的项目情况调下颜色色调就行”的说明，这张图反映的是加法层被压低后的结果：亮屑/闪光应只在爆发初期提供短促强调，后段要迅速退到一个不抢画面的弱层次，否则会让整组破坏特效显得发白、发飘或过曝。
+
+### 00:14:12-00:15:27 VAT、粒子
+
+- 本段定位：VAT、粒子。
+- 知识点：从提取到再次应用 到Unreal特效的全过程 实际操作了一遍 建议用Vate资源 将这类动画直接应用于实际物体 先来看第一个粒子。
+- 知识点：我给大家展示一个最基础 又实用的视力 这里有个关键点 忘了勾选 投射阴影 这张地图里的阴影显得太直了 总觉得有点不对劲 虽然看不出来 但有光线追踪的感觉。
+- 知识点：换个场景一放就很明显了 就能看出来了 好 那我们就一起把最后一步也走完 下个粒子继续讲 今天就先到这里 感谢大家的观看 感谢收看。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+这一步进入 `VAT、粒子` 段后的场景结果观察，画面展示的是新一轮更强的瞬时发光粒子层。当前可直接确认：
+
+- 雕像残骸仍位于前景中央偏左，左侧贴着一团白色烟雾
+- 爆发中心位于雕像后方到画面中央区域
+- 中央到右侧半空分布大量红粉色发光粒子点，亮度明显高于前一张 `S03_3`
+- 发光点沿水平方向和轻微向上方向扩散，形成一层瞬时闪光/火花感
+- 地面仍保留碎石与尘雾，说明这一层是叠加在原有破坏效果上的新亮点层
+- 右侧 `Details` 面板为空，当前仍是纯视口观感验收
+
+结合本段标题“VAT、粒子”以及正文“用爆炸粒子生成加个瞬间闪光感”的语义，这张图对应的重点不是参数面板，而是确认新增粒子层的画面职责：它负责在爆发瞬间提供一簇高亮红粉色亮点，把原先偏平的烟雾爆炸补出更明确的能量爆闪。复建时应把这层理解为短时存在、分布较散但中心更密集的发光粒子层，而不是持续驻留的主烟雾层。
+这张图仍是同一片海岸碎石场景的视口观察图，能可靠确认的信息只有：
+
+- 相机位置与上一张接近，仍面对海岸中央的碎石与残骸区域
+- 画面中的高亮红粉色粒子已经不再出现，当前只剩环境地形、海面和远处岩石
+- 右侧 `Details` 面板为空，没有可供抄录的参数或模块设置
+- 底部字幕可明确读到“这里有个关键点 忘了勾选 投射阴影”“这张地图里的阴影显得太直了”
+这张图同样是海岸场景的静态视口，当前能确认的信息包括：
+
+- 取景仍对准海面、中央残骸和前景碎石地面
+- 画面中没有可见的红粉色闪光粒子，也没有参数面板或选中对象信息
+- 右侧 `Details` 区域仍为空，左侧只显示内容浏览器中的材质缩略图
+- 与上一张相比，主要差别是字幕消失，画面被保留为更干净的最终场景参考
+## 补充视觉证据
+
+### S01 00:01:10
+
+这是一张 `S01 00:01:10` 的补充参数截图，画面核心是在 `Minimal005` 发射器里调 `Scale Sprite Size`，用于给从源粒子派生出来的补充小粒子设置随生命周期增长的尺寸曲线。图中可直接确认的结构如下：
+
+- 当前系统：`Ex_01_Statue_Destruction`
+- 当前选中发射器：`Minimal005`
+- 发射器统计：`180 Particles`
+- 当前选中模块：`Particle Update > Scale Sprite Size`
+- 右侧参数类型：
+  - `Scale Sprite Size Mode = Uniform Curve`
+  - 曲线资源类型为 `Curve for Floats`
+  - `Uniform Curve Index = PARTICLES.NormalizedAge`
+  - `Uniform Curve Scale = 1.0`
+
+当前可见曲线是一个从左低到右高的线性上升关系，表示粒子尺寸会随生命周期逐步变大。图上能辨认出的关键帧关系为：
+
+- 生命周期起点附近的值不是 `0`，而是一个略大于 `0` 的小初值
+- 当前选中的左侧关键点 `Key Data` 显示为 `0.0, 0.2`
+- 右侧末端关键点位于曲线右上侧，终值接近 `1.0`
+
+中间 `System Overview` 还能看到这组派生发射器与源发射器的关系：
+
+- 左侧是 `Source` 发射器
+- 右侧是 `Minimal005` 发射器
+- `Minimal005` 的 `Emitter Spawn` 中可见 `Spawn Particles from Other Emitter`
+- `Particle Spawn` 中可见 `Sample Particles from Other Emitter`
+- `Particle Update` 中当前至少包含：
+  - `Gravity Force`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `SubUVAnimation`
+  - `Scale Color`
+  - `Sprite Renderer`
+
+结合底部字幕“建议不要从 0 开始 而是从略小一点的初始值起步”，这张补充图传达的关键操作是：不要把补充粒子的尺寸曲线起点设为 `0`，而是让它在粒子出生时就保留一个小尺寸起步值，例如图中可见的 `0.2`，再沿 `NormalizedAge` 逐步放大到接近 `1.0`。这样能避免粒子在出生瞬间完全不可见，也能让由源粒子继承出来的附加烟尘/碎屑层更平滑地长出来。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

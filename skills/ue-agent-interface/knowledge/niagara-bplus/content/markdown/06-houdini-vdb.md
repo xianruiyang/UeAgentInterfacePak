@@ -1,0 +1,1286 @@
+# 06.Houdini 云VDB资源制作
+
+# 06.Houdini 云VDB资源制作
+
+## 关键术语
+
+- `Houdini`、`材质`、`碰撞`、`速度`、`透明度`、`纹理`、`噪声`、`烟雾`、`缓存`、`Niagara`、`系统`、`蓝图`、`用户参数`、`Niagara System`、`Emitter`、`Spawn Rate`、`Spawn`、`Lifetime`
+
+## 分段知识
+
+### 00:00:06-00:04:36 Houdini
+
+- 本段定位：Houdini。
+- 知识点：先来创建一个几何体 先在节点面板里搜Cloud,会弹出不少相关节点 我们挑其中四五个重点看看就行 先选那个叫Shape Generate的节点。
+- 知识点：能看到一堆体速球多边形聚在一起的样子 看起来像一团团聚在一起,就相当于给云搭个粗略的架子 先定个大概形状 先用草图般的随意感定好这块区域。
+- 知识点：这节点就是用来快速搭建基础形状的 这里选项很多,形状偏移,相当于种子值,点分离度 决定颗粒是粗,是细 而初始大小只是整体缩放用的 长度用来调节横向拉伸的程度。
+- 知识点：宽度就是调节厚度的参数 这些参数都很好懂,不用太费劲就能上手 扭曲就是控制颗粒怎么随机排列,形成团块状的效果 平弹底部就是设置从哪开始平调。
+- 知识点：下面的部分帮你慢慢调出想要的形状 旋转就是加个旋转数值,这样就能够调整到一半 其他还有缩放的最小最大值等参数。
+- 核对对象：`Houdini`。
+
+**关键画面：**
+
+这一张是 `p06` 教程的起始准备画面，处于 Houdini 的对象层空场景。它还没有进入具体云体节点搭建，而是在一个空网络里准备从零开始创建云的基础几何/体积结构。
+
+- 当前层级位于：
+  - `/obj`
+
+- 中央网络视图当前状态为：
+  - `Empty Network`
+  - 画面提示：`Press Tab to Add Nodes`
+
+- 右侧参数面板当前显示：
+  - `No Operator Selected`
+  - 说明此时尚未选中任何节点
+
+- 左侧视口当前能看到：
+  - 空的三维网格场景
+  - 没有任何已放置的几何体或体积云结果
+
+- 顶部工具架当前处于 Houdini 常规对象工作区，可见：
+  - 常见基础建模/创建工具按钮
+  - 说明作者正处于准备新建内容的阶段，而不是在修改已有复杂网络
+
+- 这一步的作用：
+  - 为后续创建云体基础形状预留一个干净的对象层起点
+  - 对应本页讲解中“先创建一个几何体，再从 Cloud 相关节点里挑关键节点开始搭形”的开场状态
+这一张正式进入云体基础形状搭建。当前在 `/obj/geo1` 内只放了一个 `cloudshapegenerate1` 节点，左侧视口中能看到大量球状团块拼出的长条形云坯，右侧则展开了 `Cloud Shape Generate` 的核心形状参数。这一页对应口播中“先用 Shape Generate 快速搭一个粗略的云架子，再通过长度、宽度、扭曲等参数调出大轮廓”。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中仅可见并选中的节点是：
+  - `cloudshapegenerate1`
+  - 节点类型：`Cloud Shape Generate`
+
+- 左侧视口当前展示的结果特征包括：
+  - 大量灰白色球状体彼此堆叠
+  - 整体形成一条向斜上方延展的团块状长云
+  - 仍能清楚看到每个基础团块的边界，说明此时还处于“搭骨架”阶段，而不是最终细节烟雾
+
+- 右侧参数面板当前处于：
+  - `Cloud Shapes` 页签
+
+- 当前能确认的关键设置包括：
+  - `Randomization By = Point Number`
+  - `Cloud Species = Mediocris`
+  - `Shape Offset = 0`
+  - `Point Separation = 0.1`
+  - `Initial Size = 1`
+  - `Length = 3.2`
+  - `Width = 1.1`
+  - `Distortion = 1`
+  - `Flatten Bottom = 0`
+  - `Up Vector = 0, 1, 0`
+  - `Rotation = 0`
+
+- 从当前画面可以直接推断的形状控制逻辑是：
+  - `Length` 决定整体沿主方向被拉得多长
+  - `Width` 控制横向厚度
+  - `Point Separation` 决定组成云坯的团块分布疏密
+  - `Distortion` 负责让团块排列更随机，不至于过于规整
+
+- 这一步的作用：
+  - 先用程序化团块快速搭出云的粗略体积轮廓
+  - 为后面再转成 VDB、叠噪声和微调体积细节提供一个可控的基础形状
+这一张继续调整同一个 `cloudshapegenerate1`，但相较上一张，整体云坯已经从细长形收回成更集中、更厚实的一团，右侧还展开了 `Random Scale per Shape`。这对应讲解里“前面先把基础形状定下来，再通过旋转、缩放最小值和最大值等参数把团块分布调自然”的阶段。
+
+- 当前层级仍位于：
+  - `/obj/geo1`
+
+- 当前网络中仍只有：
+  - `cloudshapegenerate1`
+
+- 左侧视口当前云坯形态可确认的变化包括：
+  - 原先较长的延展形被压缩成更紧凑的团块云
+  - 体块整体更接近竖向堆积，而不是长条拖尾
+  - 基础球团大小开始出现更明显差异，整体不再均匀
+
+- 右侧 `Cloud Shape Generate` 参数当前能确认的设置包括：
+  - `Cloud Species = Mediocris`
+  - `Shape Offset = 0`
+  - `Point Separation = 0.1`
+  - `Initial Size = 1`
+  - `Length = 2`
+  - `Width = 1`
+  - `Distortion = 1`
+  - `Flatten Bottom = 0`
+  - `Up Vector = 0, 1, 0`
+  - `Rotation = 0`
+
+- 当前已展开的 `Random Scale per Shape` 区域还能确认：
+  - `Scale Min = 0.64`
+  - `Scale Max = 2.27`
+  - `Seed = 1`
+
+- 从这张图能直接理解的调整思路是：
+  - 先把 `Length` 从更长的值收回，避免云坯拉得过散
+  - 再用 `Scale Min / Scale Max` 让每个团块尺寸产生层次变化
+  - 这样能让云更接近自然堆积，而不是机械重复的球串
+
+- 这一步的作用：
+  - 把基础云坯收敛到更适合后续细化的总体轮廓
+  - 同时用随机缩放增强团块层次，为后续转 VDB 和叠噪声保留更自然的体积起伏
+
+### 00:04:36-00:09:23 噪声、烟雾
+
+- 本段定位：噪声、烟雾。
+- 知识点：太歪了反而不好,还有 这里还能输入负值,这样设置就行可以让一侧适当鼓起来一点 看起来更自然这部分 先回到基础状态,用这个形状开始验证效果。
+- 知识点：接下来我们要转成VDB 先把体积转成VDB 选从多边形生成VDB,通常默认是距离VDB 我们接下来会根据需要调整 用作宽度控制的区域降低噪声大小后。
+- 知识点：能逐步让这个形状呈现出更精准的体积结构 而且创建体积可视化时 要先大致确认云的形态可适当调高密度 边看笑边调整 这样又很方便,随着预览都能看到效果。
+- 知识点：纯粹为了方便而设的节点 重新搜一下云,就会看到不少噪声节点 以前只有云噪声一种,现在多了 像波浪噪声、丝状噪声这类新选项 先试试加个云噪声,现在就能看到这种效果。
+- 知识点：能清楚看到效果,现在的形态有点像机云的样子 云的形态变化多端 有的像散开的烟雾,有的则鼓胀饱满,充满体积感 还有呈现现状效果的类型。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`噪声`、`烟雾`。
+
+**关键画面：**
+
+这一张仍然停留在 `cloudshapegenerate1`，但它已经进入下一段“先把基础云形调顺，再转成 VDB”的准备状态。和上一张相比，当前云团被进一步拉成长条，同时把横向厚度压得很薄，形成一条更像云带或烟带的骨架形状，方便后续转体积后再叠噪声细化。
+
+- 当前层级仍位于：
+  - `/obj/geo1`
+
+- 当前网络中可见并选中的节点仍为：
+  - `cloudshapegenerate1`
+
+- 左侧视口当前结果可见：
+  - 团块沿水平方向被明显拉长
+  - 整体厚度被压薄，云体更贴近一条细长的云带
+  - 前后大小不一的团块仍然保留，说明随机缩放仍在生效
+
+- 右侧参数面板当前能确认的关键数值包括：
+  - `Cloud Species = Mediocris`
+  - `Point Separation = 0.1`
+  - `Initial Size = 1`
+  - `Length = 3`
+  - `Width = 0.25`
+  - `Distortion = 1`
+  - `Flatten Bottom = 0`
+  - `Random Scale per Shape`
+    - `Scale Min = 0.64`
+    - `Scale Max = 2.27`
+    - `Seed = 1`
+
+- 从当前参数和形态的对应关系可以直接看出：
+  - `Length = 3` 让整体沿主方向继续延展
+  - `Width = 0.25` 把厚度压得很薄
+  - 因此最终结果更像一条可继续加工的云条，而不是饱满的块状积云
+
+- 这一步的作用：
+  - 在转 VDB 之前先把基础轮廓调成更适合当前目标的窄长形
+  - 为后续通过 VDB 体积化和噪声节点继续塑造更精细的烟云边缘做准备
+这一张已经从基础团块正式进入体积云加工流程。网络中可以清楚看到 `cloudshapegenerate1` 之后接了 `vdbfrompolygons1`，再连到 `volumevisualization1`，同时又添加了一个 `cloudnoise1` 用于后续给体积云增加噪声细节。左侧视口里也不再是单独球团，而是一个被包围盒包住的淡白色体积云结果。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见的节点包括：
+  - `cloudshapegenerate1`
+  - `vdbfrompolygons1`
+  - `volumevisualization1`
+  - `cloudnoise1`
+
+- 当前能确认的主连接关系为：
+  - `cloudshapegenerate1 -> vdbfrompolygons1 -> volumevisualization1`
+
+- 当前被选中的节点是：
+  - `cloudnoise1`
+  - 节点类型：`Cloud Noise`
+
+- 左侧视口当前显示：
+  - 一个包围盒中的浅白色体积云
+  - 云体轮廓已经从多球团块变成更连续的体积形态
+  - 说明 `VDB from Polygons` 和体积可视化阶段已经生效
+
+- 右侧 `Cloud Noise` 的 `Noise` 页当前能确认的设置包括：
+  - `Spatial Scale = 1`
+  - `Amplitude = 0.1`
+  - `Type = Sparse Convolution Noise`
+  - `Octaves = 4`
+  - `Element Size = 0.6`
+  - `Element Scale = 1, 1, 1`
+  - `Offset = 0, 0, 0`
+  - `Roughness = 0.5`
+  - `Smooth Valleys` 已勾选
+  - `Abs Noise` 已勾选
+
+- 这张图可以直接复建出当前工作流：
+  - 先用 `Cloud Shape Generate` 做粗模
+  - 再用 `VDB from Polygons` 把多边形云坯转为体积
+  - 用 `Volume Visualization` 在视口里看体积结果
+  - 最后准备通过 `Cloud Noise` 给体积云增加内部形变和边缘变化
+
+- 这一步的作用：
+  - 把基础云坯正式转换成可继续细化的 VDB 体积
+  - 同时开始引入云噪声节点，为后面做更自然的烟云起伏和纹理特征打底
+这一张继续停留在同一套体积云网络，但 `cloudnoise1` 的噪声强度已经明显加大，左侧视口中的云体从上一张较平的白雾块，变成了更蓬松、更有内凹外鼓层次的积云状体积。它对应讲解里“把噪声叠上去后，形体会更像真正的云，而不是简单光滑体积”的验证画面。
+
+- 当前层级仍位于：
+  - `/obj/geo1`
+
+- 当前网络中可见节点仍为：
+  - `cloudshapegenerate1`
+  - `vdbfrompolygons1`
+  - `volumevisualization1`
+  - `cloudnoise1`
+
+- 当前主链结构仍可确认为：
+  - `cloudshapegenerate1 -> vdbfrompolygons1 -> volumevisualization1`
+  - `cloudnoise1` 作为当前选中的后续体积加工节点存在于同一网络中
+
+- 左侧视口当前结果能明确看到：
+  - 包围盒内的云体轮廓更鼓、更碎、更有团块感
+  - 云体表面出现明显的起伏和凹凸层次
+  - 已经从“单纯体积块”进一步接近自然云朵的蓬松外观
+
+- 右侧 `Cloud Noise` 当前 `Noise` 页能确认的参数包括：
+  - `Spatial Scale = 1`
+  - `Amplitude = 0.5`
+  - `Type = Sparse Convolution Noise`
+  - `Octaves = 4`
+  - `Element Size = 0.4`
+  - `Element Scale = 1, 1, 1`
+  - `Offset = 0, 0, 0`
+  - `Roughness = 0.5`
+  - `Smooth Valleys` 已勾选
+  - `Abs Noise` 已勾选
+
+- 与上一张相比，这里最关键的变化是：
+  - `Amplitude` 从较小值提高到 `0.5`
+  - `Element Size` 进一步减小到 `0.4`
+  - 这会让噪声影响更强，同时把形体细节切得更碎、更丰富
+
+- 这一步的作用：
+  - 用更强的云噪声把基础 VDB 体积雕刻成更自然的云体外观
+  - 让体积内部和边缘都产生更真实的层次，为后续继续叠加其他纹理噪声提供更合适的基础
+
+### 00:09:29-00:14:14 透明度、纹理、噪声
+
+- 本段定位：透明度、纹理、噪声。
+- 知识点：还有鳄鱼噪声、波纹噪声等,这些都会让纹理特征更明显使用云朵噪声时 通常建议叠加多种噪声,而不是只用一层在当前设置中 云朵噪声可以调得轻一点。
+- 知识点：前期先别加太强的噪声,再通过这里选另一种风格的噪声 做第二层叠加来丰富噪声的层次感 这样分层叠加的方式更常见,如果只用云噪声 叠加噪声总会显得有点刻意,哪怕调参数也难改观。
+- 知识点：只靠云噪声时总觉得缺了点什么 这次换成比洛伊噪声,就能选到更多类型的噪声模式了 这里还能选多种噪声类型而添加像,虽然已有 但这里其实已经预设了再叠加一层额外噪声的空间。
+- 知识点：可以把它看做一个自带二次噪声叠加功能的标签页 这里可以灵活的叠加两层噪声,多加一个节点也没问题 您看一下就行,接下来我们调一下数值幅度太大。
+- 知识点：基础形状太抱团,有点结块的感觉 如果感觉块头太实,可以试着换种基础骨架 边调边找合适的形状,挺不错的 这些细节选项也建议打开看看,形状怎么变心里有数。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`透明度`、`噪声`。
+
+**关键画面：**
+
+这一张继续使用 `cloudnoise1` 雕刻体积云，当前仍停留在第一层 `Noise` 参数页。和上一批最后一张相比，视口中的云体已经形成比较稳定的蓬松主轮廓，说明作者此时在观察“只用这一层云噪声时，整体形态是否已经像云，但纹理层次是否还不够丰富”。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见节点仍为：
+  - `cloudshapegenerate1`
+  - `vdbfrompolygons1`
+  - `volumevisualization1`
+  - `cloudnoise1`
+
+- 当前选中的节点是：
+  - `cloudnoise1`
+  - 节点类型：`Cloud Noise`
+
+- 左侧视口当前结果可确认：
+  - 云体仍处于包围盒中进行体积预览
+  - 整体已经是典型的白色蓬松云块，而非光滑体积块
+  - 主体偏左更厚实，右侧拖出一片较轻的尾部
+  - 大轮廓已经自然，但细部纹理仍偏统一，没有出现特别丰富的二级噪声花纹
+
+- 右侧 `Cloud Noise` 当前 `Noise` 页可确认的参数包括：
+  - `Spatial Scale = 1`
+  - `Amplitude = 0.5`
+  - `Type = Sparse Convolution Noise`
+  - `Octaves = 4`
+  - `Element Size = 0.4`
+  - `Element Scale = 1, 1, 1`
+  - `Offset = 0, 0, 0`
+  - `Roughness = 0.5`
+  - `Smooth Valleys` 已勾选
+  - `Abs Noise` 已勾选
+
+- 从当前画面能直接读出的阶段含义是：
+  - 第一层云噪声已经足以把云体大形做自然
+  - 但如果想让纹理特征更丰富，还需要继续引入第二种风格的噪声叠加
+
+- 这一步的作用：
+  - 先确认单层 `Cloud Noise` 对体积主轮廓的塑形效果
+  - 为后面切到其他噪声类型、叠加第二层噪声做对比基线
+这一张正式切到第二种噪声做叠加。当前选中的节点不再是普通 `cloudnoise1`，而是 `cloudbillownoise1`，右侧也展开了 `Billowy Noise` 参数。这正对应本段口播里“只靠云噪声总觉得差点意思，所以再换一种噪声类型做第二层叠加，让纹理层次更丰富”的做法。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见节点包括：
+  - `cloudshapegenerate1`
+  - `vdbfrompolygons1`
+  - `volumevisualization1`
+  - `cloudnoise1`
+  - `cloudnoise2`
+  - `cloudbillownoise1`
+
+- 当前可见的网络关系能确认：
+  - 主体基础链仍然是：
+    - `cloudshapegenerate1 -> vdbfrompolygons1 -> volumevisualization1`
+  - 旁路存在多种噪声节点，说明作者正在比较或叠加不同噪声方案，而不是只保留一种默认云噪声
+
+- 当前选中的节点是：
+  - `cloudbillownoise1`
+  - 节点类型：`Cloud Billowy Noise`
+
+- 左侧视口当前显示：
+  - 体积云轮廓更平整、更圆鼓
+  - 前景右侧主块比较饱满，后方几团云也有更明确的团块边界
+  - 说明当前这层噪声更偏向塑造“鼓胀”的云朵体量，而不是单纯打碎边缘
+
+- 右侧 `Billowy Noise` 页当前能确认的设置包括：
+  - `Noise Type = Simplex`
+  - `Amplitude = 2.27`
+  - `Element Size = 1`
+  - `Offset = 0`
+
+- 右侧面板下方还能看到可继续展开的分组：
+  - `Worley Details`
+  - `Value Correction`
+  - `Fractal`
+  - `Warping`
+
+- 这张图直接说明的搭建思路是：
+  - 第一层 `Cloud Noise` 负责建立基础的云体变化
+  - 第二层换成 `Billowy Noise`，让云块产生另一种更鼓、更厚的纹理特征
+  - 通过不同噪声类型叠加，能避免所有细节都来自同一种模式而显得单调
+
+- 这一步的作用：
+  - 把第二种噪声正式接入体积云工作流
+  - 为云体增加不同风格的二级纹理层次，而不是只依赖单一的卷积噪声
+这一张继续比较第二层噪声方案，但当前已经把选中的节点换成 `cloudwispynoise1`。这说明作者不是固定用 `Billowy Noise`，而是在多个体积噪声节点之间来回试验，看哪一种更适合当前云体。口播字幕也直接强调“多试不同噪声，边看边调，感受效果更重要”，这和画面中的节点切换完全一致。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见节点包括：
+  - `cloudshapegenerate1`
+  - `vdbfrompolygons1`
+  - `volumevisualization1`
+  - `cloudnoise1`
+  - `cloudnoise2`
+  - `cloudbillownoise1`
+  - `cloudwispynoise1`
+
+- 从当前排布可确认：
+  - 作者并未只保留一种二级噪声节点
+  - 而是把多种噪声节点摆在同一网络里，方便逐个切换、观察和比较结果
+
+- 当前选中的节点是：
+  - `cloudwispynoise1`
+  - 节点类型：`Cloud Wispy Noise`
+
+- 左侧视口当前能看到的体积结果包括：
+  - 云体被拉成更有流向感的长条结构
+  - 左上形成一块较厚的云团，向右下拖出更轻、更散的尾部
+  - 整体比 `Billowy Noise` 那张更有飘散和丝状延伸感，而不是单纯鼓胀的团块
+
+- 右侧 `Wispy Noise` 页当前能确认的参数包括：
+  - `Noise Type = Anti-Aliased Flow`
+  - `Amplitude = 1`
+  - `Element Size = 1`
+  - `Offset = 0`
+
+- 右侧面板下方还能看到可继续展开的分组：
+  - `Fractal`
+  - `Evolve Noise`
+
+- 这张图表达的核心结论是：
+  - 第二层噪声不一定非要用 `Billowy`
+  - `Wispy Noise` 会把云体推向更轻、更流动、更纤细的纹理方向
+  - 因此最合适的噪声类型需要结合当前目标云的风格，边试边看
+
+- 这一步的作用：
+  - 把“多种噪声风格对同一体积云的影响”直观摆到一起比较
+  - 帮读者理解：在云 VDB 制作里，噪声节点的选择本身就是风格设计的一部分
+
+### 00:14:14-00:18:44 Houdini、噪声、烟雾
+
+- 本段定位：Houdini、噪声、烟雾。
+- 知识点：或者找些云朵参考图,试着照着做,特别有乐趣 微丝皮噪声这类,特别适合用来营造烟雾般的柔和收尾效果,能让细节更生动 加上一层微丝皮噪声,就能带出微微的色彩韵人感,整体也更自然真实。
+- 知识点：加得太重的话,团反而会显得太刻意,快撞感太强,不如这样 这样收尾处略微随机散开,反而更贴近真实云层的自然质感 所以把元素尺寸调小,图案密度更高,形态也就更真实自然。
+- 知识点：这种形态也就挺合适了 最后稍作收尾感 云层剪切节点主要是对底部做些收尾处理,宁可理解为它负责底部的收尾处理 提高原点值后,就能以剪切面为基准,或通过调节距离值实现延伸效果。
+- 知识点：也能实现延伸,但启用噪声位移功能会更自然 这里同样引入了噪声模式,注意节段面的位置 剪切部分不必直切,而是让切口带点弧度,借助噪声模式实现类似效果。
+- 知识点：下方选项完全一致,这三个节点的操作方式基本一致,用起来也很轻松 以前做这类分组特别麻烦,因为根本没好用的节点,所以用剪切节点时,切口常显得太生硬。
+- 核对对象：`Houdini`、`噪声`、`烟雾`。
+
+**关键画面：**
+
+这一张延续上一批的 `cloudwispynoise1`，但当前观察重点已经从“比较噪声类型”转到“把尾部做得更自然”。左侧体积云结果明显比前一批更轻、更散，尤其右侧尾部被拉开成柔和的散逸形，这正对应本段口播里“微丝状噪声适合做烟雾般的柔和收尾，不要加太重，收尾略微随机散开反而更真实”的结论。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见节点包括：
+  - `cloudshapegenerate1`
+  - `vdbfrompolygons1`
+  - `volumevisualization1`
+  - `cloudnoise1`
+  - `cloudnoise2`
+  - `cloudbillownoise1`
+  - `cloudwispynoise1`
+
+- 当前选中的节点是：
+  - `cloudwispynoise1`
+  - 节点类型：`Cloud Wispy Noise`
+
+- 左侧视口当前能确认的结果特征包括：
+  - 云体主体集中在中左部
+  - 右侧拖出一段更轻、更散的尾部
+  - 整个体积比前一批的 `Wispy` 示例更柔和，边缘更像被空气拉开的烟云
+  - 说明当前这层噪声主要用于收尾和边缘自然化，而不是再增加厚重团块
+
+- 右侧 `Wispy Noise` 当前 `Noise` 页能确认的参数包括：
+  - `Noise Type = Anti-Aliased Flow`
+  - `Amplitude = 1`
+  - `Element Size = 1`
+  - `Offset = 0`
+
+- 右侧面板下方还能看到：
+  - `Fractal`
+  - `Evolve Noise`
+  - 说明当前仍停留在基础 `Noise` 区，尚未切到后面的底部裁切类节点
+
+- 这一步的作用：
+  - 用 `Wispy Noise` 给云体尾部和边缘做更柔和、更自然的散逸收尾
+  - 让云体不只是一团饱满体块，而是带有真实大气流动感的尾部过渡
+这一张进入本段后半部分的底部收尾处理。当前选中的节点已经从噪声类切到 `cloudclip1`，右侧打开的是 `Cloud Clip` 的 `Clipping` 页面。口播提到“通过提高原点值、或者调节距离值实现延伸效果”，画面里也正是在用一个裁切平面去控制云体底部的截切和拉伸基准。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见节点包括：
+  - `vdbfrompolygons1`
+  - `volumevisualization1`
+  - `cloudnoise1`
+  - `cloudnoise2`
+  - `cloudbillownoise1`
+  - `cloudwispynoise1`
+  - `cloudclip1`
+
+- 从当前排布可确认的后处理链路是：
+  - 先经过多层噪声塑形
+  - 再进入 `cloudclip1` 做最终底部和边界收尾
+
+- 当前选中的节点是：
+  - `cloudclip1`
+  - 节点类型：`Cloud Clip`
+
+- 左侧视口当前云体结果能确认：
+  - 主体云团位于左侧中上部
+  - 右侧拖出较长的低平尾部
+  - 云的底边已经不再是自然鼓包，而更像被某个平面约束后重新整理过
+
+- 右侧 `Cloud Clip` 面板当前 `Clipping` 页能确认的设置包括：
+  - `Use Mask Volume` 已勾选
+  - `Invert Mask = 100`
+  - `Invert Clipping = 10`
+  - `Plane`
+    - `Origin = 0, 0, 0`
+    - `Direction = 0, 1, 0`
+    - `Distance = 0`
+
+- 右侧还能看到当前可展开的其他分组：
+  - `Noise Displacement`
+  - `Smooth Edge Density`
+
+- 这一步的作用：
+  - 用裁切平面统一处理云体底部的收尾基准
+  - 让云层底边和尾部延伸更可控，而不是完全依赖前面几层噪声随机生成
+这一张是本段底部收尾之后的进一步整理结果。网络里已经在 `cloudclip1` 后面接上了 `transform1`，说明作者开始把裁切后的云体做最后的尺度或位置整理。左侧视口中的云层也明显变成长条状、低平铺开的形态，更接近可用于场景云层的最终体积资源。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见节点包括：
+  - `volumevisualization1`
+  - `cloudnoise1`
+  - `cloudnoise2`
+  - `cloudbillownoise1`
+  - `cloudwispynoise1`
+  - `cloudclip1`
+  - `transform1`
+
+- 当前从可见排布能确认的后处理顺序是：
+  - 多层噪声塑形
+  - `cloudclip1` 做底部与边界裁切
+  - `transform1` 做最后的几何/体积变换整理
+
+- 左侧视口当前结果特征包括：
+  - 云体整体被压得更扁、更长
+  - 左侧主体仍有较厚的团块
+  - 右侧延展出一条更细、更轻的长尾
+  - 最终形态更像横向铺开的层云，而不再是独立积云块
+
+- 当前高亮选中的节点是：
+  - `transform1`
+
+- 右侧当前显示的是 `Volume Visualization` 相关参数页，能确认的设置包括：
+  - `Visualization Mode = Smoke`
+  - `Minimum = 0`
+  - `Maximum = 1`
+  - `Density Scale = 1`
+  - `Shadow Scale = 1`
+  - `Density Field = density`
+  - `Mode = Clamped Ramp`
+  - 可见 `Density Ramp` 与 `Diffuse Ramp`
+
+- 这说明当前画面除了继续整理网络外，也在同步用体积可视化查看最终烟云密度表现，而不是盲调。
+
+- 这一步的作用：
+  - 在底部裁切完成后，把云体进一步整理成更适合实际使用的层云体量和延展方向
+  - 同时借助体积可视化确认最终 `density` 显示是否符合预期，为后面放大、导出或进 Unreal 做准备
+
+### 00:18:44-00:23:13 噪声、烟雾
+
+- 本段定位：噪声、烟雾。
+- 知识点：只需放大10倍左右即可,所以放大10倍左右导出,最合适用变换节点拉伸后,密度值也会自动放大10倍 密度值随着一只放大10倍,结果显得很密实,但后期在Url中可适当调低,不影响使用。
+- 知识点：这样用完全没问题,接下来,最后导出VDB时,记得勾选这里VDB体积选项,我们这次只取单帧 所以无需设定帧范围,只要在文件名末尾加上VDB扩展名,就能直接烘焙。
+- 知识点：选好想要的文件名,导出即可,这样就能做出类似烟雾般,随机感强烈的云型效果 这类节点,形状生成,非常实用,用这些节点和各类噪声,能做出基础的云型效果。
+- 知识点：没错,但有时候你可能想要那种像爆炸云一样,饱满有质感的形态 所以,这种形状我给个简单实用的小技巧,接着就收尾 差不多了,先保存资源,现在我们用0.02的复制尺寸在操作。
+- 知识点：不过,最后烘焙时建议把复制尺寸调到最终渲染的精度,否则每次改参数都得等一会儿,体验会卡顿,所以这点一定要注意。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`噪声`、`烟雾`。
+
+**关键画面：**
+
+这一张进入本页最后的输出整理阶段。当前选中的节点是 `transform1`，右侧参数里直接把统一缩放设成了 `10`。这和口播里“放大 10 倍左右导出最合适，密度值也会跟着变得更密，但后期在 Unreal 中可以再适当调低”的说明一致。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见的后段节点包括：
+  - `volumevisualization1`
+  - `cloudnoise1`
+  - `cloudnoise2`
+  - `cloudbillownoise1`
+  - `cloudwispynoise1`
+  - `cloudclip1`
+  - `transform1`
+
+- 从当前可见顺序能确认：
+  - 多层噪声与裁切之后
+  - 最终通过 `transform1` 统一调整体积云的输出尺度
+
+- 当前选中的节点是：
+  - `transform1`
+  - 节点类型：`Transform`
+
+- 左侧视口当前结果能确认：
+  - 云体整体保持横向铺开的层云结构
+  - 主体仍位于左侧，右侧延伸出更轻的尾部
+  - 放大后体积在视口中显得更厚、更实，符合口播中“密度会显得很密实”的描述
+
+- 右侧 `Transform` 参数当前能确认的设置包括：
+  - `Transform Order = Scale Rot Trans`
+  - `Rotate Order = Rx Ry Rz`
+  - `Translate = 0, 0, 0`
+  - `Rotate = 0, 0, 0`
+  - `Scale = 1, 1, 1`
+  - `Shear = 0, 0, 0`
+  - `Uniform Scale = 10`
+
+- 右侧下方还能看到：
+  - `Move Centroid to Origin`
+  - `Move Pivot to Centroid`
+  - `Recompute Point Normals` 已勾选
+  - `Recompute Affected Normals` 已勾选
+  - `Preserve Normal Length` 已勾选
+
+- 这一步的作用：
+  - 在导出前把云体放大到更适合实际使用的世界尺寸
+  - 同时提醒读者：放大后视觉密度会上升，但这是输出阶段可以接受的结果，后续进 Unreal 再回调密度即可
+这一张开始进入真正的导出准备。作者把注意力切回 `vdbfrompolygons1`，右侧重点显示 `Voxel Size = 0.02`。同时网络末尾已经挂上了 `rop_geometry1`，节点下方直接写出输出名模板 `$HIPNAME.$OS.$F.vdb`，说明当前讨论的核心是“最终烘焙时要用更合适的体素精度，并输出为 `.vdb` 文件”。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见的完整后段链路包括：
+  - `cloudshapegenerate1`
+  - `vdbfrompolygons1`
+  - `volumevisualization1`
+  - `cloudnoise1`
+  - `cloudnoise2`
+  - `cloudbillownoise1`
+  - `cloudwispynoise1`
+  - `cloudclip1`
+  - `transform1`
+  - `rop_geometry1`
+
+- 当前选中的节点是：
+  - `vdbfrompolygons1`
+  - 节点类型：`VDB from Polygons`
+
+- 左侧视口当前结果仍是：
+  - 一条横向铺开的层云体积
+  - 说明作者此时不是再改云形，而是在确认导出前的 VDB 精度设置
+
+- 右侧 `VDB from Polygons` 参数当前能确认的设置包括：
+  - `Voxel Size = 0.02`
+  - `Fog VDB = density`
+  - `Exterior Band Voxels = 3`
+  - `Interior Band Voxels = 3`
+  - `Surface Attributes = 0`
+
+- 右侧还能看到的选项包括：
+  - `Use World Space Units for Narrow Band`
+  - `Fill Interior`
+  - `Unsigned Distance Field`
+  - `Preserve Holes`
+
+- 网络末尾导出节点当前可直接确认：
+  - `rop_geometry1`
+  - 输出命名模板：`$HIPNAME.$OS.$F.vdb`
+
+- 这一步的作用：
+  - 把最终烘焙前的体素精度切到更适合正式输出的值
+  - 同时明确这次导出的目标就是单帧 `.vdb` 体积文件，而不是仅在视口里看效果
+这一张不是继续停留在前面的层云导出节点，而是切到一个更偏“爆炸云”或高能烟团的 Pyro 示例网络，作为本页收尾补充技巧。左侧视口中已经能看到一团高亮、团块感很强的爆炸式烟火体积；右侧当前选中的是 `Pyro Trail Path pyrotailpath_side`，说明作者在用轨迹分布类节点去生成更饱满、更具爆发感的基础源。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见的主要节点包括：
+  - `pointreplicate_burs...`
+  - `offset_startframe`
+  - `startframe`
+  - `pyroburstsource_explosions`
+  - `volumerasterizeattributes1`
+  - `merge_for_sim`
+  - `pyrosolver_ground_explosion`
+  - 右侧当前选中：`pyrotrailpath_side`
+
+- 当前可确认的主要流程关系为：
+  - 上游若干点/时间偏移节点
+  - 进入 `pyroburstsource_explosions`
+  - 再到 `volumerasterizeattributes1`
+  - 合并后喂给 `pyrosolver_ground_explosion`
+
+- 左侧视口当前结果特征包括：
+  - 多个高亮发白、边缘偏褐的爆炸云团
+  - 体积更厚、更密、更有球形爆发感
+  - 与前面层云状、横向铺开的云 VDB 形态明显不同
+
+- 当前选中的节点是：
+  - `pyrotrailpath_side`
+  - 节点类型：`Pyro Trail Path`
+
+- 右侧 `Source` 页当前能确认的设置包括：
+  - `Fuse Input Points = By Attribute`
+  - `Match Attribute = explosionid`
+  - `Randomization By = Point Number`
+  - `Shape = Sphere`
+  - `Initial Size = 2.5`
+  - `Direction = 0, 1, 0`
+  - `Shape Offset = 0`
+  - `Number of Trails = 15`
+  - `Variation = 4`
+  - `Seed = 0`
+  - `Spread Start Angle = 5`
+  - `Spread Angle = 35`
+  - `Azimuth Start Angle = 0`
+  - `Azimuth Angle = 360`
+
+- 从这张图可以直接读出的用途是：
+  - 如果不想做前面那种平铺层云，而是想做更饱满、更爆炸式的烟团
+  - 可以改用这类 Pyro 爆发源与轨迹分布节点，先把源形态做得更立体、更外扩
+
+- 这一步的作用：
+  - 作为本页收尾的小技巧示例，补充另一类更厚重的云/烟体积做法
+  - 提醒读者：基础源的分布方式不同，最后得到的 VDB 风格也会完全不同
+
+### 00:23:13-00:27:29 速度、噪声、烟雾
+
+- 本段定位：速度、噪声、烟雾。
+- 知识点：与其用噪声节点,不如试试用自然爆炸产生的烟雾形态 相比之下,自然形成的爆炸烟雾形态反而更适合作为云的参考 毕竟云有体积感,烟雾同样具备,因为烟雾也有体积感,所以我来演示这种用法。
+- 知识点：如果想进一体训效果,可以适当缩小复制尺寸,按您的需求调整 找到对应针后,有时需要表现这种云的效果,我之前也这么用过 这样做挺方便,可视化时更清晰,可在这一层稍加一些噪声,效果也不错另外。
+- 知识点：这样使用时,输出务必勾选转换为VDB,确保生成为VDB格式 生成为VDB后,使用起来更方便弱用于这类提取,其他字段都不用保留 针、模板、弹性数据都无需保留,只是需保留密度即可。
+- 知识点：这样处理会更高效,这样处理后,缓存构建或烘焙时都能显着提升速度 因此可观察到,用代理替代后,前区域覆盖范围极广,振幅值需设得比预期稍高些。
+- 知识点：这样才能达到理想效果相当于少量混入噪声,不必过多 这些细节在爆炸阶段已基本定型,因此无需再依赖噪声模式来补全 可以这样处理,适当加点细节就好,再混入一些粗糙噪声。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`速度`、`噪声`、`烟雾`。
+
+**关键画面：**
+
+这一张延续上一批切入的爆炸烟雾示例网络，但当前视口已经更强调“自然爆炸烟雾本身就可以当成云的参考形态”。左侧画面里是一组强烈发光、团块密集的爆炸烟团，和前面程序化层云完全不同；它对应本段口播里“与其继续堆噪声，不如直接借用自然爆炸形成的烟雾体积感来做云”的思路。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见的主要节点包括：
+  - `pointreplicate_burs...`
+  - `offset_startframe`
+  - `startframe`
+  - `pyroburstsource_explosions`
+  - `volumerasterizeattributes1`
+  - `merge_for_sim`
+  - `pyrosolver_ground_explosion`
+  - 当前选中：`pyrotrailpath_side`
+
+- 当前主要流程关系仍可确认：
+  - 上游发射/时间偏移控制
+  - `pyroburstsource_explosions`
+  - `volumerasterizeattributes1`
+  - `merge_for_sim`
+  - `pyrosolver_ground_explosion`
+
+- 左侧视口当前结果特征包括：
+  - 多团高亮泛白、边缘偏深褐的爆炸烟雾
+  - 团块体积感很强，层叠密集
+  - 视角已经靠近烟团内部或近景，强调这种自然爆炸云的厚度与纹理
+
+- 当前选中的节点是：
+  - `pyrotrailpath_side`
+  - 节点类型：`Pyro Trail Path`
+
+- 右侧 `Source` 页当前能确认的设置包括：
+  - `Fuse Input Points = By Attribute`
+  - `Match Attribute = explosionid`
+  - `Randomization By = Point Number`
+  - `Shape = Sphere`
+  - `Initial Size = 2.5`
+  - `Direction = 0, 1, 0`
+  - `Number of Trails = 15`
+  - `Variation = 4`
+  - `Spread Start Angle = 5`
+  - `Spread Angle = 35`
+  - `Azimuth Angle = 360`
+
+- 这一步的作用：
+  - 直观展示爆炸烟雾天然就具备可借用的体积层次和云感
+  - 为后面继续讲“缩小复制尺寸、只保留密度、转成 VDB 更高效”做视觉铺垫
+这一张把前一张高亮发光的爆炸烟团，转回到更适合做体积云参考的灰色烟雾观察状态。当前选中的是 `cloudbillownoise2`，说明作者开始在这个基于爆炸源得到的体积上，再只加少量噪声做二次修整，而不是重新大幅依赖噪声去塑形。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见节点包括：
+  - `pyroburstsource_explosions`
+  - `volumerasterizeattributes1`
+  - `merge_for_sim`
+  - `pyrosolver_ground_explosion`
+  - `volumevisualization2`
+  - `cloudbillownoise2`
+
+- 当前可确认的流程关系为：
+  - 爆炸源先进入 `pyrosolver_ground_explosion`
+  - 结果通过 `volumevisualization2` 观察
+  - 当前正在把 `cloudbillownoise2` 作为后续轻量修整节点接入
+
+- 左侧视口当前结果特征包括：
+  - 体积已经不再是高亮火焰态，而是灰色烟云态
+  - 团块依然非常厚实，保留爆炸烟雾天然形成的体积层次
+  - 这类形态比单纯程序噪声生成的云更像真实的大体积烟云参考
+
+- 当前选中的节点是：
+  - `cloudbillownoise2`
+  - 节点类型：`Cloud Billowy Noise`
+
+- 右侧 `Billowy Noise` 页当前能确认的设置包括：
+  - `Noise Type = Simplex`
+  - `Amplitude = 0.25`
+  - `Element Size = 1`
+  - `Offset = 0`
+
+- 右侧面板下方还能看到可展开项：
+  - `Worley Details`
+  - `Value Correction`
+  - `Fractal`
+  - `Warping`
+
+- 从当前设置可以直接看出：
+  - `Amplitude` 被压到 `0.25`
+  - 说明作者此时只是“少量混入噪声”，让爆炸烟云更适合作云用
+  - 而不是再把形体彻底打碎重做
+
+- 这一步的作用：
+  - 证明自然爆炸烟雾作为云参考时，只需补少量二次噪声就够了
+  - 同时为后面只保留 `density`、转成 VDB 提高效率的做法做形态准备
+这一张继续沿用爆炸烟云参考做体积云，但当前 `cloudbillownoise2` 的噪声类型已经换成了更粗糙的 `Alligator`。左侧视口中团块边界和块面起伏更明显，说明作者在尝试给原本已经够厚实的爆炸烟云再加一点粗粒度结构，而不是细碎高频纹理。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见节点包括：
+  - `volumerasterizeattributes1`
+  - `merge_for_sim`
+  - `pyrosolver_ground_explosion`
+  - `volumevisualization2`
+  - `cloudbillownoise2`
+
+- 当前流程可确认：
+  - 爆炸求解后的体积
+  - 通过 `volumevisualization2` 观察
+  - 再由 `cloudbillownoise2` 做后续粗粒度形态修整
+
+- 左侧视口当前结果特征包括：
+  - 烟云整体仍保持爆炸源带来的密实体积感
+  - 但团块间的分隔和表面块面更强烈
+  - 主体不像纯程序层云那样平滑，而更像一堆厚重的爆炸残烟团
+
+- 当前选中的节点是：
+  - `cloudbillownoise2`
+  - 节点类型：`Cloud Billowy Noise`
+
+- 右侧 `Billowy Noise` 页当前能确认的设置包括：
+  - `Noise Type = Alligator`
+  - `Amplitude = 2`
+  - `Element Size = 10`
+  - `Offset = 0`
+
+- 右侧面板下方还能看到可展开项：
+  - `Worley Details`
+  - `Value Correction`
+  - `Fractal`
+  - `Warping`
+
+- 从当前参数与结果的关系可以直接读出：
+  - `Alligator` 这类噪声更偏向做大块面、粗糙分割感
+  - `Element Size = 10` 说明不是在追求高频小噪点，而是在加大尺度纹理
+  - 因此它适合在已经具备自然体积感的爆炸烟云上，补一点更粗粝的云团层次
+
+- 这一步的作用：
+  - 进一步展示“自然爆炸体积 + 少量噪声修整”这条路线也能做出可用云型
+  - 同时给读者一个对照：不同噪声类型不仅决定细节量，也决定最终云团是偏柔和、偏鼓胀，还是偏粗粝块状
+
+### 00:27:29-00:32:25 材质、碰撞、噪声
+
+- 本段定位：材质、碰撞、噪声。
+- 知识点：其实现在烟雾本身太厚实了,孔径端流值调得太强反而会显得不自然 所以只要把握好噪声形态就行,不用碰撞生成的部分太假了 这时候用剪辑节点稍作拆分,再混合噪声模式,把噪声形态放大些,就像刚才那样。
+- 知识点：刚才那种情况,尺度为1时,振幅值表现得很细密,但现在云雾爆炸的尺度变大了 所以噪声模式也要适当简化,切面才会更自然,还可以用偏移来慢慢摸索您想要的形态。
+- 知识点：这部分可以这样组合试试,那些适当凸出来的地方,就重点调整下形态 建议适当调低一点,现在密度太高,看着有点生硬,但要是把密度调低些,反而会更自然顺滑。
+- 知识点：效果也会更自然柔和,这时候别太纠结于生硬的质感,该松就松 不妨用可视化方式调一调,慢慢找到想要的感觉,多尝试几种形状,按自己的感觉来设计。
+- 知识点：先在脑子里想好自己想要什么形状,动手试一试不用照搬我的样子,按自己的感觉来就好 按自己的感觉来也完全没问题,接下来讲个基础做法。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`材质`、`噪声`、`碰撞`、`烟雾`。
+
+**关键画面：**
+
+这一张进入 `S07` 段后，仍然沿用前一批的爆炸烟云参考工作流，但当前选中的节点已经换成 `cloudwispynoise2`。这一步的重点不是继续增加厚重块感，而是把大尺度烟云边缘和起伏做得更松、更有自然散逸感，避免“碰撞做出来的形态太假、太硬”的问题。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见节点包括：
+  - `volumerasterizeattributes1`
+  - `merge_for_sim`
+  - `pyrosolver_ground_explosion`
+  - `volumevisualization2`
+  - `cloudbillownoise2`
+  - `cloudwispynoise2`
+
+- 当前流程可以确认：
+  - 爆炸烟雾求解结果先作为体积主体
+  - `cloudbillownoise2` 负责较粗的块面修整
+  - `cloudwispynoise2` 进一步负责边缘和轮廓的松弛、散逸化处理
+
+- 左侧视口当前结果特征包括：
+  - 大团灰色烟云仍然保有厚实体量
+  - 但边缘比前一张更柔和，没有那么硬的块状切分感
+  - 整体更接近“云”而不是“爆炸残烟”的最终使用方向
+
+- 当前选中的节点是：
+  - `cloudwispynoise2`
+  - 节点类型：`Cloud Wispy Noise`
+
+- 右侧 `Wispy Noise` 页当前能确认的设置包括：
+  - `Noise Type = Anti-Aliased Flow`
+  - `Amplitude = 5`
+  - `Element Size = 5`
+  - `Offset = 0`
+
+- 右侧面板下方还能看到：
+  - `Fractal`
+  - `Evolve Noise`
+
+- 从当前参数与画面可直接读出：
+  - 当前云体尺度已经很大，所以 `Amplitude` 和 `Element Size` 也被一起放大
+  - 这不是在做细密小噪声，而是在大尺度云团上做更自然的整体松散与起伏
+
+- 这一步的作用：
+  - 在厚重爆炸烟云的基础上，用 `Wispy Noise` 把形体放松、柔化
+  - 让最终结果既保留自然体积感，又不会因为块面过硬而显得不真实
+这一张继续在爆炸烟云参考基础上做形态整理，但当前选中的节点已经切到 `cloudclip2`。本图最关键的不是单纯裁掉一块体积，而是同时打开 `Noise Displacement`，让切面本身带有噪声起伏，避免出现生硬的平直截面。这正对应口播里“尺度变大后，噪声模式也要适当简化，切面才会更自然，还可以用偏移慢慢摸想要的形态”的说明。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 当前网络中可见节点包括：
+  - `pyroburstsource_explosions`
+  - `volumerasterizeattributes1`
+  - `merge_for_sim`
+  - `pyrosolver_ground_explosion`
+  - `volumevisualization2`
+  - `cloudbillownoise2`
+  - `cloudwispynoise2`
+  - `cloudclip2`
+
+- 当前流程可以确认：
+  - 爆炸烟云体积先完成求解与噪声修整
+  - 再通过 `cloudclip2` 做最终切面与边缘的自然化处理
+
+- 左侧视口当前结果特征包括：
+  - 云体整体仍是厚重块云
+  - 但能看到一块带网格的裁切/参考平面穿过体积
+  - 说明作者正在直接观察裁切面与体积的相互关系，而不是只靠参数盲调
+
+- 当前选中的节点是：
+  - `cloudclip2`
+  - 节点类型：`Cloud Clip`
+
+- 右侧 `Clipping` 页当前能确认的平面设置包括：
+  - `Plane`
+    - `Origin = 0, 1, 0`
+    - `Direction = 0, 1, 0`
+    - `Distance = 0`
+
+- 当前已展开的 `Noise Displacement` 区当前能确认的设置包括：
+  - `Noise Type = Simplex`
+  - `Amplitude = 20`
+  - `Element Size = 20`
+  - `Offset = 0`
+  - `Rest Position Bias = 1`
+
+- 右侧面板下方还能看到：
+  - `Worley Details`
+  - `Value Correction`
+  - `Fractal`
+  - `Warping`
+  - `Smooth Edge Density`
+
+- 这一步的作用：
+  - 用裁切节点重新整理爆炸烟云的大形
+  - 同时借助 `Noise Displacement` 给切面增加自然起伏，让裁切结果不显得人工和僵硬
+这一张是 `p06` 页尾的总览收束图。左侧视口里显示的是已经整理完成的一片低平灰色云层；中央网络则把两条思路都放在了同一视图中，一边是早先的程序化层云/VDB 流程，另一边是基于爆炸烟雾体积再修整的流程。右侧又回到了 `pyrotrailpath_side`，相当于用完整网络提醒读者：这页讲的不是唯一做法，而是两类云体来源都可以用。
+
+- 当前层级位于：
+  - `/obj/geo1`
+
+- 左侧视口当前结果特征包括：
+  - 一大片横向铺开的低平灰云
+  - 主体轮廓柔和，没有爆炸火焰态
+  - 已经更接近可直接当云资源使用的最终外观
+
+- 中央网络当前能明确看出两组流程并存：
+  - 左上是一套程序化云体流程：
+    - `cloudshapegenerate1`
+    - `vdbfrompolygons1`
+    - `volumevisualization1`
+    - `cloudnoise1 / cloudnoise2`
+    - `cloudbillownoise1`
+    - `cloudwispynoise1`
+    - `cloudclip1`
+    - `transform1`
+    - `rop_geometry1`
+  - 右下/中下是一套基于爆炸烟雾的流程：
+    - `explosion_center`
+    - `pointreplicate_explosion_centers`
+    - `set_unique_pointidx`
+    - `init_startframe`
+    - `pointreplicate_bursts`
+    - `pyrotrailpath_side`
+    - `offset_startframe`
+    - `pyroburstsource_explosions`
+    - `volumerasterizeattributes1`
+    - `merge_for_sim`
+    - `pyrosolver_ground_explosion`
+    - `volumevisualization2`
+    - `cloudbillownoise2`
+    - `cloudwispynoise2`
+    - `cloudclip2`
+
+- 当前选中的节点是：
+  - `pyrotrailpath_side`
+  - 节点类型：`Pyro Trail Path`
+
+- 右侧 `Source` 页当前仍能确认的关键设置包括：
+  - `Fuse Input Points = By Attribute`
+  - `Match Attribute = explosionid`
+  - `Randomization By = Point Number`
+  - `Shape = Sphere`
+  - `Initial Size = 2.5`
+  - `Direction = 0, 1, 0`
+  - `Number of Trails = 15`
+  - `Variation = 4`
+  - `Spread Start Angle = 5`
+  - `Spread Angle = 35`
+  - `Azimuth Angle = 360`
+
+- 这张图的核心结论是：
+  - 做云 VDB 并不只有一条固定路径
+  - 可以从 `Cloud Shape Generate + VDB + 多层噪声` 出发
+  - 也可以从 `爆炸烟雾求解 + 少量噪声修整 + 裁切` 出发
+  - 最终都能落到可用的云体积资源
+
+- 这一步的作用：
+  - 用总览网络把本页两类做云思路收束到一起
+  - 帮读者建立“按目标风格选源、再选噪声与裁切”的整体工作流认识
+
+### 00:32:25-00:32:31 关键画面
+
+- 本段定位：关键画面。
+- 知识点：这期就到这里啦,谢谢观看。
+
+**关键画面：**
+
+这张图是本页教程结束前的 Houdini 总览定格，左侧显示最终烟云体积预览，中间显示生成网络，右侧显示 `pyrotrailpath_side` 的参数面板。它说明作者最终采用的是“先布置爆炸中心与侧向 trail path，再合并进地面爆炸求解，最后接噪声和裁切输出”的工作流。
+
+节点定义集：
+
+- 左侧预览：
+  - 一个低矮、横向铺开的灰色云团体积，说明当前目标不是高柱状爆炸，而是沿地面扩展的云体
+- 中间主网络上半段可见：
+  - `cloudshapegenerate1`
+  - `vdbfrompolygons1`
+  - `volumevisualization1`
+  - `cloudnoise1`
+  - `cloudnoise2`
+  - `cloudbillowynoise1`
+  - `cloudwispynoise1`
+  - `cloudclip1`
+  - `transform1`
+  - `rop_geometry1`
+- 中间主网络右半段可见一组爆炸中心/路径准备节点：
+  - `explosion_center`
+  - `pointreplicate_explosion_centers`
+  - `set_unique_pointid`
+  - `init_startframe`
+  - `pointreplicate_bu...`（名称被遮挡，只能确认是一个 point replicate 类节点）
+  - `offset_startframe`
+  - `pyroburstsource_explosions`
+  - `volumerasterizeattributes1`
+  - `merge_for_sim`
+  - `pyrosolver_ground_explosion`
+- 主网络下半段后处理可见：
+  - `volumevisualization2`
+  - `cloudbillowynoise2`
+  - `cloudwispynoise2`
+  - `cloudclip2`
+- 中间偏右还能看到一条名为 `pyrotrailpath_side` 的分支参与到主网络中
+
+连线集：
+
+- `cloudshapegenerate1 -> vdbfrompolygons1 -> volumevisualization1`
+- 噪声链分成两路后再汇总到裁切与变换：
+  - `cloudnoise1 -> cloudnoise2`
+  - `cloudbillowynoise1 -> cloudwispynoise1`
+  - 两路最终进入 `cloudclip1 -> transform1 -> rop_geometry1`
+- 爆炸中心/时间准备链向下推进到求解：
+  - `explosion_center -> pointreplicate_explosion_centers -> set_unique_pointid -> init_startframe -> pointreplicate_bu... -> offset_startframe -> pyroburstsource_explosions -> volumerasterizeattributes1 -> merge_for_sim -> pyrosolver_ground_explosion`
+- `pyrosolver_ground_explosion` 结果继续进入：
+  - `volumevisualization2 -> cloudbillowynoise2 -> cloudwispynoise2 -> cloudclip2`
+- `pyrotrailpath_side` 分支从右侧路径生成链接入主求解区，说明当前云体的一部分方向性来自独立的侧向 trail path 控制
+
+设置/参数：
+
+- 右侧 `pyrotrailpath_side` 当前展开的是 `Source` 相关参数页：
+  - `Group`：空
+  - `Guide Display = None`
+  - `Fuse Input Points = By Attribute`
+  - `Match Attribute = explosionid`
+  - `Randomization By = Point Number`
+- `Shape`：
+  - `Shape = Sphere`
+  - `Initial Size = 2.5`
+  - `Direction = (0, 1, 0)`
+  - `Shape Offset = 0`
+- `Trail Distribution`：
+  - `Number of Trails = 15`
+  - `Variation = 4`
+  - `Seed = 0`
+  - `Spread Start Angle = 5`
+  - `Spread Angle = 35`
+  - `Azimuth Start Angle = 0`
+  - `Azimuth Angle = 360`
+  - `Prune by Noise`：未勾选
+- 时间轴当前停在第 `50` 帧附近
+
+输出/预览：
+
+- 左侧预览云体呈现多团低矮灰烟横向铺开的形态，说明当前网络已经得到可用的地面烟尘/云体结果。
+- `rop_geometry1` 说明作者已经把这一套最终网络整理到可输出几何/体积的阶段。
+- 这张图可替换为：教程结束时，把侧向 trail path 生成、地面爆炸求解、云噪声叠加和裁切输出整合到同一个 Houdini 网络中，并通过 `pyrotrailpath_side` 的 trail 数量、方向和扩散角控制最终云体的横向展开风格。
+这张图是上一张终稿网络的连续定格。左侧体积预览、中间节点布局和右侧 `pyrotrailpath_side` 参数页都保持一致，因此它提供的是“同一套最终配置仍然成立”的补充视觉确认，而不是新的结构变化。
+
+节点定义集：
+
+- 预览窗口仍显示一片低矮、横向铺开的灰色烟云
+- 中间主网络仍可见：
+  - `cloudshapegenerate1`
+  - `vdbfrompolygons1`
+  - `volumevisualization1`
+  - `cloudnoise1`
+  - `cloudnoise2`
+  - `cloudbillowynoise1`
+  - `cloudwispynoise1`
+  - `cloudclip1`
+  - `transform1`
+  - `rop_geometry1`
+  - `explosion_center`
+  - `pointreplicate_explosion_centers`
+  - `set_unique_pointid`
+  - `init_startframe`
+  - `pointreplicate_bu...`
+  - `offset_startframe`
+  - `pyroburstsource_explosions`
+  - `volumerasterizeattributes1`
+  - `merge_for_sim`
+  - `pyrosolver_ground_explosion`
+  - `volumevisualization2`
+  - `cloudbillowynoise2`
+  - `cloudwispynoise2`
+  - `cloudclip2`
+  - 以及右侧参与主链的 `pyrotrailpath_side`
+
+连线集：
+
+- 云体基础链、爆炸求解链和后处理链的连接关系与上一张一致，没有可见新增支路或断开：
+  - `cloudshapegenerate1 -> vdbfrompolygons1 -> volumevisualization1`
+  - 上方噪声/裁切分支最终汇入 `cloudclip1 -> transform1 -> rop_geometry1`
+  - 爆炸中心与时间准备分支最终汇入 `merge_for_sim -> pyrosolver_ground_explosion`
+  - 求解结果再进入 `volumevisualization2 -> cloudbillowynoise2 -> cloudwispynoise2 -> cloudclip2`
+
+设置/参数：
+
+- `pyrotrailpath_side` 面板当前仍保持：
+  - `Fuse Input Points = By Attribute`
+  - `Match Attribute = explosionid`
+  - `Randomization By = Point Number`
+  - `Shape = Sphere`
+  - `Initial Size = 2.5`
+  - `Direction = (0, 1, 0)`
+  - `Number of Trails = 15`
+  - `Variation = 4`
+  - `Spread Start Angle = 5`
+  - `Spread Angle = 35`
+  - `Azimuth Start Angle = 0`
+  - `Azimuth Angle = 360`
+  - `Prune by Noise`：未勾选
+- 时间轴仍停在约第 `50` 帧
+
+输出/预览：
+
+- 预览结果继续显示多个烟团并列、边缘柔化后的地面云体，说明当前参数在连续时间点上依然输出稳定。
+- 这张图可以替换为：结尾关键画面再次确认最终 Houdini 终稿网络没有临时调参回退，`pyrotrailpath_side` 的 trail 分布参数与主求解网络保持当前状态，即可得到横向扩散、低矮成团的烟云效果。
+这张图是本页最后一张关键画面，仍然固定在相同的 Houdini 终稿布局上。与前两张相比，没有新的可辨认连线或参数变化，因此它的价值在于为教程结尾提供第三次一致性确认：作者最终保留的就是当前这一套低矮横向云体网络，而不是其他备选支路。
+
+节点定义集：
+
+- 左侧保留同一组灰色团状云体预览
+- 中间仍可见完整主链：
+  - `cloudshapegenerate1`
+  - `vdbfrompolygons1`
+  - `volumevisualization1`
+  - `cloudnoise1`
+  - `cloudnoise2`
+  - `cloudbillowynoise1`
+  - `cloudwispynoise1`
+  - `cloudclip1`
+  - `transform1`
+  - `rop_geometry1`
+  - `explosion_center`
+  - `pointreplicate_explosion_centers`
+  - `set_unique_pointid`
+  - `init_startframe`
+  - `pointreplicate_bu...`
+  - `offset_startframe`
+  - `pyroburstsource_explosions`
+  - `volumerasterizeattributes1`
+  - `merge_for_sim`
+  - `pyrosolver_ground_explosion`
+  - `volumevisualization2`
+  - `cloudbillowynoise2`
+  - `cloudwispynoise2`
+  - `cloudclip2`
+  - 右侧挂接分支 `pyrotrailpath_side`
+
+连线集：
+
+- 主体连线关系与前两张一致，仍然是：
+  - 云体生成与噪声塑形链
+  - 爆炸中心复制与起始帧控制链
+  - `merge_for_sim -> pyrosolver_ground_explosion` 的主求解链
+  - 求解后 `volumevisualization2 -> cloudbillowynoise2 -> cloudwispynoise2 -> cloudclip2` 的后处理链
+
+设置/参数：
+
+- 右侧 `pyrotrailpath_side` 参数页继续保持：
+  - `Match Attribute = explosionid`
+  - `Shape = Sphere`
+  - `Initial Size = 2.5`
+  - `Direction = (0, 1, 0)`
+  - `Number of Trails = 15`
+  - `Variation = 4`
+  - `Spread Start Angle = 5`
+  - `Spread Angle = 35`
+  - `Azimuth Angle = 360`
+- 时间轴仍在约第 `50` 帧
+
+输出/预览：
+
+- 预览结果继续表现为多个烟团串联形成的地面烟云，轮廓边缘柔和，整体高度低于宽度。
+- 这张图可替换为：教程结束前三次连续定格都确认同一套 Houdini 终稿网络，说明当前 `trail path + ground explosion + cloud noise + clip` 组合就是作者最终保留的出图方案。
+
+## 补充视觉证据
+
+### S01 00:03:06
+
+这张补充图单独展示了 Houdini 中 `cloudshapegenerate1` 的起始造型参数，用来补证“云体最初是怎样由一组球状云块堆起来的”。左侧视口能直接看到大量重叠的球团，右侧参数面板则展开了 `Cloud Shape Generate` 的 `Cloud Shapes` 选项卡。
+
+节点定义集：
+
+- 中间网络区当前只有一个节点：
+  - `cloudshapegenerate1`
+- 左侧预览：
+  - 一组由大小不同的球团堆叠而成的基础云形
+  - 整体是竖向略高、底部较宽的块状体
+- 右侧参数面板对象：
+  - `Cloud Shape Generate | cloudshapegenerate1`
+
+连线集：
+
+- 本图中没有显示其他节点连线，当前可确认的是：`cloudshapegenerate1` 作为单节点阶段先生成基础云团几何，后续再接噪声、VDB 和裁切处理。
+
+设置/参数：
+
+- `General`
+  - `Group`：空
+  - `Randomization By = Point Number`
+- `Cloud Shapes > Shape`
+  - `Cloud Species = Mediocris`
+  - `Shape Offset = 0`
+  - `Point Separation = 0.1`
+  - `Initial Size = 1`
+  - `Length = 3.2`
+  - `Width = 1`
+  - `Distortion = 1`
+  - `Flatten Bottom = 0`
+  - `Up Vector = (0, 1, 0)`
+  - `Rotation = -33`
+- 下方还能确认存在但未展开的参数组：
+  - `Random Scale per Shape`
+  - `Secondary Shapes`
+
+输出/预览：
+
+- 左侧视口里的球团并不是最终烟雾，而是给后续体积化与噪声塑形准备的“云块骨架”。
+- `Point Separation = 0.1` 说明球团分布比较密，适合后续融合成连续云体。
+- `Length = 3.2`、`Width = 1` 和 `Rotation = -33` 共同决定了这一坨基础云形更偏拉长、倾斜，而不是标准圆团。
+- 这张图可替换为：先用 `cloudshapegenerate1` 生成由多颗球团组成的基础云形，并通过 `Cloud Species=Mediocris`、`Point Separation=0.1`、`Length=3.2`、`Width=1`、`Rotation=-33` 等参数确定主体比例与倾斜方向，后续再把这组云块送入 VDB、噪声和裁切链得到最终烟云。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

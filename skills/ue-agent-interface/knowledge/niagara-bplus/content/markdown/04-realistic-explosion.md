@@ -1,0 +1,1485 @@
+# 04 Realistic Explosion
+
+# 04 Realistic Explosion
+
+## 关键术语
+
+- `Alpha`、`粒子`、`速度`、`透明度`、`我忘了提到，我添加了透明度调整`、`在这里我们将添加一个黑色纹理，不需要发光效果`、`SmokeRing`、`Niagara`、`纹理`、`颜色`、`Niagara System`、`Emitter`、`Particle`、`Spawn Rate`、`Spawn`、`Initialize Particle`、`Lifetime`、`Color`
+
+## 分段知识
+
+### 00:00:04-00:04:53 关键流程 01
+
+- 本段定位：关键流程 01。
+- 知识点：嗨,让我们开始,需要给你们看我改变了什么 我适当调整了一些價值,在这个場景中 我忘了提及我提供了一些瀏覽调整 可以增加或減少它,像这樣。
+- 知识点：我们来把这个版本的錄影,然后这会是引擎的烟 我们来把这个錄影,然后这会是引擎的烟 这会是地面的烟,我们已经把質料输入了 所以我们来找找它。
+- 知识点：是我们的文件,我们来換取我们需要的东西 这里会掉一张黑色的質料,没有需要的烟 这里是我们的文件,我们来換取它 这是一个策略选择。
+- 知识点：只剩下动画的價值 之后我们需要改变一些價值 可能改变动画,可以用自動播放 看看它能否把所有东西都滑出来 可能会有更多的转换 哦,好 很順利地转换了。
+- 知识点：的烟非常好用,因为动画的動作 可以看得清楚烟是怎麼移动的 如果没有烟,它会变得很順利 看看它能否慢慢地移动 如果没有烟,我可以把动画的動作移动出来。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 材质实例参数图
+> - 组成部分: 视口预览 + `MI_ExplosionAdvanced...` 参数面板
+> - 所属: `MI_ExplosionAdvanced...`
+> - 目的: 在真实爆炸教程开头先回看现有烟雾材质，并补充此前遗漏的透明度调节项，确认这版黑烟主要靠材质实例参数而不是 Niagara 模块本身来细调
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Global Vector Parameter Values` 顶部颜色 | `R=1.0, G=0.482703, B=0.065104, A=1.0` | Details | 当前爆炸材质的主色调是偏橙色的火焰/高温烟色 |
+> | `Houdini FT - Colors.Final Color Curve` | `2.2` | Details | 提高最终颜色曲线强度 |
+> | `Houdini FT - Colors.Final Color Intensity` | `1.0` | Details | 保持最终颜色亮度 |
+> | `Houdini FT - Flipbook Playback.Advect Motion Vectors` | 已勾选 | Details | 使用运动矢量参与序列播放 |
+> | `Houdini FT - Flipbook Playback.Apply Motion Vectors` | 已勾选 | Details | 应用运动矢量 |
+> | `Houdini FT - Flipbook Playback.Auto Play` | 未勾选 | Details | 当前不自动播放 Flipbook |
+> | `Houdini FT - Flipbook Playback.FB Columns` | `8.0` | Details | 序列列数 |
+> | `Houdini FT - Flipbook Playback.FB Rows` | `8.0` | Details | 序列行数 |
+> | `Houdini FT - Flipbook Playback.Motion Vector Scale` | `0.01` | Details | 运动矢量缩放系数 |
+> | `Houdini FT - MDC.Use Directional Light Rotation` | 已勾选 | Details | 使用定向光方向影响材质表现 |
+> | `Houdini FT - Normal / Opacity / Depth.Alpha Curve` | `2.0` | Details | 提高 Alpha 曲线，让透明度衰减更明显 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Blend` | 已勾选 | Details | 开启深度混合 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Curve` | `0.5` | Details | 深度曲线强度 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Offset` | `100.0` | Details | 调整深度偏移 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Range` | `0.0` | Details | 当前深度范围未额外拉开 |
+> | `Houdini FT - Normal / Opacity / Depth.Normal Flatness` | `0.75` | Details | 压平法线细节 |
+> | `Houdini FT - Scatter.Ambient Scatter Curve` | `1.0` | Details | 环境散射曲线强度 |
+> | `Houdini FT - Scatter.Ambient Scatter Intensity End` | `0.05` | Details | 环境散射末端强度 |
+> | `Houdini FT - Scatter.Ambient Scatter Intensity Start` | `0.45` | Details | 环境散射起始强度 |
+>
+> 预览结果:
+> - 左侧视口里烟雾是一团较亮、轮廓松散的浅灰白体积，说明当前材质实例仍保持明显的体积烟感
+> - 字幕明确说“我忘了提到，我添加了透明度调整”，因此这张图的核心是补充 `Alpha Curve` 与深度相关参数，而不是引入新的 Niagara 发射器逻辑
+> 图表转写（UE-GTXT v4）
+> - 类型: 材质实例参数图
+> - 组成部分: 视口预览 + `MI_GrondShockwave_01` 参数面板
+> - 所属: `MI_GrondShockwave_01`
+> - 目的: 把地面冲击波/烟环材质切到不发光的黑色贴图方案，避免冲击波像火焰一样自发光，从而更接近真实爆炸里的黑烟或地面扬尘
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Houdini FT - MDC.Use Directional Light Rotation` | 已勾选 | Details | 继续使用定向光方向 |
+> | `Houdini FT - Normal / Opacity / Depth.Alpha Curve` | `2.0` | Details | 保持当前透明度曲线 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Blend` | 已勾选 | Details | 深度混合开启 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Curve` | `0.5` | Details | 深度曲线 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Offset` | `100.0` | Details | 深度偏移 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Range` | `0.0` | Details | 深度范围 |
+> | `Houdini FT - Normal / Opacity / Depth.Normal Flatness` | `0.75` | Details | 法线压平 |
+> | `Houdini FT - Scatter.Ambient Scatter Curve` | `1.0` | Details | 环境散射曲线 |
+> | `Houdini FT - Scatter.Ambient Scatter Intensity End` | `0.05` | Details | 环境散射末端强度 |
+> | `Houdini FT - Scatter.Ambient Scatter Intensity Start` | `0.45` | Details | 环境散射起始强度 |
+> | `Houdini FT - Scatter.Directional Scatter Curve` | `1.0` | Details | 方向散射曲线 |
+> | `Houdini FT - Scatter.Directional Scatter Intensity` | `0.1` | Details | 方向散射强度 |
+> | `Houdini FT - Scatter.Emissive Scatter Curve` | `2.0` | Details | 发光散射曲线仍存在 |
+> | `Houdini FT - Scatter.Emissive Scatter Intensity End` | `0.0` | Details | 发光散射末端被压到 0 |
+> | `Houdini FT - Scatter.Emissive Scatter Intensity Start` | `30.0` | Details | 起始阶段仍有较高发光散射值 |
+> | `Houdini FT - Textures.Emissive Color / Depth Texture` | `Black_1x1_EXR_Texture` | Details | 用纯黑纹理替代原有发光贴图 |
+> | `Houdini FT - Textures.Final Color Texture` | `T_smoke_shockwave_smoke_01` | Details | 冲击波最终颜色纹理 |
+> | `Houdini FT - Textures.MDC1 Texture` | `T_boomSix_Point_1_TLR_new` | Details | 第一张方向/深度相关纹理 |
+> | `Houdini FT - Textures.MDC2 Texture` | `T_boomSix_Point_2_BBF_new` | Details | 第二张方向/深度相关纹理 |
+> | `Houdini FT - Textures.Motion Vector Texture` | `T_boomMotion_Vector_new` | Details | 运动矢量纹理 |
+>
+> 预览结果:
+> - 左侧预览区此时几乎只剩很淡的烟影，没有明显高亮火焰，说明材质正朝非发光黑烟方向切换
+> - 字幕明确说“这里加一个黑色纹理，不需要发光效果”，因此本图的关键动作是把 `Emissive Color / Depth Texture` 换成黑色贴图
+> 图表转写（UE-GTXT v4）
+> - 类型: 材质实例参数图
+> - 组成部分: 视口预览 + `MI_GrondShockwave_01` 参数面板
+> - 所属: `MI_GrondShockwave_01`
+> - 目的: 在黑烟版本的地面冲击波材质上继续压低发光与环境散射，让烟团更厚、更暗、更接近真实爆炸尘烟
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Houdini FT - Normal / Opacity / Depth.Alpha Curve` | `1.0` | Details | 把透明度曲线从上一张的更强衰减调回更平缓的基础值 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Blend` | 已勾选 | Details | 保持深度混合 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Curve` | `0.25` | Details | 进一步减弱深度曲线 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Offset` | `100.0` | Details | 深度偏移保持不变 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Range` | `0.0` | Details | 深度范围不变 |
+> | `Houdini FT - Normal / Opacity / Depth.Normal Flatness` | `10.0` | Details | 显著压平法线，让烟面更柔更糊 |
+> | `Houdini FT - Scatter.Ambient Scatter Curve` | `1.0` | Details | 环境散射曲线 |
+> | `Houdini FT - Scatter.Ambient Scatter Intensity End` | `0.0` | Details | 环境散射末端降为 0 |
+> | `Houdini FT - Scatter.Ambient Scatter Intensity Start` | `0.0` | Details | 环境散射起始也降为 0 |
+> | `Houdini FT - Scatter.Ambient Scatter Offset` | `0.0` | Details | 无额外偏移 |
+> | `Houdini FT - Scatter.Directional Scatter Curve` | `1.0` | Details | 方向散射曲线 |
+> | `Houdini FT - Scatter.Directional Scatter Intensity` | `0.442857` | Details | 主要保留由方向散射塑形 |
+> | `Houdini FT - Scatter.Directional Scatter Offset` | `0.002` | Details | 很小的方向散射偏移 |
+> | `Houdini FT - Scatter.Emissive Scatter Curve` | `1.0` | Details | 发光散射曲线被压回基础值 |
+> | `Houdini FT - Scatter.Emissive Scatter Intensity End` | `0.0` | Details | 末端无发光散射 |
+> | `Houdini FT - Scatter.Emissive Scatter Intensity Start` | `0.0` | Details | 起始也不再发光 |
+> | `Houdini FT - Textures.Emissive Color / Depth Texture` | `Black_1x1_EXR_Texture` | Details | 保持纯黑发光贴图 |
+> | `Houdini FT - Textures.Final Color Texture` | `T_smoke_shockwave_smoke_01` | Details | 最终颜色纹理 |
+> | `Houdini FT - Textures.MDC1 Texture` | `T_smoke_shockwave_six_point_1_tlr_01` | Details | 第一张方向/深度纹理 |
+> | `Houdini FT - Textures.MDC2 Texture` | `T_smoke_shockwave_six_point_2_bbf_01` | Details | 第二张方向/深度纹理 |
+> | `Houdini FT - Textures.Motion Vector / Normal Texture` | `T_smoke_shockwave_motion_vector_01` | Details | 运动矢量/法线纹理 |
+> | `General.Parent` | `M_ExplosionAdvanced` | Details | 当前实例材质父级 |
+>
+> 预览结果:
+> - 左侧预览中的烟团已经变成一团更暗、更厚、更实心的黑灰色爆炸核心，发光感基本被清掉
+> - 这一步对应教程在起始流程里把“看起来太亮的烟”压回真实黑烟方案，属于材质侧的成品外观确认
+
+### 00:04:53-00:09:45 透明度
+
+- 本段定位：透明度。
+- 知识点：首先,第二,我们需要從下面看 首先我们需要设置它的面向 vector 设置 更重要的,看起来 现在我只要把它玩了 嗯 我没有換取 失敗了 哦,这里它是。
+- 知识点：我们现在可以做什么 看看它现在如何 哦,这是我们的烟会如何 首先,需要改变随机生命 第二,需要從 我们不把它做随机转换 它会是一个设置的转换。
+- 知识点：需要把它转换,根據 particle number 記得这个 return,一些 index 来增加深度 我们也会设置随机色 来增加不同的色彩。
+- 知识点：需要设置这些黑色的 需要把它像这樣剪裁 它会是均勻和透明的 它会是更光亮的 它的透明度会是像这个 需要随机混合 由Z的位置 一邊会是适当高一点。
+- 知识点：另一邊会是适当低一点 像这樣 我们需要调整它的 pivot 它会是正確的位置 0 这里和下面 这是它如何流動 雷看起来很酷 我们只需要加一件事。
+- 核对对象：`Particle`、`透明度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: 预览 + `NS_Explosion` 双发射器 Stack + `SmokeRing / Sprite Renderer` 属性图
+> - 所属: `NS_Explosion / SmokeRing`
+> - 目的: 在烟环发射器上先调整 Sprite 的朝向方式，让地面烟环按自定义方向向量或相机位置对齐，而不是完全随机翻转
+>
+> 模块栈:
+> | 顺序 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|
+> | 1 | 发射器 | `Explosion` | Enabled | 作为主爆炸层对照 | 主体爆炸发射器 |
+> | 2 | 发射器 | `SmokeRing` | Enabled | 当前选中 | 地面烟环发射器 |
+> | 3 | `SmokeRing` / Emitter Update | `Emitter State` | Enabled | `Self Once` | 发射器单次播放 |
+> | 4 | `SmokeRing` / Emitter Update | `Spawn Burst Instantaneous` | Enabled | 图中未展开数量 | 一次性生成烟环粒子 |
+> | 5 | `SmokeRing` / Particle Spawn | `Initialize Particle` | Enabled | 图中未展开参数 | 初始化粒子 |
+> | 6 | `SmokeRing` / Particle Spawn | `Add Velocity` | Enabled | `Linear` | 添加线速度 |
+> | 7 | `SmokeRing` / Particle Spawn | `Sprite Facing and Alignment` | Enabled | 当前步骤关键模块 | 控制朝向和对齐方式 |
+> | 8 | `SmokeRing` / Particle Update | `Drag`、`Solve Forces and Velocity`、`Particle State`、`Scale Sprite Size`、`Dynamic Material Parameters`、`Camera Offset`、`Scale Color` | Enabled | 图中均启用 | 继续控制减速、尺寸、材质和颜色 |
+> | 9 | `SmokeRing` / Render | `Sprite Renderer` | Enabled | 当前选中 | 设置材质与面向模式 |
+>
+> 设置:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Sprite Renderer.Material` | `MI_ExplosionAdvanced_01` | Material | Details | 使用爆炸烟材质 |
+> | `Sprite Renderer.Source Mode` | `Particles` | enum | Details | 从粒子属性驱动渲染 |
+> | `Sprite Renderer.Alignment` | `Custom Alignment` | enum | Details | 对齐方式改为自定义 |
+> | `Sprite Renderer.Facing Mode` | 当前下拉列表已展开 | enum | Details | 正在比较 `Face Camera`、`Face Camera Plane`、`Custom Facing Vector`、`Face Camera Position`、`Face Camera Distance Blend` 等模式 |
+> | `Sprite Renderer.Pixel Coverage Mode` | `Automatic` | enum | Details | 像素覆盖自动 |
+> | `Sprite Renderer.Min Facing Camera Blend Distance` | `0.0` | float | Details | 最小混合距离 |
+> | `Sprite Renderer.Max Facing Camera Blend Distance` | `0.0` | float | Details | 最大混合距离 |
+> | `Sprite Renderer.Sort Mode` | `None` | enum | Details | 不额外排序 |
+>
+> 预览结果:
+> - 左侧预览几乎看不到烟环主体，说明当前主要在调整朝向行为，而不是观察最终大效果
+> - 字幕明确说“首先需要设置自定义的朝向向量”，因此本图的关键是把 `SmokeRing` 的 Sprite 从默认相机朝向改到可控的自定义朝向体系
+> 图表转写（UE-GTXT v4）
+> - 类型: 视口效果图 + Sequencer 时间线
+> - 组成部分: 爆炸成品预览 + Outliner + Sequencer
+> - 所属: 关卡 `LS_Explosion` 中的 `NS_Explosion`
+> - 目的: 回看透明度与朝向调整后的地面烟环实际效果，确认黑烟尘圈已经围绕爆心铺开，并与碎片动画配合正常
+>
+> Sequencer:
+> - 当前时间游标停在约 `1.35`
+> - 轨道层级可见 `CameraCuts`、`CameraActor`、`LP`、`NS_Explosion > NiagaraComponent0 > System Life Cycle`，以及 `prebaked_destruction_Anim`
+> - `System Life Cycle` 使用 `Desired Age`，红色 `Life Cycle` 条覆盖当前时间段
+> - 预览缩略轨显示从起爆到尘圈扩散的一整段连续爆炸帧
+>
+> Outliner / 场景:
+> - 右侧可见 `Explosion (Editor)` 世界、环境目录 `Env`、`Floor`、`PointLight`、`PostProcess`、`SkyLight`
+> - 还可见 `CameraActor`、`LevelSequence`、`NS_Explosion`、`prebaked_dest`
+> - 当前 `Floor` 被选中，底部 `Details` 显示它使用 `Plane` 静态网格，缩放约为 `5000, 5000, 5000`
+>
+> 预览结果:
+> - 视口中央可见一圈深灰色地面烟尘围绕爆心扩散，中心区域是碎石和向上抛起的碎片
+> - 黑烟整体较贴地、较均匀，没有明显发光边缘，说明前两张材质与朝向调整已经生效
+> - 字幕明确评价“尘土看起来非常酷”，这张图就是对烟环成品状态的阶段性确认
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: 预览 + `SmokeRing` 发射器 Stack + 发射器生命周期/爆发设置图
+> - 所属: `NS_Explosion / SmokeRing`
+> - 目的: 通过 `Life Cycle` 与两段 `Spawn Burst Instantaneous` 控制烟环的出现节奏，让烟尘不是连续喷发，而是在起爆时先后打出两次小规模尘圈
+>
+> 模块栈:
+> | 顺序 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|
+> | 1 | Emitter Update | `Emitter State` | Enabled | 当前选中生命周期设置 | 控制发射器如何循环和结束 |
+> | 2 | Emitter Update | `Spawn Burst Instantaneous` | Enabled | 第一段 Burst | 第一次瞬时生成烟环粒子 |
+> | 3 | Emitter Update | `Spawn Burst Instantaneous 001` | Enabled | 第二段 Burst | 补打一小批烟粒增强层次 |
+> | 4 | Particle Spawn | `Initialize Particle` | Enabled | 图中未展开参数 | 初始化烟环粒子 |
+> | 5 | Particle Spawn | `Add Velocity` | Enabled | `Linear` | 添加速度 |
+> | 6 | Particle Spawn | `Sprite Facing and Alignment` | Enabled | 延续上一图的朝向设置 | 控制面向 |
+> | 7 | Particle Update | `Gravity Force` | Enabled | 当前新增重力模块 | 让烟尘带一点下坠重量 |
+> | 8 | Particle Update | `Solve Forces and Velocity`、`Particle State`、`Scale Sprite Size`、`Dynamic Material Parameters`、`Camera Offset`、`Scale Color` | Enabled | 图中均启用 | 继续解算和控制外观 |
+> | 9 | Render | `Sprite Renderer` | Enabled | 图中未展开参数 | 输出烟环 |
+>
+> 设置:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Emitter Properties.Sim Target` | `CPUSim` | enum | Details | 当前发射器在 CPU 上模拟 |
+> | `Emitter Properties.Calculate Bounds Mode` | `Dynamic` | enum | Details | 动态计算包围盒 |
+> | `Emitter State.Life Cycle Mode` | `System` | enum | Details | 生命周期跟随系统 |
+> | `Emitter State.Inactive Response` | `Complete (Let Particles Finish) then Kill Emitter` | enum | Details | 先让粒子播完再销毁发射器 |
+> | `Emitter State.Loop Behavior` | `Once` | enum | Details | 只播放一次 |
+> | `Emitter State.Loop Duration Mode` | `Fixed` | enum | Details | 固定循环时长 |
+> | `Emitter State.Loop Duration` | `1.0` | float | Details | 循环持续 1 秒 |
+> | `Spawn Burst Instantaneous.Spawn Count` | `5` | int | Details | 第一批生成 5 个粒子 |
+> | `Spawn Burst Instantaneous.Spawn Time` | `0.0` | float | Details | 第一批在起始时刻生成 |
+> | `Spawn Burst Instantaneous.Spawn Probability` | `1.0` | float | Details | 第一批必定生成 |
+> | `Spawn Burst Instantaneous.Loop Count Limit` | `1` | int | Details | 每次循环只触发一次 |
+> | `Spawn Burst Instantaneous 001.Spawn Count` | `2` | int | Details | 第二批额外生成 2 个粒子 |
+> | `Spawn Burst Instantaneous 001.Spawn Time` | `0.2` | float | Details | 第二批延后 0.2 秒生成 |
+> | `Spawn Burst Instantaneous 001.Spawn Probability` | `1.0` | float | Details | 第二批必定生成 |
+> | `Spawn Burst Instantaneous 001.Loop Count Limit` | `1` | int | Details | 第二批每次循环也只触发一次 |
+>
+> 预览结果:
+> - 左侧预览里烟环由许多不规则的黑灰色烟片围成一圈，中心留空，边缘形态比上一张成品回看更容易看出单个粒子的分布
+> - 这一步把烟尘“看起来不错”的结果落实到具体的 Burst 节奏上，说明烟环不是靠持续 `Spawn Rate`，而是靠两段瞬时爆发做出来的
+
+### 00:09:46-00:14:33 Alpha、速度
+
+- 本段定位：Alpha、速度。
+- 知识点：爆炸 然后 下降 可能 需要減少它的显示 但它不想开启 哦 是的 第一塊Alpha 第二塊 我们混合 首先,需要剪掉Alpha 然后这里的出口 與Alpha相關。
+- 知识点：它会变得更深 好,让它变得更深 我其實喜欢这种選項 哦,还有什么? 加一点深度 如果我们靠近一点 可观察到这里 像这樣 它不是有重量 如果这是最高的景色。
+- 知识点：那它会很棒 这是選項 如果我们 前景 第一个人 然后 也不差 但它有點显示 这里缺乏更深度 需要再加一点 像这樣 很有趣的選項 需要快速剪掉 我们要做什么?。
+- 知识点：需要 爆炸 创建 立刻 我们怎麼稱呼? 烟 需要稱之为雷 需要消失 我们可能不会去取地圖 但我们还是去取吧 还是去取吧 需要從这里取走光线。
+- 知识点：需要從这里取走光线 所以 可以把 所有东西都留下 可能是 需要剪掉这个 好吧 让它没事 剪掉 把它这里刪掉 它会让很多物質 变得很随机 它会生长很快。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`速度`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 视口效果图 + Sequencer 时间线
+> - 组成部分: 爆炸成品预览 + Outliner + Sequencer
+> - 所属: `LS_Explosion / NS_Explosion`
+> - 目的: 进入 `Alpha、速度` 小节后，先从时间线上回看爆炸中段，检查黑烟柱与内部火光在这一帧的叠加效果，判断当前透明度和速度是否已经能撑起真实爆炸的厚重感
+>
+> Sequencer:
+> - 当前时间游标仍停在约 `1.35`
+> - 可见轨道与上一组一致：`CameraCuts`、`CameraActor`、`LP`、`NS_Explosion > NiagaraComponent0 > System Life Cycle`、`prebaked_destruction_Anim`
+> - `System Life Cycle` 使用 `Desired Age`，红色 `Life Cycle` 条覆盖当前时间段
+>
+> 预览结果:
+> - 爆心中央出现亮红色火焰核心，外层包着较厚的深灰色烟柱，整体比上一组的纯地面烟环更立体
+> - 烟柱向上翻卷，同时仍保留地面尘圈和四散碎片，说明本小节开始把“贴地烟”推进到“带火心的立体爆炸烟团”
+> - 这张图主要用于确认中段成品效果，不是新的参数面板证据
+> 图表转写（UE-GTXT v4）
+> - 类型: 材质实例参数图
+> - 组成部分: 视口预览 + `MI_SmokeAdvanced_01` 参数面板
+> - 所属: `MI_SmokeAdvanced_01`
+> - 目的: 在 `Alpha、速度` 小节中继续回到烟雾材质实例，检查 Alpha、深度和散射参数，确认烟柱的厚度与消隐仍由材质侧控制
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Houdini FT - Colors.Final Color Curve` | `2.2` | Details | 最终颜色曲线强度 |
+> | `Houdini FT - Colors.Final Color Intensity` | `1.0` | Details | 最终颜色亮度 |
+> | `Houdini FT - Flipbook Playback.Advect Motion Vectors` | 已勾选 | Details | 使用运动矢量 |
+> | `Houdini FT - Flipbook Playback.Apply Motion Vectors` | 已勾选 | Details | 应用运动矢量 |
+> | `Houdini FT - Flipbook Playback.Auto Play` | 未勾选 | Details | 不自动播放 |
+> | `Houdini FT - Flipbook Playback.FB Columns` | `8.0` | Details | 序列列数 |
+> | `Houdini FT - Flipbook Playback.FB Rows` | `8.0` | Details | 序列行数 |
+> | `Houdini FT - Flipbook Playback.Motion Vector Scale` | `0.01` | Details | 运动矢量缩放 |
+> | `Houdini FT - MDC.Use Directional Light Rotation` | 已勾选 | Details | 使用定向光方向 |
+> | `Houdini FT - Normal / Opacity / Depth.Alpha Curve` | `2.0` | Details | 强化 Alpha 衰减 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Blend` | 已勾选 | Details | 开启深度混合 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Curve` | `0.5` | Details | 深度曲线 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Offset` | `100.0` | Details | 深度偏移 |
+> | `Houdini FT - Normal / Opacity / Depth.Depth Range` | `0.0` | Details | 深度范围 |
+> | `Houdini FT - Normal / Opacity / Depth.Normal Flatness` | `0.75` | Details | 法线压平 |
+> | `Houdini FT - Scatter.Ambient Scatter Curve` | `1.0` | Details | 环境散射曲线 |
+> | `Houdini FT - Scatter.Ambient Scatter Intensity End` | `0.05` | Details | 环境散射末端强度 |
+> | `Houdini FT - Scatter.Ambient Scatter Intensity Start` | `0.45` | Details | 环境散射起始强度 |
+> | `Houdini FT - Scatter.Directional Scatter Curve` | `1.0` | Details | 方向散射曲线 |
+> | `Houdini FT - Scatter.Directional Scatter Intensity` | `0.1` | Details | 方向散射强度 |
+> | `Houdini FT - Scatter.Emissive Scatter Curve` | `2.0` | Details | 发光散射曲线 |
+> | `Houdini FT - Scatter.Emissive Scatter Intensity End` | `0.0` | Details | 发光散射末端强度 |
+> | `Houdini FT - Scatter.Emissive Scatter Intensity Start` | `30.0` | Details | 发光散射起始强度 |
+>
+> 预览结果:
+> - 左侧预览里只剩很淡的浅灰烟影，说明当前截图重点不是看最终爆炸形态，而是确认材质实例参数本身
+> - 结合上下文，这一步是为后面“让烟更深、更有重量、再快速裁掉 Alpha”做参数基线核对
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: 预览 + `SmokeRing` / `SmokeShockwave` 发射器 Stack + `Drag` 属性图
+> - 所属: `NS_Explosion / SmokeRing`
+> - 目的: 在烟环发射器的更新阶段加入阻力，让粒子速度更快衰减，避免烟圈飞得太散太远，从而给爆炸更多“重量感”
+>
+> 模块栈:
+> | 顺序 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|
+> | 1 | 发射器 | `SmokeRing` | Enabled | 当前选中 | 主要烟环层 |
+> | 2 | 发射器 | `SmokeShockwave` | Enabled | 作为旁边的对照层 | 另一圈烟/冲击波层 |
+> | 3 | `SmokeRing` / Emitter Update | `Emitter State` | Enabled | `Self Once` | 单次播放 |
+> | 4 | `SmokeRing` / Emitter Update | `Spawn Burst Instantaneous`、`Spawn Burst Instantaneous 001` | Enabled | 延续上一图的两段爆发 | 控制生成节奏 |
+> | 5 | `SmokeRing` / Particle Spawn | `Initialize Particle` | Enabled | 图中未展开参数 | 初始化粒子 |
+> | 6 | `SmokeRing` / Particle Spawn | `Sprite Facing and Alignment` | Enabled | 已配置 | 维持朝向 |
+> | 7 | `SmokeRing` / Particle Spawn | `Shape Location` | Enabled | `Ring / Disc` | 环形出生 |
+> | 8 | `SmokeRing` / Particle Spawn | `Add Velocity` | Enabled | `From Point` | 从爆心向外给速度 |
+> | 9 | `SmokeRing` / Particle Update | `Gravity Force` | Enabled | 保持重量下坠 | 添加重力 |
+> | 10 | `SmokeRing` / Particle Update | `Drag` | Enabled | 当前选中 | 让粒子快速减速 |
+> | 11 | `SmokeRing` / Particle Update | `Solve Forces and Velocity`、`Particle State`、`Scale Sprite Size`、`Dynamic Material Parameters`、`Camera Offset`、`Scale Color` | Enabled | 图中均启用 | 继续解算与控制外观 |
+> | 12 | `SmokeRing` / Render | `Sprite Renderer` | Enabled | 图中未展开参数 | 输出烟环 |
+>
+> 设置:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Drag.Drag` | `1.0` | float | Details | 线性阻力强度 |
+> | `Drag.Rotational Drag` | `1.0` | float | Details | 旋转阻力强度 |
+>
+> 预览结果:
+> - 左侧预览正在 `Compiling...`，当前帧没有稳定显示烟环成品，因此这张图的有效信息集中在 Stack 与 `Drag` 设置上
+> - 结合上下文可确认：这一步是在把烟尘的速度压下来，让爆炸烟圈更重、更不会一直高速外飞
+
+### 00:14:33-00:19:21 速度
+
+- 本段定位：速度。
+- 知识点：可以增加重量 所以它们会掉下来 尺寸 可以把它從这里剪掉 可观察到我们不需要鏡頭的调整 它需要被高光 这里也不需要 颜色会很快地。
+- 知识点：变成这樣 还有 曲線 像这樣 我们来看看結果 这里 就像雷了 我们已经有重量了 另外 它会看起来很酷 我们来看看結果 现在我们有更多的重量 因为这烟。
+- 知识点：下面 这是雷 像这樣 现在很酷 爆炸太多了 接下来需要製造雷 这会發生 烟打到我们 我们也需要它 火箭打到我们 这是我们的錄像 我们需要考慮 我们还没有烟,但有爆炸。
+- 知识点：有一个爆炸 爆炸会打到火箭 一些石頭会崩潰 火箭会飛到石上 有很多爆炸 这需要考慮 在烟穴里 我们有一个生物圈 我们需要火箭 所以我们需要 火箭的發電機。
+- 知识点：我们来製造 發電機 这会是 一致的东西 让它發電 四、五个 氣体 随机生存 像这樣 大小不重要 我们只要看到它们 这些白色的 我们需要它们 從旁邊發電。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`速度`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: 预览 + `SmokeRing` / `SmokeShockwave` 双发射器 Stack + `SmokeRing` 更新参数图
+> - 所属: `NS_Explosion / SmokeRing`
+> - 目的: 继续增加烟尘的重量感，通过更强的阻力、向下重力和按寿命写入的动态材质参数，让烟圈既会减速又会逐步变暗、变淡
+>
+> 模块栈:
+> | 顺序 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|
+> | 1 | 发射器 | `SmokeShockwave` | Enabled | 左侧作为对照层 | 冲击波层 |
+> | 2 | 发射器 | `SmokeRing` | Enabled | 当前选中 | 主烟尘层 |
+> | 3 | `SmokeRing` / Particle Update | `Drag` | Enabled | 当前值更高 | 进一步减速 |
+> | 4 | `SmokeRing` / Particle Update | `Gravity Force` | Enabled | 加入向下重力 | 增加重量感 |
+> | 5 | `SmokeRing` / Particle Update | `Solve Forces and Velocity` | Enabled | 图中未展开全部参数 | 解算速度与加速度 |
+> | 6 | `SmokeRing` / Particle Update | `Particle State` | Enabled | `Kill Particles When Lifetime Has Elapsed` 勾选 | 生命周期结束时销毁粒子 |
+> | 7 | `SmokeRing` / Particle Update | `Dynamic Material Parameters` | Enabled | 当前选中 `Index 0` | 按寿命写材质动态参数 |
+>
+> 设置:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Drag.Drag` | `2.0` | float | Details | 比上一组更强的线性阻力 |
+> | `Drag.Rotational Drag` | `1.0` | float | Details | 旋转阻力保持 1 |
+> | `Gravity Force.Gravity` | `(0.0, 0.0, -50.0)` | Vector3 | Details | 给烟粒持续向下的重力 |
+> | `Solve Forces and Velocity.Speed Limit` | `1000.0` | float | Details | 速度上限 |
+> | `Solve Forces and Velocity.Acceleration Limit` | `9999.0` | float | Details | 加速度上限 |
+> | `Particle State.Kill Particles When Lifetime Has Elapsed` | 已勾选 | bool | Details | 寿命结束就销毁 |
+> | `Dynamic Material Parameters.Animation Phase` | `Float from Curve` | enum | Details | 动态材质参数由曲线驱动 |
+> | `Dynamic Material Parameters.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 用归一化寿命驱动曲线 |
+> | `Dynamic Material Parameters.Scale Curve` | `1.0` | float | Details | 曲线缩放 |
+> | `Dynamic Material Parameters.Param1-0` | `0.0` | float | Details | 当前未用于材质 |
+> | `Dynamic Material Parameters.Param2-0` | `0.0` | float | Details | 当前未用于材质 |
+> | `Dynamic Material Parameters.Param3-0` | `0.0` | float | Details | 当前未用于材质 |
+>
+> 预览结果:
+> - 左侧预览仍在 `Compiling...`，当前看不到稳定成品
+> - 当前图的核心不是视口结果，而是确认烟层从“只是扩散”转向“带重力下坠、强阻力减速，并随寿命驱动材质参数”的更新逻辑
+> 图表转写（UE-GTXT v4）
+> - 类型: 视口效果图 + Sequencer 时间线
+> - 组成部分: 爆炸中后段预览 + Outliner + Sequencer
+> - 所属: `LS_Explosion / NS_Explosion`
+> - 目的: 验证加强重量和减速后的烟柱是否真正“沉下来”，并检查爆炸碎片、地面尘圈和主烟柱在这一帧的空间关系是否更可信
+>
+> Sequencer:
+> - 当前时间游标停在约 `1.5333`
+> - 底部缩略轨显示此时已进入爆炸中后段，烟团从集中上冲开始向外翻卷
+> - `System Life Cycle` 红色条仍覆盖当前时间段，说明 Niagara 仍在持续模拟中
+>
+> 预览结果:
+> - 视口中两股高而厚的黑灰色烟柱从爆心两侧抬起，中间仍有较低的烟尘与碎片带
+> - 地面残留的尘圈更浅、更贴地，而主体烟柱更高、更重，说明“地面烟”和“主体爆炸烟”已经分出层次
+> - 四周散落的石块和中心立柱仍清晰可见，这张图主要证明加强速度/重力后，烟层没有把场景完全糊住，整体观感更像真实爆炸
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: 预览 + 多发射器 Stack + `Empty` 发射器新增 `Drag` 动态输入搜索界面
+> - 所属: `NS_Explosion / Empty`
+> - 目的: 开始为新的辅助发射器搭建“可控减速”逻辑，不再只给一个固定 `Drag` 数值，而是准备把减速时机改成动态输入驱动
+>
+> 模块栈:
+> | 顺序 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|
+> | 1 | 发射器 | `Empty` | Enabled | 当前选中 | 新增的辅助发射器 |
+> | 2 | `Empty` / Emitter Update | `Emitter State` | Enabled | `Self Once` | 单次播放 |
+> | 3 | `Empty` / Emitter Update | `Spawn Burst Instantaneous` | Enabled | 图中未展开数量 | 瞬时生成 |
+> | 4 | `Empty` / Particle Spawn | `Initialize Particle` | Enabled | 图中未展开参数 | 初始化粒子 |
+> | 5 | `Empty` / Particle Spawn | `Add Velocity` | Enabled | `In Cone` | 在锥形方向上发射 |
+> | 6 | `Empty` / Particle Spawn | `Shape Location` | Enabled | `Cylinder` | 以圆柱范围生成 |
+> | 7 | `Empty` / Particle Update | `Gravity Force` | Enabled | 图中未展开参数 | 添加重力 |
+> | 8 | `Empty` / Particle Update | `Drag` | Enabled | 当前正在改写输入 | 准备控制减速时机 |
+> | 9 | `Empty` / Particle Update | `Solve Forces and Velocity`、`Particle State` | Enabled | 图中可见 | 解算与生命周期 |
+> | 10 | `Empty` / Render | `Sprite Renderer` | Enabled | 图中可见 | 渲染辅助粒子 |
+>
+> 动态输入搜索:
+> - `Drag` 输入处已打开 `Source Filtering` 弹窗
+> - 过滤源锁定在 `Niagara`，并勾选了 `Library Only`
+> - `Suggested` 列表中可见 `Distance Between Positions`、`Float from Curve`、`Lerp Float`、`Multiply Float`、`Multiply Float by Int`、`Random Range Float`、`Return Normalized Exec Index`、`Select Float from Array`、`Waveform`
+> - 下方还可见 `Dynamic Inputs`、`Link Inputs`、`Make`、`New Expression`、`New Local Value`、`New Scratch Dynamic Input`
+>
+> 预览结果:
+> - 左侧视口仍未显示明显的辅助粒子效果，说明这一步主要在编辑模块输入而不是观察成品
+> - 字幕明确说“我们将控制减速的时机”，因此本图的关键是：从固定 `Drag` 数值转向可由曲线或其他 Niagara 动态输入控制的减速逻辑
+
+### 00:19:23-00:24:07 关键流程 05
+
+- 本段定位：关键流程 05。
+- 知识点：让它们 5秒 需要減少所有價值 让我们 慢慢地下降 让它们5秒 它们在这里飛 在重量上 它们开始下降 也会慢慢地下降 首先 飛得很快 然后需要很快地下降。
+- 知识点：它们就像这樣 我们減少它们的價值 这些 物質不适合 發電 它们会被用 需要用它们的位置 需要用它们的位置 它们会飛得很快 它们会下降 比如說。
+- 知识点：可以让它们 一直飛同一條路 需要用決定的方式 它们会一直这樣 不管我做什么 它们都会一直这樣 像我說的 可以用 4至5的方式 在这个情况下。
+- 知识点：我们需要在这里設立 發電器 它们会 從这个位置 發電 發電 对 可以用 随机生存方式 發電 需要用的 發電方式 需要用的 發電方式 我们可观察到它们。
+- 知识点：我们需要改变它们的尺寸 让它们能够 從这里發電 它们都發電 它们都在一个位置 可以加速減速 首先让它们 变大 然后慢慢地減速 OK 可以把这條圈。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: 预览 + 多发射器 Stack + `Empty` 发射器的 `Drag` 动态输入图
+> - 所属: `NS_Explosion / Empty`
+> - 目的: 把辅助发射器的减速逻辑从固定数值改成“随机值乘以寿命曲线”，从而精确控制粒子在什么时候开始明显减速
+>
+> 模块栈:
+> | 顺序 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|
+> | 1 | 发射器 | `Empty` | Enabled | 当前选中 | 新的辅助粒子层 |
+> | 2 | `Empty` / Emitter Update | `Emitter State` | Enabled | `Self Once` | 单次播放 |
+> | 3 | `Empty` / Emitter Update | `Spawn Burst Instantaneous` | Enabled | 图中未展开数量 | 起始瞬时生成 |
+> | 4 | `Empty` / Particle Spawn | `Initialize Particle` | Enabled | 图中未展开参数 | 初始化粒子 |
+> | 5 | `Empty` / Particle Spawn | `Add Velocity` | Enabled | `In Cone` | 锥形发射 |
+> | 6 | `Empty` / Particle Spawn | `Shape Location` | Enabled | `Cylinder` | 圆柱范围出生 |
+> | 7 | `Empty` / Particle Update | `Gravity Force` | Enabled | 图中未展开参数 | 提供重力 |
+> | 8 | `Empty` / Particle Update | `Drag` | Enabled | 当前选中并改成动态输入 | 控制减速时机 |
+> | 9 | `Empty` / Particle Update | `Solve Forces and Velocity`、`Particle State` | Enabled | 图中可见 | 解算与生命周期 |
+> | 10 | `Empty` / Render | `Sprite Renderer` | Enabled | 图中可见 | 渲染辅助粒子 |
+>
+> 设置:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Drag.Drag` | `Multiply Float` | 动态输入 | 把随机值与曲线结果相乘得到最终阻力 |
+> | `Multiply Float.A` | `Random Range Float` | 动态输入 | 先随机出每粒子的阻力基值 |
+> | `Random Range Float.Minimum` | `4.0` | float | Details | 随机阻力下限 |
+> | `Random Range Float.Maximum` | `8.0` | float | Details | 随机阻力上限 |
+> | `Random Range Float.Evaluation Type` | `Spawn Only` | enum | Details | 只在出生时随机一次 |
+> | `Multiply Float.B` | `Float from Curve` | 动态输入 | 用曲线决定阻力何时生效 |
+> | `Float from Curve.CurveIndex` | `Divide Float(Emitter.Age / 5.0)` | 动态输入 | 以发射器年龄归一化作为曲线输入 |
+> | `Divide Float.A` | `Emitter.Age` | Niagara attribute | Details | 使用发射器年龄 |
+> | `Divide Float.B` | `5.0` | float | Details | 以 5 秒为归一化基准 |
+> | `Float from Curve.Scale Curve` | `0.25` | float | Details | 曲线结果再缩放 |
+> | `Drag.Rotational Drag` | `1.0` | float | Details | 旋转阻力保持 1 |
+>
+> 曲线:
+> - 当前红色曲线在前段几乎贴近 `0`
+> - 到后段才逐渐抬起，意味着粒子先高速飞出，随后才进入明显减速阶段
+>
+> 预览结果:
+> - 左侧预览没有稳定显示新粒子效果，当前有效信息集中在 `Drag` 动态输入
+> - 字幕说明“我们将控制减速的时机”，这张图正是把“何时减速”落实为 `Emitter.Age/5.0` 驱动的阻力曲线
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: 预览 + 多发射器 Stack + `Sources_Sparks / Sprite Renderer` 属性图
+> - 所属: `NS_Explosion / Sources_Sparks`
+> - 目的: 新建一层用于“源头火花/亮点”的辅助发射器，先用最基础的圆点 Sprite 材质确认这层粒子能独立生成，再决定后续是否换成主材质或更复杂贴图
+>
+> 模块栈:
+> | 顺序 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|
+> | 1 | 发射器 | `Sources_Sparks` | Enabled | 当前选中 | 新的亮点/火花层 |
+> | 2 | `Sources_Sparks` / Emitter Update | `Emitter State` | Enabled | `Self Once` | 单次播放 |
+> | 3 | `Sources_Sparks` / Emitter Update | `Spawn Burst Instantaneous` | Enabled | 图中未展开数量 | 瞬时生成火花 |
+> | 4 | `Sources_Sparks` / Particle Spawn | `Initialize Particle` | Enabled | 图中未展开参数 | 初始化粒子 |
+> | 5 | `Sources_Sparks` / Particle Spawn | `Add Velocity` | Enabled | `In Cone` | 锥形发射 |
+> | 6 | `Sources_Sparks` / Particle Spawn | `Shape Location` | Enabled | `Cylinder` | 从圆柱范围发射 |
+> | 7 | `Sources_Sparks` / Particle Update | `Gravity Force`、`Drag`、`Solve Forces and Velocity`、`Particle State` | Enabled | 图中可见 | 控制火花下坠、减速和生命周期 |
+> | 8 | `Sources_Sparks` / Render | `Sprite Renderer` | Enabled | 当前选中 | 设置火花材质与朝向 |
+>
+> 设置:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Sprite Renderer.Material` | `DefaultSpriteMaterial` | Material | Details | 先用默认圆点 Sprite 材质做可见性验证 |
+> | `Sprite Renderer.Material User Param Binding` | `None` | binding | Details | 没有额外材质绑定 |
+> | `Sprite Renderer.Source Mode` | `Particles` | enum | Details | 从粒子属性读渲染数据 |
+> | `Sprite Renderer.Alignment` | `Automatic` | enum | Details | 自动对齐 |
+> | `Sprite Renderer.Facing Mode` | `Automatic` | enum | Details | 自动朝向 |
+> | `Sprite Renderer.Default Pivot in UV Space` | `(0.5, 0.5)` | Vector2 | Details | 以贴图中心为枢轴 |
+> | `Sprite Renderer.Pixel Coverage Mode` | `Automatic` | enum | Details | 像素覆盖自动 |
+> | `Sprite Renderer.Pixel Coverage Blend` | `1.0` | float | Details | 像素覆盖混合保持 1 |
+> | `Sprite Renderer.Min Facing Camera Blend Distance` | `0.0` | float | Details | 最小相机混合距离 |
+> | `Sprite Renderer.Max Facing Camera Blend Distance` | `0.0` | float | Details | 最大相机混合距离 |
+> | `Sprite Renderer.Sort Mode` | `None` | enum | Details | 不做额外排序 |
+> | `Sprite Renderer.Renderer Visibility` | `0` | int | Details | 当前渲染器可见性值为 0 |
+>
+> 预览结果:
+> - 左侧预览仍未清晰显示这层粒子，说明当前主要是在搭一层新的发射器骨架
+> - 结合上下文，这一步是先确保“源头亮点/火花”层有一个最容易观察的默认 Sprite，再决定是否替换成更复杂材质
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: 爆炸预览 + 多发射器 Stack + `Empty / Curl Noise Force` 属性图
+> - 所属: `NS_Explosion / Empty`
+> - 目的: 在辅助发射器中加入 `Curl Noise Force`，让新生成的火焰或亮点粒子从一开始就带有横向散开和扰动，而不是笔直上冲
+>
+> 模块栈:
+> | 顺序 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|
+> | 1 | 发射器 | `Sources_Sparks` | Enabled | 左侧可见警告标记 | 作为取样或来源粒子层 |
+> | 2 | 发射器 | `Empty` | Enabled | 当前选中 | 辅助发射器 |
+> | 3 | `Empty` / Emitter Update | `Emitter State` | Enabled | `Self Once` | 单次播放 |
+> | 4 | `Empty` / Emitter Update | `Spawn Particles from Other Emitter` | Enabled | 当前新增 | 从其他发射器派生粒子 |
+> | 5 | `Empty` / Particle Spawn | `Initialize Particle` | Enabled | 图中未展开参数 | 初始化粒子 |
+> | 6 | `Empty` / Particle Spawn | `Sample Particles from Other Emitter` | Enabled | 当前新增 | 读取来源粒子数据 |
+> | 7 | `Empty` / Particle Spawn | `Shape Location` | Enabled | `Sphere` | 球形范围出生 |
+> | 8 | `Empty` / Particle Update | `Gravity Force` | Enabled | 保持下坠逻辑 | 增加重量感 |
+> | 9 | `Empty` / Particle Update | `Drag` | Enabled | 保持减速逻辑 | 控制减速 |
+> | 10 | `Empty` / Particle Update | `Curl Noise Force` | Enabled | 当前选中 | 给粒子增加扰动和横向扩散 |
+> | 11 | `Empty` / Particle Update | `Solve Forces and Velocity`、`Particle State`、`Scale Sprite Size` | Enabled | 图中可见 | 解算与外观控制 |
+> | 12 | `Empty` / Render | `Sprite Renderer` | Enabled | 图中可见 | 输出这层粒子 |
+>
+> 设置:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Curl Noise Force.Noise Strength` | `10.0` | float | Details | 扰动力度 |
+> | `Curl Noise Force.Noise Frequency` | `75.0` | float | Details | 噪声频率，决定扰动细密程度 |
+> | `Curl Noise Force.Noise Quality / Cost` | `Baked (Medium)` | enum | Details | 使用中等成本的烘焙噪声 |
+> | `Curl Noise Force.Pan Noise Field` | `(0.0, 0.0, 0.0)` | Vector3 | Details | 当前不平移噪声场 |
+> | `Curl Noise Force.Mask Curl Noise` | 未勾选 | bool | Details | 不额外遮罩 Curl 噪声 |
+>
+> 预览结果:
+> - 左侧预览里可见底部黑烟环上方出现一大团明亮火焰，火焰边缘被噪声撕成很多向外散开的舌形轮廓
+> - 字幕明确提到“变异性使它们向侧面散开”，对应这一步通过 `Curl Noise Force` 让粒子在起始阶段就产生横向分叉和随机感
+
+### 00:24:07-00:28:50 速度
+
+- 本段定位：速度。
+- 知识点：并会快速地減速 它们会減速 或者 这條圈的聲音 它们会开始 從开始开始發電 可以给它们颜色。
+- 知识点：像这个 我们也可以 把它们的尺寸 非常大 可以给它们 一个材料 可以 拿我们的 主材料 它们会变成 小塊 可以把它们稱为閃光 但我们把它们留在这里。
+- 知识点：我看到我没有做 这里的圈子 而且我们已经 把这里的圈子 移动到这里 它们会怎樣 我们把它们 一圈一圈地 推到这里 微笑地按下 剪輯 把这个材料 我们拿了它们。
+- 知识点：我们必须隨意地选择 这里的圈子 显示2x2 现在我们看看 它们都很有趣 我们改变了 随机转换 它们很酷 再看 让它们掉得好 它们掉了 可以加多點雷霆。
+- 知识点：这会影响它们 它们会掉 它们会跟隨 这塊塊的路 從这五塊 这塊塊的雷霆 会被發生 它们会这樣飛 然后慢慢地让它们掉 可以剪輯它们的大小 可以把它们。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`速度`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: 爆炸预览 + `Empty / Curl Noise Force` 曲线属性图
+> - 所属: `NS_Explosion / Empty`
+> - 目的: 把 `Curl Noise Force` 的强度改成按粒子寿命衰减，让粒子在出生瞬间就剧烈横向散开，随后很快减弱扰动，避免整段生命周期都保持同样噪声强度
+>
+> 模块栈:
+> | 顺序 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|
+> | 1 | 发射器 | `Empty` | Enabled | 当前选中 | 辅助粒子层 |
+> | 2 | `Empty` / Emitter Update | `Spawn Particles from Other Emitter` | Enabled | 继续使用来源发射器 | 从其他层派生粒子 |
+> | 3 | `Empty` / Particle Spawn | `Sample Particles from Other Emitter` | Enabled | 已启用 | 读取来源粒子 |
+> | 4 | `Empty` / Particle Spawn | `Shape Location` | Enabled | `Sphere` | 球形范围出生 |
+> | 5 | `Empty` / Particle Update | `Gravity Force`、`Drag` | Enabled | 已启用 | 维持重力与减速 |
+> | 6 | `Empty` / Particle Update | `Curl Noise Force` | Enabled | 当前选中 | 控制横向噪声扩散 |
+> | 7 | `Empty` / Particle Update | `Solve Forces and Velocity`、`Particle State`、`Scale Sprite Size` | Enabled | 图中可见 | 解算与外观 |
+>
+> 设置:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Curl Noise Force.Noise Strength` | `Float from Curve` | 动态输入 | 噪声强度由曲线驱动 |
+> | `Float from Curve.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 用粒子归一化寿命作为曲线输入 |
+> | `Float from Curve.Scale Curve` | `1000.0` | float | Details | 放大曲线输出后的噪声强度 |
+> | `Curl Noise Force.Noise Frequency` | `75.0` | float | Details | 保持高频噪声 |
+> | `Curl Noise Force.Noise Quality / Cost` | `Baked (Medium)` | enum | Details | 中等成本烘焙噪声 |
+> | `Curl Noise Force.Pan Noise Field` | `(0.0, 0.0, 1.0)` | Vector3 | Details | 沿 Z 方向平移噪声场 |
+> | `Curl Noise Force.Mask Curl Noise` | 未勾选 | bool | Details | 不遮罩噪声 |
+>
+> 曲线:
+> - 红色曲线在粒子寿命开始阶段接近 `0.8` 以上
+> - 到约 `0.2` 的归一化寿命时快速衰减到接近 `0`
+> - 之后剩余生命周期基本保持接近 `0`
+>
+> 预览结果:
+> - 左侧预览里火焰团从一开始就有明显的横向撕裂和外散感，底部仍保留一圈黑烟
+> - 字幕明确说“它们一开始就开始混乱地散开”，这正对应当前用寿命前段高、后段低的曲线驱动 `Noise Strength`
+> 图表转写（UE-GTXT v4）
+> - 类型: 材质实例参数图
+> - 组成部分: 视口预览 + `MI_Pieces_01...` 参数面板
+> - 所属: `MI_Pieces_01...`
+> - 目的: 给爆炸里新增的碎片/亮块粒子准备单独材质，让这些小块既能用自己的贴图形状和溶解噪声，又能保持和主爆炸相近的蓝白高亮色调
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Base Texture.Colormap` | `VFX.T_ColorMap_Blue_06` | Details | 碎片使用偏蓝白的色带 |
+> | `Base Texture.Premultiply Color?` | `1.0` | Details | 颜色预乘开启 |
+> | `Base Texture.T_Main` | `T_Pieces_01_2x2` | Details | 主碎片形状贴图 |
+> | `Base Texture.Use Colormap?` | `0.0` | Details | 当前不额外启用颜色映射混合 |
+> | `Dissolve.T_Dissolve` | `T_Noise111` | Details | 溶解噪声贴图 |
+> | `Dissolve.Smoothness` | `0.1` | Details | 溶解边缘较硬 |
+> | `Distortion.(Scale/Scroll)` | `R=1.0, G=1.0, B=0.0, A=0.0` | Details | 扭曲缩放/滚动参数 |
+> | `Distortion Distortion Influencer` | `0.0` | Details | 当前不额外放大扭曲 |
+> | `Distortion.T_Distortion` | `T_Voronnoise002` | Details | 扭曲噪声纹理 |
+> | `Global Scalar Parameter Values.Depth Fade` | `100.0` | Details | 深度淡化距离 |
+> | `Mask.T_Mask` | `WhiteSquareTexture` | Details | 使用纯白遮罩 |
+> | `General.Parent` | `M_UberMaterial` | Details | 当前材质实例父级 |
+>
+> 预览结果:
+> - 左侧预览中可见一块非常亮的白色碎片形状，底部还有一小块高亮反射，说明这层材质不是烟，而是给独立碎片/闪片使用
+> - 字幕明确提到“这些小块”，对应当前步骤是在为爆炸里额外的白色碎片准备专用材质，而不是继续调主烟材质
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: 爆炸预览 + `Empty / Sprite Renderer` 属性图
+> - 所属: `NS_Explosion / Empty`
+> - 目的: 把辅助碎片/亮块发射器真正接上新材质 `MI_Pieces_01`，并按速度方向对齐 Sprite，让这些小块沿飞行方向拉伸和朝向
+>
+> 模块栈:
+> | 顺序 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|
+> | 1 | `Empty` / Emitter Update | `Spawn Particles from Other Emitter` | Enabled | 继续从其他发射器派生粒子 | 生成辅助碎片层 |
+> | 2 | `Empty` / Particle Spawn | `Initialize Particle` | Enabled | 图中未展开参数 | 初始化粒子 |
+> | 3 | `Empty` / Particle Spawn | `Sample Particles from Other Emitter` | Enabled | 已启用 | 读取来源粒子 |
+> | 4 | `Empty` / Particle Spawn | `Shape Location` | Enabled | `Sphere` | 球形生成范围 |
+> | 5 | `Empty` / Particle Spawn | `Sub UV Animation` | Enabled | `Random` | 随机选择子图帧 |
+> | 6 | `Empty` / Particle Update | `Gravity Force`、`Drag`、`Curl Noise Force`、`Curl Noise Force 001`、`Solve Forces and Velocity`、`Particle State` | Enabled | 图中均启用 | 控制重力、扰动和解算 |
+> | 7 | `Empty` / Particle Update | `Scale Sprite Size 001`、`Scale Sprite Size`、`Scale Sprite Size by Speed` | Enabled | 当前新增速度缩放 | 让碎片尺寸随速度变化 |
+> | 8 | `Empty` / Render | `Sprite Renderer` | Enabled | 当前选中 | 设置材质与朝向 |
+>
+> 设置:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Sprite Renderer.Material` | `MI_Pieces_01` | Material | Details | 使用新的碎片材质实例 |
+> | `Sprite Renderer.Source Mode` | `Particles` | enum | Details | 从粒子属性渲染 |
+> | `Sprite Renderer.Alignment` | `Velocity Aligned` | enum | Details | 沿粒子速度方向对齐 |
+> | `Sprite Renderer.Facing Mode` | `Automatic` | enum | Details | 朝向保持自动 |
+> | `Sprite Renderer.Default Pivot in UV Space` | `(0.5, 0.5)` | Vector2 | Details | 贴图中心枢轴 |
+> | `Sprite Renderer.Pixel Coverage Mode` | `Automatic` | enum | Details | 像素覆盖自动 |
+> | `Sprite Renderer.Pixel Coverage Blend` | `1.0` | float | Details | 像素覆盖混合 |
+> | `Sprite Renderer.Min Facing Camera Blend Distance` | `0.0` | float | Details | 最小混合距离 |
+> | `Sprite Renderer.Max Facing Camera Blend Distance` | `0.0` | float | Details | 最大混合距离 |
+> | `Sprite Renderer.Sort Mode` | `None` | enum | Details | 不额外排序 |
+> | `Sprite Renderer.Renderer Visibility` | `0` | int | Details | 当前渲染器可见性值 |
+> | `Sprite Renderer.Sub UV Blending Enabled` | 未勾选 | bool | Details | 不启用 SubUV 混合 |
+> | `Sprite Renderer.Sub Image Size` | `(2.0, 2.0)` | Vector2 | Details | 使用 2x2 子图布局 |
+>
+> 预览结果:
+> - 左侧预览中，明亮火焰外侧开始混入细小的白色亮片或碎片痕迹，顶部还能看到沿速度方向抛出的细长亮点
+> - 字幕明确说“让它们朝我们的速度方向”，对应当前把 `Alignment` 设为 `Velocity Aligned`，让这些小块真正跟随飞行轨迹
+
+### 00:28:50-00:33:30 关键流程 07
+
+- 本段定位：关键流程 07。
+- 知识点：它们会向下 很好 可以随机转换 但我们不做了 没關係 它们会掉 它们会掉到地面上 我不想它们掉到地面上 所以需要加點雷霆 需要加 这个,它会一直在地面上。
+- 知识点：需要升它一点 所以在这里 一个或三个都没有 基本上它们会掉 它们会掉到地面上 然后就这樣 在地面上 然后慢慢地消失 很好,就这樣 因此我们创建了雷霆。
+- 知识点：现在我们来创建 我们创建另一种 它们的大小 它们不需要任何东西 我们创建它们 我们来创建一个随机的数字 让它们活得更长 是的,是0 我们来创建它们。
+- 知识点：我知道它们需要 创建得更低 它们会在一个 空中 随机的價值 升 它们会降低重量 然后需要用拉鍵 把它從这里剪掉 把它放入,然后改变價值 也一樣,我们再回到。
+- 知识点：像这樣 需要把雷霆消失掉 它们不需要任何东西 是的,我还是看不到它们 嗯,我们来 这里 最初应该没有成功 55,哦 这就是它们的快速创建 需要。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这一帧在 Unreal 的 `LS_Explosion` 关卡序列中检查爆炸总效果。画面中央是一个高亮火球与外层烟团叠加的爆炸，底部 Sequencer 正在播放 `NS_Explosion` 的生命周期轨道
+
+- 当前场景与资源
+  顶部标签包含 `NS_Explosion`、`MI_ExplosionAdvanced...`、`MI_GrondShockwave_01`、`MI_SmokeAdvanced_01`、`MI_Pieces_01`
+  Outliner 中可见 `LS_Explosion`、`NS_Explosion`、`prebaked_destr...`
+  当前选中对象是 `Floor`
+  右侧 `Details` 显示 `Floor (Instance)` 与 `StaticMeshComponent0`
+- Sequencer 结构
+  底部轨道中可见
+  `CameraActor`
+  `LP`
+  `NS_Explosion`
+  `NiagaraComponent0`
+  `System Life Cycle`
+  `prebaked_destruction_Anim`
+  `System Life Cycle` 当前模式显示为 `Desired Age`
+  红色 `Life Cycle` 条带覆盖主要时间段
+- 当前可见效果
+  爆炸中心是高亮白黄火核
+  外层包裹橙红色烟火团
+  上方可见多条向外抛射的细碎火花轨迹
+  爆炸底部和外围还能看到若干碎片或石块被抛起
+  时间线游标位于约 `1.0833`
+
+这张图可作为当前“关键流程 07”的总体结果基准：Sequencer 中通过 `NS_Explosion` 的生命周期驱动火核、烟团、火花和碎片在同一时刻叠加成完整爆炸
+这一帧打开的是 `NS_Explosion` 的 `System Overview`，当前选中发射器为 `Sparks_Burst`，右侧正在调整 `Add Velocity` 模块。字幕明确说的是 `Up.`，说明这一段的核心是把火花喷射方向调成朝上
+
+- 当前系统与时间线
+  系统名为 `NS_Explosion`
+  底部时间线当前列出
+  `Explosion`
+  `SmokeRing`
+  `SmokeShockwave`
+  `Sources_Sparks`
+  `Sparks`
+  当前时间游标约在 `0.3292`
+- 当前发射器
+  画面中央选中的是 `Sparks_Burst`
+  可见栈结构包括
+  `Emitter Summary`
+  `Emitter Spawn`
+  `Emitter State`
+  `Spawn Burst Instantaneous`
+  `Particle Spawn`
+  `Initialize Particle`
+  `Shape Location Sphere`
+  `Sub UV Animation Random`
+  `Add Velocity In Cone`
+  `Particle Update`
+  `Gravity Force`
+  `Drag`
+  `Curl Noise Force`
+  `Curl Noise Force 001`
+  `Collision`
+  `Solve Forces and Velocity`
+  `Particle State`
+  多个 `Scale Sprite Size`
+  `Render`
+  `Sprite Renderer`
+- `Add Velocity` 当前参数
+  `Velocity Mode = In Cone`
+  `Velocity Speed = Random Range Float`
+  `Minimum = 1500.0`
+  `Maximum = 4500.0`
+  `Distribution Along Cone Axis = 0.5`
+  `Speed Falloff From Cone Axis = 0.7`
+  `Cone Axis = (0, 0, 0)` 当前正在输入，结合字幕可知作者正准备把轴向改到朝上
+  `Cone Angle = 45.0`
+  `Inner Cone Angle = 0.0`
+  `Cone Angle Mode = Degrees`
+  `Rotation Mode = Default`
+  `Rotation Coordinate Space = Local`
+- 预览
+  左侧预览窗口当前没有清晰火花结果，只能看到空场景和地面
+  这说明作者此刻重点是调模块参数，而不是停在最终可视化帧
+
+复建这一步时，应把火花 burst 的速度模式设为圆锥喷射，并把主轴明确朝上，再用较高的最小/最大速度范围把火花迅速抛出
+这一帧仍在 `NS_Explosion` 的 `Sparks_Burst` 发射器中，但当前选中模块已经切到 `Scale Color`。字幕为 `To standard values.`，可确认作者在把颜色或透明度缩放恢复到更标准的基线值
+
+- 当前发射器与栈
+  当前发射器仍是 `Sparks_Burst`
+  画面可见的栈顺序与上一张相同，说明作者没有切换 emitter，只是在同一发射器内继续调参
+  当前高亮模块为 `Scale Color`
+- `Scale Color` 当前设置
+  `Scale Mode = RGB and Alpha Separately`
+  `Scale RGB = Vector from Float`
+  `Value = Float from Curve`
+  曲线编辑器使用 `Curve for Floats`
+  `CurveIndex = PARTICLES.NormalizedAge`
+  `Scale Curve = 1.0`
+  `Scale Alpha = 1.0`
+  图中的曲线几乎保持在 `1` 的水平线上，说明此时颜色缩放基本没有额外衰减或增强
+- 预览与时间线
+  左侧预览中能看到少量向上漂浮的小亮点，说明当前火花已经能在预览里出现
+  底部时间游标仍在约 `0.3292`
+  时间线中的 `Explosion`、`SmokeRing`、`SmokeShockwave`、`Sources_Sparks`、`Sparks` 依旧同时存在
+
+这一步的意义，是把火花层的颜色和透明度缩放先归到稳定基线，再在这个基础上继续做后续尺寸、速度或寿命方面的微调
+
+### 00:33:30-00:38:27 粒子
+
+- 本段定位：粒子。
+- 知识点：慢慢地改变 它们的價值 在最初 需要把它们变成 很大 所以把它们放在一邊 所以,我们来改变它们的 大小 需要把它们改成分開的 X或Y 需要改成现在的標準。
+- 知识点：更加地像这樣 我们来一一一一一 它们总是在一 但为什么最有興趣呢? 在最初 需要增加價值 我们把它设置为25 然后它 会慢慢地变得很快 就像这樣。
+- 知识点：把價值变成这樣 好,这里 这个小东西就出现了 然后它就跳起来了 它看起来很酷 像这樣 我先把它拉起来 然后它就掉到標準價值 然后像这樣它就会消失。
+- 知识点：我们把它们都拼在一起 像这樣 看起来很酷 需要在这里改变它们的標準 在创建中 需要改变它们的標準 所以它们都很正確 所以它总是在烟後显示 所以需要在这里放一个-。
+- 知识点：在这里 然后我们就继续 接下来需要 例如說 需要把这个選項拼上去 需要加點粒子 3D的我们的石頭 你記得我们加了 现在需要给你们看 这个可以拼上去。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+这一帧继续在 `NS_Explosion` 的 `Sparks_Burst` 发射器里调 `Scale Color`，但这次右侧同时展开了 `Scale RGB` 和 `Scale Alpha` 两条曲线，说明作者开始让火花随着生命周期逐渐变暗并降低透明度
+
+- 当前模块
+  仍是 `Scale Color`
+  `Scale Mode = RGB and Alpha Separately`
+  `Scale RGB = Vector from Float`
+  `Scale Alpha = Float from Curve`
+- 曲线设置
+  上半部分 `Scale RGB` 使用 `Float from Curve`
+  下半部分 `Scale Alpha` 也使用 `Float from Curve`
+  两条曲线的横轴索引均为 `PARTICLES.NormalizedAge`
+  两条曲线都从接近 `1` 的高位开始，随后向右逐步下降
+  `Scale Curve = 1.0`
+  这说明粒子刚生成时保持完整亮度和透明度，之后随着年龄增长逐渐衰减
+- 发射器上下文
+  中央栈结构依然是 `Sparks_Burst`
+  `Add Velocity In Cone`、`Gravity Force`、`Drag`、`Collision`、`Scale Sprite Size by Speed` 等模块仍在同一条链路上
+  说明当前并不是新增模块，而是在既有火花链路上补齐寿命期内的视觉衰减
+- 预览
+  左侧预览中仍可见少量白色小点漂浮在空中
+  这些小点可视为当前火花粒子在预览里的近似结果
+
+复建时，应让火花的颜色和 Alpha 都随 `NormalizedAge` 从高值缓慢衰减，而不是全程保持恒亮，这样粒子在末端才会自然淡出
+这一帧切到 `NS_Explosion` 里的 `SmokeShockwave` 发射器，并打开 `Sprite Renderer` 细节。作者此时在核对冲击波烟层的材质、面对相机方式和渲染排序
+
+- 当前发射器
+  底部时间线当前选中的是 `SmokeShockwave`
+  系统总览里可见 `Explosion`、`SmokeShockwave`、`SmokeRing` 以及右侧部分被遮住的其他发射器
+  当前时间游标约为 `0.5542`
+- `Sprite Renderer` 当前设置
+  当前模块为 `Sprite Renderer`
+  `Material = MI_GrondShockwave_01`
+  `Material User Param Binding = None`
+  `Source Mode = Particles`
+  `Alignment = Custom Alignment`
+  `Facing Mode = Custom Facing Vector`
+  `Macro UVRadius = 0.0`
+  `Default Pivot in UV Space = (0.5, 0.5)`
+  `Pixel Coverage Mode = Automatic`
+  `Pixel Coverage Blend = 1.0`
+  `Min Facing Camera Blend Distance = 0.0`
+  `Max Facing Camera Blend Distance = 0.0`
+- 排序与渲染
+  `Sort Mode = None`
+  `Renderer Visibility = 0`
+  `Cast Shadows` 已启用
+  `Sort Order Hint = -1`
+  `Motion Vector Setting = Auto Detect`
+- 预览
+  左侧预览里能看到高亮黄白火核与外层橙红烟火团，说明 `SmokeShockwave` 正在和主爆炸层一起参与整体预览
+- 字幕可确认的讲解意图
+  英文字幕为 `And we move on.`
+  可确认作者在完成这一层的渲染检查后，准备继续下一个粒子部分
+
+复建这一步时，要确保冲击波烟层使用单独的 `MI_GrondShockwave_01` 材质，并通过 `Custom Alignment` 与 `Custom Facing Vector` 控制 sprite 朝向，而不是直接沿用默认的相机朝向模式
+这一帧回到 `LS_Explosion` 的 Sequencer 结果视图，但此时爆炸主体已经结束，视口里只剩地面上的若干碎块和一个较高的残留碎片柱体，说明粒子与火光阶段已经播放完毕
+
+- 当前场景状态
+  主视口里已经看不到火球、烟环或冲击波
+  地面上散落着多块碎石或预烘焙破坏残片
+  中央偏左有一块较高的竖立残片
+  这表明当前镜头停在爆炸结束后的残留阶段
+- Sequencer 状态
+  底部轨道仍是
+  `CameraActor`
+  `LP`
+  `NS_Explosion`
+  `NiagaraComponent0`
+  `System Life Cycle`
+  `prebaked_destruction_Anim`
+  `System Life Cycle` 模式仍为 `Desired Age`
+  红色 `Life Cycle` 条带仍在主要持续区间内
+  当前时间游标位于约 `3.2167`
+- Outliner
+  可见 `NS_Explosion` 与 `prebaked_dest...`
+  右侧 `Details` 当前没有选中对象，显示 `Select an object to view details.`
+
+这张图可以作为本批的结束验收图：完整爆炸播放结束后，粒子层已经自然消失，只留下场景中的破坏残骸和序列轨道，说明生命周期收束是正常的
+
+### 00:38:29-00:43:09 关键流程 09
+
+- 本段定位：关键流程 09。
+- 知识点：可以调整它们 也要加上它们的價值 这是一个轉動 在靈体上 这里基本上是標準的 我们也会加速 轉動,從最初开始 需要加速 需要加速 这顆星球。
+- 知识点：它们的大小会变小 它们的大小会变小 我们需要靈体的靈体 我们需要靈体的靈体 我们需要靈体的靈体 我们需要靈体的靈体 它们不会停下来 我们把它们都变成標準的靈体。
+- 知识点：我们也会加速 我们也会加速 我们也会加速 这里,需要把这些小石頭 飛起来,然后掉下来 在靈体上,它们会轉動 像这樣,很酷 我只想改变它们的东西。
+- 知识点：为它们创建 特别的靈体 它们会变成非常 其實,很简单 我们需要它们 需要用 我们已经使用的標準的靈体 让我给你们看 我怎麼做 我们找到,这里,世界创建。
+- 知识点：物品,可以用它 还是不可以 需要用它 是的,它是標準的 需要用它像这樣 拼製 找到我们的文件 有什么物品 有什么物品 需要用它 把它做成我做的一樣。
+
+**关键画面：**
+
+这一帧展示的是 `NS_Explosion` 系统中 `Rocks_Pieces` 发射器的粒子碰撞设置，重点是在让碎石落地后发生弹跳和翻滚
+
+- 发射器结构
+  当前选中的发射器是 `Rocks_Pieces`
+  `Particle Update` 栈里可见 `Gravity Force`、`Drag`、`Collision`、`Solve Forces and Velocity`、`Particle State`
+  `Render` 使用 `Mesh Renderer`
+- `Collision > Collision`
+  `Collision Mode = CPU Collision Trace Channel`
+  `CPU Collision Type = Analytical Planes`
+  `Collision Enabled` 已开启
+- `Collision Radius`
+  `Radius Calculation Type = Mesh`
+  `Method for Calculating Particle Radius = Bounds`
+  `Mesh Dimensions = (1.0, 1.0, 1.0)`
+  `Particle Radius Scale = 1.0`
+- `Bounce`
+  `Restitution = 0.2`
+  `Restitution Coefficient Blending = Ignore`
+  `Randomize Collision Normal = 0.1`
+  `Control Roll On Collision` 已开启，用于让碎石第一次撞地后按接触情况继续滚动
+- `Friction`
+  `Simple Friction` 已开启
+  `CPU Friction Blending` 当前可见为默认下拉项
+  `Friction = 1.0`
+  `Friction During a Bounce = 0.0`
+- `Analytical Collision Planes`
+  `Analytical Collision Plane Space = Simulation`
+  可见两组平面法线与位置
+  `Plane 1 Normal = (0.0, 0.0, 1.0)`
+  `Plane 1 Position = (0.0, 0.0, 5.0)`
+  `Plane 2 Normal = (0.0, 0.0, 1.0)`
+  `Plane 2 Position = (0.0, 0.0, 5.0)`
+- `Rest`
+  `Enable Rest State` 已开启
+  `Manually Enter Rest` 未勾选
+  `Maximum Penetration Correction Distance = 0.5`
+  `Percentage of Penetration Before Rest = 1.0`
+  `Rest State Time Range = 0.5`
+
+结合左侧预览和时间轴，这一步是在给碎石 mesh 粒子补上落地碰撞、弹跳、摩擦与静止逻辑，让它们飞出后能像真实石块一样落地、滚动并逐渐停住
+> 图表转写（UE-GTXT v4）
+> - 类型: 材质节点图总览 + 材质设置
+> - 所属: `WorldGridMaterial / Material Graph`
+> - 目的: 打开引擎标准网格材质作为结构参考，确认其由多个功能分组汇总到材质输出
+>
+> 设置:
+> | Owner.Property | 值 | 作用 |
+> |---|---|---|
+> | `WorldGridMaterial.Material Domain` | `Surface` | 作为表面材质运行 |
+> | `WorldGridMaterial.Blend Mode` | `Opaque` | 使用不透明混合 |
+> | `WorldGridMaterial.Shading Model` | `Default Lit` | 参与默认光照 |
+> | `WorldGridMaterial.Two Sided` | 未启用 | 只按默认单面方式渲染 |
+> | `WorldGridMaterial.Use Material Attributes` | 未启用 | 各材质输入直接接入主输出 |
+>
+> 节点结构:
+> - 画布中可见多个注释框分组，分组输出通过跨区连线汇入右侧材质主输出
+> - 当前总览缩放为 `-6`，本帧用于确认整体分组与汇流关系，不承担单节点名称、Pin 或参数值的复建
+> - 左侧预览球显示标准灰色网格材质结果，平台统计显示 `Texture samplers 4/16`
+这一帧回到关卡编辑器和 Sequencer，展示如何把预烘焙的破碎动画对象与爆炸镜头放到同一条序列里
+
+- 当前场景
+  顶部标签显示正在编辑 `VFX_Library` 关卡
+  当前序列是 `LS_Explosion`
+  视口里可见的是铺满地面的灰色棋盘测试材质地面
+- Outliner
+  场景根下包含 `Env` 文件夹、`Floor`、`PointLight`、`PostProcess`、`SkyLight`、`WorldDataLayer`
+  关键对象包括 `CameraActor`、`LevelSequence`、`LP`、`NS_Explosion`
+  当前选中对象是 `prebaked_dest`，类型为 `Skeletal`
+- 选中对象细节
+  `Details` 面板显示对象名为 `prebaked_destruction_Anim`
+  组件类型是 `SkeletalMeshComponent`
+  `Transform`
+  `Location = (0.0, 0.0, 0.0)`
+  `Rotation = (0.0, 0.0, -9.0)`
+  `Scale = (1.0, 1.0, 1.0)`
+  `Animation Mode = Use Custom Mode`
+  `Mesh > Skeletal Mesh Asset` 已指定 `prebaked_destruction...`
+  `Materials` 中可见使用了 `M_Destruction...`
+- Sequencer 轨道
+  轨道列表里可见 `Camera Cuts`、`CameraActor`、`LP`、`NS_Explosion`、`NiagaraComponent0`
+  `NiagaraComponent0` 下使用 `System Life Cycle`，模式是 `Desired Age`
+  新增了一条 `prebaked_destruction_Anim` 轨道，与爆炸镜头放在同一时间线上
+  播放头位于 `3.80` 秒附近，右侧可见对应相机缩略图和 `Life Cycle` 区段
+
+这一操作的目的，是把预烘焙碎裂动画对象纳入同一个 `LS_Explosion` 镜头节奏中，让几何体破碎与 `NS_Explosion` 的 Niagara 粒子爆炸在同一时间点同步播放
+
+### 00:43:09-00:44:30 关键流程 10
+
+- 本段定位：关键流程 10。
+- 知识点：可以做一个很酷的东西 就是把我们已经有的光线 剪輯出来 我们已经用的物品 就是这个 把它換掉 像这樣 这里会有一点不同 我们不需要这个 我们需要把它们都重新设置为標準。
+- 知识点：我们不需要它们 这里 我们不需要 我们把塵土搬走 我们把污垢搬走 我们也把它们搬走 我们減少了它们的物体 这会是 我们的石頭 我们的石頭 一些石頭会被 損坏,会被烟燒。
+
+**关键画面：**
+
+这一帧回到 `NS_Explosion` 的 `System Overview`，用于总览当前爆炸系统里各个发射器的组合关系，并在左侧预览里观察整体效果
+
+- 系统概览
+  当前系统是 `NS_Explosion`
+  视图处于 `System Overview`
+  右侧 `Details` 面板当前标题为 `Life Cycle Mode`，但没有展开具体参数
+- 可见发射器
+  `Explosion`
+  `SmokeShockwave`
+  `SmokeRing`
+  右侧还能看到后续发射器的一部分列，但名称未完整显示
+- `Explosion` 发射器栈
+  能辨认出 `Emitter State`
+  `Spawn Burst Instantaneous`
+  `Initialize Particle`
+  `Sphere Location`
+  `Add Velocity`
+  `Scale Color`
+  `Sprite Renderer`
+  其余模块因缩放较远不适合逐项确认
+- 时间轴
+  下方时间轴同时列出了 `Explosion`、`Rocks_Pieces`、`SmokeRing`、`SmokeShockwave`、`Sources_Sparks`
+  播放头位于 `0.1667` 秒附近，说明此时正在查看爆炸刚触发后的瞬间
+- 预览结果
+  左侧预览中可见地面中心爆出一团高亮火焰，并带有向外飞射的细线状火花
+
+这一帧的作用主要是确认系统里哪些发射器仍在参与当前版本的爆炸组合，以及它们合成后的整体观感
+这一帧展示的是 `Sparks001` 发射器的 `Scale Sprite Size 001` 模块，用生命周期曲线控制火花贴片在大部分寿命内保持尺寸，末段再迅速缩小
+
+- 发射器
+  当前选中发射器是 `Sparks001`
+  `Emitter Update`
+  `Emitter State`
+  `Spawn Particles from Other Emitter`
+  `Particle Spawn`
+  `Initialize Particle`
+  `Sample Particles from Other Emitter`
+  `Shape Location Sphere`
+  `Sub UV Animation Random`
+  `Particle Update`
+  `Gravity Force`
+  `Drag`
+  `Curl Noise Force`
+  `Curl Noise Force 001`
+  `Collision`
+  `Solve Forces and Velocity`
+  `Particle State`
+  `Scale Sprite Size 001`
+  `Scale Sprite Size`
+  `Render > Sprite Renderer`
+- `Scale Sprite Size 001`
+  `Scale Sprite Size Mode = Uniform Curve`
+  使用 `Uniform Curve Sprite Scale`
+  `Uniform Curve Index = Particles.NormalizedAge`
+  `Uniform Curve Scale = 1.0`
+- 曲线形状
+  曲线在寿命前段到中后段基本保持在 `0.8` 左右
+  接近寿命尾端时快速下降
+  末端落到接近 `0.0`
+
+这表示火花碎片在飞行的大部分时间里维持较稳定的可见尺寸，临近消失前再迅速缩小，以避免粒子在尾段突然硬切消失
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara System Overview + 发射器设置
+> - 所属: `NS_Explosion` 中用于石块烟雾的当前选中发射器
+> - 目的: 从 `Sources_Sparks` 读取粒子并为每个源粒子生成烟雾
+>
+> 对象状态:
+> - `System Overview` 的选中发射器名称输入框显示 `Smoke`，字幕说明这是石块烟雾
+> - `Details` 顶部仍显示旧标题 `Sparks001`，本帧处于发射器重命名/切换过程，因此下列参数绑定到“当前选中发射器”，不把旧标题当作最终名称
+>
+> 模块栈:
+> `Emitter State` -> `Spawn Particles from Other Emitter` -> `Initialize Particle` -> `Sample Particles from Other Emitter` -> `Shape Location Sphere` -> `Gravity Force` -> `Curl Noise Force 001` -> `Solve Forces and Velocity` -> `Particle State` -> `Sprite Renderer`
+>
+> 设置:
+> | Owner.Property | 值 | 作用 |
+> |---|---|---|
+> | `Emitter.Local Space` | 未启用 | 在非本地空间模拟 |
+> | `Emitter.Interpolated Spawning` | 已启用 | 平滑帧间生成 |
+> | `Emitter.Sim Target` | `CPUSim` | 使用 CPU 模拟 |
+> | `Emitter.Calculate Bounds Mode` | `Dynamic` | 动态计算边界 |
+> | `Emitter State.Inactive Response` | `Complete (Let Particles Finish then Kill Emitter)` | 停止生成后等待现有粒子结束 |
+> | `Emitter State.Loop Duration` | `1.0` | 当前循环时长 |
+> | `Spawn Particles from Other Emitter.Emitter Binding` | `Other / Sources_Sparks` | 读取火花源发射器 |
+> | `Spawn Particles from Other Emitter.Spawn Rate` | `100.0` | 控制派生烟雾生成率 |
+> | `Calculate Spawn Rate Per Particle` | 已启用 | 按每个源粒子计算生成率 |
+> | `Spawn Rate Per Particle Cap` | `100.0` | 限制每个源粒子的生成率 |
+
+### 00:45:49-00:50:28 粒子、透明度
+
+- 本段定位：粒子、透明度。
+- 知识点：我们看看它们的样子 是的,为了某种原因 我们还有什么? 我们不需要它们的物体 我看到我们需要调整它的量 量和颜色。
+- 知识点：我们把颜色调整好 也让它们的生命长度都一樣 任何的转换都好 啊,我们把塑膠紙搬走 你看,现在烟都從石頭飛走了 当然,它们很密集 可以调整它的透明度。
+- 知识点：可以減少它们 让它们減少了 像这樣,它很酷 它继续 可以增长时间 它会继续多久 像这樣 它快要到最後了 雖然我不想它,但一秒 是足夠的。
+- 知识点：酷,现在石頭飛走了 烟都從它们飛走了 我们把鏡頭轉过来 嘩,石頭和烟都從它们飛走了 我们也要把石頭搭起来 跟着我们一樣的循環 例如,这个循環。
+- 知识点：我已经選了它的價值 像这樣 石頭搭起来 它们来了 火力好像... 低了 可以让它们变大 其實它们还蠻小的 可以让它们变大 從它们 变成了这麼有趣的烟。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`颜色`、`透明度`。
+
+**关键画面：**
+
+这一帧是在关卡视口中预览预烘焙破碎体与爆炸序列的组合效果，画面重点是地面上的碎石分布和中心残留的立柱形碎块
+
+- 场景与序列
+  当前关卡是 `VFX_Library`
+  当前序列是 `LS_Explosion`
+  `Sequencer` 中可见 `CameraActor`、`LP`、`NS_Explosion`、`NiagaraComponent0`、`prebaked_destruction_Anim`
+  `NiagaraComponent0` 使用 `System Life Cycle`，模式是 `Desired Age`
+- 时间位置
+  播放头位于 `2.00` 秒
+  右侧相机区段正在覆盖当前时刻
+  下方可见红色 `Life Cycle` 区段，表示 Niagara 爆炸系统仍处于有效播放窗口
+- 视口结果
+  地面使用深色棋盘测试平面
+  中心位置保留一根竖立的主体碎块
+  周围散落大量灰色碎石块，已经形成爆炸后的落地分布
+  画面顶部还能看到一个较小的飞出碎块
+- 场景对象
+  `Outliner` 里仍包含 `CameraActor`、`LevelSequence`、`LP`、`NS_Explosion`、`prebaked_dest`
+  当前没有选中具体对象，`Details` 面板为空
+
+这一帧的用途是直接检查预烘焙石块破碎动画在序列中的落地形态，确认大块保留、碎块散落和时间点是否符合爆炸后两秒左右的镜头节奏
+这一帧是在 `CameraActor` 视角下检查爆炸合成效果，关注点是中心火焰、周围烟团、上抛火花和落地碎石的整体尺寸是否合适
+
+- 视口状态
+  左上角显示 `Pilot Actor: CameraActor`
+  说明当前直接从镜头相机里预览最终构图
+- 当前画面效果
+  中心是高亮橙红色爆心
+  爆心周围包裹一圈深灰色烟雾体
+  顶部两侧有向上外抛的金色火花轨迹
+  地面散布大量灰色碎石块
+  整体背景仍是深色棋盘测试平面
+- Sequencer
+  播放头位于 `1.25` 秒
+  `CameraActor` 轨道覆盖整个当前镜头段
+  `NiagaraComponent0 > System Life Cycle` 仍处于红色活动区间
+  `prebaked_destruction_Anim` 轨道仍在与 Niagara 同步播放
+- 教程意图
+  字幕说明“可以让它们更大，现在它们相当小”
+  结合这一画面，讨论对象应是爆炸中较小的碎片或烟粒子，需要继续放大以便在镜头中更清晰可见
+
+这一帧的作用是从最终镜头角度检查特效读形，而不是改某个具体模块参数，重点是确认哪些粒子层现在看起来过小，需要在后续模块里继续放大
+这一帧打开的是一个材质实例的参数面板，用于整理爆炸中烟尘或污渍贴片的基础贴图、溶解、扭曲和遮罩参数
+
+- 顶部标签
+  当前窗口是材质实例编辑器
+  顶部可见多个页签，包括 `MI_PiecesObj...`、`MI_NoiseDrips_01`、`MI_Dirt_01*`
+  当前激活页签从界面上看应为右侧这个带 `*` 的材质实例
+- `Base Texture`
+  `Colormap = VFX.T_ColorMap_Blue_01`
+  `Main (Scale/Scroll)` 当前可见数值
+  `R = 0.75`
+  `G = 0.75`
+  `B = 0.0`
+  `A = 0.0`
+  `Premultiply Color? = 1.0`
+  `T_Main = T_SpotsNoise_01`
+  `Use Colormap? = 0.0`
+- `Dissolve`
+  `T_Dissolve = T_Swirly_Noise`
+  `Smoothness = 0.25`
+- `Distortion`
+  `Distortion (Scale/Scroll)` 当前可见数值
+  `R = 5.0`
+  `G = 5.0`
+  `B = 0.1`
+  `A = 0.3`
+  `Distortion Influence = 0.01`
+  `T_Distortion = T_Voronnoise002`
+- `Global Scalar Parameter Values`
+  `Depth Fade = 100.0`
+- `Mask`
+  `T_Mask = T_Glow6`
+
+从这些参数可以看出，这个材质实例使用噪声主贴图加溶解噪声、轻微扭曲和发光遮罩来塑造烟尘或污渍类贴片，目的不是做硬边碎块，而是做更柔和、可溶解的半透明层
+
+### 00:50:28-00:55:21 发射器生成与粒子初始化
+
+- 本段定位：发射器生成与粒子初始化。
+- 知识点：重新重新,就这樣 我们开始 这里都準備好了 需要用它 需要用它 再次转换它 我们转换 这个物件 我们不需要任何物件 我们把它删除 我们需要它在爆炸前。
+- 知识点：需要把这个物件 转换成一 让它是发射器 我们不需要发射器的生產 让它有15个生產 随机生存 随机生存 颜色应该是黑。
+- 知识点：很暗、非常雅致 需要 用这个 非常非常黑 在这里 我们把它删除 我们不需要它 我们不需要它 我们不需要它 我们不需要它 我们不需要它 我们需要它。
+- 知识点：我们不需要它 我们需要它 所以它下降 很難看到 我告訴你为什么 因为我们需要 增加合適度 我们不需要它 我们已经可以 在这里 用它做到的事 我们来畫分隔。
+- 知识点：從遠處 合適度 我们要把它设置为200,很高的價值,让它显示 我还没设置好,所以它们会在一塊的邊緣上擺出 随机? 它们需要飛向上方,像这个沉沉的。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`发射器`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara System Overview + `Initialize Particle` 设置 + 爆炸预览
+> - 所属: `NS_Explosion / Rocks_Pieces`
+> - 目的: 以石块发射器作为后续派生烟雾的基础，并核对石块粒子的初始化值
+>
+> Owner 判定:
+> - Timeline 中高亮轨道和 `Details` 标题均为 `Rocks_Pieces`，因此右侧 `Initialize Particle` 参数属于 `Rocks_Pieces`
+> - 画布中央同时可见 `SmokeFromPieces` 概览节点，但它不是右侧参数面板的 Owner
+>
+> 设置:
+> | Owner.Property | 值 | 作用 |
+> |---|---|---|
+> | `Rocks_Pieces.Initialize Particle.Lifetime Mode` | `Direct Set` | 直接指定寿命 |
+> | `Rocks_Pieces.Initialize Particle.Lifetime` | `10.0` | 石块粒子存活时间 |
+> | `Rocks_Pieces.Initialize Particle.Color Mode` | `Unset` | 不在此模块覆盖颜色 |
+> | `Rocks_Pieces.Initialize Particle.Position Mode` | `Simulation Position` | 使用模拟位置 |
+> | `Rocks_Pieces.Initialize Particle.Position Offset` | `(0.0, 0.0, 0.0)` | 不增加位置偏移 |
+> | `Rocks_Pieces.Initialize Particle.Sprite Size Mode` | `Uniform` | 使用统一 Sprite 尺寸 |
+> | `Rocks_Pieces.Initialize Particle.Uniform Sprite Size` | `10.0` | Sprite 基础尺寸 |
+> | `Rocks_Pieces.Initialize Particle.Mesh Scale Mode` | `Random Uniform` | 网格粒子使用均匀随机缩放 |
+> | `Rocks_Pieces.Initialize Particle.Mesh Uniform Scale Min` | `0.3` | 最小网格缩放 |
+> | `Rocks_Pieces.Initialize Particle.Mesh Uniform Scale Max` | `0.5` | 最大网格缩放 |
+>
+> 预览结果:
+> - 爆心出现高亮火球、向外飞散的石块和细长火花，说明 `Rocks_Pieces` 正作为爆炸碎块层参与最终系统
+这一帧展示的是新建的 `Dirt` 发射器，在 `Emitter Spawn` 阶段使用一次性突发生成来产生土尘粒子
+
+- 发射器
+  当前选中发射器是 `Dirt`
+  时间轴中可见当前系统顺序包含 `Dirt`、`Explosion`、`Rocks_Pieces`、`SmokeFromPieces`、`SmokeRing`
+- 可见模块栈
+  `Emitter State`
+  `Spawn Burst Instantaneous`
+  `Initialize Particle`
+  `Shape Location Sphere`
+  `Gravity Force`
+  `Drag`
+  `Solve Forces and Velocity`
+  `Particle State`
+  `Scale Sprite Size 001`
+  `Scale Sprite Size`
+  `Scale Color`
+  `Sprite Renderer`
+- `Spawn Burst Instantaneous`
+  `Spawn Count = 15`
+  `Spawn Time = 0.0`
+  `Spawn Probability = 1.0`
+  `Loop Count Limit = 1`
+- 时间位置
+  下方播放头位于 `1.0542` 秒附近
+  当前 `Dirt`、`Explosion`、`Rocks_Pieces`、`SmokeFromPieces` 都处于同一段早期爆发窗口
+
+这一步的含义是让 `Dirt` 发射器在爆炸开始瞬间只生成一小批固定数量的土尘粒子，而不是持续刷出，从而把土尘控制成一次爆开的短时层
+这一帧展示的是 `Dirt` 发射器通过锥形速度把土尘向上抛开的设置，左侧预览也能看到爆心周围已经形成向上翻卷的火焰和尘层
+
+- 当前系统组合
+  同时可见 `SmokeFromPieces` 与 `Dirt` 两个发射器概览节点
+  左侧时间轴中 `Dirt`、`Explosion`、`Rocks_Pieces`、`SmokeFromPieces`、`SmokeRing` 都处于激活阶段
+- `Dirt` 发射器可见模块
+  `Emitter State`
+  `Spawn Burst Instantaneous`
+  `Initialize Particle`
+  `Shape Location Sphere`
+  `Add Velocity in Cone`
+  `Camera Offset`
+  `Particle State`
+  `Scale Sprite Size`
+  `Gravity Force`
+  `Drag`
+  `Solve Forces and Velocity`
+  `Scale Color`
+  `Sprite Renderer`
+- `Add Velocity`
+  `Velocity Mode = In Cone`
+  `Velocity Speed = Random Range Float`
+  `Minimum = 1000.0`
+  `Maximum = 1500.0`
+  `Distribution Along Cone Axis = 0.5`
+  `Speed Falloff From Cone Axis = 0.7`
+- `Cone`
+  `Cone Axis = (0.0, 0.0, 1.0)`
+  `Cone Angle = 45.0`
+  `Inner Cone Angle = 0.0`
+  `Cone Angle Mode = Degrees`
+- `Rotation`
+  `Rotation Mode = Default`
+  `Rotation Coordinate Space = Local`
+- 时间位置
+  播放头位于 `0.5167` 秒附近，属于爆炸刚刚展开的阶段
+
+这一步的核心作用，是给 `Dirt` 粒子一个向上的随机锥形初速度，让土尘不是平铺在地面上冒出，而是像爆炸冲击一样被往上掀起，再在后续重力和阻力作用下回落
+
+### 00:55:21-00:59:09 Alpha、速度
+
+- 本段定位：Alpha、速度。
+- 知识点：它们的尺寸慢慢增长,它们开始变小,慢慢地增长 之后它们会变成这个样子,所以我们慢慢地增长 就像爆炸一樣增长 然后是重量,它们的點子是要掉下来。
+- 知识点：我们也把它们的速度降低了,而它们的alpha降低了 所以我们把它们分成了,因为如果是1,你根本就看不到 这里的多是100 1000,我需要200。
+- 知识点：我的Sprite 我们来看看 像这樣,我覺得看起来更好 可能是難以看見 我们来近一点 你看起来是有些粒粒飛出来 这里是一些地面,看起来很酷。
+- 知识点：我们把它们拆掉 还有 我现在想要加的东西 我们来创建一个空的 这是为了光影 所以我们来加光影 它们是一个粒粒飛出来 所以 我们来设置生命的色彩。
+- 知识点：我们把光影調到很高 我们也会提升它,让它明顯地显示 然后慢慢地 让alpha控制光影的光光 让它慢慢地降低 需要用这樣的一种曲線 我们来看看它们现在的样子。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`速度`。
+
+**关键画面：**
+
+这一帧展示的是 `Dirt` 发射器的 `Scale Sprite Size` 曲线，用生命周期把土尘贴片从较小尺寸逐渐放大到接近满值
+
+- 当前系统
+  视图中同时可见 `SmokeFromPieces` 与 `Dirt` 两个发射器
+  左侧预览能看到爆炸中心的大块火焰和其中掺杂的黑色小颗粒
+- `Dirt` 发射器可见模块
+  `Emitter State`
+  `Spawn Burst Instantaneous`
+  `Initialize Particle`
+  `Shape Location Sphere`
+  `Add Velocity in Cone`
+  `Camera Offset`
+  `Particle State`
+  `Scale Sprite Size`
+  `Gravity Force`
+  `Drag`
+  `Solve Forces and Velocity`
+  `Scale Color`
+  `Sprite Renderer`
+- `Scale Sprite Size`
+  `Scale Sprite Size Mode = Uniform Curve`
+  使用 `Curve for Floats`
+  `Uniform Curve Index = Particles.NormalizedAge`
+  `Uniform Curve Scale = 1.0`
+- 曲线形状
+  起点大约在 `0.3`
+  随生命周期持续上升
+  到寿命后段接近 `1.0`
+  没有看到末端急剧缩回，说明这层土尘主要是逐步放大而不是先大后小
+- 时间位置
+  播放头位于 `0.4083` 秒附近，属于爆炸最早期阶段
+
+这表示 `Dirt` 粒子会在出生后继续扩张，从而把刚生成时较小的尘点逐步拉成更有体积感的土尘团，配合字幕中提到的“让它们更大”
+这一帧展示的是 `Empty` 发射器在 `Initialize Particle` 中直接设置粒子颜色，右侧打开了颜色选择器，用于把这层粒子调成高亮橙色
+
+- 当前系统
+  中间同时可见 `Dirt` 与 `Empty` 两个发射器概览节点
+  时间轴左侧当前新增并选中了 `Empty`
+- `Empty` 发射器概览
+  `Emitter State`
+  `Spawn Burst Instantaneous`
+  `Initialize Particle`
+  `Particle Update`
+  `Particle State`
+  `Render > Light Renderer`
+  `Emitter State` 显示为 `Infinite`
+- `Initialize Particle > Point Attributes`
+  `Lifetime Mode = Direct Set`
+  `Lifetime = 1.25`
+  `Color Mode = Direct Set`
+  `Position Mode = Simulation Position`
+  其余未使用的 Sprite、Mesh、Ribbon 属性保持 `Unset`
+- 颜色选择器
+  当前新颜色为高亮橙色
+  线性十六进制值可见为 `FF2800FF`
+  sRGB 十六进制值可见为 `FFF6E00F`
+  通道数值可见
+  `R = 1.0`
+  `G = 0.155699`
+  `B = 0.0`
+  `A = 1.0`
+- 时间位置
+  播放头位于 `0.325` 秒附近
+
+这一步的作用，是给 `Empty` 这一层粒子或灯光驱动粒子直接指定偏橙黄的高亮颜色，使其在爆炸核心区域提供更强的发光感和热量感
+这一帧展示的是单独的 `Light` 发射器，总体意图是确认这层只负责灯光渲染的粒子是否需要保留；字幕明确说明这里准备把光关掉
+
+- 当前系统可见发射器
+  `Dirt`
+  `Light`
+  时间轴中还能看到 `Explosion`、`Rocks_Pieces`、`SmokeFromPieces`
+- `Light` 发射器概览
+  `Emitter State`
+  `Spawn Burst Instantaneous`
+  `Initialize Particle`
+  `Set Particles.LightRadius`
+  `Particle State`
+  `Scale Color`
+  `Render > Light Renderer`
+  `Emitter State` 显示为 `Self / Once`
+- 画面结果
+  左侧预览仍是非常明亮的爆炸核心，周围带有少量飞散黑点和火花
+  当前时刻为 `0.325` 秒左右，属于爆炸最亮的早期阶段
+- 教程动作
+  字幕为 “Without light. I'll turn it off.”
+  说明这一层单独的 `Light` 发射器在当前版本里被认为不是必须项，准备直接禁用或移除
+
+这一帧传达的不是具体参数调整，而是一个取舍决策：如果爆炸核心已经足够亮，就可以关闭专门的 `Light Renderer` 发射器，避免多余的灯光层
+
+### 00:59:20-01:00:46 关键流程 14
+
+- 本段定位：关键流程 14。
+- 知识点：需要把这顆光影調到这里 甚至可以更快地改变这个範圍 像这樣 哦,我看到它们把石頭掉了 因为 我說的是不现實 引擎掉了 一些设置都被破坏了 所以要小心。
+- 知识点：总是要儘量儘量保護它们 以避免这些問題 这事實上很常發生 但是 幸運的是,我把我的材料儲存了 需要把它安裝好 现在所有东西都会很好 这方法。
+- 知识点：我们做了一个很棒的爆发 但这不是全部 需要加更多的細節 改善它 这就是了 謝謝觀看 下个影片再見 拜拜。
+
+**关键画面：**
+
+这一帧展示的是 `Sparks_Burst` 发射器的 `Scale Sprite Size`，通过二维非均匀曲线让爆发火花在寿命最前段快速缩小
+
+- 当前系统中可见的关键发射器
+  `Sparks`
+  `Sparks_Burst`
+  `Rocks_Pieces`
+  `SmokeFromPieces`
+- `Sparks_Burst` 发射器可见模块
+  `Emitter State`
+  `Spawn Burst Instantaneous`
+  `Initialize Particle`
+  `Shape Location Sphere`
+  `Sub UV Animation Random`
+  `Add Velocity in Cone`
+  `Gravity Force`
+  `Curl Noise Force`
+  `Curl Noise Force 001`
+  `Drag`
+  `Solve Forces and Velocity`
+  `Particle State`
+  `Scale Sprite Size`
+  `Scale Sprite Size 001`
+  `Scale Sprite Size by Speed`
+  `Scale Color`
+  `Sprite Renderer`
+- `Scale Sprite Size`
+  `Scale Sprite Size Mode = Non-Uniform Curve`
+  使用 `Curve for Vector2D's`
+  `Non-Uniform Curve Index = Particles.NormalizedAge`
+  `Non-Uniform Curve Scale = (1.0, 1.0)`
+- 曲线形状
+  `X` 与 `Y` 两条曲线起点都在大约 `25`
+  寿命前段很快从 `25` 掉到约 `3`
+  之后一路保持在较低值直到寿命结束
+- 时间位置
+  当前播放头位于 `0.325` 秒左右
+
+这说明 `Sparks_Burst` 的火花贴片会在出生瞬间先以较大的尺寸出现，再非常快地收缩成细小碎片，从而把爆炸第一下的冲击感做强，但不会让大贴片在屏幕上停留过久
+这一帧是在关卡编辑器中从 `CameraActor` 视角检查最终爆炸效果，同时选中了场景里的 `LevelSequenceActor`，用于确认序列资源和播放配置都已正确挂回场景
+
+- 视口与镜头
+  左上角显示 `Pilot Actor: CameraActor`
+  当前从镜头相机直接查看最终画面
+  画面中可见爆炸核心、外圈烟雾、上抛火花和落地碎石，整体已经接近成品效果
+- Outliner
+  当前选中对象是 `LevelSequen...`
+  场景里仍包含 `CameraActor`、`LP`、`NS_Explosio`、`prebaked_de`
+- `Details > LevelSequenceActor`
+  组件是 `RootComponent (SceneComp)`
+  `Transform`
+  `Location = (-1866.0, 22.0, 663.0)`
+  `Rotation = (0.0, 0.0, 0.0)`
+  `Scale = (1.0, 1.0, 1.0)`
+  `Level Sequence Asset = LS_Explosion`
+  `Playback`
+  `Auto Play` 未勾选
+  `Loop = Don't Loop`
+  `Play Rate = 1.0x`
+  `Start Offset = 0.0s`
+- 内容浏览器
+  当前定位在 `Content > VFX_Library > Maps`
+  可见多个地图资源缩略图，说明教程此时已经回到场景层面做最终整理
+- 教程提示
+  字幕强调“Always try to save to avoid such issues”
+  这里在提醒要及时保存，避免引擎或资源状态异常导致之前调整丢失
+
+这一帧的意义是确认最终镜头实例、关卡中的序列引用以及成品画面都还正常，同时提醒在收尾阶段及时保存工程
+这一帧是在 `CameraActor` 视角下查看爆炸进入后段后的画面状态，重点是火焰已经退去，保留下来的主要是烟团、飞溅火花和落地碎石
+
+- 视口结果
+  爆心中央仍保留一根竖立的大块碎片
+  两侧形成较厚的灰色烟团
+  背后和上方还能看到向外抛散的细小火花尾迹
+  地面周围散落大量碎石，分布半径已经明显拉开
+- 场景与镜头
+  左上角仍显示 `Pilot Actor: CameraActor`
+  当前依然从最终镜头视角审看成品
+- Sequencer
+  播放头位于 `2.2833` 秒
+  `CameraActor` 镜头区段和 `NS_Explosion > NiagaraComponent0 > System Life Cycle` 仍处于活动范围
+  `prebaked_destruction_Anim` 轨道继续与当前镜头同步
+- 选中对象
+  右侧仍选中 `LevelSequenceActor`
+  `Level Sequence Asset = LS_Explosion`
+  `Loop = Don't Loop`
+  `Play Rate = 1.0x`
+
+这一帧说明本教程当前阶段的爆炸已经建立出可用的主效果：前景碎石、中心残块、外扩烟团和少量残留火花都已经就位，后续只需要继续补更细的修饰层
+
+## 补充视觉证据
+
+### S11 00:48:57
+
+这张补充截图提供的是镜头视角下的整体效果证据，用来验证前面新增的土尘粒子确实会被爆炸带着向上飞起
+
+- 镜头与序列
+  左上角显示 `Pilot Actor: CameraActor`
+  当前仍在 `LS_Explosion` 序列中查看最终镜头
+  `Sequencer` 下可见 `CameraActor`、`LP`、`NS_Explosion > NiagaraComponent0 > System Life Cycle`、`prebaked_destruction_Anim`
+- 时间位置
+  播放头位于 `1.0667` 秒
+  属于爆炸中段，火球仍然很亮，但已经能明显看到土尘、烟和碎石同时存在
+- 画面结果
+  中央是高亮橙黄色爆心
+  爆心外圈包裹红橙色火焰边缘
+  上方两侧有向外抛散的火花束
+  爆心底部和周围可见向上卷起的灰尘与碎石
+  地面附近存在较多被爆炸抬起的小块碎石
+- 教程意图
+  字幕说明 “Some dirt particles, they can fly up.”
+  这与画面中爆心周围向上掀起的灰尘颗粒相对应，证明 `Dirt` 发射器的上抛速度和尺寸设置已经开始起作用
+
+这张补充图的价值，在于它直接证明了新增土尘层不是只停在地面，而是会被爆炸冲击抬起，参与到爆心周围的立体运动里
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+
+

@@ -1,0 +1,1038 @@
+# 01 Aoe Magic Fire Breakdown
+
+# 01 Aoe Magic Fire Breakdown
+
+## 关键术语
+
+- `Emitter`、`System`、`Spawn`、`Color`、`Alpha`、`Material`、`UV`、`Lerp`、`Add`、`Niagara`、`Texture`、`Decal`、`Emissive`、`系统`、`颜色`、`透明度`、`Niagara System`、`Particle`
+
+## 分段知识
+
+### 00:00:07-00:04:51 Spawn、Color、Texture
+
+- 本段定位：Spawn、Color、Texture。
+- 知识点：火焰或爆炸需要拆分亮核、烟雾、余烬和冲击层，再用颜色与透明度曲线统一节奏。
+- 知识点：角色或镜头演示需要导入 FBX/骨骼/动画，并用 Sequencer 校准触发时机。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。；参考素材应按效果类型、颜色、运动方式和用途打标签，便于后续复现 VFX 风格。
+- 知识点：本段围绕 `Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Spawn`、`Color`、`Alpha`、`Opacity`、`Texture`、`Sequencer`、`Panner`、`Emissive`。
+
+**关键画面：**
+
+这一帧是教程开场的关卡与 Sequencer 总览，展示本节要分析的“魔法火焰斩击”示例场景
+
+- 当前场景与对象
+  主视口中是一名角色站在黑色棋盘地面上，角色手臂或武器前方带有一条明亮的橙色火焰拖尾
+  右侧 `Outliner` 显示当前关卡为 `Fire_AOE`
+  可见对象包括
+  `AS_Combo_...`
+  `Great_Swc...`
+  `NS_Fire...`
+  `Center`
+  `Cine Camera`
+  `Floor`
+  `LevelSequer` 或 `LevelSequencer`
+  `PostProcess`
+- 当前时间线与轨道
+  下方 `Sequencer` 中存在
+  `AS_Combo_Attack_01_All_Seq`
+  `Cine Camera Actor`
+  `Center`
+  `Slash`
+  `AOE`
+  时间轴当前停在很靠前的位置，约 `0.0167`
+  说明教程先用一个完整镜头来预览斩击与 AOE 的整体节奏
+- 当前可见效果
+  角色身前的橙色火焰痕迹说明斩击特效已经挂在角色动作或武器轨迹上
+  底部轨道缩略图也能看到一串沿路径展开的亮色特效
+- 逻辑含义
+  这张图的意义是建立上下文：后续所有 `Spawn`、`Color`、`Texture`、`Emitter` 设置，最终都要服务于这个“斩击 + AOE”镜头结果
+
+复建时，可先搭一个最小演示关卡和 `Sequencer`，确认角色动作、镜头、斩击轨迹和 AOE 轨道都在同一时间线上，再开始细化 Niagara 与材质
+这一帧不是 Unreal 编辑器，而是作者放在网页商品页中的成品演示视频截图，用来说明这套 `Fire Slash VFX` 已经被整理成可下载资源，且核心效果并不只是单一一道 slash，而是由多段发光切片与中心爆点组合出来
+
+- 当前画面
+  浏览器打开 `Fire Slash VFX` 商品页
+  主视频停在 `00:01 / 00:07`
+  中央预览区是一组斜向挥出的火焰斩击
+  可见三条主要发光轨迹
+  一条从左下向中部冲入
+  一条从中部向右下弯折坠落
+  一条从中心向左上方延伸
+  三条轨迹在中心交汇，并伴随一团高亮爆裂火花
+- 页面信息
+  标题为 `Fire Slash VFX`
+  左下价格标记显示 `15+`
+  右侧有 `Buy this` 按钮
+  下方正文说明作者提供整套 UE 数据，便于研究、修改和复用
+- 对效果结构的可确认结论
+  这组 slash 不是均匀宽度的一条光带，而是多条长短不同、方向不同的发光笔触叠加
+  中心交汇区额外加入高亮爆点，使攻击重心更集中
+  主体颜色从白黄高光过渡到橙色，再在边缘带少量洋红尾迹，用来拉开火焰层次
+- 复建要点
+  复建时应至少拆出三类视觉层
+  主 slash 轨迹
+  中心爆裂火花
+  边缘拖尾或次级碎焰
+  如果只做单条统一粗细的发光贴片，无法得到图中这种多向交汇的攻击感
+这一帧切到浏览器中的参考网页 `Design Process of 'Fire Slash' VFX`，说明教程并不是直接从 Niagara 节点开始，而是先借助现成的特效设计分析资料来讲解视觉原则
+
+- 当前页面内容
+  浏览器标签页标题可见 `Design Process of 'Fire Slash' V...`
+  地址栏显示 `heyyocg.link/en/design-process-of-flame-slash/`
+  页面中部嵌入了一个 YouTube 视频
+  视频封面大字为 `REAL-TIME VFX VISUAL DESIGN COLOR (B)`
+  页面正文中可见英文说明，大意是在讲游戏特效如何拆解为形状、颜色、时间等设计元素
+- 当前可见参考素材
+  页面上方还能看到一张小尺寸火焰斩击示意图
+  下方继续出现 `Color Design` 版块截图，包含多条颜色分层示意
+  中文字幕也在强调 `the silhouette, the colors`
+- 逻辑含义
+  这张图说明本小节的 `Spawn`、`Color`、`Texture` 不是孤立技术参数，而是先有视觉设计依据，再回到引擎里实现
+  作者此处引用外部讲解，是为了说明火焰斩击特效要先想清楚轮廓、配色层级和节奏，再决定粒子和材质做法
+- 输出/用途
+  对复建者来说，这张图提供的是设计方法论证据
+  在进入 Niagara 前，可以先拆解目标效果的轮廓形状、主辅色层次和时间节奏，再映射到 Spawn、Alpha、Texture 和 Emissive 上
+
+复建时，如果效果总是“技术上能跑但视觉上不对”，先回到这种参考分析方式，明确轮廓、颜色和时间节奏，再去调 Niagara 与材质参数
+
+### 00:04:53-00:09:29 Emitter、System、Color
+
+- 本段定位：Emitter、System、Color。
+- 知识点：本段围绕 `Emitter` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。；烟雾效果通常依赖较长 Lifetime、透明度衰减、噪声扰动和柔和的材质混合。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。；火焰或爆炸需要拆分亮核、烟雾、余烬和冲击层，再用颜色与透明度曲线统一节奏。
+- 知识点：火焰或爆炸需要拆分亮核、烟雾、余烬和冲击层，再用颜色与透明度曲线统一节奏。
+- 知识点：本段围绕 `Emitter`、`Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Emitter`、`Particle`、`Lifetime`、`Color`、`Alpha`、`Opacity`、`Material`、`Texture`。
+
+**关键画面：**
+
+这一帧展示作者在设计说明页中如何把火焰 slash 拆成多发射器分层，而不是只展示最终成品。画面直接给出用于打散轮廓的黑白遮罩，以及两组粒子的独立预览和叠加结果
+
+- 上方遮罩
+  页面中部是一张黑底白形状贴图
+  白色主体沿竖向弯折延伸
+  轮廓边缘柔化并带有多处膨胀团块
+  这类遮罩用于打破 slash 过于规整的网格外轮廓，同时给高亮区域增加额外层次
+- 中部三张小预览
+  `Particle1`
+  显示一段较短、偏左侧的橙黄火焰弧片
+  `Particle2`
+  显示另一段更饱满、更靠上的弧形火焰
+  `Both`
+  显示两者叠加后的合成结果，轮廓明显比单层更复杂
+- 下方两张结果图
+  `Shadow`
+  是一条更暗、更低亮度的底层 slash，用来承担阴影或中间色调
+  `Final Look`
+  是高光层与暗层叠加后的最终斩击外观，亮区和暗区已经拉开层次
+- 文本可确认的制作原则
+  作者明确说明为了打破整体轮廓、消除过于“网格感”的外形，又为高亮部分额外添加了一个 silhouette mask
+  同时使用两个 `Scale`、`Position`、`Timing` 不同的粒子层
+  最后再额外做一条更暗的 underlying slash，分别承担 `Highlight`、`Midtone`、`Shadow`
+- 复建要点
+  这张图给出的关键不是某个单独参数，而是分层策略
+  至少拆分高光层、中过渡层、暗底层
+  再用不同时间偏移和不同位置的粒子层相互叠加
+  只靠一个 emitter 和一张主贴图，很难做出图中这种既有亮核又有暗底的火焰笔触感
+这一帧继续停留在 `Design Process of 'Fire Slash' VFX` 页面，但重点已经转向贴图内容和最终效果拆分，属于从“设计思路”过渡到“实现素材”的桥接图
+
+- 当前页面内容
+  页面上方是一段英文正文，提到在消失过程中为了避免过于圆润的轮廓，需要增强纹理对比并加入类似流体的消散运动
+  中部有一张黑底白色的纹理板，排布为多格不规则烟雾/火焰斑块
+  下方有两张效果对比图
+  左图标题 `Flames and Smoke`
+  右图标题 `Final look (slash + fire and smoke + fire sparks)`
+- 可确认的素材结构
+  白色纹理板说明作者先准备了一组不规则明暗纹理，用于火焰或烟雾的透明度/形状控制
+  对比图表明最终效果不是单层斩击，而是至少叠加了
+  `slash`
+  `fire and smoke`
+  `fire sparks`
+- 逻辑含义
+  这张图明确说明火焰斩击效果需要分层构建
+  一方面要有可驱动透明度和轮廓变化的纹理
+  另一方面最终成品要把斩击主体、烟火层和火花层叠加在一起
+- 输出/用途
+  对 Niagara 复建来说，这张图给出的不是单个节点名，而是实现顺序
+  先准备纹理资产和消散形状，再分别做火焰烟雾层、火花层，最后再合成为完整 slash 效果
+
+复建时，不要试图用一个 Emitter 同时解决所有表现。更稳妥的方式是先做可用纹理和单层效果，再按 `slash / smoke / sparks` 逐层叠加
+这一帧打开的是剑模型资源的静态网格或网格查看器。字幕说明作者专门做了一个剑的 3D 物体，并为它分配了两个材质槽，供后续特效与武器表现配合
+
+- 当前对象与视图
+  中央视口里可见一把细长的剑，当前镜头聚焦在剑身前半段
+  剑刃表面已经带有橙黄色、类似熔岩或火焰的发光纹理
+  右侧页签包含 `Details` 和 `Socket Manager`
+  左上统计信息显示当前资源处于 `LOD 0`
+- 材质槽设置
+  右侧 `Material Slots` 区域明确显示 `2 Material Slots`
+  `Element 0` 使用 `M_Tech_Hex_Tile`
+  其槽位名可见为 `handle`
+  `Element 1` 使用 `MI_FireSword_01`
+  其槽位名可见为 `blade`
+- 逻辑含义
+  这张图说明剑并不是一个单一材质对象，而是至少拆成“手柄”和“刀刃”两部分
+  这样可以只让刀刃部分承载火焰或发光效果，而不影响手柄材质
+- 输出/用途
+  对火焰斩击特效来说，武器本体材质也是最终观感的一部分
+  即使 Niagara 做得正确，如果剑模型的材质分槽没有拆好，火焰刀刃和普通手柄也无法在视觉上区分开
+
+复建时，可先确保剑模型至少拆出 `handle` 与 `blade` 两个材质槽，再单独给 `blade` 指向类似 `MI_FireSword_01` 的发光火焰材质，为后续 slash 效果建立稳定的武器视觉基底
+
+### 00:09:29-00:14:06 Niagara、Material
+
+- 本段定位：Niagara、Material。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：因为可以怎樣才能理解 可能会看起来在慌张 我不懂任何东西 可以慢慢地回頭 看,明白 至少要學習一些自己的技巧 因为需要告訴你,这是一个最困難的事情。
+- 知识点：可以遇到的东西是在工作上 我不知道可以遇到什么樣的程度 特别是在开始 你不会有这种情况 事情会变得很简单 这会让你感到困難 如果你明白,可以明白什么、什么、什么、什么。
+- 知识点：可以没有什么可怕的 至少要理解什么、什么、什么、什么 不理解每个小碟子 这会很酷,这是一种物品 这是你所見的武器 这些东西,这是它们的動作。
+- 知识点：需要攝影機移动,如果武器移动,需要攝影機移动 我还将这部分的影响给武器 它们会有蝕蝕、火、烟 需要整个层面都放在这 将它们放在攝影機上。
+- 知识点：連接动画 攝影機搖動 我们不需要这樣 我不知道它在这里做什么,但不管它 这里和那里,它慢慢地滑動 现在我们来看一步一步的影响 需要一个分開的。
+- 知识点：folder 剪輯 这里你来 Levels,需要这 Level 所有材料、所有檔案、所有質料都在这 folder 里面 我首先想說的是 Slashes。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Niagara`、`Alpha`、`Opacity`、`Material`、`Panner`、`Emissive`、`材质`、`纹理`。
+
+**关键画面：**
+
+这一帧打开的是 `M_FireSword > Material Graph` 的整体远景。字幕明确说这已经足够复杂，属于单独课程的话题，说明作者此处只想让读者理解材质的功能分区，而不是逐节点抄完整实现
+
+- 当前材质上下文
+  顶部标题显示 `M_FireSword > Material Graph`
+  左侧预览球显示一颗带紫白云状纹理的球体
+  左下 `Details` 可确认
+  `Material Domain = Surface`
+  `Blend Mode = Opaque`
+  `Shading Model = Clear Coat`
+  `Two Sided` 未启用
+  `Use Material Attributes` 未启用
+- 材质图结构
+  右侧是一张大范围展开的复杂材质网络
+  上下至少分成两大块区域
+  每块区域都包含大量颜色参数节点、纹理采样节点、数学运算节点和连线汇合
+  当前缩放较远，单个节点名称无法全部可靠辨认
+- 可确认的节点特征
+  多个黑白纹理采样缩略图，说明材质依赖噪声或遮罩贴图
+  多个黄绿渐变色参数节点，说明材质含有显式颜色控制
+  多个紫色方块参数节点，可能对应向量或颜色参数
+  连线在多处分叉与汇合，表明它不是单一贴图直连，而是多层混合材质
+- 输出/用途
+  这张图的核心作用是提醒读者：剑火焰材质本身已经承担了大量颜色、遮罩、流动和分层混合逻辑
+  后续在 Niagara 里看到的斩击表现，部分视觉复杂度来自这里的材质，而不是全靠发射器参数
+
+复建时，不需要先完全复刻整张图，但至少要接受这个前提：火焰剑效果依赖一个多层材质网络，不能只用单张贴图和一个 Emissive 常量就期望得到相同结果
+这一帧回到关卡与 `Sequencer`，展示 `Slash` 轨道中的多个火焰斩击 Niagara 实例如何在场景里排布、旋转和定时
+
+- 当前场景与对象
+  主视口中角色位于斩击圆弧中心附近
+  地面上可见一段明亮的橙黄色火焰斩击弧线，以及若干发光粒子
+  视口里散布着多个带绿色方向箭头的小型 Actor 或组件 gizmo
+  右侧 `Outliner` 选中的是 `NS_FX_FireSlash01_a`
+- 当前 `Sequencer` 结构
+  下方 `Sequencer` 当前选中 `Slash` 轨道
+  `Slash` 下面挂了多个子条目
+  `NS_FX_FireSlash03`
+  `NS_FX_FireSlash02_e`
+  `NS_FX_FireSlash01_a`
+  `NS_FX_FireSlash01_b`
+  时间轴当前位于约 `1.5833`
+  顶部缩略图显示一串连续展开的斩击帧
+- 右侧实例参数
+  当前是 `NS_FX_FireSlash01_a (Instance)`
+  可见
+  `Location = (-156.3, -1240, 159.94)` 左右
+  `Rotation = (128.40, 10.89, 471.87)` 左右
+  `Scale = 1.0, 1.0, 1.0`
+  `Niagara System Asset` 指向 `NS_FX_FireSl...`
+  `LifetimeScale = 1.0`
+- 逻辑含义
+  字幕说明作者对这些斩击实例做了三类编辑
+  调整朝向 `Rotation`
+  移到正确方向 `Location`
+  调整触发时间
+  这意味着完整斩击并不是单个 Niagara 一次生成，而是多个实例沿动作路径逐个排布和修正
+
+复建时，可在 `Sequencer > Slash` 下放置多个斩击 Niagara 实例，逐个调 `Location`、`Rotation` 和出现时间，让它们沿角色攻击路径组成完整的地面命中弧线
+这一帧打开的是火焰材质实例的 `Layer Parameters` 面板，说明作者并不是在主材质里硬编码所有行为，而是通过实例参数来控制颜色曲线、消散和顶点位移等功能
+
+- 当前材质上下文
+  左侧预览球显示一团橙黄色火焰状体积
+  右侧处于 `Layer Parameters`
+  顶部当前标签名被截断为 `MI_FX_Sla...`
+  可判断这是斩击或火焰相关的材质实例
+- 设置/参数
+  可见一组渐变与方向参数
+  `GradientUP_Multiply = 1.0`
+  `Gradient_Down` 已启用
+  `Gradient_Down_Power = 1.0`
+  `Gradient_Down_Multiply = 1.0`
+  `Gradient_Step_Max = 0.15`
+  `06. ColorCurve`
+  `ColorCurve_Use` 已启用
+  `ColorCurve` 资源为 `C_Fire01`
+  下方还有一个 `ColorCurve` 数值，当前为 `0.0`
+  `07. Dissolve`
+  `Dissolve_Use` 当前未启用
+  `08. Refraction`
+  `Refraction_Use` 当前未启用
+  `09. Fresnel`
+  `Fresnel_Use` 当前未启用
+  `10. WPO`
+  `WPO_Use` 已启用
+  `UVDirectionalWPO_FromCenter` 已启用
+  `UVDirectionWPO_Amount = -7.940756`
+  `DP_WPO_Amount` 已启用
+  `Global Scalar Parameter Values`
+  `Depth Fade = 0.0`
+- 输出/预览
+  左侧预览球上的火焰纹理说明该实例当前确实在驱动可见的火焰形态
+  底部存在 `Save Sibling` 与 `Save Child`，表示作者正在以实例方式派生和保存参数组合
+- 逻辑含义
+  这张图说明火焰斩击材质的关键不是单个颜色值，而是由多个开关分组控制
+  例如颜色曲线决定火焰梯度，WPO 决定形体流动或扭曲，而 `Dissolve`、`Refraction`、`Fresnel` 可以按需启停
+
+复建时，可优先把材质实例按功能分成 `ColorCurve / Dissolve / WPO` 等组，并先启用真正需要的部分；尤其是颜色曲线和 WPO，通常直接决定火焰是否“活起来”
+
+### 00:14:06-00:18:44 Color、Material、Lerp
+
+- 本段定位：Color、Material、Lerp。
+- 知识点：它是一个很複雜的圖案 它是一个很複雜的圖案 它是一个很複雜的圖案 它是一个很複雜的圖案 你看看它们有多少个设置 你不需要理解材料 你不需要理解材料。
+- 知识点：至少要明白它们的功能 去创建,去看 去创建自己的資料 可以覺得很酷,很不可思议 我们有很多可以關掉的功能 这叫做Static Switch。
+- 知识点：当我们關掉,關掉 然后,根據这个方向 各种功能都会啟動 我们用了Lerp来做这件事 因为我们關掉这个Static Switch 会有什么問題。
+- 知识点：例如,当我们關掉 然后,某些功能都会消失 这就是对这个功能的問題 就是对这个功能的問題 当我们使用同樣的材料 我们有很多这个Switch。
+- 知识点：On的選項 看看这个Shader Instructions 这里有更多的 每当我们把某些功能關掉 它都会覺得在创建新的东西 简单来說,这对。
+- 知识点：optimization 来說是有點差 但在一个項目中 用到这麼大的材料 是很棒的 我们来看看这个基本材料 这里可观察到 这麼有趣的东西叫做attributes。
+- 知识点：我们不使用这种东西 根據原則 这里有一个很大的物質功能 它使用这个东西 叫做Material。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Color`、`Material`、`Lerp`、`Emissive`。
+
+**关键画面：**
+
+这一帧继续展示同一个火焰材质实例的 `Layer Parameters`。字幕强调“参数很多可以配置，你甚至不需要全部理解”，重点转向如何把复杂材质当作一个可调系统来使用
+
+- 当前实例状态
+  左侧预览球仍显示一团拉伸向上的橙黄色火焰体
+  右侧面板保持在 `Layer Parameters`
+  顶部仍能看到多条黄色 `Warning: Texture ...` 提示，说明这个材质实例依赖多张工程内纹理资源
+- 可确认的参数组织
+  上方梯度相关参数集中放在同一区域
+  `Gradient_Down` 已启用
+  `Gradient_Down_Power = 1.0`
+  `Gradient_Down_Multiply = 1.0`
+  `Gradient_Step_Max = 0.15`
+  中部 `06. ColorCurve` 保持启用，并继续使用 `C_Fire01`
+  下方 `10. WPO` 保持启用，`UVDirectionWPO_Amount = -7.940756`
+  `Depth Fade = 0.0`
+- 逻辑含义
+  这张图不是在新增某个特殊节点，而是在传达一种使用方式
+  面对复杂材质时，不必先理解整张主材质图的每根线
+  更实用的做法是先识别“哪些参数分组会直接影响外观”，再从实例面板里逐项开关和微调
+- 输出/用途
+  对复建者来说，这张图的价值在于参数工作流
+  先从 `Gradient`、`ColorCurve`、`WPO` 这类高影响组开始调试
+  只有当形状、颜色或流动仍然不对时，再回到主材质图深挖内部实现
+
+复建时，如果材质实例参数很多，先把它当成一个分组控制台使用：优先调会直接改变轮廓、颜色和运动感的分组，而不是一次同时改所有开关
+这一帧打开的是 `M_FX_Basic > Material Graph`，展示作者如何把材质函数或属性层拆开，再把需要的通道重新接到主材质输出
+
+- 节点定义集
+  `MF_FX_MA_Basic`
+  `Material Attribute Layers`
+  `BreakMaterialAttributes`
+  一个参数节点 `Depth Fade`
+  一个 `Depth Fade` 材质节点
+  最右侧主材质输出节点 `M_FX_Basic`
+- 连线集
+  `MF_FX_MA_Basic` 的 `Material Attributes` 输出连接到 `Material Attribute Layers`
+  `Material Attribute Layers` 输出连接到 `BreakMaterialAttributes.Attr`
+  `BreakMaterialAttributes.EmissiveColor` 连接到 `M_FX_Basic.Emissive Color`
+  `BreakMaterialAttributes.Opacity` 接入右侧的 `Depth Fade.Opacity`
+  参数节点 `Depth Fade` 的输出连接到 `Depth Fade.FadeDistance`
+  `Depth Fade` 节点输出再连接到 `M_FX_Basic.Opacity`
+  `BreakMaterialAttributes.Normal` 连接到 `M_FX_Basic.Normal`
+  `BreakMaterialAttributes.WorldPositionOffset` 连接到 `M_FX_Basic.World Position Offset`
+  `BreakMaterialAttributes.Refraction` 连接到 `M_FX_Basic.Refraction`
+- 设置/参数
+  参数 `Depth Fade` 当前 `Default Value = 0.0`
+  左侧预览窗口当前是一块纯白平面
+  说明此时讲解重点是结构接法，而不是复杂外观
+- 输出/用途
+  这张图说明作者先通过 `Material Attribute Layers` 或材质函数组合出一整套属性，再用 `BreakMaterialAttributes` 拆开，按需要接回主材质
+  其中 `Opacity` 并不是直接输出，而是先经过 `Depth Fade` 节点处理，便于控制与地面或几何体接触时的边缘过渡
+
+复建时，如果想做可复用的特效基础材质，可以把复杂逻辑先封进材质函数或属性层，再用 `BreakMaterialAttributes` 只抽出真正需要的通道接回主材质输出
+这一帧从材质图切回关卡与内容浏览器，目的是说明前面材质实例里用到的颜色曲线资源究竟存放在哪里，以及接下来要如何从资源层回到材质层使用它们
+
+- 当前场景与对象
+  主视口中角色站在远处，手部或武器上仍有一小段橙色火焰
+  右侧 `Outliner` 里当前选中 `Center`
+  同层级可见
+  多个 `NS_FX_F...`
+  `AS_Combo...`
+  `Great_Sw...`
+  `Cine Camera`
+  `Floor`
+  `LevelSeque...`
+- 当前资源上下文
+  下方 `Content Browser` 路径位于
+  `Content > VFX_Library > Projects > MagicFireAOE > _Common > Curve`
+  当前可见 6 个曲线相关资源
+  `C_Fire01`
+  `C_Fire02`
+  `C_LineHigh`
+  `CA_ColorCurves`
+  `NewCurveBase`
+  `NewCurveLinearColor`
+  其中 `CA_ColorCurves` 当前被选中
+- 逻辑含义
+  这张图把前面材质实例中的 `ColorCurve = C_Fire01` 放回到资源目录中确认来源
+  同时也说明颜色并不是随手填一个常量，而是通过专门的曲线资源集中管理
+  字幕提到“我们之前添加过它，现在去材质里看怎么用它”，表明工作流是
+  先准备曲线资源
+  再在材质或材质实例中引用这些曲线
+- 输出/用途
+  对复建者来说，这张图明确了资产组织方式
+  如果要复制这套火焰系统，除了 Niagara 和材质，还要同步整理 `_Common/Curve` 下的颜色曲线资源库
+
+复建时，可先建立独立的 `Curve` 资源目录，把 `C_Fire01` 这类颜色曲线整理好，再在材质实例中引用，而不是把所有颜色变化直接写死在材质节点里
+
+### 00:18:44-00:21:39 关键流程 05
+
+- 本段定位：关键流程 05。
+- 知识点：这是我们要去的地方 这是我们要去的記號 它是这樣的 它是这樣的 可以在这里加任何名字 可以在这里选择 可以选择我们创建的新的。
+- 知识点：在这个Atlas上 在这个案例中 只有一个色彩图片 因此可以选择 可以利用它来转换 Atlas已经在这里連接了 这里有它的颜色。
+- 知识点：可以在材料上看到 这是可以选择的 这三个選項 可以在这三个選項中 加新的格局 为什么我不喜欢这个選項呢? 为什么我不喜欢这个選項呢?。
+- 知识点：因为它是非常限制的 在材料上选择了一个 在材料上选择了一个 一个Atlas 可以选择颜色的格局。
+- 知识点：你必须要 一直在这里加新的颜色 加到Atlas上 等等 它们很難從 項目上转换 我真的不喜欢这个選項 雖然它也有它的優點 因为 更好的质感会是。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这一帧打开的是 `MF_FX_MA_Basic > Material Graph` 中标注为 `EmissiveColor Output` 的局部节点链，重点是说明颜色曲线节点如何被插进发光颜色流程
+
+- 节点定义集
+  `Texture_Emissive_Output`
+  `Mask (R)`
+  `ColorCurve`
+  `ColorCurve_Use`
+  `HueShift_Value`
+  一个 `Hue Shift Percentage (S)` 节点
+  `HueShift_Use`
+  `Particle Color`
+  `Multiply`
+  下方弹出的节点搜索框中高亮 `CurveAtlasRowParameter`
+- 连线集
+  `Texture_Emissive_Output` 分两路输出
+  一路进入 `Mask (R)`
+  一路直接进入 `ColorCurve`
+  `Mask (R)` 输出连接到 `ColorCurve.CurveTime`
+  `ColorCurve` 输出连接到 `ColorCurve_Use`
+  `ColorCurve_Use` 的结果再进入 `HueShift_Use`
+  `HueShift_Value` 进入 `Hue Shift Percentage (S)`
+  `Hue Shift Percentage (S)` 输出接到 `HueShift_Use.True`
+  `Particle Color.RGB` 接到 `Multiply` 的一个输入
+  `HueShift_Use` 输出接到 `Multiply` 的另一个输入
+- 设置/参数
+  `ColorCurve` 节点当前 `Default Value = 0.0`
+  `ColorCurve_Use` 与 `HueShift_Use` 都是 `Switch Param (False)`
+  `HueShift_Value` 的 `Default Value = 0.0`
+  左侧预览球当前是纯白结果，说明当前预览的是某个中间输出而不是完整火焰成品
+- 输出/用途
+  这段链的作用是
+  先从发光纹理中取出一条通道作为曲线采样时间
+  再决定是否通过颜色曲线重映射
+  然后按需叠加 `Hue Shift`
+  最后再与 `Particle Color` 相乘，得到最终的发光颜色结果
+
+复建时，如果想让同一套 slash 材质支持多种火焰配色，可以把颜色映射做成 `ColorCurve + HueShift + Particle Color` 的组合，而不是只靠单一颜色常量
+这一帧把前一张中的颜色曲线方案放回到工程资源层，进一步解释为什么作者不太喜欢把配色强绑定到 `Curve Atlas` 方案里
+
+- 当前场景与对象
+  主视口中角色站在场景中央，武器上仍有一小段火焰
+  右侧 `Details` 当前选中 `NS_FX_GroundCenterCrack (Instance)`
+  可见 `Niagara System Asset` 指向 `NS_FX_Grou...`
+  当前 `Rotation = 0,0,0`
+  `Scale = 1.0, 1.0, 1.0`
+- 当前资源上下文
+  下方 `Content Browser` 路径位于
+  `Content > VFX_Library > Projects > MagicFireAOE > _Common > Curve`
+  当前可见
+  `C_Fire01`
+  `C_Fire02`
+  `C_LineHigh`
+  `CA_ColorCurves`
+  `NewCurveBase`
+  `NewCurveLinearColor`
+  其中 `CA_ColorCurves` 是一个 `Curve Atlas`
+- 逻辑含义
+  结合字幕“从一个项目传输到另一个项目，我不太喜欢这个选项”，这张图表达的是资源组织层面的缺点
+  如果把多种颜色模式都塞进一个 `Curve Atlas`，在材质里虽然可选，但跨项目迁移时会带来较强耦合
+  每增加一种新颜色，还可能需要回到 `Atlas` 里继续维护和扩展
+- 输出/用途
+  这张图不是在讲节点连线，而是在提醒复建者考虑资产复用策略
+  `Curve Atlas` 有集中管理的优点，但当项目需要频繁迁移、拆分或共享资源时，可能不如独立曲线资源灵活
+
+复建时，如果项目需要经常在不同工程之间复用特效，优先评估独立曲线资源和参数化方案，避免把所有颜色变体都硬塞进单一 `Curve Atlas`
+这一帧继续展示火焰 slash 材质实例的 `Layer Parameters`，但讲解重点已经从“资源放在哪里”转成“为什么这些开关不能随便关”
+
+- 当前实例状态
+  左侧预览球上的火焰效果此时明显变淡，接近灰白色
+  右侧面板可见多个功能分组开关
+  底部字幕明确说明：关闭某个选项会失去参数和对应功能，打开后才能保留这组参数化能力
+- 设置/参数
+  `05. Gradient`
+  `Gradient_Use` 已启用
+  `Gradient_Up` 已启用
+  `Gradient_UP_Power = 1.0`
+  `Gradient_UP_Multiply = 1.0`
+  `Gradient_Down` 已启用
+  `Gradient_Down_Power = 1.0`
+  `Gradient_Down_Multiply = 1.0`
+  `Gradient_Step_Max = 0.15`
+  `06. ColorCurve`
+  `ColorCurve_Use` 当前未启用
+  `07. Dissolve`
+  `Dissolve_Use` 当前未启用
+  `08. Refraction`
+  `Refraction_Use` 当前未启用
+  `09. Fresnel`
+  `Fresnel_Use` 当前未启用
+  `10. WPO`
+  `WPO_Use` 已启用
+  `UVDirectionWPO_Amount = -7.940756`
+  `DP_WPO_Amount` 已启用
+- 逻辑含义
+  这张图说明材质实例中的开关不是纯粹的视觉按钮，而是直接决定某组参数是否还存在、某条功能链是否还参与编译和输出
+  例如关闭 `ColorCurve_Use` 后，配色曲线相关的调色能力就会失效
+  关闭某些位移或渐变组后，slash 的层次和运动感也会被明显削弱
+- 输出/用途
+  对复建者来说，这张图给出的关键经验是
+  先确认哪些开关对应“必须保留的能力”
+  再考虑哪些功能可以为性能或简化而关闭
+
+复建时，不要把所有静态开关都当成可随意精简的噪音；先确认关闭后会不会连带丢失整组参数和效果功能，再决定是否裁剪
+
+### 00:21:43-00:26:28 Niagara
+
+- 本段定位：Niagara。
+- 知识点：这件物品很複雜,很大 需要告訴你,这类大物品很少在现實的工程中使用 它们通常都会被分成小的和简单的 但这件物品的優點是什么? 它是很好的物品,它是非常多元的。
+- 知识点：它是非常大的,很難在它中運行 但它是适合任何东西的 因此,我还是想告訴你,你不要害怕 你以为我没有告訴你任何东西 你不明白很多东西?。
+- 知识点：因为这是很重的东西 在现實的工程中,这不会發生 这是非常複雜的东西,我给你訓練 你能够在这件物品的最大程度 如果你已经明白了这件物品的部分。
+- 知识点：因此,需要尝试给你一个理解 什么和怎麼運行 所以,后续会慢慢地理解 现在我们来看看 Slash 高光,中調,暗色 和 暗色 当它们混合起来,它们会產生了一个很有趣的转换。
+- 知识点：如果我留下一个东西,它们不会很漂亮 它们会变得更好看 首先,它们很快 之后,它会变得更慢 这是最慢的 它仍然在延伸 它在用什么来延伸? 它是3D。
+- 知识点：物体在移动轴心时,它在延伸 这里有这个圖案 我把它關掉,现在它不像它以前一樣 它并不延伸 这里,我可能不会展示它是怎樣的 但现在需要展示它是怎樣的。
+- 知识点：需要把这个时刻转换给你们看 3D物体的邊緣,它们应该不会有效 所以你们明白如何来做評估效果 这是3D物体的基礎 这是用 Slash 它仍然在用物体。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Niagara`、`系统`、`颜色`。
+
+**关键画面：**
+
+这一帧继续停留在 slash 火焰材质实例的 `Layer Parameters`，但当前视图已经滚动到更底层的纹理扰动和多贴图设置，开始讲这套大材质为何“重”但又足够通用
+
+- 当前实例预览
+  左侧预览球显示的是一团更复杂的火焰 slash 体积
+  形体里能看到多层橙黄火焰、烟感边缘和下方反射/投影式残影
+- 设置/参数
+  上半段是 `Texture_01_Distort` 相关参数
+  `Texture_01_Distort_Color_Channel_V` 为红色通道色块
+  `Texture_01_Distort_Power = 1.051646`
+  `Texture_01_DistortIntensity_U = 0.0`
+  `Texture_01_DistortIntensity_V = 0.2`
+  `Modify_01_Distort_Scale_UV` 已启用
+  `Modify_01_Distort_Scale_U = 1.0`
+  `Modify_01_Distort_Scale_V = 1.0`
+  `Distort_Pan_V_01 = -0.3`
+  `Distort_Tile_U_01 = 0.803076`
+  `Distort_Tile_V_01 = 0.9`
+  `DP_Texture_01_Distort_Scale_UV` 已启用
+  `Random_Offset_Texture_01_Distort` 已启用
+  下半段进入 `02. Texture_02`
+  `Texture_02_Use_As_Emissive` 已启用
+  `Texture_02_Emissive_Add_Or_Mult` 已启用
+  `Texture_02_Tex` 资源为 `T_FX_TilingMask_VoronoiNoise02`
+  `Texture_02_Emissive_Power = 0.3`
+  `Texture_02_Emissive_Multiply = 1.0`
+- 逻辑含义
+  这张图说明 slash 材质并不是靠一张主纹理完成，而是通过多层纹理和扰动参数共同塑形
+  `Texture_01` 更像主扰动层，负责拉伸、平移、平铺和随机偏移
+  `Texture_02` 则被拿来作为额外发光遮罩，并且使用了 `Voronoi` 风格噪声
+- 输出/用途
+  对复建者来说，这张图提供了材质可扩展性的证据
+  虽然这种大材质在真实项目中常会拆小，但其优点是可以通过参数组合快速覆盖多种 slash / fire / crack 的风格变化
+
+复建时，如果想让一个 slash 材质既能拉伸又能保留细节，至少准备“主扰动层 + 额外发光层”两类纹理，并为它们分别提供平铺、平移、强度和随机偏移参数
+这一帧打开的是 `NS_FX_FireSlash03` 的 `System Overview`。字幕说明 slash 物体的展开是通过移动顶点实现的，因此这里的重点是 Niagara 如何把随生命周期变化的动态材质参数写给材质
+
+- 节点定义集
+  Niagara System `NS_FX_FireSlash03`
+  发射器 `Slash_Shadow`
+  模块 `Dynamic Material Parameters`
+  参数条目 `WPO_Amount`
+  参数条目 `Refraction`
+  左侧 `User Parameters`
+  `LifetimeScale`
+- 连线/模块结构
+  `Slash_Shadow` 发射器堆栈中可见
+  `Emitter State`
+  `Spawn Burst Instantaneous`
+  `Initialize Particle`
+  `Initial Mesh Orientation`
+  `Particle State`
+  `Update Mesh Orientation`
+  `Color`
+  `Dynamic Material Parameters`
+  `Mesh Renderer`
+  说明动态材质参数是在 `Particle Update` 阶段持续写入
+- 设置/参数
+  `WPO_Amount` 使用 `Lerp Float`
+  `A = -20.0`
+  `B = -120.0`
+  `Alpha = Float from Curve`
+  曲线索引来源是 `PARTICLES.NormalizedAge`
+  可见曲线从接近 `0` 缓慢上升到接近 `1`
+  `Refraction` 使用 `Float from Curve`
+  同样按 `PARTICLES.NormalizedAge` 驱动
+  可见曲线从较高值逐步下降到接近 `0`
+  左下 `User Parameters` 中 `LifetimeScale = 1.0`
+- 输出/用途
+  这张图说明 slash 的“延伸感”不是单靠贴图滚动，而是通过 Niagara 持续写入 `WPO_Amount`，让材质中的顶点位移随粒子年龄变化
+  同时 `Refraction` 也能按曲线衰减，形成早期更强、后期减弱的折射效果
+
+复建时，可在 Niagara 的 `Dynamic Material Parameters` 中用 `NormalizedAge` 驱动 `WPO_Amount` 和 `Refraction` 之类的材质参数，让 slash 在生命周期前段快速展开，后段逐步收束
+这一帧回到 `MF_FX_MA_Basic > Material Graph`，并且直接对准 `WPO_Output` 相关节点链。字幕说明作者正在查找这个动态参数的实际使用位置，并用自己的替代参数接进去
+
+- 节点定义集
+  `UV`
+  `DP_WPO_Amount`
+  `UVDirectionWPO_Amount`
+  `Add`
+  `DP_WPO_Amount` 开关节点
+  `UVDirectionWPO_FromCenter`
+  `UVDirectionalWPO_InverseUV`
+  若干 `Static Bool Param`
+  `MF_FX_UVDirectionWPO`
+  `WPO_Use`
+  `WPO_Output`
+- 连线集
+  `UV` 连接到 `MF_FX_UVDirectionWPO.UV (V2)`
+  `DP_WPO_Amount` 与 `UVDirectionWPO_Amount` 一起进入 `Add`
+  `Add` 的结果连接到 `DP_WPO_Amount` 开关节点的输入
+  `DP_WPO_Amount` 开关输出连接到 `MF_FX_UVDirectionWPO.Amount (S)`
+  `UVDirectionWPO_FromCenter` 连接到 `MF_FX_UVDirectionWPO.From_Center (SB)`
+  `UVDirectionalWPO_InverseUV` 连接到 `MF_FX_UVDirectionWPO.Inverse_UV (SB)`
+  下方多个静态布尔开关分别连接到
+  `Direction_UorV`
+  `Use_Weight`
+  `Weight_UorV`
+  `Weight_Inverse_UV`
+  等输入
+  `MF_FX_UVDirectionWPO.Result` 输出进入 `WPO_Use`
+  `WPO_Use` 的结果接到 `WPO_Output`
+- 设置/参数
+  `UVDirectionWPO_Amount` 当前 `Default Value = 0.0`
+  `UVDirectionWPO_FromCenter` 默认勾选
+  `UVDirectionalWPO_InverseUV` 默认未勾选
+  多个权重相关 `Static Bool Param` 默认未勾选
+  `WPO_Use` 是 `Switch Param (False)`
+- 输出/用途
+  这张图把前一张 Niagara 里的 `WPO_Amount` 动态参数，和材质函数内部真正消费这个值的位置闭环起来
+  说明 slash 的顶点展开逻辑是
+  Niagara 写入动态参数
+  材质函数把动态参数与本地默认值相加或切换
+  再送入 `MF_FX_UVDirectionWPO`
+  最终输出到 `WPO_Output`
+
+复建时，如果要让 Niagara 真正控制材质里的顶点位移，必须同时完成两端：Niagara 里写入 `WPO_Amount`，材质函数里也要像这张图一样把动态参数接到 `WPO` 计算链上
+
+### 00:26:28-00:31:14 Alpha、UV、Lerp
+
+- 本段定位：Alpha、UV、Lerp。
+- 知识点：需要叫它 为示範 需要给它正確的組合 用,不要儲存 这是为示範 我去这里 我找到这个機關 找到我们的新动态器 它在这里 需要做同樣的动态器 我们的动态器。
+- 知识点：它慢慢從-20到-120 從0到1 但我们通过Lerp 这是我们的Alpha 这也是一个很好的选择 我通常用錯了 用Lerp Dynamic。
+- 知识点：你看到它延长了 我们慢慢地增长 看它延长了嗎 这兩个角度延长 它们移到中心 它们的量度增加了 这都改变了 这很酷 你看到它们可以 在3D的物件上。
+- 知识点：操作到很酷 加了一个很有趣的量 特别是4和- 很酷 我回到0 一般的規格 并不一樣 某些規格 并不一樣 可以做什么 这里有些很酷的设置 可以控制我们想要的規格。
+- 知识点：從哪里去 看这里 我拿中心 现在規格像这个 可以,例如 加點重量 可以從这邊 或從另一邊 很多酷的东西 可以改变、管理 我編輯了 我需要把它回到之前。
+- 知识点：正常的規格 这是需要它重新设置到 標準的價值 重新重新设置 是的 我这里是怎麼編輯的 需要重新设置这个價值 非常酷 重新设置 这里也有调整 这里是调整。
+- 知识点：是從中心的调整 这里是 UV 和中心的调整 这里是 UV 和中心的调整 非常酷 主要是加點重量 例如,需要把调整關掉 为了 UV 和中心调整 需要把这个關掉。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`Lerp`、`颜色`。
+
+**关键画面：**
+
+这一帧继续停留在 `MF_FX_MA_Basic > Material Graph`，但镜头已经拉近到动态参数替换的核心局部，用来演示如何在不直接保存正式材质的前提下验证参数映射
+
+- 节点定义集
+  `DP_Dissolve_Threshold`
+  `DP_Distort_Intensity`
+  `Append`
+  `DP_Distort_ScaleUV`
+  参数节点 `TestWPO`
+  `Dynamic Parameter`
+  `DP_WPO_Amount`
+  `DP_Refraction`
+- 连线集
+  左侧一组动态材质输出先分流到
+  `DP_Dissolve_Threshold`
+  `DP_Distort_Intensity`
+  `Append -> DP_Distort_ScaleUV`
+  中间 `Dynamic Parameter` 节点的右侧输出中
+  `WPO_Amount` 连接到 `DP_WPO_Amount`
+  `Refraction` 连接到 `DP_Refraction`
+  参数节点 `TestWPO` 位于 `Dynamic Parameter` 上方，并与 `DP_WPO_Amount` 区域相邻，用于演示替换或比较本地参数
+- 设置/参数
+  当前选中参数是 `TestWPO`
+  左侧 `Details` 可确认
+  `Parameter Name = TestWPO`
+  `Default Value = 0.0`
+  `Slider Min = 0.0`
+  `Slider Max = 0.0`
+  `Group = 10.WPO`
+  `Sort Priority = 32`
+  `Dynamic Parameter` 节点中可见
+  `Parameter Index = 2`
+  并命名了 `WPO_Amount` 与 `Refraction`
+- 输出/用途
+  这张图的重点不是最终效果，而是验证“Niagara 写过来的动态参数到底落到了材质里的哪几个口”
+  通过添加像 `TestWPO` 这样的本地测试参数，作者可以在不正式保存成品的情况下，快速检查 `WPO` 链路是否工作
+
+复建时，如果动态材质参数链路不确定，可先像这张图一样插一个临时测试参数，对照 `Dynamic Parameter` 的实际输出口逐一验证，再决定是否写回正式材质
+这一帧把材质参数编辑和关卡中的实际 slash 网格实例放到同一画面里，用来证明 `WPO`、权重等参数并不是抽象数值，而是会直接改变地面弧形斩击的形状
+
+- 当前场景与对象
+  主视口中可见一条发白的弧形 slash 轨迹贴在地面上
+  角色站在弧线一端附近，身体被白色高亮边缘包住
+  右侧 `Details` 当前选中 `SM_FX_Slash02 (Instance)`
+  可见
+  `Location ≈ (-503.0, -755.2, 85.0)`
+  `Rotation = (0.0, 0.0, -20.0)`
+  `Scale = 1.0, 1.0, 1.0`
+  `Static Mesh` 指向 `SM_FX_Slas...`
+  `Materials > Element 0` 使用 `MI_FX_Slash...`
+- 当前材质实例窗口
+  前景弹出的窗口标题是 `MI_FX_Slash_Shadow03`
+  右侧搜索框输入 `wpo`
+  可见参数包括
+  `WPO_Use`
+  `UVDirectionalWPO_FromCenter`
+  `UVDirectionalWPO_InverseUV`
+  `TestWPO = -108.734032`
+  `UVDirectionalWPO_Amount = -10.0`
+  `UVDirectionalWPO_Weight` 已启用
+  `UVDirectionWPO_WeightPower = 5.0`
+  `UVDirectionWPO_WeightMultiply = 1.0`
+- 逻辑含义
+  这张图说明作者不是只在材质函数里看数值，而是直接打开材质实例并对照场景结果调参
+  尤其是 `TestWPO`、`UVDirectionalWPO_Amount` 和权重参数，会决定这条 slash 弧线是更薄、更平，还是更有“抬起与延展”的体积感
+- 输出/用途
+  对复建者来说，这张图给出了一种有效调试方式
+  在场景里选中实际 slash 网格实例
+  再打开对应材质实例只筛 `wpo` 相关参数
+  这样能最快看到顶点位移参数对最终地面弧线的直接影响
+
+复建时，调 `WPO` 类参数不要脱离场景单独猜；最好像这张图一样同时看关卡里的 slash 网格结果和材质实例窗口，边改边观察弧线变化
+这一帧回到 `NS_FX_FireSlash03` 的 `System Overview`，开始从单个材质参数转向整个 Niagara 系统的时间与层次设计。字幕强调 slash 不应该静止，即使动作结束也要保留一段惯性
+
+- 节点定义集
+  Niagara System `NS_FX_FireSlash03`
+  上方一组 slash 相关发射器
+  下方 `Fire01`
+  下方 `Fire02`
+  左下 `User Parameters`
+  `LifetimeScale`
+- 模块结构
+  上方多个发射器的堆栈中可见
+  `Emitter State`
+  `Spawn Burst Instantaneous`
+  `Initialize Particle`
+  `Initial Mesh Orientation`
+  `Particle State`
+  `Update Mesh Orientation`
+  `Color`
+  `Dynamic Material Parameters`
+  `Mesh Renderer`
+  下方 `Fire01` 与 `Fire02` 则是独立的火焰辅助发射器
+  可见它们各自拥有
+  `Emitter State`
+  `Spawn Rate`
+- 时间信息
+  底部时间轴当前停在约 `0.8417`
+  左侧预览窗口当前几乎无明显主 slash 图形，说明系统正在讲“动作尾段”或余势阶段，而不是主爆发瞬间
+  `User Parameters` 中 `LifetimeScale = 1.0`
+- 逻辑含义
+  这张图说明完整 slash 系统并不是只有一个主发射器
+  至少还包含持续补火、余烬或辅助层发射器
+  作者强调“斩击结束后仍有 momentum”，意味着时间曲线应让部分层继续带着余势衰减，而不是主 slash 一停，所有层同步归零
+- 输出/用途
+  复建时要把主 slash、火焰拖尾和后续残留分层考虑
+  主 slash 可以用 `Burst` 快速打出
+  辅助火焰层则可用 `Spawn Rate` 或较缓的衰减逻辑维持短暂的后续动感
+
+复建时，如果 slash 看起来像一张突然出现又突然消失的平面，优先检查系统里是否缺少类似 `Fire01/Fire02` 这种负责惯性和拖尾的辅助发射器
+
+### 00:31:14-00:35:53 Niagara、Spawn、Material
+
+- 本段定位：Niagara、Spawn、Material。
+- 知识点：可以看一看 看,看得到打开的物料 这里我已经分開了 这些是標準的 看一看質料 看哪些 3D 物件 哪些 3D 物件 哪些 3D 物件 我为它们制作了一些物料。
+- 知识点：我为它们制作了一些物料 这就是基本的物料 这是很大的物料 这是用在基礎上 这是用在基礎上 这是用在各种 UV 动画上 个人动画上 简单的东西 这里用了少量的功能。
+- 知识点：这是简单的版本 这是很简单的东西 这是一把劍 需要删除 让我们来看看效果 影响的一刻 那就是 Understanding Trishkina。
+- 知识点：本段围绕 `Niagara`、`Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：in a stylized explosive But it is a little heavier here 这里是所有的图像在这个项目里 这里是这个缺点,这里是什么理由。
+- 知识点：每个频道都要有一个责任 我们的频道 这是深度 黑色的资料是用于遮暗屏幕的 为了深度,让我们设置深度 这是我们的透明度 这是我们的高度。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Niagara`、`Spawn`、`Alpha`、`Opacity`、`Material`、`Decal`、`Panner`、`Emissive`。
+
+**关键画面：**
+
+这一帧回到关卡总览，并把资源目录切到 `_Common/Texture`。教程在这里强调项目已经把材质和贴图资源拆分整理，属于可复用的标准基础层
+
+- 当前场景与对象
+  主视口中可见一条发白的地面 slash 弧线
+  角色手中的剑呈现橙紫色发光
+  视口里还能看到两条斜穿画面的白色辅助线
+  右侧 `Outliner` 当前选中 `SM_FX_Sla`
+- 当前资源上下文
+  下方 `Content Browser` 路径位于
+  `Content > VFX_Library > Projects > MagicFireAOE > _Common > Texture`
+  当前可见 6 个子目录
+  `Atlas`
+  `Mask`
+  `Normal`
+  `SubUV`
+  `TilingMask`
+  `Util`
+- 逻辑含义
+  这张图说明 slash 和火焰特效所依赖的纹理资源并不是散落在单独材质里，而是被拆成标准类别集中管理
+  例如颜色 Atlas、遮罩、法线、SubUV、平铺遮罩和通用工具贴图都被放在独立目录
+  这种组织方式方便多个材质、多个 Niagara 系统共享同一套基础资源
+- 输出/用途
+  对复建者来说，这张图给出的重点是资源分层
+  在开始堆 Niagara 之前，先把贴图资源按功能拆目录，后续维护与复用会更稳定
+
+复建时，可仿照这张图先建立 `_Common/Texture` 的分类结构，再把 slash、火焰、烟雾等材质统一引用这些标准目录中的贴图资源
+这一帧打开的是一张裂纹类贴图资源的查看器界面。字幕直接解释了这类贴图的逻辑：不同通道各自承担不同职责，其中黑值会参与视差遮挡映射，另外还会区分深度与透明度用途
+
+- 当前贴图内容
+  中央显示一张黑底裂纹纹理
+  纹理主体是从中心向外扩散的碎裂网络
+  中间区域裂纹更密，外围裂纹更稀疏、更粗
+  顶部通道按钮中当前高亮的是 `A`
+  说明作者正在单独查看某个通道输出
+- 右侧资源信息
+  `Imported: 1024x1024`
+  `Displayed: 1024x1024`
+  `Max In-Game: 1024x1024`
+  `Resource Size: 1365 KB`
+  `Has Alpha Channel: True`
+  `Format: DXT5`
+  `Number of Mips: 11`
+- 贴图设置
+  `Texture Group = World`
+  `Compression Settings = Default (DXT1/5, BC1/3 on DX11)`
+  `sRGB` 已勾选
+  `X-axis Tiling Method = Clamp`
+  `Y-axis Tiling Method = Clamp`
+- 逻辑含义
+  这张图说明裂纹贴图不是只拿来当一张黑白遮罩看待
+  教程明确在讲“每个 channel 负责某些东西”
+  当前这个通道至少涉及
+  深度信息
+  透明度或 `Opacity`
+  以及用于 `Parallax Occlusion Mapping` 的黑值区域
+- 输出/用途
+  对 `Niagara、Spawn、Material` 这一小节来说，这张图的意义是把地面裂纹、黑边或深度层次背后的纹理来源说清楚
+  也就是 slash 命中地面后的裂痕、遮挡和厚度感，部分是由这种多通道贴图直接驱动的
+
+复建时，如果要做地面裂痕或 decal 类效果，优先准备一张多通道职责明确的贴图，而不是只用单通道黑白图；这样材质里才能同时控制深度、透明度和视差层次
+这一帧切到 `Fire Slash VFX` 的商品或演示页面，用来展示前面那张裂纹贴图在真实效果里的落地结果。字幕继续解释高亮遮罩、G 通道透明度和用于视差的默认裂纹纹理
+
+- 当前页面内容
+  浏览器页面标题为 `Fire Slash VFX`
+  中间嵌入了一段短视频，当前进度约 `00:06 / 00:07`
+  视频中可见地面上有一条拉长的黑色裂痕轨迹，前端带一点橙色发光
+  左下角还有一个白色球体作为测试物
+  页面下方显示商品信息
+  标题 `Fire Slash VFX`
+  作者 `HeyYo`
+  评分 `4 ratings`
+  价格区域 `15+`
+- 当前可见效果
+  裂痕不是均匀黑线，而是由不规则碎裂块和边缘暗化组成
+  前端伴随少量热感发光，说明这条地面痕迹与火焰 slash 有直接关联
+  这与前一张黑底裂纹贴图的结构能对应起来：中心更密、向前延展、更适合作为命中轨迹或残留 decal
+- 逻辑含义
+  这张图的意义是把“贴图通道职责”与“最终成片效果”连接起来
+  也就是
+  高亮遮罩控制裂痕中哪些部分更亮
+  某个通道承担透明度
+  默认裂纹纹理继续被用作视差和深度层次
+  最终才形成这种既有地面划痕、又有厚度和轻微发光的残留痕迹
+- 输出/用途
+  对复建者来说，这张图是验证图
+  如果裂痕贴图、透明度和视差链路都接对了，最终地面应出现类似这种长条、不规则、带局部高亮和深度感的残留痕迹
+
+复建时，不要只在贴图查看器里确认通道；还要像这张图一样回到实际效果页或关卡结果里，验证裂纹是否真的形成了带视差和透明层次的地面轨迹
+
+### 00:35:53-00:37:13 透明度
+
+- 本段定位：透明度。
+- 知识点：这是遮暗屏幕的用途 如果我们把物件编辑成一块 这个图像会被编辑成一块 然后需要把频道编辑成一块 其他都会被编辑成一块 这是用于透明度的。
+- 知识点：这是透明度的 第三个频道是光源 是透明度的 这是光源 是从转向的阻值 从黑暗到亮 慢慢地从这里到这里移动 我的图像也会一样 现在需要慢慢地。
+- 知识点：从创造和理解 如何创造自己的分别 如何创造我的图像分别 我的缺点 我的转向 和这种东西 在下一个视频中会说到这 谢谢观看,拜拜。
+- 核对对象：`透明度`。
+
+**关键画面：**
+
+这一帧继续停留在地面裂纹贴图的查看器中，但这次重点已经从“深度与视差”转到“通道职责分配”。字幕明确说明会提取 `R` 通道，其他通道则承担透明度、背光和自发光等用途
+
+- 当前贴图内容
+  中央显示一张纵向很长的裂纹纹理
+  黑色主裂缝沿中轴蜿蜒延伸，并向两侧长出树枝状细裂纹
+  背景整体偏浅灰，说明当前查看的是某个通道后的灰度结果，而不是最终彩色贴图
+  顶部通道按钮中 `R` 处于激活状态
+- 右侧资源信息
+  当前资源名可见为 `T_FX_Decal...GroundLineCrack`
+  `Imported: 512x2048`
+  `Displayed: 512x2048`
+  `Has Alpha Channel: True`
+  `Format: DXT5`
+  `Number of Mips: 12`
+  `Texture Group = World`
+  `sRGB` 已勾选
+  `X-axis Tiling Method = Clamp`
+  `Y-axis Tiling Method = Clamp`
+- 逻辑含义
+  这张图说明这类裂纹贴图并不是单纯拿一个黑白通道做完所有事情
+  教程已经把职责拆开
+  `R` 通道用于当前这条主裂纹或某类主要遮罩提取
+  另一个通道承担透明度
+  第三个通道承担背光或 `Emissive`
+  也就是说，一张 decal 贴图可以同时服务于裂缝形状、透明边缘和发光层
+- 输出/用途
+  对复建者来说，这张图给出的关键原则是
+  单张贴图内的不同通道应有明确分工
+  不要把所有信息混在一张统一灰度图里，否则后续材质很难同时控制裂缝、透明和背光
+
+复建时，可把地面裂纹 decal 贴图设计成多通道资产，例如主形状、透明度、背光各占一个通道，这样材质里才能分别提取和组合
+这一帧仍然是同一张纵向长条裂纹贴图，但讲解重点已经变成“过渡渐变”。字幕直接说明这是一条从暗到亮、会逐步推进的渐变，而作者自己的纹理也按同样逻辑工作
+
+- 当前贴图内容
+  中央显示一条纵向延伸的高亮区域
+  亮区边缘呈不规则颗粒状
+  从下往上或沿纵向可见灰度逐步变化，不是纯平的单色遮罩
+  贴图主体周围仍是大面积黑底
+- 右侧资源信息
+  仍是同一资源
+  `512x2048`
+  `Has Alpha Channel: True`
+  `Format: DXT5`
+  `Texture Group = World`
+  贴图方式为 `Clamp`
+- 逻辑含义
+  这张图说明 slash / decal 贴图里除了裂纹形状本身，还内置了一个沿长度方向变化的亮度梯度
+  这个梯度可以决定
+  哪一段先出现
+  哪一段更亮
+  哪一段逐渐淡出
+  因而非常适合配合 `Lerp`、`Opacity` 或时间轴去制造“从前到后推进”的命中痕迹
+- 输出/用途
+  对复建者来说，这张图给出的不是单一静态图案，而是一种纹理设计原则
+  如果贴图内部自带方向性渐变，材质里就能更容易做出顺着 slash 方向流动、推进和衰减的效果
+
+复建时，长条类 slash 或裂纹纹理不要只画轮廓，还应加入沿主要方向变化的灰度梯度，这样材质和 Niagara 才更容易控制出现顺序与过渡节奏
+这一帧回到关卡与 `Sequencer` 的运行结果，作为本段关于裂缝、过渡和纹理变化的收束图。字幕里作者直接说“纹理变化、裂缝和过渡的创建方法会放到下一个视频”，说明当前教程在这里结束
+
+- 当前场景与对象
+  主视口中角色站在画面中偏左位置
+  角色周围有一圈橙色火焰或火柱状特效
+  右侧 `Outliner` 仍在 `Fire_AOE` 关卡中
+  可见对象包括
+  `AS_Combo...`
+  `Great_Sw...`
+  `NS_Fire...`
+  `Center`
+  `Cine Camera`
+  `Floor`
+  `LevelSeque...`
+  `PostProcess`
+- 当前时间线结构
+  下方 `Sequencer` 当前选中的是 `AOE` 轨道
+  轨道下可见多条子项
+  `NS_FX_FirePillar01_a2`
+  `NS_FX_FirePillar01_a`
+  `NS_FX_FirePillar01_c`
+  `NS_FX_FirePillar01_b`
+  `NS_FX_FirePillar01_d`
+  `NS_FX_FirePillar01_b2`
+  `NS_FX_FirePillar01_a3`
+  `NS_FX_FirePillar01_a4`
+  以及 `NS_FX_GroundCenterCrack`、`NS_FX_GroundHit01`
+  时间轴当前位于约 `2.0667`
+- 逻辑含义
+  这张图说明最终 AOE 并不是单一地面裂痕，而是由多组火柱、地面中心裂纹和命中特效共同组成
+  前面讲到的裂纹贴图、透明度、视差和过渡，只是这套 AOE 系统中的一个组成部分
+  最终呈现仍需要在 `Sequencer` 中把多个子效果按时间叠起来
+- 输出/用途
+  对复建者来说，这是一张终局验收图
+  如果整套逻辑正确，最终应看到角色周围形成完整的火焰环绕 / AOE 结果，而不是只有单独一张裂纹贴图或一段 slash 网格
+
+复建时，要把地面裂痕、火柱和命中效果一起放回 `Sequencer` 验收；单独调通某张贴图或某个材质，并不等于 AOE 整体成立
+
+## 补充视觉证据
+
+### S03 00:11:48
+
+这张补充视觉证据回到 `Sequencer > Slash` 轨道，用来更直观地证明斩击实例并不是自动排整齐的，而是需要在关卡里逐个调整位置、朝向和触发时间
+
+- 当前场景与对象
+  主视口中角色正在挥出一段明亮的橙黄色弧形 slash
+  斩击周围分布着多个带绿色方向箭头的实例 gizmo
+  右侧 `Outliner` 当前选中 `NS_FX_FireSlash01_a`
+  右侧 `Details` 可见
+  `Location ≈ (-156.3, -1240, 159.94)`
+  `Rotation ≈ (128.40, 10.89, 471.87)`
+  `Scale = 1.0, 1.0, 1.0`
+  `LifetimeScale = 1.0`
+- 当前时间线结构
+  下方 `Sequencer` 当前选中 `Slash`
+  其下可见
+  `NS_FX_FireSlash03`
+  `NS_FX_FireSlash02_e`
+  `NS_FX_FireSlash01_a`
+  `NS_FX_FireSlash01_b`
+  时间轴当前位于约 `1.5833`
+  上方缩略图显示这些实例沿攻击路径依次铺开
+- 逻辑含义
+  这张补图强化了一个实际制作要点
+  同样一套 slash Niagara，在不同时间点和不同空间位置重复摆放后，才能形成完整攻击轨迹
+  如果不逐个修正这些实例的旋转与朝向，弧线就不会准确贴着角色动作和地面方向展开
+- 输出/用途
+  这张图可以作为 `Niagara graph / Sequencer 排布` 的补充验收图
+  复建时，除了系统和材质本身要正确，还必须确认 `Slash` 轨道里的多个实例确实沿路径排开，而不是全部堆在同一位置
+
+复建时，针对地面命中类 slash，优先在 `Sequencer` 中逐实例检查 `Location`、`Rotation` 和触发时间；这类排布错误往往比材质错误更容易直接破坏最终轨迹
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+
+

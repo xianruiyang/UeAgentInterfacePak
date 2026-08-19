@@ -1,0 +1,933 @@
+# 16-3-Unreal火焰技能特效制作
+
+# 16-3-Unreal火焰技能特效制作
+
+## 关键术语
+
+- `GPU`、`UV`、`蓝图`、`材质`、`粒子`、`渲染器`、`网格`、`生命周期`、`速度`、`Niagara`、`Normalized Age`、`Renderer`、`颜色`、`曲线`、`火焰`、`Niagara System`、`Emitter`、`Particle`
+
+## 分段知识
+
+### 00:00:00-00:04:42 生命周期、速度、颜色
+
+- 本段定位：生命周期、速度、颜色。
+- 知识点：按顺序看的话中间会一切消失 这个会一直扩散到最后才消失 所以请这么想 这个要适当按压使用 假如只调整最周的大小 降低到0.15左右 改变了高度值。
+- 知识点：现在该把方向值倒过来了 用负载转成飞 简单转180多就行 这样出来现在双面是关的 就这样出来了 请检查双面模式 这样就会出来 以这种感觉呈现。
+- 知识点：毕竟现在有向旁边扩散的火焰 这部分火焰似乎更多一些 这部分看起来火更多了 空间3D的立体感可以更充实 然后因为往下走了 所以提高高度值。
+- 知识点：希望火的高度能匹配 看起来更安全 希望火的高度能匹配 看起来更安全 这火的高度是合适 能够保安的话就行了 火的高度和看到的一样 记录线或相同。
+- 知识点：点击改进按钮 然后R加勘贼和一样的机身仪 产现实性活动 具体准备 本身带来的事情就完成了 能力一样的支援着下降效果 首先这部分左侧setment部分。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`生命周期`、`速度`、`颜色`、`火焰`。
+
+**关键画面：**
+
+这张图继续选中 `Empty006 -> Initialize Particle`，但系统正处于播放中。左侧预览里已经能看到中心爆发火焰外包着一层向四周拉开的薄片状拖尾，说明前一页新增的第二个 mesh 半球层已经开始真实参与最终效果，而不是只停留在参数设定上。
+
+当前左上 `Particle Counts` 为：
+
+- `Empty`：`1 Current, 1 Max (est.) [Active]`
+- `Empty001`：`1 Current, 1 Max (est.) [Active]`
+- `Empty002`：`13 Current, 13 Max (est.) [Active]`
+- `Empty003`：`1 Current, 1 Max (est.) [Active]`
+- `Empty004`：`1 Current, 1 Max (est.) [Active]`
+- `Empty005`：`1 Current, 1 Max (est.) [Active]`
+- `Empty006`：`1 Current, 1 Max (est.) [Active]`
+
+这说明到 `p29` 开头，系统仍是 7 个发射器同时叠加，其中 `Empty005` 与 `Empty006` 是两层 mesh 外壳，其他发射器负责中心火团、外圈火舌和贴地火环。
+
+右侧 `Initialize Particle` 当前可确认的设置与上一页末尾基本一致：
+
+- `Lifetime Mode`：`Direct Set`
+- `Lifetime`：`0.75`
+- `Color Mode`：`Unset`
+- `Position Mode`：`Simulation Position`
+- `Position Offset`：`(0.0, 0.0, 0.0)`
+- `Mass Mode`：`Unset / (Mass of 1)`
+- `Mesh Scale Mode`：`Uniform`
+- `Mesh Uniform Scale`：`0.45`
+- `Mesh Renderer Array Visibility`：`Unset`
+
+结合本页小节“生命周期、速度、颜色”的说明，这张图的作用是建立一个基线认知：`Empty006` 这层 mesh 会一直参与扩散到末尾才消失，因此它不能做得过大或过厚，而需要在较短生命周期和较小尺寸下承担“外围补体积、增强 3D 立体感”的职责。
+这张图继续查看 `Empty006`，但重点已经从 `Initialize Particle` 转到 `Mesh Renderer` 和整体堆栈结构。左侧预览里的爆发火焰更饱满，外层薄片状拖尾已经明显形成上下包裹感，说明 `Empty006` 不是简单复制 `Empty005`，而是在 mesh 层的朝向和渲染设置上继续微调。
+
+中间 `Empty006` 堆栈此时能确认的顺序为：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Initial Mesh Orientation`
+- `Particle Update`
+  - `Particle State`
+  - `Dynamic Material Parameters`
+  - `Scale Color`
+- `Render`
+  - `Mesh Renderer`
+
+这说明 `Empty006` 比前一页多出了一个显式的 `Initial Mesh Orientation` 模块，直接对应小节里提到的“把方向值倒过来”“简单转 180 多就行”的操作语义。虽然当前截图没有展开这个模块的具体角度值，但已经能确定作者正在通过初始网格朝向来翻转半球的包裹方向。
+
+右侧 `Mesh Renderer` 可确认的设置包括：
+
+- `Meshes -> Index [0]`：`Half_Sphere_01`
+- `Enable Material Overrides`：开启
+- `Override Materials -> Explicit Mat`：`M_Mesh_01_Ins_02`
+- `User Param Binding`：`None`
+- `Source Mode`：`Particles`
+- `Locked Axis Enable`：关闭
+- `Enable Mesh Flipbook`：关闭
+- `Facing Mode`：`Default`
+- `Sort Mode`：`None`
+- `Enable Frustum Culling`：关闭
+- `Enable Camera Distance...`：关闭
+- `Renderer Visibility`：`0`
+- `Cast Shadows`：开启
+- `Sort Order Hint`：`3`
+- `Motion Vector Setting`：`Auto Detect`
+
+从这张图可以明确读出本段的核心动作：`Empty006` 仍沿用 `Half_Sphere_01 + M_Mesh_01_Ins_02` 的 mesh 方案，但通过补上 `Initial Mesh Orientation`，把这一层半球外壳反向包到主体火焰的另一侧，使整体火焰从单侧扩散变成更完整的上下/前后包裹。
+这张图回到 `Ex_04 (Play In Editor)` 的运行结果观察。角色被一团极亮的橙白色火焰包住，底部还能看到一圈贴地的小型火焰排布，说明中心爆发层、外壳 mesh 层与地面火环层已经同时叠加到一个相当高亮的状态。
+
+当前可确认的场景/编辑器状态有两点：
+
+- 右侧 Outliner 里选中的是 `PostProcessVolume`
+- 右下 Details 面板已切到 `PostProcessVolume (Instance)`，并展开到 `Lens -> Bloom` 区域
+
+Bloom 面板中当前能读出的值包括：
+
+- `Method`：`Standard`
+- `Intensity`：`0.675`
+- `Threshold`：`-1.0`
+
+底部 Content Browser 当前高亮资源是另一份 `M_Mesh_..._Ins` 材质实例，说明作者在这一帧很可能正在对比 mesh 材质实例调整结果与场景后期亮度的配合，而不是单独只看 Niagara 参数。
+
+这张图的关键意义是确认“亮度、火焰高度、包裹感”是否协调：当前中心亮团非常强，已经明显受 Bloom 放大影响；而外圈贴地火焰仍能从高亮中心下方读出来，说明 mesh 包裹层和 sprite 火焰层虽然很亮，但还没有完全吃掉地面层的轮廓。结合字幕“感觉搭配还不错”，可以把它理解为一次针对整体火焰亮度与后期泛光是否匹配的场景级验收画面。
+
+### 00:04:43-00:08:08 UV、生命周期、速度
+
+- 本段定位：UV、生命周期、速度。
+- 知识点：感觉有点突兀 应该更快消失才对 或者这个涂直 这样快点干掉的感觉 而且不是0.5值降到0值 现在适当自然消失的感觉不突兀 这部分现在颜色感觉有点死。
+- 知识点：适当放慢点看也没关系 感觉再快一点传播也行 速度看起来有点慢 有点遗憾那种爆发的那种紧张感 这部分是关于碎片的火花 UV-BRAD 是的。
+- 知识点：那部分可以帮忙做一下 而且现在shake也没加进去 shake也请加一下 还有现在另外 从添加一个灯光开始 帮助整体混合 复制一个灰光 去修改生命周期。
+- 知识点：不需要 然后Eidos 拿出光剑 拿光拿出光剑 300左右 300左右 而且希望光源本身的 效果能表现得更大一些 希望本身效果能表现得大一些。
+- 知识点：适当提高了高光比例 那么这个角色就会感觉更亮一些 尺寸用摩地调小 尺寸用摩地调小 生命周期 生命周期。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`生命周期`、`速度`、`颜色`。
+
+**关键画面：**
+
+这张图继续围绕 `Empty006` 调整，但焦点已经切到 `Particle Update -> Scale Color`，用于解决本段文字里提到的“颜色有点死”“应该更快自然消失”的问题。左侧预览里中心爆发火焰仍然很亮，但外层薄片火焰已经能看出更明确的红橙渐变与消散趋势。
+
+右侧 `Scale Color` 当前可确认的结构为：
+
+- `Scale Mode`：`RGB and Alpha Separately`
+- `Scale RGB`：`Multiply Vector by Float`
+  - `Vector`：`Vector from Curve`
+  - `Vector Curve`：`Curve for Vector3's`
+  - `Curve Index`：`Particles.NormalizedAge`
+  - `Scale Curve`：`(1.0, 1.0, 1.0)`
+  - `Float`：`Float from Curve`
+  - 下方浮点曲线的 `Scale Curve`：`20.0`
+- `Scale Alpha`：`Float from Curve`
+
+从右侧曲线图可直接读出的趋势：
+
+- 上方 `Vector Curve`
+  - `X`（红）通道保持在高位，接近一条平直高线
+  - `Y`（绿）通道在较低位置并缓慢下降
+  - `Z`（蓝）通道最低，变化幅度也很小
+- 下方 `FloatCurve`
+  - 起点接近 `1.0`
+  - 中段快速下降
+  - 末端收敛到约 `0.5`
+
+左下独立弹出的曲线树当前选中项属于：
+
+- `Empty006 Emitter`
+  - `Dynamic Material...`
+    - `Index 0 Param 1`
+
+其对应红色曲线从约 `0.7` 持续下降到约 `0.3`，说明作者同时也在关注 `Empty006` 的动态材质参数衰减，而不只是纯粹调 `Scale Color`。
+
+这张图的实际含义是：`Empty006` 的 mesh 外壳层需要比前面更快进入衰减段，既保留爆发初期的强亮度，又避免拖到后半段还维持过硬、过死的颜色。通过高倍率的浮点曲线和更偏红的向量曲线，作者在把这层外壳调成“前亮后快散”的火焰包裹感。
+这张图继续针对 `Empty006` 调整，但右侧已切到 `Particle Update -> Dynamic Material Parameters`。左侧预览中的外围火环呈现出更明显的贴地流动边缘，说明作者正在通过材质动态参数直接控制这层 mesh 的传播速度、透明度和扰动感，而不只是调静态材质实例。
+
+中间堆栈可确认 `Empty006` 当前结构为：
+
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Initial Mesh Orientation`
+- `Particle Update`
+  - `Particle State`
+  - `Dynamic Material Parameters`
+  - `Scale Color`
+- `Render`
+  - `Mesh Renderer`
+
+右侧 `Dynamic Material Parameters` 当前在 `All` 视图，可确认的 `Dynamic Parameter Index 0` 内容如下：
+
+- `Write Parameter Index 0`：开启
+- `Panning_Opacity`：`Float from Curve`
+  - `Curve Index`：`Particles.NormalizedAge`
+  - `Scale Curve`：`1.0`
+  - 曲线从约 `0.7` 开始持续下降，到末端约 `0.3`
+- `Distortion`：`Float from Curve`
+  - `Curve Index`：`Particles.NormalizedAge`
+  - `Scale Curve`：`1.0`
+  - 曲线从接近 `0` 缓慢上升，到末端约 `0.05`
+- `Param2-0 (Parameter...)`：`0.0`
+
+左下独立曲线树当前选中的是：
+
+- `Empty006 Emitter`
+  - `Dynamic Materi...`
+    - `Index 0 Param 1`
+
+对应红色曲线与右侧上方 `Panning_Opacity` 的下降趋势一致，进一步说明作者此时正在精调“外壳层该以什么速度自然消失”。
+
+从参数语义可以直接推断这一步的意图：
+
+- `Panning_Opacity` 下降：让外壳层随生命周期更快淡出，避免残留太久显得突兀
+- `Distortion` 上升：让后半段扰动感稍微增强，给扩散末尾增加一点不稳定感和“shake / 紧张感”
+
+因此这张图体现的是 `Empty006` 的 UV 与生命周期协同控制：不是简单一刀切地把透明度降到 0，而是边减透明、边略增扭曲，让外圈火焰在扩散过程中看起来更像有张力的能量壳而不是静态贴片。
+这张图出现了一个新的发射器 `Empty007`。它不再是前面的 sprite 或 mesh 外壳层，而是明确带有 `Light Renderer` 的灯光发射器，正好对应小节文字里“从添加一个灯光开始”的操作。
+
+中间 `Empty007` 堆栈可确认的结构为：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+- `Render`
+  - `Light Renderer`
+
+左上 `Particle Counts` 显示当前系统里已经增加了 `Empty007`，且这一帧播放已结束，状态大多为 `Complete`：
+
+- `Empty`：`0 Current, 1 Max (est.) [Complete]`
+- `Empty001`：`0 Current, 1 Max (est.) [Complete]`
+- `Empty002`：`2 Current, 13 Max (est.) [Inactive]`
+- `Empty003`：`0 Current, 1 Max (est.) [Complete]`
+- `Empty004`：`0 Current, 1 Max (est.) [Complete]`
+- `Empty005`：`0 Current, 1 Max (est.) [Complete]`
+- `Empty006`：`0 Current, 1 Max (est.) [Complete]`
+- `Empty007`：`0 Current, 1 Max (est.) [Complete]`
+
+右侧当前展开的是 `Empty007 -> Scale Color`，设置如下：
+
+- `Scale Mode`：`RGB and Alpha Separately`
+- `Scale RGB`：`Multiply Vector by Float`
+  - `Vector`：`(10.0, 1.0, 0.5)`
+  - `Float`：`Float from Curve`
+  - `Curve Index`：`Particles.NormalizedAge`
+  - `Scale Curve`：`10.0`
+  - 曲线：从接近 `1.0` 持续衰减到接近 `0`
+- `Scale Alpha`：`Float from Curve`
+  - `Curve Index`：`Particles.NormalizedAge`
+  - `Scale Curve`：`1.0`
+  - 曲线：同样从接近 `1.0` 衰减到接近 `0`
+
+从这张图可以明确理解 `Empty007` 的职责：它不是直接显示火焰贴图，而是以灯光/亮度补偿层的形式跟随爆发短时存在。通过高红通道向量 `(10,1,0.5)` 和快速衰减曲线，它会在爆发初期给角色周围补一层偏暖的瞬时亮光，随后迅速淡出，用来增强爆发瞬间的照明感和紧张感，同时避免灯光残留过久。
+
+### 00:08:21-00:11:21 UV、颜色
+
+- 本段定位：UV、颜色。
+- 知识点：浅色系然后 调成了红色调 调成了红色调 先做一下试试看吧 UV-BRAD 调成红色调 非常亮地出来了 非常亮地出来了 色调很搭了一次 色调很搭。
+- 知识点：跟那次色调很搭 就那一次 感觉有点太强烈了 颜色也是 颜色也是 那种颜色适当有点 就是那种颜色适当试了一下。
+- 知识点：毕竟高光比例有点高了 这块地上的高光效果 有点过度的感觉 这也是真的被拍到的直播场面 MOOC灯柜 还不错 适当降低了亮度 100左右 颜色部分。
+- 知识点：就先保持原样 试试看吧 现在火花进去的时候 可能会被那火花吸引一些目光 那部分也可能很好 地搭配 所以 现在这样也不坏 挺好的 如果灯光本身进去了。
+- 知识点：现在感觉这个品牌更好了 有一种在一个空间里的感觉更强烈了。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这张图继续调 `Empty007 -> Scale Color`，但已经不再使用上一小节那组较克制的暖光比例，而是直接尝试更强烈的偏红光照方案。左侧预览里中心爆发被明显染得更亮、更暖，正对应小节里“调成红色调，非常亮地出来了”的描述。
+
+当前右侧可确认的设置为：
+
+- `Scale Mode`：`RGB and Alpha Separately`
+- `Scale RGB`：`Multiply Vector by Float`
+  - `Vector`：`(5.0, 2.0, 1.0)`
+  - `Float`：`50000.0`
+- `Scale Alpha`：`Float from Curve`
+  - `Curve for Floats`
+  - `Curve Index`：`Particles.NormalizedAge`
+  - `Scale Curve`：`1.0`
+  - 曲线：前段接近 `1.0`，后半段逐步衰减到接近 `0`
+
+左下独立红色曲线窗口仍处于 `Empty007 Emitter` 的曲线树上下文中，曲线从约 `0.7` 下降到约 `0.3`。仅凭本帧可确认它属于当前灯光发射器的衰减编辑状态，但不能将它直接等同于右侧任一字段的唯一来源，因此不做强绑定。
+
+这张图的要点是“先把颜色做得非常亮、非常红，看看搭不搭”。通过 `(5,2,1)` 这种明显偏红橙的向量，再乘上非常高的亮度倍率 `50000`，`Empty007` 这层灯光会在爆发瞬间提供极强的暖色补光，从而显著改变整套技能的综合色调。
+这张图回到 `Ex_04 (Play In Editor)` 的运行视角，但当前帧没有清晰可辨的火焰或灯光爆发结果。能确认的信息只有：
+
+- 右侧 Outliner 里选中的是 `PostProcessVolume`
+- 右下 Details 面板仍停在 `PostProcessVolume (Instance)` 的 `Lens -> Bloom` 区域
+- 底部 Content Browser 当前高亮的是一份 `M_Mesh_..._Ins` 材质实例
+- 场景中角色站在测试场地中央，身上只有很弱的紫色背部发光部件
+
+由于这一帧既看不到明确的红色灯光效果，也无法仅凭静止画面判断“适当降低亮度 100 左右”具体落在灯光参数、Bloom 参数还是材质亮度参数上，因此只能确认作者在用运行态场景观察综合色调是否过强，具体结论需要人工结合相邻视频帧复核。
+这张图回到运行态结果观察，角色站在一整圈已经铺开的火焰中央。与前面纯参数调整图相比，这一帧能更直观地看出本小节“UV、颜色”调整后的综合色调效果：
+
+- 地面火环主体仍以亮橙和浅黄火焰为主
+- 火焰外缘和拖尾带有一层偏红的能量线条
+- 角色周围的整体空间被一圈暖色火光包住，空间感更强
+
+右侧 Outliner 仍选中 `PostProcessVolume`，右下 Details 面板也仍停在 `PostProcessVolume (Instance)` 的 `Lens -> Bloom` 区域，说明作者在这一帧关注的不只是某个单独发射器，而是“火焰颜色 + 后期泛光 + 场景观感”三者叠加后的整体结果。
+
+底部 Content Browser 继续停在 `Content/Signature/Course_05/Material`，当前高亮的是一份 `M_Mesh_..._Ins` 材质实例，说明外围红色拖尾或地面高光感仍与 mesh 材质实例联动。
+
+这张图可以作为本小节调色的结果结论：偏红暖的补光和材质色调没有把效果彻底染坏，反而让火焰看起来更像真实存在于场景中的一圈能量火墙。不过从地面高光和中心亮面仍然比较强这一点看，也保留了下一步继续压亮度、调 GPU/粒子/网格配合的必要性。
+
+### 00:11:28-00:14:30 GPU、粒子、网格
+
+- 本段定位：GPU、粒子、网格。
+- 知识点：要不要加点火花呢 再复制一个马拉过来 用这个把这个部分加进去 这样出来了 然后 现在 这样 就这样 这样 这样 这样 就这样用一次试试 第一次数量多放点。
+- 知识点：撒上 这期现在有点 用GPU的趋势 在控制台那边的项目中 更常用的趋势 用GPU来做 用GPU500左右的话 数量相当少 毕竟你要做这种真实。
+- 知识点：现实的Fact的时候 用这些粒子填充空间 可能是个不错的方法 所以使用这种方法挺好的 比起加入很多幻想元素和网格效果 这些元素只要放一个就行。
+- 知识点：用这些粒子的运动方向填充空间 用这种平衡的运动来填充 会显得 更精致一点的感觉 和这种真实的序列一起 所以 就这样 这样 确认一下 高度值可以没有。
+- 知识点：随机给了生命周期 用农林重涂 又随机给了尺寸值 不需要相机偏移 因为要用QN位置向四周扩散 应该做成5左右的半球吧 这个程度的数值 只保存一次。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`GPU`、`粒子`、`序列`、`生命周期`。
+
+**关键画面：**
+
+这张图进入 `GPU、粒子、网格` 小节，系统里新增了一个发射器 `Empty008`。结合字幕“再复制一个马达过来”，可以确认作者是在现有基础上复制出一层新的 sprite 粒子，用来补火花或碎片式空间填充，而不是继续增加 mesh 外壳。
+
+左侧 `Particle Counts` 当前已出现 `Empty008`：
+
+- `Empty`：`0 Current, 1 Max (est.) [Active]`
+- `Empty001`：`0 Current, 1 Max (est.) [Active]`
+- `Empty002`：`13 Current, 13 Max (est.) [Active]`
+- `Empty003`：`1 Current, 1 Max (est.) [Active]`
+- `Empty004`：`1 Current, 1 Max (est.) [Active]`
+- `Empty005`：`1 Current, 1 Max (est.) [Active]`
+- `Empty006`：`1 Current, 1 Max (est.) [Active]`
+- `Empty007`：`1 Current, 1 Max (est.) [Active]`
+- `Empty008`：`0 Current, 1 Max (est.) [Active]`
+
+系统总览中可以看见 `Empty008` 位于下方，与 `Empty007` 同处新增层区域，但其渲染器已改为 `Sprite Renderer`。右侧 `Sprite Renderer` 当前能确认的设置为：
+
+- `Material`：`M_Additive_01_Ins_02`
+- `Source Mode`：`Particles`
+- `Alignment`：`Automatic`
+- `Facing Mode`：`Automatic`
+- `Default Pivot in UV Space`：`(0.5, 0.5)`
+- `Pixel Coverage Mode`：`Automatic`
+- `Pixel Coverage Blend`：`1.0`
+- `Sort Mode`：`None`
+- `Enable Camera Distance...`：关闭
+- `Renderer Visibility`：`0`
+- `Cast Shadows`：开启
+- `Sort Order Hint`：`30`
+- `Motion Vector Setting`：`Auto Detect`
+
+这说明 `Empty008` 不是复杂网格或灯光层，而是基于 `M_Additive_01_Ins_02` 的附加 sprite 粒子层，目标是用少量高亮贴图粒子补足爆发时的空间碎片感。结合小节文字，这一层后续大概率会被改成 GPU 趋向的高数量填充方案。
+这张图把新增的 `Empty008` 明确切成了 GPU 粒子发射器。发射器标题栏上的 `GPU` 标识已经可见，左侧 `Particle Counts` 也直接显示：
+
+- `Empty008`：`500 Current, 1000 Max (est.) [Active]`
+
+这正对应小节文字里“用 GPU 来做，500 左右的话数量相当少”的思路：作者不再让 `Empty008` 只作为一两个补粒子存在，而是改成一次性放出数百个 GPU sprite，用来填充爆发周围的空间碎片感。
+
+右侧当前展开的是 `Empty008 -> Spawn Burst Instantaneous`，可确认参数为：
+
+- `Spawn Count`：`500`
+- `Spawn Time`：`0.0`
+- `Spawn Probability`：`1.0`
+- `Loop Count Limit`：`1`
+
+中间堆栈还能确认 `Empty008` 的总体结构为：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+- `Render`
+  - `Sprite Renderer`
+
+相比旁边的 `Empty007` 灯光层，`Empty008` 明显承担的是“高数量空间填充粒子”职责。当前预览被一个极亮的中心白团压满，说明这 500 个 GPU 粒子和原有高亮火焰叠加后已经能显著抬高爆发中心的体积感与亮度密度。
+这张图继续编辑 GPU 发射器 `Empty008`，右侧打开的是 `Particle Spawn -> Shape Location`。与上一张只确认“放出 500 个 GPU 粒子”不同，这一张明确说明这些粒子不是从单点乱飞，而是从一个半球/球面分布里向四周扩散，用来填充爆发周围的空间。
+
+左侧 `Particle Counts` 当前显示：
+
+- `Empty008`：`371 Current, 500 Max (est.) [Active]`
+
+说明这层 GPU 粒子已经实际生成并处于播放中。
+
+右侧 `Shape Location` 当前可确认设置为：
+
+- `Shape`
+  - `Shape Primitive`：`Sphere`
+  - `Sphere Radius`：`100.0`
+- `Distribution`
+  - `Sphere Distribution`：`Random`
+  - `Sphere Surface Distribution`：`0.0`
+  - `Hemisphere Distribution`：`(1.0, 1.0)`
+- `Transform`
+  - `Transform Order`：`Scale / Rotate / Offset`
+  - `Scale Mode`：`Default`
+  - `Non Uniform Scale`：`(1.0, 1.0, 1.0)`
+  - `Rotation Mode`：`Default`
+  - `Rotation Coordinate Space`：`Local`
+  - `Offset Mode`：`None`
+  - `Shape Origin`：`STACKCONTEXT Position`
+
+中间堆栈此时也能看出 `Empty008` 在 `Particle Spawn` 阶段包含：
+
+- `Initialize Particle`
+- `Camera Offset`
+- `Shape Location (Sphere)`
+
+结合小节文字“用 QN 位置向四周扩散”“应该做成 5 左右的半球”，可以把这一步理解为：作者用球/半球分布给 500 个 GPU 粒子一个天然的空间散布基础，让它们不再全从一个方向挤出来，而是围绕爆发中心以更均衡的方式填充 3D 空间，从而得到更真实、更精致的碎片火花层。
+
+### 00:14:35-00:17:26 UV、速度、曲线
+
+- 本段定位：UV、速度、曲线。
+- 知识点：现在得再加一个速度 从这个点开始就给个随机速度值 这样简单D扩散开 组合成功了 现在有了 从0.5开始的尺寸动画本身 简单D做成这种感觉也可以。
+- 知识点：会有点火花的那种感觉 适当在纵轴上的动作 适当适当纵轴上动 适当换种方式做吧 像这样 像这样 这样摸应该可以 动作本身得改下张力 用速度缩放。
+- 知识点：延迟限量旋转后 嗯 用旋转值 UV Bread UV UV UV Bread 啊 是在UV Bread 这里也加一个曲线值 从0开始反向 这一轴上升的感觉。
+- 知识点：啊 需要做出来 那么 就这样花了 向上燃烧的动感 想表达一下 这部分在 现在可以做的 可以做的 这部分 这部分。
+- 核对对象：`速度`、`曲线`。
+
+**关键画面：**
+
+这张图继续编辑 GPU 发射器 `Empty008`，右侧打开的是新增的 `Add Velocity` 模块。相比上一小节只让粒子从球/半球位置随机生成，这一步开始显式给它们一个向上运动趋势，用来做出火花或燃烧碎片向上飘散的感觉。
+
+当前 `Empty008` 的播放状态为：
+
+- `99 Current, 500 Max (est.) [Inactive]`
+
+说明这层 GPU 粒子已经完成了一次爆发，并进入剩余粒子逐步消散阶段。
+
+右侧 `Add Velocity` 可确认设置如下：
+
+- `Velocity Mode`：`Linear`
+- `Velocity`：`(0.0, 0.0, 50.0)`
+- `Velocity Speed Scale`：`1.0`
+- `Rotation`
+  - `Rotation Mode`：`Default`
+  - `Rotation Coordinate Space`：`Local`
+
+中间堆栈此时也可确认 `Empty008` 在 `Particle Spawn` 阶段的模块顺序已经扩展为：
+
+- `Initialize Particle`
+- `Camera Offset`
+- `Shape Location (Sphere)`
+- `Add Velocity (Linear)`
+
+这张图对应的小节意图很明确：先给 GPU 粒子一个基础向上速度 `Z=50`，让它们从半球分布位置出发后，不只是静态向外散，而是带着轻微上升感扩散。这样粒子会更像火花或热流被抬升，而不是单纯平面贴图向外推开。
+这张图继续编辑 GPU 发射器 `Empty008`，但焦点已经从单一速度值切到“速度扩散 + 尺寸动画”的组合。左侧 `Particle Counts` 显示：
+
+- `Empty008`：`500 Current, 500 Max (est.) [Active]`
+
+说明这一层 GPU 粒子正处于满量激活状态，适合直接观察尺寸和扩散手感。
+
+中间堆栈中可见两个关键变化：
+
+- `Particle Spawn` 阶段的速度模块已显示为 `Add Velocity (From Point)`
+- `Particle Update` 阶段当前选中的是 `Scale Sprite Size`
+
+右侧 `Scale Sprite Size` 当前可确认的设置为：
+
+- `Scale Sprite Size Mode`：`Non-Uniform Curve`
+- `Non-Uniform Curve Sprite Size`：`Curve for Vector2D's`
+- `Curve Index`：`Particles.NormalizedAge`
+- `Non-Uniform Curve Scale`：`(1.0, 1.0)`
+
+曲线图中能直接读出的形态为：
+
+- `X`（红）通道整体很低，基本贴近 `0~1` 区间
+- `Y`（绿）通道起始更高，前段有较大值，随后快速下降
+- 两条曲线在生命周期后段都逐步收敛到较小值
+- 当前 `Key Data` 显示为 `0.0` 与数值 `5.0` 的关键点状态，说明起始段尺寸被明显放大过
+
+这表示 `Empty008` 的 GPU 粒子不是各向同性缩放，而是带明显纵横差异的 2D 尺寸曲线：前段某一轴更大，后段快速收缩。结合本段文字“会有点火花的感觉”“适当在纵轴上的动作”，可以理解为作者在把这些粒子调成前期略长、略竖向的火花/碎片条带，再随着生命周期迅速缩短，形成向上燃烧和飞散的动感。
+这张图继续调 GPU 发射器 `Empty008`，当前右侧打开的是 `Particle Update -> Scale Velocity`。这一步不再只是给一个固定初速度，而是让速度本身随生命周期变化，从而做出“向上燃烧、后段更有冲劲”的火花动感。
+
+左侧 `Particle Counts` 显示：
+
+- `Empty008`：`500 Current, 1000 Max (est.) [Active]`
+
+说明此时 GPU 粒子层正在以更高的估算上限参与播放。
+
+右侧 `Scale Velocity` 当前可确认设置如下：
+
+- `Coordinate Space`：`Local`
+- `Velocity Scale`：`Multiply Vector by Float`
+  - `Vector`：`Make Vector`
+    - `X`：`1.0`
+    - `Y`：`1.0`
+    - `Z`：`Float from Curve`
+      - `Curve Index`：`Particles.NormalizedAge`
+      - `Scale Curve`：`1.0`
+      - 曲线从前段接近 `1`，后段上升到约 `8`
+  - `Float`：`Float from Curve`
+    - `Curve Index`：`Particles.NormalizedAge`
+    - `Scale Curve`：`1.0`
+    - 曲线从前段约 `5` 开始，随后持续下降到接近 `0`
+
+从这组曲线关系可以读出一个很明确的运动设计：
+
+- 全局速度倍率 `Float` 随时间递减：整体动能会逐步减弱
+- 但 `Z` 方向单独乘一个随时间升高的曲线：后半段粒子的向上趋势更明显
+
+这意味着 `Empty008` 的粒子不会全程匀速笔直飞行，而是会逐渐把运动重心转向竖直上升方向。结合本段文字“向上燃烧的动感”“这一轴上升的感觉”，可以把这一步理解为：让火花/碎片前段先向四周扩散，后段再更明显地向上扬起，形成更自然的燃烧尾势。
+
+### 00:17:38-00:20:36 UV、颜色、曲线
+
+- 本段定位：UV、颜色、曲线。
+- 知识点：本段围绕 `颜色` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：亮度值现在很低 这部分 需要让那个颜色慢慢退去 像这样 本地化了啊 几处锁定 还在换成世界版 有点遗憾的是 现在 色调有点 太红了有点遗憾 再往上快点升。
+- 知识点：应该会有不错的动作 让曲线更平缓起 这样感觉会更好 我觉得这样 好多了 所以我 做的更好吧 这部分节奏快点也没关系。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`、`曲线`。
+
+**关键画面：**
+
+这张图继续选中 GPU 发射器 `Empty008`，但焦点已经切到 `Emitter Properties`。这里能确认这层火花粒子确实运行在 GPU 模式下，同时还暴露了一个与可见性/边界有关的警告。
+
+左侧 `Particle Counts` 当前显示：
+
+- `Empty008`：`310 Current, 1000 Max (est.) [Active]`
+
+说明这层 GPU 粒子仍在播放中，而且估算上限已经按更高密度配置过。
+
+右侧顶部出现的提示可确认：
+
+- `The emitter is GPU and is using dynamic bounds mode.`
+- `Please update the Emitter or System properties otherwise bounds may be incorrect.`
+- `Missing fixed bounds.`
+
+这表明当前发射器采用 GPU + 动态边界，但还没有补固定 bounds，后续如果边界估计不足，粒子可能会被错误裁剪。
+
+右侧 `Emitter` 区域当前可确认的设置为：
+
+- `Local Space`：开启
+- `Determinism`：关闭
+- `Interpolated Spawning`：开启
+- `Sim Target`：`GPUCompute Sim`
+- `Calculate Bounds Mode`：`Dynamic`
+- `Requires Persistent IDs`：关闭
+
+中间堆栈还能确认 `Empty008` 在 `Particle Update` 阶段已经扩展为：
+
+- `Scale Velocity`
+- `Curl Noise Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Sprite Size`
+- `Scale Color`
+
+这说明本段除了继续调颜色和曲线，还开始给 GPU 粒子加入更复杂的受力与扰动逻辑。特别是 `Curl Noise Force` 的加入，正好对应字幕里提到的“动作本身得改下张力”“向上燃烧的动感”，它会让这些火花不是均匀直线飞散，而是带一点涡流和自然扰动。
+这张图回到 `Ex_04 (Play In Editor)` 的运行视角，但当前帧没有清晰可辨的 GPU 火花或爆发结果。能确认的信息只有：
+
+- 右侧 Outliner 里选中的是 `PostProcessVolume`
+- 右下 Details 面板仍停在 `PostProcessVolume (Instance)` 的 `Lens -> Bloom` 区域
+- 底部 Content Browser 定位在 `Content/Signature/Course_05/Material`
+- 当前高亮的是一份 `M_Additive_01_Ins_*` 材质实例
+- 角色站在测试场地中央，身上仅保留弱紫色背部发光部件
+
+由于这一帧既看不到明确的火焰层，也看不到 GPU 火花的扩散形态，因此不足以可靠说明本段“颜色慢慢退去”“曲线更平缓”“节奏快点”的具体视觉结果。只能确认作者在通过运行态场景检查综合色调是否过红、是否过暗，以及后期/材质与粒子节奏是否匹配，具体判断需要人工结合相邻视频帧复核。
+这张图继续查看 `Empty008 -> Scale Velocity`，但与 `S05_3` 相比，当前版本已经把速度缩放的坐标空间改成了世界空间，并且更明确地展示出两条“一个上升、一个下降”的控制曲线。左侧预览里能看到一束亮橙色火花正往上抬升，正好对应本段“颜色慢慢退去、往上快点升”的调节目标。
+
+当前右侧可确认设置为：
+
+- `Coordinate Space`：`World`
+- `Velocity Scale`：`Multiply Vector by Float`
+  - `Vector`：`Make Vector`
+    - `X`：`1.0`
+    - `Y`：`1.0`
+    - `Z`：`Float from Curve`
+      - `Curve Index`：`Particles.NormalizedAge`
+      - `Scale Curve`：`1.0`
+      - 曲线从接近 `1` 持续上升到约 `8`
+      - 当前关键点显示：`Key Data 1.0`，值约 `8.0`
+  - `Float`：`Float from Curve`
+    - `Curve Index`：`Particles.NormalizedAge`
+    - `Scale Curve`：`1.0`
+    - 曲线从约 `5` 开始持续下降，到末端接近 `0`
+    - 当前关键点显示：`Key Data 0.0`，值约 `5.0`
+
+左侧 `Particle Counts` 当前为：
+
+- `Empty008`：`500 Current, 1000 Max (est.) [Active]`
+
+这说明 GPU 火花层仍在高密度播放状态下调试。
+
+把 `Coordinate Space` 切成 `World` 的意义在于：无论粒子最初的局部朝向如何变化，后续“向上升”的趋势都以世界空间的竖直方向为准。再配合“全局速度逐渐衰减、但 Z 比例逐渐升高”的两条曲线，粒子就会更像真实火花那样先爆开，再逐渐抬头上扬，而不是一直沿局部方向生硬飞行。
+
+### 00:20:42-00:23:25 蓝图、材质、渲染器
+
+- 本段定位：蓝图、材质、渲染器。
+- 知识点：怕散的太开 希望像炸开一样这样扩散 需要减少平衡间隙 同时降低上升的力量 力量减弱了 那样的话这部分曲线再调整一下 现在感觉 好多了 因为这不是那种重机地面的感觉。
+- 知识点：紧张的 比起碰的一声更柔和的感觉 更柔和 感觉更好 那么几乎所有的要素都包含了 现在最后再加一个Zombie 就差不多了 应该可以结束了 再加一个空的Vit。
+- 知识点：这个 现在这个我们按上次一样的方式 做出来就行 现在做一个爆发 我们用组件渲染器 做了两个 一个放个后材质。
+- 知识点：一个用蓝图调动画质 所以再走一遍 这个过程应该就行。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`材质`、`渲染器`、`蓝图`、`曲线`。
+
+**关键画面：**
+
+这张图继续选中 GPU 发射器 `Empty008 -> Scale Velocity`，但左侧预览已经能直接看到本段要的结果：大量小型亮橙火花从中心爆点周围向外炸开，同时仍保留轻微上升趋势，不再是单纯沿一个方向拖尾。
+
+左侧 `Particle Counts` 当前显示：
+
+- `Empty008`：`500 Current, 1000 Max (est.) [Active]`
+
+说明这层 GPU 火花正以高密度状态参与主爆发。
+
+右侧仍是 `Scale Velocity`，当前可确认的关键结构与上一批末尾一致：
+
+- `Coordinate Space`：`World`
+- `Velocity Scale`：`Multiply Vector by Float`
+  - `Vector`：`Make Vector`
+    - `X`：`1.0`
+    - `Y`：`1.0`
+    - `Z`：`Float from Curve`
+  - `Float`：`Float from Curve`
+
+这张图额外能读到两个曲线的具体关键点信息：
+
+- 上方 `Z` 曲线当前悬停点：
+  - `Time`：`1.0`
+  - `Value`：`8.0`
+- 下方全局速度倍率曲线当前悬停点：
+  - `Time`：`0.2`
+  - `Value`：`3.097`
+
+也就是说，粒子后段的竖直上升系数会被拉到约 `8`，而整体速度倍率在生命周期前 20% 左右已降到约 `3.1`。这种组合正好实现字幕里“希望像炸开一样这样扩散”的效果：前期先爆散开，后期再让速度更多转向上升而不是继续平推。
+
+中间堆栈中 `Empty008` 的 `Particle Update` 此时还可见：
+
+- `Scale Velocity`
+- `Curl Noise Force`
+- `Solve Forces and Velocity`
+- `Particle State`
+- `Scale Sprite Size`
+- `Scale Color`
+
+这说明当前火花的自然感不是单一速度模块完成的，而是靠“速度缩放 + 涡流扰动 + 尺寸/颜色衰减”共同塑造出来的。
+这张图回到 `Ex_04 (Play In Editor)` 的最终场景观感检查。角色位于爆发中心，周围已经同时叠加出三类效果：
+
+- 贴地和外圈的大体积火焰片层
+- 中心极亮的爆发光团
+- 大量分布在四周的细小火花/火星粒子
+
+与前几页相比，这一帧最明显的新变化是 GPU 火花层已经真正融入画面：角色两侧和后方都能看到许多点状橙白亮粒子，证明 `Empty008` 这一层不是只在参数面板里成立，而是确实补足了空间中的细碎高频细节。
+
+当前仍可确认的场景观察上下文有：
+
+- 右侧 Outliner 选中 `PostProcessVolume`
+- 右下 Details 仍停在 `PostProcessVolume (Instance)` 的 `Lens -> Bloom` 区域
+- 底部 Content Browser 位于 `Content/Signature/Course_05/Material`
+- 当前高亮资源是一份 `M_Additive_01_Ins_*` 材质实例
+
+这说明作者此时是在用完整场景结果去检查：
+
+- 火焰主体是否过亮
+- GPU 火花是否散得太开
+- 后期 Bloom 是否把高频火花吃掉或糊成一片
+
+从这张图可直接总结当前效果特征：
+
+- 整体比“砰的一下”的硬爆发更柔和，火焰边缘有流动感
+- GPU 火花让空间不再只有大片火焰贴面，而是多了真实的细粒子填充
+- 中心光团、外围火焰和火星粒子之间已经形成层次分离
+
+也正因为如此，这一帧可以看作本小节“蓝图、材质、渲染器”阶段的阶段性验收图：主要组成元素已经都齐了，后面只剩收尾流程和同步问题修正。
+这张图出现了一个新的发射器 `Empty009`。它不再使用 `Sprite Renderer`、`Mesh Renderer` 或 `Light Renderer`，而是直接切到 `Component Renderer`，对应小节文字里“我们用组件渲染器，做了两个，一个放个后材质，一个用蓝图调动画质”的做法。
+
+左侧 `Particle Counts` 当前显示：
+
+- `Empty008`：`320 Current, 800 Max (est.) [Active]`
+- `Empty009`：`1 Current, 1 Max (est.) [Active]`
+
+说明 `Empty009` 不是高数量粒子层，而是单实例组件层，用来挂接后处理/材质或蓝图组件。
+
+中间系统总览可以确认：
+
+- `Empty008` 仍是 GPU sprite 火花发射器
+- `Empty009` 是新的 CPU 发射器
+- `Empty009` 的 `Render` 阶段里可见两个 `Component Renderer`
+
+右侧当前展开的是其中一个 `Component Renderer`，可确认设置如下：
+
+- 顶部提示：
+  - `The component renderer is still a very experimental feature...`
+  - 说明该渲染器功能灵活，但在性能和安全性上仍属实验性质
+- `Component Rendering`
+  - `Component Type`：`None`
+  - `Component Count Limit`：`15`
+  - `Enabled Binding`：`PARTICLES ComponentsEnabled`
+  - `Renderer Visibility Tag`：`PARTICLES VisibilityTag`
+  - `Renderer Visibility`：`0`
+- `Scalability`
+  - `Low / Medium / High / Epic / Cinematic` 全部可见，当前 `Cinematic` 高亮
+  - `Allow in Cull Proxies`：开启
+- `Rendering`
+  - `Sort Order Hint`：`0`
+  - `Motion Vector Setting`：`Auto Detect`
+- `Bindings`
+  - `Renderer Enabled Binding`：`None`
+
+虽然这张图里 `Component Type` 还没指定具体组件类，但已经能可靠确认作者的结构意图：`Empty009` 将不再直接渲染一张贴图或一盏灯，而是通过 Niagara 组件渲染器去生成/控制额外组件，并且至少会放两个组件渲染器实例。按照上下文，这两个组件后续分别承担“后材质”与“蓝图调动画质”的职责。
+
+### 00:30:30-00:33:33 关键流程 08
+
+- 本段定位：关键流程 08。
+- 知识点：现在好像没同步 得再找问题 这么做的 这图得反过来用 这样做的误会了 所以结尾部分 那样0到1不行 原来的质理 得慢慢减少 这部分好像有点不同。
+- 知识点：看看其他部分 都好好进去了 现在自然就出来了 一开始突然表达也没关系 0.7有点长 弄短一点 那么 就这样做 这样试试看能不能更短点 10.70.5这样。
+- 知识点：强度适当降点也行 然后 0.70.5这样强度适当降点也行 然后这样看起来更好 这样看起来更好 这样一直进行到了完成 加入各种复杂因素后 觉得。
+- 知识点：变化的表现更加逼真了 这次利用模拟资源 也尝试表达了技能效果 这样也展示了另一种 有趣工作的可能性 我好像在工作过程中 展示了一些 我其实不太擅长多任务处理。
+- 知识点：同时解释的时候 经常会说得有点乱 这部分希望能适当谅解一下。
+
+**关键画面：**
+
+这张图进入 `关键流程 08` 的收尾阶段，`Empty009` 的组件渲染器已经不再是空配置，而是正式绑定到了一个蓝图组件类型 `BP_Zoom_Ctrl`。这直接印证了上一段“一个用蓝图调动画质”的说法。
+
+左侧 `Particle Counts` 当前显示：
+
+- `Empty008`：`400 Current, 800 Max (est.) [Inactive]`
+- `Empty009`：`0 Current, 1 Max (est.) [Complete]`
+
+说明此时 GPU 火花层仍留有余量在收尾，而蓝图组件层 `Empty009` 的单实例已经完整执行完毕。
+
+中间 `Empty009` 在 `Render` 阶段现在可以明确看到两个组件渲染器名称：
+
+- `BP Zoom Ctrl Renderer`
+- `Post Process Component Renderer`
+
+右侧当前展开的是 `BP Zoom Ctrl Renderer`，可确认设置如下：
+
+- `Component Type`：`BP_Zoom_Ctrl`
+- `Component Count Limit`：`15`
+- `Enabled Binding`：`PARTICLES ComponentsEnabled`
+- `Renderer Visibility Tag`：`PARTICLES VisibilityTag`
+- `Renderer Visibility`：`0`
+
+当前展开到 `Component Properties -> Default / Transform`，可确认的粒子到组件属性绑定包括：
+
+- `Alpha`：绑定到 `Particles.Alpha`
+- `Relative Location`：绑定到 `Particles.Position`
+- `Relative Rotation`：`(0.0, 0.0, 0.0)`
+- `Relative Scale 3D`：绑定到 `Particles.Scale`
+
+左下属性浏览面板当前也高亮在 `PARTICLES Alpha`，进一步说明这个蓝图组件的可见度或驱动强度会跟随 Niagara 粒子的 `Alpha` 变化。
+
+这张图的关键意义是：`Empty009` 不只是“生成一个组件”这么简单，而是把 Niagara 粒子属性直接桥接到蓝图控制器 `BP_Zoom_Ctrl` 上。这样后续蓝图就能跟随粒子的生成位置、缩放和透明度去驱动缩放、后材质或镜头感相关效果。
+这张图继续编辑 `Empty009`，当前焦点不是组件类型本身，而是 `Particle Update` 阶段新增的 `Set (PARTICLES) Alpha` 模块。它的作用很直接：在 Niagara 侧先把 `Particles.Alpha` 做成一条可控衰减曲线，再把这个 `Alpha` 值喂给前一张绑定好的组件渲染器。
+
+左侧 `Particle Counts` 当前显示：
+
+- `Empty008`：`400 Current, 800 Max (est.) [Inactive]`
+- `Empty009`：`1 Current, 1 Max (est.) [Complete]`
+
+说明此时主要是在收尾阶段调单实例组件层的强度变化，而不是继续大幅改主爆发粒子。
+
+中间 `Empty009` 堆栈现在能确认：
+
+- `Particle Update`
+  - `Particle State`
+  - `Set (PARTICLES) Alpha`
+- `Render`
+  - `BP Zoom Ctrl Renderer`
+  - `Post Process Component Renderer`
+
+右侧 `Set (PARTICLES) Alpha` 设置可确认如下：
+
+- 目标属性：`PARTICLES Alpha`
+- 值类型：`Float from Curve`
+- `Curve Index`：`Particles.NormalizedAge`
+- 当前 `Scale Curve`：`0.15`
+
+曲线图能直接看出它是一条从前段较高值逐步衰减到后段较低值的下降曲线，意味着组件层的影响会随着粒子年龄增长而持续减弱，而不是一直保持满强度。
+
+左下属性浏览面板当前也高亮在 `PARTICLES Alpha`，与前一张 `BP_Zoom_Ctrl` 渲染器中的 `Alpha -> Particles.Alpha` 绑定形成闭环：Niagara 先写 `Particles.Alpha`，组件渲染器再把这个值传给蓝图/后处理组件。
+
+因此这张图的关键是把收尾流程参数化：不是靠手工固定一个组件强度，而是让 `Empty009` 的组件层沿着一条 `Alpha` 曲线自然淡出。`Scale Curve=0.15` 也说明作者在有意把这层强度压得更低，避免蓝图/后处理效果喧宾夺主。
+这张图是 `p29` 的收尾运行态画面。爆发效果已经结束，角色在测试场景中向前移动，屏幕上不再显示火焰、火花或亮光残留，说明前面所有 Niagara 发射器以及 `Empty009` 组件层都已经按预期销毁或淡出，没有明显的后处理残留留在屏幕上。
+
+当前可确认的编辑器状态为：
+
+- 右侧 Outliner 显示运行时对象列表，已能看到：
+  - `ParticleEventManager0`
+  - `PhasePlayerCharacter0`
+  - `PlayerCameraManager0`
+- 底部 Content Browser 仍位于 `Content/Signature/Course_05/Material`
+- 当前高亮资源是 `PP_Zoom`
+- 左侧目录树下的 `Course_05` 已有：
+  - `Blueprint`
+  - `Level`
+  - `Material`
+  - `Mesh`
+  - `Particles`
+  - `Texture`
+
+这张图虽然不是参数编辑画面，但它验证了两件很关键的收尾结果：
+
+- 后处理/蓝图组件流程已经真正落到项目结构中，`PP_Zoom` 作为资源入口明确存在
+- 最终效果播放结束后，场景能回到正常第三人称状态，没有被组件渲染器或后处理材质卡死在高亮状态
+
+因此这张图可以视为 `关键流程 08` 的完成态检查：蓝图控制器、后处理材质和 Niagara 的联动已经走通，并且在技能结束后能正确回收。
+
+### 00:33:45-00:34:11 火焰
+
+- 本段定位：火焰。
+- 知识点：这样试玩技能时 可以确认效果 我们利用自己的编码资源 一起合作尝试了火焰的表现 那么第四个实力的完成 就在这里结束吧 下次后续会一起完成最后一个实力 那么我们就到这里结束吧 谢谢。
+- 核对对象：`火焰`。
+
+**关键画面：**
+
+这一帧是教程结尾的实际试玩验证画面。当前在 Unreal Editor 的 `Ex_04` 场景中以第三人称视角运行游戏，角色位于测试场中央，屏幕里能看到少量散落的发光火星/余烬，说明火焰技能效果已经被带回场景中做最终观察。
+
+当前图中可直接确认的场景与资源状态：
+- 工程/关卡窗口标题：`Ex_04`
+- 当前处于运行中，顶部工具栏可见暂停与停止按钮
+- 右侧 `Outliner` 当前可见：
+  - `Playground`
+  - `SM_Cube`
+  - `SM_Cube2`
+  - `SM_Cube3`
+  - `SM_Cube5`
+  - `BP_ThirdPersonGameMode10`
+  - `HUD`
+  - `ParticleEventManager0`
+  - `phasePlayerCharacter0`
+  - `PlayerCameraManager0`
+- 视口中角色正在测试场上移动，周围可见零散细小亮点粒子
+
+底部 `Content Browser` 当前路径与可见资源：
+- 路径：`Content > Signature > Course_05 > Material`
+- 当前可见多组材质资源，包括：
+  - 多个 `M_Additive...`
+  - 多个 `M_Mesh...`
+  - `M_Smoke...`
+  - `MPC_Blur`
+  - `PP_Zoom ...`
+
+这一步的作用是通过实际试玩来确认火焰技能在场景中的最终落地状态。结合正文“这样试玩技能时可以确认效果……第四个实例的完成就在这里结束”可知，这里不是再调参数，而是验证材质、火焰粒子和场景表现已经能够一起工作。当前截图只显示到零散火星/余烬阶段，没有单独展开 Niagara 或材质节点，因此不能从该图继续反推具体模块参数。
+这一帧显示火焰技能进入最明显的爆发表现。角色站在测试场中央，脚下和身体周围出现一圈连续铺开的橙白色火焰带，同时大量发光火星向外散开，形成一个围绕角色展开的环状火焰区域。
+
+当前图中可直接确认的最终表现特征：
+- 火焰以角色为中心沿地面向四周展开
+- 主火焰是连续片状/带状的流动火焰，而不是单点喷射
+- 画面中同时存在大量独立的亮点余烬粒子
+- 火焰主体颜色以亮黄白核心加橙红边缘为主
+- 场景背景仍是 `Ex_04` 的简化测试场，不存在复杂环境遮挡
+
+底部 `Content Browser` 当前仍停留在：
+- `Content > Signature > Course_05 > Material`
+
+可见资源延续上一张，包括：
+- 多个 `M_Additive...`
+- 多个 `M_Mesh...`
+- `M_Smoke...`
+- `MPC_Blur`
+- `PP_Zoom ...`
+
+这一步的作用是确认前面制作的序列火焰、网格/粒子组合和材质发光效果已经在实际技能触发时形成完整的视觉冲击。相较于上一帧的零散余烬，这一帧已经明确展示出“地面环状火焰 + 空中火星”的成品形态，可用于判断第四个实例的主效果已经基本达成。
+这一帧是第四个实例结束时的收束状态。角色已经回到场地中央的普通站立状态，上一帧中围绕身体展开的大片火焰和余烬已经完全消退，场景恢复为干净的测试场地。
+
+当前图中可直接确认的结束状态：
+- 角色仍停留在 `Ex_04` 测试场中央
+- 地面不再可见环状火焰贴片
+- 画面中不再有明显的火星/余烬粒子
+- 顶部工具栏仍显示处于运行中，可随时暂停/停止
+
+底部 `Content Browser` 仍保持在：
+- `Content > Signature > Course_05 > Material`
+
+可见资源延续上一张：
+- 多个 `M_Additive...`
+- 多个 `M_Mesh...`
+- `M_Smoke...`
+- `MPC_Blur`
+- `PP_Zoom ...`
+
+这一步的作用是确认技能生命周期能够正常结束，而不是把火焰残留在场景中。结合字幕“下次我们将一起完成最后一个示例”可知，这一帧既是第四个实例的收尾，也是在验证本次火焰效果的生成、展示与消退流程已经闭环完成。
+
+## 补充视觉证据
+
+### S06 00:19:45
+
+这是一张对 `S06 00:19:45` 的 Niagara 参数补充截图。当前打开的是 Niagara System `Ex_04_FireSkill`，选中发射器为 `Empty008`，右侧 `Details` 面板定位在 `Particle Update > Scale Velocity` 模块，用来控制速度缩放的矢量与浮点曲线。
+
+当前图中可直接确认的系统与发射器结构：
+- Niagara System：`Ex_04_FireSkill`
+- 当前选中发射器：`Empty008`
+- 预览左侧 `Particle Counts` 可见：
+  - `Empty` 到 `Empty007` 当前粒子数都很低并标记为 `[Complete]`
+  - `Empty008` 显示为 `117 Current, 1000 Max (est.) [Inactive]`
+- 中央系统总览中当前能看到：
+  - `Empty007`
+  - `Empty008`
+
+`Empty008` 当前可见模块结构：
+- `Emitter Spawn`
+- `Emitter Update`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Shape Location Sphere`
+  - `Add Velocity From Point`
+- `Particle Update`
+  - `Scale Velocity`
+  - `Curl Noise Force`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+- `Render`
+  - `Sprite Renderer`
+
+`Scale Velocity` 当前可确认的设置：
+- `Coordinate Space = World`
+- `Velocity Scale = Multiply Vector by Float`
+- `Vector = Make Vector`
+  - `X = 1.0`
+  - `Y = 1.0`
+  - `Z = Float from Curve`
+- `Z` 对应的 `FloatCurve`：
+  - `Curve for Floats`
+  - `CurveIndex = [PARTICLES] NormalizedAge`
+  - `Scale Curve = 1.0`
+  - 曲线前段约为 `0`
+  - 中后段平滑上升
+  - 末端约升到 `8`
+- 下方 `Float = Float from Curve`
+  - `Curve for Floats`
+  - `CurveIndex = [PARTICLES] NormalizedAge`
+  - 曲线起点约为 `5`
+  - 随生命周期逐步衰减
+  - 末端接近 `0`
+
+左下曲线编辑器当前还能看到被选中的 `FloatCurve` 形态：
+- 起点约 `0.7`
+- 中段持续下降
+- 终点约 `0.3`
+
+这张补充图的作用是把 `Empty008` 的速度缩放曲线补齐。可直接确认的是：该发射器在粒子更新阶段并不是恒定保持速度，而是让 `Scale Velocity` 随 `NormalizedAge` 变化，其中 `Z` 方向后段抬升，而另一个浮点曲线整体逐步衰减。结合字幕“让曲线更平缓些”可知，作者在这里强调的是把速度变化做得更顺滑，以避免火焰/粒子运动出现过硬的突变。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

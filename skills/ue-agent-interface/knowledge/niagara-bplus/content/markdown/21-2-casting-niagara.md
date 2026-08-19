@@ -1,0 +1,1458 @@
+# 21-2 制作Casting Niagara粒子特效
+
+# 21-2 制作Casting Niagara粒子特效
+
+## 关键术语
+
+- `Color`、`Alpha`、`GPU`、`Material`、`Opacity`、`Texture`、`材质`、`粒子`、`发射器`、`Niagara`、`Emitter`、`Particle`、`Spawn Rate`、`Spawn`、`Lifetime`、`Normalized Age`、`Niagara System`、`Initialize Particle`
+
+## 分段知识
+
+### 00:00:00-00:02:47 颜色、纹理
+
+- 本段定位：颜色、纹理。
+- 知识点：非常密集吧 如果只看四代 看这个纹理有点像这个水的点特性 边缘有点生动的部分 而且这里中间部分的颜色。
+- 知识点：有点空洞的感觉 这种感觉我认为还是比较符合 水滴的特性 所以使用了这个纹理 这种纹理即使有阳灾区。
+- 知识点：看起来这个边缘不会破碎 如果把这些作为一点来看会比较好 所以现在这里看到的歪曲 即使破裂也有重新聚集的感觉 跟水很像的感觉 我觉得这是一种很好的体现。
+- 知识点：水的特性的色彩 所以用了这个纹理 这里会适当增加一下平铺 水的线条不那么密集 就这个程度我们看一下 感觉还不错 颜色感觉也跟中间的水滴有点吻合。
+- 知识点：四代本身有一个平易的效果 感觉到这边有某种流动聚集 时机也似乎很合适 适当调整一下选项 让水的感觉更强烈一些 甚至修改一下 这毕竟有点半血石的感觉。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 纹理资源 `13_2` 的水滴状纹理复查
+> - 组成部分: Texture Editor + Details + Content Browser + 字幕
+> - 所属: Texture `13_2`。
+> - 目的: 复查用于水系 Ribbon/粒子表现的纹理，确认其边缘水纹和中部留空特征。
+>
+> Texture Editor:
+> - 打开的纹理标签为 `13_2`。
+> - 预览中央显示横向 `512x256` 纹理，黑底上有灰白半透明、带状流动水纹。
+> - 纹理边缘有较亮的水纹线条，中间区域较暗且留空，适合作为水滴/水流边缘纹理。
+> - 顶部工具栏可见 `R/G/B/A` 通道按钮、`Mip Level 0`、`Zoom`、`Fit (100%)`。
+>
+> Details:
+> | 字段 | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Imported` | `512x256` | pixels | Details | 导入尺寸 |
+> | `Displayed` | `512x256` | pixels | Details | 当前显示尺寸 |
+> | `Max In-Game` | `512x256` | pixels | Details | 游戏内最大尺寸 |
+> | `Resource Size` | `85 KB` | size | Details | 资源大小 |
+> | `Has Alpha Channel` | `False` | bool | Details | 无 Alpha 通道 |
+> | `Source Alpha Detected` | `False` | bool | Details | 未检测到源 Alpha |
+> | `Method` | `Streamed` | enum | Details | 流式纹理 |
+> | `Format` | `DXT1` | format | Details | 压缩格式 |
+> | `Number of Mips` | `10` | integer | Details | Mip 数量 |
+> | `Mip Gen Settings` | `FromTextureGroup` | enum | Details | Mip 生成设置 |
+> | `LOD Bias` | `0` | integer | Details | LOD 偏移 |
+> | `Texture Group` | `World` | enum | Details | 纹理组 |
+> | `Compression Settings` | `Default (DXT1/5, BC1/3 on DX11)` | enum | Details | 默认压缩 |
+> | `Power Of Two Mode` | `None` | enum | Details | 不额外调整为 2 次幂模式 |
+> | `sRGB` | 勾选 | bool | Details | 使用 sRGB |
+> | `Brightness` | `1.0` | float | Details | 亮度 |
+> | `Brightness Curve` | `1.0` | float | Details | 亮度曲线 |
+> | `Vibrance` | `0.0` | float | Details | 鲜艳度 |
+> | `Saturation` | `1.0` | float | Details | 饱和度 |
+> | `RGBCurve` | `1.0` | float | Details | RGB 曲线 |
+> | `Hue` | `0.0` | float | Details | 色相 |
+> | `Min Alpha` | `0.0` | float | Details | 最小 Alpha 字段 |
+>
+> 字幕:
+> - 字幕文本为“看这个纹理，有点像水的点特性”。
+>
+> 画面含义: 当前帧说明继续使用 `13_2` 纹理的原因：边缘半透明水纹和中心留空特征与水滴/水点表现相符。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Ribbon_01001.Ribbon Renderer` 绑定与 Scalability 检查
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + 曲线面板 + Timeline + 字幕
+> - 所属: Niagara System `Cast_02`，Emitter `Ribbon_01001`，Renderer `Ribbon Renderer`。
+> - 目的: 检查复制 Ribbon 的 Renderer 绑定、动态材质参数绑定和可扩展性级别。
+>
+> Niagara Preview:
+> - `Particle Counts` 显示 `0 Current, 1 Max (est.) - [Source_01] [Complete]`，`0 Current, 92 Max (est.) - [Ribbon_01] [Complete]`，`0 Current, 92 Max (est.) - [Ribbon_01001] [Complete]`。
+> - Preview 当前没有可见粒子，说明该时间点各相关 Emitter 已完成。
+>
+> System Overview / Stack:
+> | Emitter | 组 | 模块/项 | 状态/设置 | 作用 |
+> |---|---|---|---|---|
+> | `Ribbon_01` | Emitter/Particle/Render | `Spawn Particles from Other Emitter`、`Emitter State`、`Sample Particles from Other Emitter`、`Dynamic Material Parameters`、`Scale Ribbon Width`、`Scale Color`、`Ribbon Renderer` | Enabled | 主 Ribbon 层 |
+> | `Ribbon_01001` | Emitter Update | `Spawn Particles from Other Emitter`、`Emitter State` | Enabled | 复制 Ribbon 生成 |
+> | `Ribbon_01001` | Particle Spawn | `Initialize Particle`、`Sample Particles from Other Emitter` | Enabled | 初始化与采样 |
+> | `Ribbon_01001` | Particle Update | `Particle State`、`Solve Forces and Velocity`、`Dynamic Material Parameters`、`Scale Ribbon Width`、`Scale Color` | Enabled | 更新、材质参数、宽度和颜色 |
+> | `Ribbon_01001` | Render | `Ribbon Renderer` | 选中并 Enabled | 当前 Details Owner |
+>
+> Details:
+> | Binding | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Position Binding` | `PARTICLES / Position` | Details | Ribbon 顶点位置 |
+> | `Color Binding` | `PARTICLES / Color` | Details | Ribbon 颜色 |
+> | `Velocity Binding` | `PARTICLES / Velocity` | Details | 速度绑定 |
+> | `Normalized Age Binding` | `PARTICLES / NormalizedAge` | Details | 归一化年龄 |
+> | `Ribbon Twist Binding` | `PARTICLES / RibbonTwist` | Details | Ribbon 扭转 |
+> | `Ribbon Width Binding` | `PARTICLES / RibbonWidth` | Details | Ribbon 宽度 |
+> | `Ribbon Facing Binding` | `PARTICLES / RibbonFacing` | Details | Ribbon 朝向 |
+> | `Ribbon Id Binding` | `PARTICLES / RibbonID` | Details | Ribbon ID |
+> | `Ribbon Link Order Binding` | `PARTICLES / RibbonLinkOrder` | Details | Ribbon 连接顺序 |
+> | `Material Random Binding` | `PARTICLES / MaterialRandom` | Details | 材质随机 |
+> | `Dynamic Material Parameter 0-3` | `PARTICLES / DynamicMaterialParameter0..3` | Details | 动态材质参数 |
+> | `Ribbon UVDistance` | `PARTICLES / RibbonUVDistance` | Details | Ribbon UV 距离 |
+> | `U0/V0/U1/V1 Override Binding` | `PARTICLES / RibbonU0Override` 等 | Details | UV Override |
+>
+> Scalability / Rendering:
+> - Scalability 级别按钮 `Low`、`Medium`、`High`、`Epic`、`Cinematic` 均可见。
+> - `Allow in Cull Proxi...` 勾选。
+> - `Sort Order Hint` 为 `10`。
+> - `Motion Vector Set...` 显示 `Auto Detect`。
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `4.84`，帧数约 `1161 of 2400`，`Ribbon_01001` 轨道处于选中状态。
+> - 字幕文本为“就这程度我们看一下”。
+>
+> 画面含义: 当前帧用于核对 `Ribbon_01001.Ribbon Renderer` 的粒子属性绑定；虽然预览当前没有粒子可见，但 Renderer 绑定仍确认了后续 Ribbon 输出依赖哪些粒子属性。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Ribbon_01001.Ribbon Renderer` 输出检查
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + 曲线面板 + Timeline + 字幕
+> - 所属: Niagara System `Cast_02`，Emitter `Ribbon_01001`，Renderer `Ribbon Renderer`。
+> - 目的: 在可见粒子状态下检查复制 Ribbon 的 Renderer 绑定和水珠状粒子边缘表现。
+>
+> Niagara Preview:
+> - `Particle Counts` 显示 `1 Current, 1 Max (est.) - [Source_01] [Inactive]`，`38 Current, 92 Max (est.) - [Ribbon_01] [Active]`，`38 Current, 92 Max (est.) - [Ribbon_01001] [Active]`。
+> - Preview 中可见浅蓝白弧形 Ribbon，边缘有细小颗粒/水珠状亮点。
+>
+> System Overview / Stack:
+> | Emitter | 组 | 模块/项 | 状态/设置 | 作用 |
+> |---|---|---|---|---|
+> | `Ribbon_01` | Update/Render | `Dynamic Material Parameters`、`Scale Ribbon Width`、`Scale Color`、`Ribbon Renderer` | Enabled | 主 Ribbon 层 |
+> | `Ribbon_01001` | Emitter Update | `Spawn Particles from Other Emitter`、`Emitter State` | Enabled | 复制 Ribbon 生成 |
+> | `Ribbon_01001` | Particle Spawn | `Initialize Particle`、`Sample Particles from Other Emitter` | Enabled | 初始化和采样 |
+> | `Ribbon_01001` | Particle Update | `Particle State`、`Solve Forces and Velocity`、`Dynamic Material Parameters`、`Scale Ribbon Width`、`Scale Color` | Enabled | 更新、材质、宽度和颜色 |
+> | `Ribbon_01001` | Render | `Ribbon Renderer` | 选中并 Enabled | 输出复制 Ribbon |
+>
+> Details:
+> - 当前仍显示 `Ribbon Renderer` 的 Bindings：`Position`、`Color`、`Velocity`、`NormalizedAge`、`RibbonTwist`、`RibbonWidth`、`RibbonFacing`、`RibbonID`、`RibbonLinkOrder`、`MaterialRandom`、`DynamicMaterialParameter0..3`、`RibbonUVDistance` 和 UV Override 均绑定到 `PARTICLES` 命名空间下对应属性。
+> - Scalability 级别按钮 `Low/Medium/High/Epic/Cinematic` 可见，`Allow in Cull Proxi...` 勾选。
+> - `Sort Order Hint` 为 `10`。
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `1.93`，帧数约 `465 of 2400`。
+> - 字幕文本为“如果能够加入颗粒状像火花的水珠感觉会更好”。
+>
+> 画面含义: 当前帧确认复制 Ribbon 的 Renderer 绑定在活动粒子状态下输出浅蓝水纹；边缘小亮点对应字幕中的颗粒状水珠表现方向。
+
+### 00:02:53-00:05:53 材质、精灵、生命周期
+
+- 本段定位：材质、精灵、生命周期。
+- 知识点：加上这个作为一整套来看 应该可以检查一下 这里也设为3 这里的话大约3秒 再把延迟减少到0.1秒 接下来这个Other就一样用一 这个就要多一些吧。
+- 知识点：设为50 接下来生命周期的话 适当随机一下 在4秒到5秒之间 需要从随机的统一中给出13 1.52左右 或许这里只需存在ID值即可 作为属性值。
+- 知识点：现在这样直线排列出来 需要适当给点偏移 用形状位置 太大了只给10这样 以一个值让它适当突出表面 比起从中间突出 只适当给这样偏移 然后制作缩放。
+- 知识点：精灵大小 保持到0.5秒为止 在时机上逐渐变小 从0.5开始逐渐变小 就是这样 然后先把材质适当改变一下。
+- 知识点：会很亮吧 因为需要看颜色部分 我们把材质都一样 这个材料这个添加剂没有模糊 需要带过来使用 当然会用Volociton Line来做 接下来适当给一点颜色 让它有随机的运动。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`生命周期`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 新增 `Empty` Emitter 并设置 Emitter Properties
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + 曲线面板 + Timeline + 字幕
+> - 所属: Niagara System `Cast_02`，Emitter `Empty`。
+> - 目的: 新增一层用于颗粒/水珠感的 Emitter，并先设置它的 Emitter Properties。
+>
+> Niagara Preview:
+> - `Particle Counts` 显示 `1 Current, 1 Max (est.) - [Source_01] [Inactive]`，`68 Current, 68 Max (est.) - [Ribbon_01] [Active]`，`68 Current, 68 Max (est.) - [Ribbon_01001] [Active]`，`0 Current, 0 Max (est.) - [Empty] [Active]`。
+> - Preview 中可见蓝白弧形水纹 Ribbon，`Empty` 当前还没有可见粒子。
+>
+> System Overview / Stack:
+> | Emitter | 组 | 模块/项 | 状态/设置 | 作用 |
+> |---|---|---|---|---|
+> | `Ribbon_01` | Update/Render | `Dynamic Material Parameters`、`Scale Ribbon Width`、`Scale Color`、`Ribbon Renderer` | Enabled | 主 Ribbon |
+> | `Ribbon_01001` | Update/Render | `Dynamic Material Parameters`、`Scale Ribbon Width`、`Scale Color`、`Ribbon Renderer` | Enabled | 复制 Ribbon |
+> | `Empty` | Emitter Properties | `Emitter Properties` | 选中 | 当前 Details Owner |
+> | `Empty` | Emitter Spawn | `Emitter Summary` | 可见 | Emitter 摘要 |
+> | `Empty` | Emitter Update | `Emitter State` | `System` 可见 | 生命周期跟随 System |
+> | `Empty` | Particle Spawn | `Initialize Particle` | Enabled | 初始化颗粒粒子 |
+> | `Empty` | Particle Update | `Particle State` | Enabled | 更新粒子状态 |
+> | `Empty` | Render | `Sprite Renderer` | Enabled | 使用 Sprite 输出 |
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Empty.Emitter Properties.Local Space` | 勾选 | bool | Details | 启用 Local Space 字段 |
+> | `Determinism` | 未勾选 | bool | Details | 不启用确定性 |
+> | `Interpolated Spawning` | 勾选 | bool | Details | 插值生成 |
+> | `Sim Target` | `CPUSim` | enum | Details | CPU 模拟 |
+> | `Calculate Bounds Mode` | `Dynamic` | enum | Details | 动态 Bounds |
+> | `Requires Persistent IDs` | 未勾选 | bool | Details | 不要求持久 ID |
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `3.46`，帧数约 `830 of 2400`，`Empty` 轨道处于选中状态。
+> - 字幕文本为“这里也设为self”。
+>
+> 画面含义: 当前帧新增 `Empty` Emitter 作为后续颗粒/水珠层，先确认其基础模拟、Local Space、动态 Bounds 和默认 Sprite Renderer 状态。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Empty.Sample Particles from Other Emitter` 采样字段
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + 曲线面板 + Timeline + 字幕
+> - 所属: Niagara System `Cast_02`，Emitter `Empty`，模块 `Sample Particles from Other Emitter`。
+> - 目的: 让新增 `Empty` Emitter 从其他 Emitter 采样粒子，并确认哪些采样项保持禁用或只输出 ID。
+>
+> Niagara Preview:
+> - Preview 正在编译，显示 `Compiling Emitter - Source_01`、`Compiling Emitter - Ribbon_01`、`Compiling Emitter - Ribbon_01001`、`Compiling Emitter - Empty`。
+> - 预览中央显示 `Compiling...`，当前帧不用于判断最终颗粒外观。
+>
+> System Overview / Stack:
+> | Emitter | 组 | 模块/项 | 状态/设置 | 作用 |
+> |---|---|---|---|---|
+> | `Ribbon_01001` | Render | `Ribbon Renderer` | Enabled | 复制 Ribbon 输出 |
+> | `Empty` | Emitter Update | `Emitter State` | `Self`、`Once` 可见 | Empty 生命周期 |
+> | `Empty` | Emitter Update | `Spawn Particles from Other Emitter` | Enabled | 从其他 Emitter 生成粒子 |
+> | `Empty` | Particle Spawn | `Initialize Particle` | Enabled | 初始化 Empty 粒子 |
+> | `Empty` | Particle Spawn | `Sample Particles from Other Emitter` | 选中并 Enabled | 采样其他 Emitter 粒子属性 |
+> | `Empty` | Particle Update | `Particle State` | Enabled | 更新状态 |
+> | `Empty` | Render | `Sprite Renderer` | Enabled | Sprite 输出 |
+>
+> Details:
+> - 采样项中 `Velocity Sampling`、`Color Sampling`、`Age Sampling`、`Lifetime Sampling`、`Mass Sampling`、`Material Random Sampling` 均显示 `Disabled`。
+> - Sprite Renderer Binding 下的 `Sprite Size Sampling`、`Sprite Rotation Sampling`、`Sprite Facing Sampling`、`Sprite Alignment Sampling` 均显示 `Disabled`。
+> - Mesh Renderer Binding 下的 `Mesh Scale Sampling`、`Mesh Orientation Sampling` 显示 `Disabled`。
+> - Dynamic Material Parameter 相关采样项可见，均显示 `Disabled`。
+> - `Particle ID (Ribbon ID).Particle ID Sampling` 显示 `Output Only`。
+> - `Ribbon UV Distance.Ribbon UV Distance` 显示 `Disabled`。
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `3.28`，帧数约 `789 of 2400`，`Empty` 轨道处于选中状态。
+> - 字幕文本为“然后”。
+>
+> 画面含义: 当前帧设置 `Empty` 的 `Sample Particles from Other Emitter`，采样模块大部分属性保持禁用，只把 Particle ID 作为输出相关信息保留，为后续颗粒位置/材质设置做准备。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Empty` 颗粒层 Shape Location 与 Sprite Renderer
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + 曲线面板 + Timeline
+> - 所属: Niagara System `Cast_02`，Emitter `Empty`，Renderer `Sprite Renderer`。
+> - 目的: 为新增颗粒层加入形状位置偏移，并用 additive sprite 材质输出水珠/火花状颗粒。
+>
+> Niagara Preview:
+> - `Particle Counts` 显示 `1 Current, 1 Max (est.) - [Source_01] [Inactive]`，`54 Current, 92 Max (est.) - [Ribbon_01] [Active]`，`54 Current, 92 Max (est.) - [Ribbon_01001] [Active]`，`131 Current, 150 Max (est.) - [Empty] [Active]`。
+> - Preview 中可见蓝白 Ribbon 外侧新增许多细小亮点，表现为水珠/颗粒层。
+>
+> System Overview / Stack:
+> | Emitter | 组 | 模块/项 | 状态/设置 | 作用 |
+> |---|---|---|---|---|
+> | `Ribbon_01001` | Render | `Ribbon Renderer` | Enabled | 复制 Ribbon 输出 |
+> | `Empty` | Emitter Update | `Emitter State`、`Spawn Particles from Other Emitter` | Enabled | 控制颗粒层生命周期和生成 |
+> | `Empty` | Particle Spawn | `Initialize Particle` | Enabled | 初始化颗粒粒子 |
+> | `Empty` | Particle Spawn | `Sample Particles from Other Emitter` | Enabled | 从其他 Emitter 采样 |
+> | `Empty` | Particle Spawn | `Shape Location Sphere` | Enabled | 用球形位置/偏移分布颗粒 |
+> | `Empty` | Particle Update | `Particle State`、`Scale Sprite Size`、`Solve Forces and Velocity` | Enabled | 状态、大小和运动解算 |
+> | `Empty` | Render | `Sprite Renderer` | 选中并 Enabled | 输出颗粒 Sprite |
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Empty.Sprite Renderer.Material` | `M_AdditiveNoBlur_v01` | Material | Details | 使用 additive 无模糊材质 |
+> | `Material User Parameter Binding` | `None` | binding | Details | 不用 User Parameter 覆盖材质 |
+> | `Source Mode` | `Particles` | enum | Details | 以粒子为渲染源 |
+> | `Alignment` | `Velocity Aligned` | enum | Details | Sprite 按速度对齐 |
+> | `Facing Mode` | `Automatic` | enum | Details | 自动面向 |
+> | `Macro UVRadius` | `0.0` | float | Details | Macro UV 半径 |
+> | `Default Pivot in UV Space` | `(0.5, 0.5)` | vector2 | Details | Sprite Pivot 居中 |
+> | `Remove HMD Roll` | 未勾选 | bool | Details | 不移除 HMD Roll |
+> | `Pixel Coverage Mode` | `Automatic` | enum | Details | 自动像素覆盖 |
+> | `Pixel Coverage Blend` | `1.0` | float | Details | 覆盖混合 |
+> | `Min/Max Facing Camera Blend Distance` | `0.0 / 0.0` | float | Details | 面向相机混合距离 |
+> | `Sorting.Sort Mode` | `None` | enum | Details | 不额外排序 |
+> | `Visibility.Renderer Visibility` | `0` | int | Details | Renderer Visibility 值 |
+>
+> Timeline:
+> - Timeline 当前约 `2.77`，帧数约 `664 of 2400`，`Empty` 轨道处于选中状态。
+>
+> 画面含义: 当前帧完成 `Empty` 颗粒层的基础输出：从其他 Emitter 采样后，通过 `Shape Location Sphere` 分布，并用 `M_AdditiveNoBlur_v01` 的 `Velocity Aligned` Sprite Renderer 生成弧形水纹周围的细小亮点。
+
+### 00:06:00-00:08:58 Alpha、颜色、纹理
+
+- 本段定位：Alpha、颜色、纹理。
+- 知识点：感觉像是渐渐散开的感觉 感觉还不错 现在只需要调整颜色 用缩放颜色带过来 因为会使用相同的指 这个只要By Float 大约32 这里原本纹理就大约有红色调。
+- 知识点：这个专业值 大概调整到这个程度 然后亮度一开始要强一点 大约从30开始到0值 这个F快速减下 我快速消失的感觉 Alpha也大约0.3秒。
+- 知识点：我们来看一下有什么感觉 我觉得还不错 现在因为我只用一个显示器 这里现在这种颗粒表现 发光的感觉或者这些 可能看起来不太漂亮 在一起制作时看时。
+- 知识点：现在这个屏幕很小 比例可能有些失真 如果在自己屏幕上看的值就好看 那可以试着找找那个值 这个标准可能适当大一些 或者克拉克斯可以更强一点。
+- 知识点：由于这样一组已经完成 所以将其 复制并放置 复制并命名为2号 然后再复制一个。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`纹理`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Empty` 颗粒层颜色调整入口
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + 曲线面板 + Timeline + Add Module 菜单 + 字幕
+> - 所属: Niagara System `Cast_02`，Emitter `Empty`。
+> - 目的: 在颗粒层已有 Sprite 输出后，准备给 `Empty` 的 Particle Update 添加颜色缩放模块。
+>
+> Niagara Preview:
+> - `Particle Counts` 显示 `1 Current, 1 Max (est.) - [Source_01] [Active]`，`15 Current, 92 Max (est.) - [Ribbon_01] [Active]`，`15 Current, 92 Max (est.) - [Ribbon_01001] [Active]`，`35 Current, 150 Max (est.) - [Empty] [Active]`。
+> - Preview 中可见少量白色颗粒沿水纹轨迹分布。
+>
+> System Overview / Stack:
+> | Emitter | 组 | 模块/项 | 状态/设置 | 作用 |
+> |---|---|---|---|---|
+> | `Ribbon_01001` | Particle Update / Render | `Dynamic Material Parameters`、`Scale Ribbon Width`、`Scale Color`、`Ribbon Renderer` | Enabled | 复制 Ribbon 层 |
+> | `Empty` | Emitter Update | `Emitter State`、`Spawn Particles from Other Emitter` | Enabled | 控制颗粒层生成 |
+> | `Empty` | Particle Spawn | `Initialize Particle`、`Sample Particles from Other Emitter`、`Shape Location Sphere` | Enabled | 初始化、采样和球形位置分布 |
+> | `Empty` | Particle Update | `Particle State`、`Solve Forces and Velocity` | `Solve Forces and Velocity` 当前在 Details 中展开 | 解算颗粒运动 |
+> | `Empty` | Particle Update | Add Module 菜单 | 搜索框输入 `sc`，建议项含 `Scale Color`、`Scale Color by Speed`、`Scale Ribbon Width` | 准备添加颜色缩放 |
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Empty.Solve Forces and Velocity.Speed Limit` | `1000.0` | float | Details | 速度上限字段 |
+> | `Acceleration Limit` | `9999.0` | float | Details | 加速度上限字段 |
+> | `Manually Enable Rota...` | 未勾选 | bool | Details | 手动旋转相关字段未启用 |
+>
+> 曲线 / Timeline / 字幕:
+> - 曲线面板中选中 `Float` 曲线，左侧列表可见 `Source_C`、`Ribbon_0`、`Scale RGB` 等分组；曲线从约 `1` 逐步下降到 `0`。
+> - Timeline 当前约 `10.94`，帧数约 `2626 of 2400`，`Empty` 轨道处于选中状态。
+> - 字幕文本为“现在只需要调整颜色”。
+>
+> 画面含义: 当前帧说明 `Empty` 颗粒层的运动解算已存在，下一步通过 Add Module 搜索 `Scale Color` 来调整颗粒颜色和淡出。
+> 图表转写（UE-GTXT v4）
+> - 类型: 关卡 Viewport 中水球、水纹 Ribbon 与颗粒层预览
+> - 组成部分: 关卡 Viewport + Outliner + Content Browser + Niagara Editor 底部局部 + 字幕
+> - 所属: Level `06_Water_Explosion`，关卡 Actor `Cast 01`、`Cast 02`，Niagara System `Cast_02`。
+> - 目的: 在关卡视角检查调整后的水系爆发效果是否具备透明水球、环形水纹和颗粒亮点。
+>
+> 关卡 Viewport:
+> - 视口处于 `Pilot Actor: Cine Camera Actor`。
+> - 棋盘地面中央有角色，角色外侧包围一个半透明灰蓝水球。
+> - 水球周围有两条浅蓝白 Ribbon 水纹，一条从左侧拖入球体附近，另一条在右侧形成弧形环绕。
+> - 水纹边缘有细小白色亮点，表现为颗粒/水珠层。
+>
+> Outliner:
+> | Actor | Sequencer | Type | 作用 |
+> |---|---|---|---|
+> | `06_Water_Explosion (Editor)` | - | 场景根项 | 当前关卡/序列语境 |
+> | `Cast 01` | `06_Water_Explosion` | Niagara Actor | 第一组 Niagara 效果 |
+> | `Cast 02` | `06_Water_Explosion` | Niagara Actor | 当前制作的第二组 Niagara 效果 |
+> | `Cine Camera Ac...` | `06_Water_Explosion` | CineCameraActor | 当前 Pilot 视角 |
+> | `Floor` | - | StaticMesh | 棋盘地面 |
+> | `PlayerStart` | - | PlayerStart | 场景起点 |
+> | `PostProcessVo...` | - | PostProcessVolume | 后处理体 |
+>
+> Content Browser:
+> - 当前在 `Content/Coloso_Se.../Material` 目录，能看到 `M_AdditiveNoBlur_v01`、`M_Decal_01`、`M_Magic...` 等材质资源缩略图。
+> - `M_AdditiveNo...` 类材质资源处于选中状态，关联前一批 `Empty.Sprite Renderer.Material=M_AdditiveNoBlur_v01` 的颗粒输出语境。
+>
+> 字幕:
+> - 字幕文本为“我觉得还不错。”。
+>
+> 画面含义: 当前帧用于检查颜色和颗粒层调整后的关卡效果：透明水球仍可见，Ribbon 水纹围绕角色，颗粒亮点沿水纹边缘出现。
+> 图表转写（UE-GTXT v4）
+> - 类型: 复制并放置第一组 `Source/Ribbon/Empty` Emitter
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + 曲线面板 + Timeline + 字幕
+> - 所属: Niagara System `Cast_02`，Emitters `Source_01`、`Ribbon_01`、`Ribbon_01001`、`Empty`。
+> - 目的: 在第一组水纹和颗粒完成后，将相关 Emitter 作为一组复制并准备放置。
+>
+> Niagara Preview:
+> - `Particle Counts` 显示 `0 Current, 1 Max (est.) - [Source_01] [Complete]`，`0 Current, 92 Max (est.) - [Ribbon_01] [Complete]`，`0 Current, 92 Max (est.) - [Ribbon_01001] [Complete]`，`73 Current, 150 Max (est.) - [Empty] [Inactive]`。
+> - Preview 中只剩少量散点，Ribbon 和 Source 在该时间点已完成。
+>
+> System Overview:
+> - 图中可见一排 Emitter，从左到右包括 `Cast_02` 系统项、`Source_01`、`Ribbon_01`、`Ribbon_01001`、`Empty`。
+> - `Empty` 外框高亮，表示当前选中的是 `Empty` Emitter。
+>
+> Details:
+> - 顶部 Emitter 列表显示 `Source_01`、`Ribbon_01`、`Ribbon_01001`、`Empty` 均勾选，但状态文字为 `No running preview...`。
+> - 当前 Details Owner 为 `Source_01 - Emitter Properties`。
+> - `Emitter.Local Space` 勾选，`Determinism` 未勾选，`Interpolated Spawning` 勾选。
+> - `Sim Target=CPUSim`，`Calculate Bounds Mode=Dynamic`，`Requires Persistent IDs` 未勾选。
+> - `Emitter Summary` 显示 `No Parameters in Emitter Summary`。
+> - `Source_01 - Emitter State` 展开，`Life Cycle Mode=Self`，`Inactive Response=Complete (Let Particles Finish then ...)`，`Loop Behavior=Once`，`Loop Duration Mode=Fixed`，`Loop Duration=1.0`。
+>
+> 曲线 / Timeline / 字幕:
+> - 曲线面板显示 `Float` 曲线从约 `32` 降到 `0`，用于当前段落中亮度/颜色强度快速衰减语境。
+> - Timeline 当前约 `6.14`，帧数约 `1474 of 2400`。
+> - Timeline 中 `Empty`、`Ribbon_01`、`Ribbon_01001` 等轨道可见，绿色片段覆盖约 `1.00` 到 `6.00` 一带。
+> - 字幕文本为“复制并放置。”。
+>
+> 画面含义: 当前帧记录第一组 `Source/Ribbon/Empty` 结构已经形成并进入复制放置步骤；复制对象包含 Source、两层 Ribbon 和颗粒层。
+
+### 00:09:01-00:11:56 关键流程 04
+
+- 本段定位：关键流程 04。
+- 知识点：改为3号 接下来再复制一个 改为4号 接下来这里名字现在全部更 改编号 这种全部相同 找到正确的编号 第三个是有点重复的工作。
+- 知识点：现在只需要再更改一个 现在我们使用的圆的偏移值 这个位置部分 因为这个四个方向都要不同 500这里500 所以移动到这里能看到吗 在这里移动到对面去了。
+- 知识点：有5这里是5次5 这里2都变为负5的话 我的部队现在都这样 在这个状态下看看吧 有点像 在这里作为结尾需要看的就是 这种折射的感觉 是否能够很好地呈现水的感觉。
+- 知识点：调节这些 然后尝试找出你自己的感觉 也是非常好的 折射有点弱的话 毕竟这里会有螺旋元素 感觉有点弱 不要太强烈 太强的话角色看不见 背景会移动的很多。
+- 知识点：会有那种感觉 因为这种感觉强烈 就是所以物质表现好的话 只要避免太强烈的使用就可以。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 多组复制后的 `Source_02001` / `Ribbon_01004` 等 Emitter 编号检查
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + 曲线面板 + Timeline + 字幕
+> - 所属: Niagara System `Cast_02`，复制后的 Emitters `Source_02001`、`Ribbon_01004`、`Ribbon_01005`、`Empty001/Empty002` 等。
+> - 目的: 将复制出的组改为新的编号，并检查 Emitter Properties、生命周期和生成模块仍保持一致。
+>
+> Niagara Preview:
+> - Preview 正在编译，列表显示 `Compiling Emitter - Source_01`、`Ribbon_01`、`Ribbon_01001`、`Empty`、`Source_02`、`Ribbon_01002`、`Ribbon_01003`、`Empty001`、`Source_02001`、`Ribbon_01004`、`Ribbon_01005`、`Empty002` 等。
+> - 预览中央显示 `Compiling...`，当前帧不用于判断最终粒子外观。
+>
+> System Overview / Stack:
+> | Emitter | 可见模块/组 | 状态/设置 | 作用 |
+> |---|---|---|---|
+> | `Source_02001` | `Emitter State`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Add Velocity From Point`、`Particle State`、`Vortex Force`、`Drag` 等 | 当前节点外框高亮 | 第四组或后续编号 Source |
+> | `Ribbon_01004` | `Spawn Particles from Other Emitter`、`Emitter State`、`Initialize Particle`、`Sample Particles from Other Emitter`、`Solve Forces and Velocity`、`Dynamic Material Parameters` 等 | 可见 | 对应复制 Ribbon |
+> | `Ribbon_01005` | 同类 Ribbon Stack 局部可见 | 可见 | 另一层复制 Ribbon |
+> | `Empty/Empty001/Empty002` | Timeline 轨道可见 | 可见 | 对应颗粒层 |
+>
+> Details:
+> - 当前 Details Owner 为 `Source_02001`。
+> - `Emitter Properties.Local Space` 勾选，`Determinism` 未勾选，`Interpolated Spawning` 勾选。
+> - `Sim Target=CPUSim`，`Calculate Bounds Mode=Dynamic`，`Requires Persistent IDs` 未勾选。
+> - `Emitter Summary` 显示无参数摘要。
+> - `Emitter State` 中 `Life Cycle Mode=Self`，`Inactive Response=Complete (Let Particles Finish then ...)`，`Loop Behavior=Once`，`Loop Duration Mode=Fixed`，`Loop Duration=1.0`。
+> - `Spawn Burst Instantaneous.Spawn Count=1` 可见。
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `6.17`，帧数约 `1481 of 2400`，可见 `Empty`、`Empty001`、`Empty002` 等轨道。
+> - 字幕文本为“改为4号。”。
+>
+> 画面含义: 当前帧用于确认复制出的后续组已经按编号重命名，并且 Source Emitter 的基础属性、生命周期和一次性 Burst 生成仍保持与原组一致。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Source_02.Initialize Particle` 偏移与 Sprite 尺寸设置
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + 曲线面板 + Timeline + 字幕
+> - 所属: Niagara System `Cast_02`，Emitter `Source_02`，模块 `Initialize Particle`。
+> - 目的: 让复制后的 Source 组使用不同位置偏移，形成四组不同方向的水纹发射起点。
+>
+> Niagara Preview:
+> - `Particle Counts` 列出多组活动 Emitter，包括 `Source_01`、`Ribbon_01`、`Ribbon_01001`、`Empty`、`Source_02`、`Ribbon_01002`、`Ribbon_01003`、`Empty001`、`Source_02001`、`Ribbon_01004`、`Ribbon_01005`、`Empty002`、`Source_02002`、`Ribbon_01006`、`Ribbon_01007`、`Empty003`。
+> - 可读计数包括每个 Source 约 `1 Current, 1 Max (est.)`，Ribbon 约 `12 Current, 55 Max (est.)`，Empty 约 `28 Current, 137 Max (est.)`。
+> - Preview 左侧可见一簇白色颗粒，说明当前帧存在活动颗粒层。
+>
+> System Overview / Stack:
+> | Emitter | 组 | 模块/项 | 状态/设置 | 作用 |
+> |---|---|---|---|---|
+> | `Source_02` | Emitter Update | `Emitter State`、`Spawn Burst Instantaneous` | Enabled | 第二组 Source 生成 |
+> | `Source_02` | Particle Spawn | `Initialize Particle` | 选中并 Enabled | 当前 Details Owner |
+> | `Source_02` | Particle Spawn | `Add Velocity From Point` | Enabled | 给 Source 粒子速度 |
+> | `Source_02` | Particle Update | `Particle State`、`Vortex Force`、`Drag`、`Acceleration Force`、`Solve Forces and Velocity`、`Scale Color` | Enabled | 更新、受力、颜色 |
+> | `Source_02` | Render | `Sprite Renderer` | Enabled | Source Sprite 输出 |
+> | `Ribbon_01002` | Particle Spawn/Update/Render | 采样、宽度、颜色、Ribbon Renderer | Enabled | 对应 Ribbon 层 |
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Source_02.Initialize Particle.Lifetime Mode` | `Direct Set` | enum | Details | 直接设置生命周期 |
+> | `Lifetime` | `4.6` | float | Details | 粒子生命周期 |
+> | `Color Mode` | `Unset` | enum | Details | 不在此处直接设颜色 |
+> | `Position Mode` | `Simulation Position` | enum | Details | 位置模式字段 |
+> | `Position Offset` | `(500.0, -5, 0.0)` | vector | Details | 当前 Source 的偏移字段；不额外断言坐标系 |
+> | `Position Offset Coordinate Space` | `Simulati...` 可见 | enum | Details | 偏移坐标空间字段，完整值未全部露出 |
+> | `Mass Mode` | `Unset / (Mass of 1)` | enum | Details | 质量模式 |
+> | `Sprite Size Mode` | `Uniform` | enum | Details | 统一 Sprite 尺寸 |
+> | `Uniform Sprite Size` | `15.0` | float | Details | Source Sprite 尺寸 |
+> | `Sprite Rotation Mode` | `Unset` | enum | Details | 不在此处设置旋转 |
+> | `Sprite UV Mode` | `Unset` | enum | Details | 不在此处设置 UV |
+> | `Mesh Scale Mode` | `Unset` | enum | Details | 不设置 Mesh Scale |
+> | `Ribbon Width/Facing/Twist Mode` | `Unset` | enum | Details | 不在 Source Initialize 中设置 Ribbon 属性 |
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `0.70`，帧数约 `168 of 2400`。
+> - 字幕文本为“所以移动到这里能看到吗？”。
+>
+> 画面含义: 当前帧把 `Source_02.Initialize Particle.Position Offset` 改成与其他组不同的值，用于让四组水纹/颗粒从不同偏移处出现；字段值只按 Details 中可读内容记录。
+> 图表转写（UE-GTXT v4）
+> - 类型: 多组水纹与颗粒层的关卡最终预览
+> - 组成部分: 关卡 Viewport + Outliner + Content Browser + Niagara Editor 底部局部 + 字幕
+> - 所属: Level `06_Water_Explosion`，Niagara Actor `Cast 01`、`Cast 02`，材质资源 `M_AdditiveNoBlur_v01`。
+> - 目的: 检查四组偏移后的水纹围绕角色形成大范围环形效果，并评估折射/背景位移强度。
+>
+> 关卡 Viewport:
+> - 视口处于 `Pilot Actor: Cine Camera Actor`。
+> - 棋盘地面中央有角色，角色外侧仍有半透明灰蓝水球。
+> - 多条浅蓝白 Ribbon 水纹围绕角色形成大范围环形轨迹，右侧和左侧各有明显的弧形水纹段。
+> - 水纹边缘分布大量小白色亮点，对应 `Empty` 颗粒层。
+> - 图中水纹和水球对棋盘背景有可见的透明/折射类视觉变化，字幕提醒背景移动幅度过大时会影响观看。
+>
+> Outliner / Content Browser:
+> - Outliner 仍处于 `06_Water_Explosion (Editor)`，包含 `Cast 01`、`Cast 02`、`Cine Camera Ac...`、`Floor`、`PlayerStart`、`PostProcessVo...` 等对象。
+> - Content Browser 位于 `Material` 目录，`M_AdditiveNoBlur_v01` 缩略图仍处于选中状态；附近可见 `M_Decal_01`、`M_Magic...` 等材质资源。
+>
+> 字幕:
+> - 字幕文本为“背景会移动得很多”。
+>
+> 画面含义: 当前帧用于检查四组水纹/颗粒复制和偏移后的整体效果。目标是在角色周围形成明显水感和折射感，同时避免折射强度过大导致角色或棋盘背景难以辨认。
+
+### 00:12:03-00:15:02 粒子、生命周期、颜色
+
+- 本段定位：粒子、生命周期、颜色。
+- 知识点：确实强烈的后水的感觉更多 水只要守住这些点 就会变得很容易感受到 真的很有趣 第一颗粒几乎完成了 只需完成与第二个身体相关的粒子。
+- 知识点：这次就可以结束了 这一部分就先关掉 这一部分相关的先关掉 我们再来看这一部分 接着这一部分 使机方面很好配合 螺旋部分先试着放进去 因为这个螺旋部分需要有一个黑色调。
+- 知识点：从那部分开始增加 然后继续进行 那部分我们之前用过了 我用过制作电机爆炸时的黑色调 需要把这个带过来用在这里 这种东西是同样功能的材料。
+- 知识点：做新的有点低效 从这一部分开始认真再看一下 因为是很简单的动作 只要调整一下生命周期等。
+- 知识点：这个现在的助教本身的生命周期很长 只要调整一下这种东西 例如颜色调 摄像机偏移可以不需要。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`生命周期`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 多组水纹、透明水球与颗粒层的关卡复查
+> - 组成部分: 关卡 Viewport + Outliner + Content Browser + Niagara Editor 底部局部
+> - 所属: Level `06_Water_Explosion`，Niagara Actor `Cast 01`、`Cast 02`。
+> - 目的: 在继续处理第二个身体相关粒子前，复查当前水球、水纹和颗粒层的整体水感。
+>
+> 关卡 Viewport:
+> - 视口处于 `Pilot Actor: Cine Camera Actor`。
+> - 棋盘地面中央有角色，角色外侧有半透明灰蓝水球。
+> - 水球周围有多层浅蓝白 Ribbon 水纹，其中外圈较大、内圈较紧，均带透明水流边缘。
+> - Ribbon 周围分布大量白色小亮点，形成水珠/颗粒层。
+> - 外圈水纹带有淡灰蓝透明尾迹，背景棋盘仍可辨认。
+>
+> Outliner / Content Browser:
+> - Outliner 中可见 `06_Water_Explosion (Editor)`、`Cast 01`、`Cast 02`、`Cine Camera Ac...`、`Floor`、`PlayerStart`、`PostProcessVo...`。
+> - Content Browser 仍在 `Material` 目录，`M_AdditiveNoBlur_v01` 处于选中状态；附近可见 `M_Decal_01`、`M_Magic...` 等材质。
+>
+> 画面含义: 当前帧确认现有水系主体已经有透明水球、环形 Ribbon 和颗粒亮点，后续重点转向补充或调整第二个身体相关的粒子、生命周期和颜色。
+> 图表转写（UE-GTXT v4）
+> - 类型: 旧 `Cast_01` 螺旋/黑色调参考
+> - 组成部分: Niagara Preview + System Overview + Stack + Details 空面板 + Parameters/Curves + Timeline + 字幕
+> - 所属: Niagara System `Cast_01`，Emitters `WaterBall`、`Spiral_01`。
+> - 目的: 回到旧 `Cast_01` 中查看螺旋部分和黑色调参考，准备把同类材质/粒子思路带到当前效果。
+>
+> Niagara Preview:
+> - `Particle Counts` 显示 `1 Current, 1 Max (est.) - [WaterBall] [Active]`，`0 Current, 1 Max (est.) - [Spiral_01] [Disabled]`。
+> - Preview 中可见一个半透明蓝白水球，下方边缘有较亮水纹；`Spiral_01` 当前禁用。
+>
+> System Overview / Stack:
+> - `Cast_01` 图中有 `WaterBall` 和 `Spiral_01` 两个主要 Emitter。
+> - `WaterBall` 的 Stack 可见 `Emitter State(Self/Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Particle State`、`Scale Mesh Size`、`System Location`、`Scale Color`、`Mesh Renderer` 等项。
+> - `Spiral_01` 位于右侧，节点底部有 `Disabled` 标识，Stack 局部可见 `Emitter State`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Sprite Facing and Alignment`、`Particle State`、`Scale Sprite Size`、`Scale Color`、`Sprite Renderer`。
+>
+> Parameters / Curves / Timeline:
+> - 左下 Parameters/Curves 列表可见 `WaterBall` 下的 `Scale Mes...`、`System Lo...`、`Scale Col...`，以及 `Spiral_01` 下的 `Scale Spri...`、`Scale Col...`。
+> - 曲线面板提示 `Select a curve on the left to begin editing.`。
+> - Timeline 中 `Spiral_01` 轨道可见，绿色片段从约 `1.00` 处开始。
+>
+> 字幕:
+> - 字幕文本为“因为这个螺旋部分需要有一个黑色调，所以”。
+>
+> 画面含义: 当前帧不是设置当前 `Cast_02`，而是回看旧 `Cast_01` 的 WaterBall/Spiral 结构；`Spiral_01` 处于禁用状态，用作后续黑色调/材质参考。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Black_01.Initialize Particle` 生命周期、位置偏移和 Sprite 尺寸参考
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Parameters/Curves + Timeline + 字幕
+> - 所属: Niagara System `Cast_01`，Emitter `Black_01`，模块 `Initialize Particle`。
+> - 目的: 查看旧黑色调粒子的基础生命周期和尺寸设置，用作后续当前效果的粒子参考。
+>
+> Niagara Preview:
+> - `Particle Counts` 显示 `1 Current, 1 Max (est.) - [WaterBall] [Active]`，`0 Current, 1 Max (est.) - [Spiral_01] [Disabled]`，`0 Current, 1 Max (est.) - [Black_01] [Active]`。
+> - Preview 中仍主要可见蓝白水球，`Black_01` 当前没有明显可见粒子。
+>
+> System Overview / Stack:
+> | Emitter | 组 | 模块/项 | 状态/设置 | 作用 |
+> |---|---|---|---|---|
+> | `Black_01` | Emitter Update | `Emitter State(Self/Once)`、`Spawn Burst Instantaneous` | Enabled | 黑色调粒子生成 |
+> | `Black_01` | Particle Spawn | `Initialize Particle` | 选中并 Enabled | 当前 Details Owner |
+> | `Black_01` | Particle Spawn | `Camera Offset`、`Sprite Facing and Alignment` | Enabled | 相机偏移与朝向对齐参考 |
+> | `Black_01` | Particle Update | `Particle State`、`Scale Sprite Size`、`Scale Color` | Enabled | 生命周期内大小和颜色变化 |
+> | `Black_01` | Render | `Sprite Renderer` | Enabled | Sprite 输出 |
+> | `Spiral_01` | 全栈 | 底部标识 `Disabled` | 禁用 | 旧 Spiral 参考层 |
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Black_01.Initialize Particle.Lifetime Mode` | `Direct Set` | enum | Details | 直接设置生命周期 |
+> | `Lifetime` | `0.5` | float | Details | 黑色调粒子生命周期较短 |
+> | `Color Mode` | `Unset` | enum | Details | 不在 Initialize 中直接设置颜色 |
+> | `Position Mode` | `Simulation Position` | enum | Details | 位置模式字段 |
+> | `Position Offset` | `(0.0, 0.0, 5.0)` | vector | Details | 位置偏移字段；不额外断言坐标系 |
+> | `Position Offset Coordinate Space` | `Simulation` | enum | Details | 偏移坐标空间字段 |
+> | `Mass Mode` | `Unset / (Mass of 1)` | enum | Details | 质量模式 |
+> | `Sprite Size Mode` | `Uniform` | enum | Details | 使用统一 Sprite 尺寸 |
+> | `Uniform Sprite Size` | `350.0` | float | Details | 旧黑色调粒子尺寸参考 |
+> | `Sprite Rotation Mode` | `Unset` | enum | Details | 不设置 Sprite Rotation |
+> | `Sprite UV Mode` | `Unset` | enum | Details | 不设置 Sprite UV |
+> | `Mesh Scale Mode` | `Unset` | enum | Details | 不设置 Mesh Scale |
+> | `Ribbon Width/Facing/Twist Mode` | `Unset` | enum | Details | 不在该 Sprite 粒子中设置 Ribbon 属性 |
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `0.50`，帧数约 `120 of 2400`，`Black_01` 轨道处于选中状态。
+> - 字幕文本为“只要调整一下这样的东西。”。
+>
+> 画面含义: 当前帧给出旧黑色调粒子的核心参考值：短生命周期 `0.5`、小幅位置偏移、较大的 `Uniform Sprite Size=350.0`，后续只需按当前水系效果调整类似字段。
+
+### 00:15:05-00:18:03 Color、Alpha、Opacity
+
+- 本段定位：Color、Alpha、Opacity。
+- 知识点：摄像机偏移 阿迪克精灵尺寸可能要稍调整一下 大约4吗 只适当调整一下这个开始的大小 这程度要满足 Alpha现在这样做法 这里改为1 无论如何会消失。
+- 知识点：不是convert 4.8秒后立即 即使消失也无妨 因为因素 比起太浓 约0.75 年份 这里可以用00里 地面上适当暗掉 背景稍暗的话这种物质表达会更美丽地显示。
+- 知识点：现在比起 无论如何告知更重要 刚才做的螺旋打开 这个可以用10粒水材料制作 可能可以用不同的纸 创建共享并放入 把分享链接连接起来 打开后先看一下水材是什么样的。
+- 知识点：而且spiral会比这个多加一层 现在适当有点笨拙的感觉 纹理其实这个歌的纹理是重要的 适当换个不同的感觉看看 现在感觉不是很好看 opacity。
+- 知识点：texture也换成更柔和的 将使用core color texture。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Color`、`Alpha`、`Opacity`、`Texture`、`纹理`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Black_01` 参考 Emitter 的 Sprite Facing/Alignment 调整入口
+> - 组成部分: Niagara Preview + System Overview + Stack + Details 空面板 + Parameters/Curves + Timeline + 字幕
+> - 所属: Niagara System `Cast_01`，Emitter `Black_01`。
+> - 目的: 在旧黑色调粒子参考中查看 Sprite Facing/Alignment 和 Sprite Size 是否需要微调。
+>
+> Niagara Preview:
+> - Preview 正在编译，显示 `Compiling Emitter - WaterBall`、`Compiling Emitter - Spiral_01`、`Compiling Emitter - Black_01`。
+> - 预览中央显示 `Compiling...`，当前帧不用于判断最终外观。
+>
+> System Overview / Stack:
+> - `Black_01` 处于选中状态。
+> - `Black_01` Stack 可见 `Emitter State(Self/Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Sprite Facing and Alignment`、`Particle State`、`Scale Sprite Size`、`Scale Color`、`Sprite Renderer`。
+> - 鼠标提示位于 `Sprite Facing and Alignment` 附近，说明当前关注该模块。
+> - `Spiral_01` 仍在右侧，底部显示 `Disabled`。
+>
+> Parameters / Curves / Timeline:
+> - Parameters/Curves 面板列出 `WaterBall`、`Spiral_01`、`Black_01` 及其 `Scale Sprite Size`、`Scale Color` 类曲线项。
+> - Timeline 当前约 `0.50`，`Black_01`、`Spiral_01`、`WaterBall` 三条轨道可见。
+>
+> 字幕:
+> - 字幕文本为“阿迪克精灵尺寸可能要稍微调整一下，”。
+>
+> 画面含义: 当前帧用于定位旧 `Black_01` 参考中的 Sprite 面向/对齐和 Sprite Size 调整入口；由于预览处于编译中，外观判断不来自此帧。
+> 图表转写（UE-GTXT v4）
+> - 类型: 关卡预览与 `Particle/04` Niagara System 资源选择
+> - 组成部分: 关卡 Viewport + Outliner + Content Browser + Niagara Editor 底部局部 + 字幕
+> - 所属: Level `06_Water_Explosion`，Content Browser 目录 `Particle/04`，资源 `Exp_01`。
+> - 目的: 对比当前水系效果，并从 `Particle/04` 目录中查看可作为黑色调/水纹参考的 Niagara System 资源。
+>
+> 关卡 Viewport:
+> - 视口处于 `Pilot Actor: Cine Camera Actor`。
+> - 棋盘地面中央有半透明灰蓝水球，水球内可见角色。
+> - 大范围浅蓝白 Ribbon 水纹围绕水球形成环形轨迹，内圈和外圈均有水珠状亮点。
+> - 右下与左下可见淡灰蓝尾迹，整体水纹仍保持透明感。
+>
+> Content Browser:
+> - 当前路径位于 `Particle/04`。
+> - `Exp_01` Niagara System 缩略图处于选中状态。
+> - 同目录可见 `Thunder...`、`Thunder_Left...`、`Thunder...` 等 Niagara System 资源。
+>
+> Outliner:
+> - 仍显示 `06_Water_Explosion (Editor)`、`Cast 01`、`Cast 02`、`Cine Camera Ac...`、`Floor`、`PlayerStart`、`PostProcessVo...`。
+>
+> Niagara Editor 底部局部:
+> - 底部仍打开 `Cast_01`，当前 `Black_01` 面板区域局部可见，Preview 计数中可读 `WaterBall` 活动、`Spiral_01` 禁用。
+>
+> 字幕:
+> - 字幕文本为“现在比起那个”。
+>
+> 画面含义: 当前帧把关卡中的水系效果和资源目录放在同一语境下，表示作者正在寻找或对比可用于黑色调/螺旋层的参考 Niagara System。
+> 图表转写（UE-GTXT v4）
+> - 类型: `M_SpiralUV_v01_Ins_01` 材质实例参数与 Opacity 贴图调整
+> - 组成部分: 材质实例预览 + Details/Layer Parameters + Content Browser + 字幕
+> - 所属: Material Instance `M_SpiralUV_v01_Ins_01`。
+> - 目的: 调整用于螺旋/水纹层的材质实例，使颜色、Opacity 和贴图更柔和。
+>
+> 材质实例预览:
+> - 预览中显示一圈青白色旋涡状水纹，中心较暗，边缘有高亮水流纹理。
+> - 左上统计可读 `Base pass shader without light map: 179 instructions`、`Base pass vertex shader: 287 instructions`、`Texture samplers: 5/16`、`Texture Lookups (Est.): VS(3), PS(4)`。
+>
+> Layer Parameters / Scalar:
+> | 参数 | 值 | 作用 |
+> |---|---:|---|
+> | `Color_Str` | `1.0` | 颜色强度 |
+> | `Color_Tile_U` | `2.0` | Color 贴图 U 平铺 |
+> | `Color_Tile_V` | `0.35` | Color 贴图 V 平铺 |
+> | `Color_VPan` | `0.1` | Color 贴图 V 方向滚动参数 |
+> | `Desaturation` | `0.0` | 去饱和 |
+> | `Diff_Tile_U` | `1.0` | Diff 贴图 U 平铺 |
+> | `Diff_Tile_V` | `0.5` | Diff 贴图 V 平铺 |
+> | `Diff_VPan` | `0.2` | Diff 贴图 V 方向滚动参数 |
+> | `Distortion_Str` | `0.02` | 扭曲强度 |
+> | `Mask_Str` | `2.0` | Mask 强度 |
+> | `Normal_Tile_U` | `1.0` | Normal 贴图 U 平铺 |
+> | `Normal_Tile_V` | `0.5` | Normal 贴图 V 平铺 |
+> | `Opacity_Pow` | `0.75` | Opacity 幂指数 |
+> | `Opacity_Str` | `5.0` | Opacity 强度 |
+> | `Spiral_Str` | `0.25` | 螺旋强度 |
+>
+> Texture Parameters:
+> | 参数 | 贴图 | 作用 |
+> |---|---|---|
+> | `Color_Tex` | `fx_liquid_diffuse_v01` | 颜色水纹贴图 |
+> | `Diff_Tex` | `Noise_Water` | Diff/噪声水纹贴图 |
+> | `Normal_Tex` | `T_Voronoi_Cells_02_NRM` | 法线贴图 |
+> | `Opacity_Tex` | `H_DustRingDecal001_clamp` | Opacity 遮罩贴图 |
+>
+> Content Browser / 字幕:
+> - Content Browser 位于 `Texture` 目录，可见 `13_CI`、`A_Hit_new`、`B_Mana...`、`CloudFilter`、`D_Ocean...` 等贴图资源缩略图。
+> - 字幕文本为“Opacity Texture也换成更柔和的。”。
+>
+> 画面含义: 当前帧明确了材质实例的 Opacity 调整目标：降低或柔化不透明遮罩表现，并用 `H_DustRingDecal001_clamp` 等贴图槽配合参数，让旋涡水纹边缘更柔和。
+
+### 00:18:06-00:20:51 Material、材质、透明度
+
+- 本段定位：Material、材质、透明度。
+- 知识点：就关于这个泡沫的表现模式可能更好 而且感觉像是太白的火焰 就需要控制一下 拼贴感觉就是差不多可以接受 几乎不会感受到展示的压力 只是把亮的部分去掉。
+- 知识点：水的材质感增加了 这种泡沫的图案更能体现海水的感觉 因为和暗调叠加在一起 感觉更好 这样 接下来particle的部分就是感觉好像不用特别去动。
+- 知识点：稍后需要检查透明度等是否更好一些 我是再写一层 所以需要复制着用 首先这个material也需要复制。
+- 知识点：这个情况下 这大概是第一次做的 我们适当小一点 写的小的话 如果适当在中间位置的话 第二个就是制作的适当宽的区域 感觉变得轻松一些会更好。
+- 知识点：现在这样中间有位置 所以多做一层是在这里 这里外侧的感觉如果再延续一点的话 就会很好 这个复制后打开这里连接会。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Particle`、`Material`、`材质`、`透明度`、`火焰`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `M_SpiralUV_v01_Ins_01` 亮部、Opacity 和贴图槽调整
+> - 组成部分: 材质实例预览 + Layer Parameters + Content Browser + 字幕
+> - 所属: Material Instance `M_SpiralUV_v01_Ins_01`。
+> - 目的: 控制旋涡材质中过白、偏火焰感的亮部，并用更接近泡沫/水纹的贴图组合调整透明度。
+>
+> 材质实例预览:
+> - 预览中显示灰白旋涡状水纹，中心较暗，外圈亮部较集中。
+> - 左上统计可读 `Base pass shader without light map: 179 instructions`、`Base pass vertex shader: 287 instructions`、`Texture samplers: 5/16`、`Texture Lookups (Est.): VS(3), PS(4)`。
+>
+> Scalar Parameters:
+> | 参数 | 值 | 作用 |
+> |---|---:|---|
+> | `Color_Str` | `1.0` | 颜色强度 |
+> | `Color_Tile_U` | `2.0` | Color 贴图 U 平铺 |
+> | `Color_Tile_V` | `0.35` | Color 贴图 V 平铺 |
+> | `Color_VPan` | `0.1` | Color 贴图 V 方向滚动参数 |
+> | `Desaturation` | `0.0` | 去饱和 |
+> | `Diff_Tile_U` | `1.0` | Diff 贴图 U 平铺 |
+> | `Diff_Tile_V` | `0.5` | Diff 贴图 V 平铺 |
+> | `Diff_VPan` | `0.2` | Diff 贴图 V 方向滚动参数 |
+> | `Distortion_Str` | `0.02` | 扭曲强度 |
+> | `Mask_Str` | `2.0` | Mask 强度 |
+> | `Normal_Tile_U` | `1.0` | Normal 贴图 U 平铺 |
+> | `Normal_Tile_V` | `0.5` | Normal 贴图 V 平铺 |
+> | `Opacity_Pow` | `0.75` | Opacity 幂指数 |
+> | `Opacity_Str` | `5.0` | Opacity 强度 |
+> | `Spiral_Str` | `0.25` | 螺旋强度 |
+>
+> Texture Parameters:
+> | 参数 | 贴图 | 作用 |
+> |---|---|---|
+> | `Color_Tex` | `fxPtn_thunder_noise_v02` | 颜色/泡沫状图案 |
+> | `Diff_Tex` | `Noise_Water` | 水纹噪声 |
+> | `Normal_Tex` | `T_Voronoi_Cells_02_NRM` | 法线扰动 |
+> | `Opacity_Tex` | `C_BG_Ring_glow03` | 环形透明度遮罩 |
+>
+> Content Browser / 字幕:
+> - Content Browser 位于 `Texture` 目录，`fxPtn_thunder...` 贴图缩略图处于选中状态；附近可见 `fx_liquid...`、`H_DustRing...`、`Noise_Water` 等贴图。
+> - 字幕文本为“而且感觉像是太白的火焰需要控制一下”。
+>
+> 画面含义: 当前帧记录用 `fxPtn_thunder_noise_v02` 和 `C_BG_Ring_glow03` 调整旋涡材质，让亮部从偏白火焰感转向泡沫/水纹感。
+> 图表转写（UE-GTXT v4）
+> - 类型: 控制亮部后的关卡弱化预览
+> - 组成部分: 关卡 Viewport + Outliner + Content Browser + Niagara Editor 底部局部
+> - 所属: Level `06_Water_Explosion`，Niagara Actor `Cast 01`。
+> - 目的: 检查材质亮部被控制后，水纹/泡沫层在关卡中是否变得过弱。
+>
+> 关卡 Viewport:
+> - 棋盘地面中央只有角色清晰可见。
+> - 角色周围的大部分水球、水纹和颗粒层在该帧非常淡，地面上仅能看到浅灰蓝透明痕迹。
+> - 该帧用于判断亮部被控制后的可见度，不是最终强水纹状态。
+>
+> Content Browser:
+> - 仍位于 `Texture` 目录，能看到 `D_Ocean...`、`dust_thick...`、`Eff_Wave01...`、`falloff_circle`、`fx_liquid...`、`fxPtn_oblique...`、`fxPtn_thunder...`、`H_DustRing...`、`line_v06`、`Noise_Car...`、`Noise_Water` 等贴图。
+>
+> Outliner / Niagara Editor 局部:
+> - Outliner 可见 `06_Water_Explosion (Editor)`、`Cine Camera Ac...`、`Floor`、`PlayerStart`、`PostProcessVo...`、`Serath Future`、`SpotLight` 等对象。
+> - 底部仍打开 `Cast_01` 与 `M_SpiralUV_v01_Ins_01` 标签，Details 局部可见 `Spiral_01`。
+>
+> 画面含义: 当前帧显示亮部控制后关卡中的水纹层非常弱，提示后续需要在透明度、宽度或材质强度上继续找平衡。
+> 图表转写（UE-GTXT v4）
+> - 类型: 外圈材质层延续后的关卡预览
+> - 组成部分: 关卡 Viewport + Outliner + Content Browser + Niagara Editor 底部局部 + 字幕
+> - 所属: Level `06_Water_Explosion`，Niagara Actor `Cast 01`。
+> - 目的: 检查复制/叠加材质层后，外侧水纹是否形成更宽、更连续的区域。
+>
+> 关卡 Viewport:
+> - 中央角色处于半透明灰蓝水球内。
+> - 水球外侧有内外两圈浅蓝白水纹；内圈较紧，外圈较宽且带淡灰蓝透明面。
+> - 外圈边缘有零散白色颗粒亮点，整体水纹比上一帧更明显。
+> - 外层水纹在棋盘地面上形成较宽的透明区域，仍能看见地面格子。
+>
+> Content Browser / Outliner:
+> - Content Browser 仍显示 Texture 目录和 `fxPtn_thunder...`、`H_DustRing...`、`Noise_Water` 等贴图资源。
+> - Outliner 中可见 `Cast 01`、`Cast 02`、`Cine Camera Ac...`、`Floor`、`PlayerStart`、`PostProcessVo...`。
+>
+> 字幕:
+> - 字幕文本为“这里外侧的感觉如果再延续一点就会很好。”。
+>
+> 画面含义: 当前帧用于验证外侧水纹层的宽度和连续性；外圈已经形成更大的透明水面/泡沫区域，后续继续围绕这个外侧延续感微调。
+
+### 00:21:19-00:24:19 纹理
+
+- 本段定位：纹理。
+- 知识点：首先是纹理 更水的感觉的这个 请换一下 把这个这样放进去 这里也多改一些而不是 因为需要更强一点的连续性 瓷砖会尖角瓷砖 从更远处看比例感应该有些不同。
+- 知识点：柔和底 这里感觉适当少了一点螺旋感 这种感觉 调整一下看看 再加一层 似乎看起来不错 还有和丝带的某种同步感 如果有这种感觉会很好 很好 而且这水本来就。
+- 知识点：不是一个核心元素 铸造的丝带或水的感觉更是主要部分 现在到了 然后返回 换安装部分 进行了更改 有一些比较明显的地方。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 复制材质实例 `M_SpiralUV_v01_Ins_02` 的纹理与透明度参数
+> - 组成部分: 材质实例预览 + Layer Parameters + Content Browser + 字幕
+> - 所属: Material Instance `M_SpiralUV_v01_Ins_02`。
+> - 目的: 复制一层旋涡材质并调整纹理、透明度和 Mask，使新层更适合水感连续性。
+>
+> 材质实例预览:
+> - 预览显示一圈较暗的灰蓝白旋涡纹理，中心留空，右侧有较亮水纹团块。
+> - 左上统计同样可读 `Base pass shader without light map: 179 instructions`、`Base pass vertex shader: 287 instructions`、`Texture samplers: 5/16`、`Texture Lookups (Est.): VS(3), PS(4)`。
+>
+> Scalar Parameters:
+> | 参数 | 值 | 作用 |
+> |---|---:|---|
+> | `Color_Str` | `1.0` | 颜色强度 |
+> | `Color_Tile_U` | `2.0` | Color 贴图 U 平铺 |
+> | `Color_Tile_V` | `0.35` | Color 贴图 V 平铺 |
+> | `Color_VPan` | `0.1` | Color 贴图 V 方向滚动参数 |
+> | `Desaturation` | `0.0` | 去饱和 |
+> | `Diff_Tile_U` | `1.0` | Diff 贴图 U 平铺 |
+> | `Diff_Tile_V` | `0.5` | Diff 贴图 V 平铺 |
+> | `Diff_VPan` | `0.2` | Diff 贴图 V 方向滚动参数 |
+> | `Distortion_Str` | `0.01` | 扭曲强度 |
+> | `Mask_Str` | `3.0` | Mask 强度 |
+> | `Normal_Tile_U` | `1.0` | Normal 贴图 U 平铺 |
+> | `Normal_Tile_V` | `0.5` | Normal 贴图 V 平铺 |
+> | `Opacity_Pow` | `1.0` | Opacity 幂指数 |
+> | `Opacity_Str` | `2.0` | Opacity 强度 |
+> | `Spiral_Str` | `0.25` | 螺旋强度 |
+>
+> Texture Parameters:
+> | 参数 | 贴图 | 作用 |
+> |---|---|---|
+> | `Color_Tex` | `fxPtn_thunder_noise_v02` | 颜色/泡沫状图案 |
+> | `Diff_Tex` | `Noise_Water` | 水纹噪声 |
+> | `Normal_Tex` | `T_Voronoi_Cells_02_NRM` | 法线扰动 |
+> | `Opacity_Tex` | `C_BG_Ring_glow03` | 环形透明度遮罩 |
+>
+> Content Browser / 字幕:
+> - Content Browser 中 `fx_liquid...` 贴图缩略图处于选中状态，附近可见 `fxPtn_thunder...`、`H_DustRing...`、`Noise_Water`。
+> - 字幕文本为“把这个这样放进去”。
+>
+> 画面含义: 当前帧记录复制后的第二个 Spiral 材质实例：降低 `Distortion_Str` 和 `Opacity_Str`，提高 `Mask_Str`，并沿用 thunder noise、Noise_Water、Voronoi Normal 和 ring glow 贴图组合。
+> 图表转写（UE-GTXT v4）
+> - 类型: 新增 `Spiral_01001` 后的关卡预览
+> - 组成部分: 关卡 Viewport + Outliner + Content Browser + Niagara Editor 底部局部 + 字幕
+> - 所属: Level `06_Water_Explosion`，Niagara System `Cast_01`，Emitter `Spiral_01001`。
+> - 目的: 检查增加第二层 Spiral 材质后，水纹与颗粒层是否更连续。
+>
+> 关卡 Viewport:
+> - 角色位于半透明水球中。
+> - 水球外侧出现大范围灰蓝透明水面层，内圈有较亮 Ribbon 水纹和白色颗粒亮点。
+> - 外层水纹较宽、较柔，环形区域覆盖到角色周围较大范围。
+>
+> Content Browser / Outliner:
+> - Content Browser 位于 Texture 目录，`H_DustRing...` 贴图缩略图处于选中状态。
+> - Outliner 中可见 `Cast 01`、`Cast 02`、`Cine Camera Ac...`、`Floor`、`PlayerStart`、`PostProcessVo...`。
+>
+> Niagara Editor 底部局部:
+> - 底部标签中打开 `Cast_01`、`M_SpiralUV_v01_Ins_01`、`M_SpiralUV_v01_Ins_02`。
+> - Details 顶部可见当前 Owner 为 `Spiral_01001`，状态为 `No running preview...`。
+>
+> 字幕:
+> - 字幕文本为“再加一层似乎看起来不错”。
+>
+> 画面含义: 当前帧验证新增 `Spiral_01001` 后的叠层结果：外层透明水纹面积更大，内圈 Ribbon 和颗粒仍可见，整体连续性比单层更强。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Spiral_01.Sprite Renderer` 材质与渲染设置
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Parameters/Curves + Timeline
+> - 所属: Niagara System `Cast_01`，Emitter `Spiral_01`，Renderer `Sprite Renderer`。
+> - 目的: 检查 Spiral Sprite Renderer 的材质实例、对齐方式和渲染排序，确保新旧 Spiral 层能和水纹效果配合。
+>
+> Niagara Preview:
+> - `Particle Counts` 显示 `1 Current, 1 Max (est.) - [WaterBall] [Active]`，`1 Current, 1 Max (est.) - [Spiral_01] [Active]`，`1 Current, 1 Max (est.) - [Black_01] [Active]`，`1 Current, 1 Max (est.) - [Spiral_01001] [Active]`。
+> - Preview 中可见放大的水球局部和灰白旋涡纹理，说明 WaterBall 与 Spiral/Black 层均处于活动状态。
+>
+> System Overview / Stack:
+> | Emitter | 可见模块/组 | 状态/设置 | 作用 |
+> |---|---|---|---|
+> | `Black_01` | `Emitter State`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Sprite Facing and Alignment`、`Particle State`、`Scale Sprite Size`、`Scale Color`、`Sprite Renderer` | Enabled | 黑色调参考层 |
+> | `Spiral_01` | 同类 Sprite Emitter Stack | `Sprite Renderer` 选中 | 当前 Details Owner |
+> | `Spiral_01001` | 同类 Sprite Emitter Stack | Enabled | 新增第二层 Spiral |
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Spiral_01.Sprite Renderer.Material` | `M_SpiralUV_v01_Ins_01` | Material Instance | Details | Spiral Sprite 使用的材质实例 |
+> | `Material User Parameter Binding` | `None` | binding | Details | 不通过 User Parameter 覆盖材质 |
+> | `Source Mode` | `Particles` | enum | Details | 以粒子作为渲染源 |
+> | `Alignment` | `Custom Alignment` | enum | Details | 自定义对齐 |
+> | `Facing Mode` | `Custom Facing Vector` | enum | Details | 自定义 Facing Vector |
+> | `Macro UVRadius` | `0.0` | float | Details | Macro UV 半径 |
+> | `Default Pivot in UV Space` | `(0.5, 0.5)` | vector2 | Details | Sprite Pivot 居中 |
+> | `Remove HMD Roll` | 未勾选 | bool | Details | 不移除 HMD Roll |
+> | `Pixel Coverage Mode` | `Automatic` | enum | Details | 自动像素覆盖 |
+> | `Pixel Coverage Blend` | `1.0` | float | Details | 覆盖混合 |
+> | `Min/Max Facing Camera Blend Distance` | `0.0 / 0.0` | float | Details | 面向相机混合距离 |
+> | `Sort Mode` | `None` | enum | Details | 不额外排序 |
+> | `Renderer Visibility` | `0` | int | Details | Renderer Visibility 值 |
+> | `Sort Order Hint` | `5` | int | Details | 渲染排序提示 |
+> | `Motion Vector Setting` | `Auto Detect` | enum | Details | 自动检测 Motion Vector |
+>
+> Timeline / Parameters:
+> - Timeline 当前约 `0.50`，`Black_01`、`Spiral_01`、`Spiral_01001` 轨道可见。
+> - Parameters/Curves 面板列出 `WaterBall`、`Spiral_01`、`Black_01`、`Spiral_0100...` 及各自 `Scale Sprite Size`、`Scale Color` 类曲线项。
+>
+> 画面含义: 当前帧确认 `Spiral_01` 使用 `M_SpiralUV_v01_Ins_01` 作为 Sprite Renderer 材质，并通过自定义对齐、Facing Vector 和 `Sort Order Hint=5` 与其它水球/Spiral 层叠加。
+
+### 00:24:26-00:27:25 粒子、精灵、网格
+
+- 本段定位：粒子、精灵、网格。
+- 知识点：进行了修正 在安装灯之前 这里再加一个发光的东西 来处理一下 这个用不着网格而用精灵 增益材料我们经常使用 材料将会使用 在4号中也曾使用过类似的监控。
+- 知识点：将其复制过来 应该可以使用 将其复制到6号中 进行联系 需要表达某种身体周围变强的 图像感觉的表现 这个可以不变直接使用 粒子的大小或其他这些要一起调整观察。
+- 知识点：嗯 从生命时间4.9秒来看 应该是一样的 反正这个网格不使用 将以160左右的均匀贴上 并且片一直应该要一些 相机片一直 大约50 Cat location可以一样使用。
+- 知识点：毕竟这里需要与中心对齐一起移动 关闭缩放网格大小缩放颜色 不要太强适当减少一下 而且饱和度在最后会逐渐增强 从0纸开始 变成大约0.9的纸。
+- 知识点：最后用0.1秒的差异使其变强 然后这样线性定义提高透明度 需要适当转换成精灵的大小。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`颜色`、`透明度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Spiral_01.Sprite Renderer` 发光层复查
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Parameters/Curves + Timeline + 字幕
+> - 所属: Niagara System `Cast_01`，Emitter `Spiral_01`，Renderer `Sprite Renderer`。
+> - 目的: 在添加发光 Sprite 之前，确认现有 Spiral Sprite Renderer 的材质、对齐和排序设置。
+>
+> Niagara Preview:
+> - `Particle Counts` 显示 `WaterBall`、`Spiral_01`、`Black_01`、`Spiral_01001` 均为 `1 Current, 1 Max (est.)` 且 Active。
+> - Preview 中可见水球局部、暗灰蓝旋涡和浅色水纹，表明 Spiral 层参与当前预览。
+>
+> System Overview / Stack:
+> - 图中可见 `WaterBall`、`Black_01`、`Spiral_01`、`Spiral_01001` 等 Emitter。
+> - `Spiral_01` 的 `Sprite Renderer` 被选中，当前 Details 显示该 Renderer。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Spiral_01.Sprite Renderer.Material` | `M_SpiralUV_v01_Ins_01` | Material Instance | Details | Spiral Sprite 材质 |
+> | `Material User Parameter Binding` | `None` | binding | Details | 不通过 User 参数覆盖材质 |
+> | `Source Mode` | `Particles` | enum | Details | 使用粒子作为源 |
+> | `Alignment` | `Custom Alignment` | enum | Details | 自定义对齐 |
+> | `Facing Mode` | `Custom Facing Vector` | enum | Details | 自定义 Facing Vector |
+> | `Macro UVRadius` | `0.0` | float | Details | Macro UV 半径 |
+> | `Default Pivot in UV Space` | `(0.5, 0.5)` | vector2 | Details | Pivot 居中 |
+> | `Pixel Coverage Mode` | `Automatic` | enum | Details | 自动像素覆盖 |
+> | `Pixel Coverage Blend` | `1.0` | float | Details | 覆盖混合 |
+> | `Min/Max Facing Camera Blend Distance` | `0.0 / 0.0` | float | Details | 面向相机混合距离 |
+> | `Sort Mode` | `None` | enum | Details | 不额外排序 |
+> | `Renderer Visibility` | `0` | int | Details | Renderer Visibility |
+> | `Sort Order Hint` | `5` | int | Details | 渲染排序提示 |
+> | `Motion Vector Setting` | `Auto Detect` | enum | Details | 自动检测 Motion Vector |
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `0.50`，`Spiral_01` 轨道选中。
+> - 字幕文本为“这里再加一个发光的东西”。
+>
+> 画面含义: 当前帧说明现有 Spiral 层已经有 Sprite Renderer 和材质实例；后续要在此水纹系统中再加入发光类 Sprite 层。
+> 图表转写（UE-GTXT v4）
+> - 类型: 复制 `WaterBall001` 并改用 Sprite Renderer
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Parameters/Curves + Timeline + 字幕
+> - 所属: Niagara System `Cast_01`，Emitter `WaterBall001`，模块 `Spawn Burst Instantaneous`。
+> - 目的: 从 `WaterBall` 复制一层用于发光/包裹感的 Sprite Emitter，并保持一次性生成。
+>
+> Niagara Preview:
+> - `Particle Counts` 显示 `WaterBall`、`Spiral_01`、`Black_01`、`Spiral_01001`、`WaterBall001` 均为 `1 Current, 1 Max (est.)` 且 Active。
+> - Preview 中可见水球和周围暗灰蓝旋涡层。
+>
+> System Overview / Stack:
+> | Emitter | 组 | 模块/项 | 状态/设置 | 作用 |
+> |---|---|---|---|---|
+> | `WaterBall` | Render | `Mesh Renderer` | Enabled | 原水球 Mesh 层 |
+> | `WaterBall001` | Emitter Update | `Emitter State(Self/Once)`、`Spawn Burst Instantaneous` | Enabled，`Spawn Burst Instantaneous` 选中 | 复制出的发光/包裹层生成 |
+> | `WaterBall001` | Particle Spawn | `Initialize Particle`、`Camera Offset` | Enabled | 初始化和相机偏移 |
+> | `WaterBall001` | Particle Update | `Particle State`、`Scale Sprite Size`、`System Location`、`Scale Color` | Enabled | 大小、位置跟随和颜色/透明度 |
+> | `WaterBall001` | Render | `Mesh Renderer` | 关闭 | 不使用 Mesh |
+> | `WaterBall001` | Render | `Sprite Renderer` | Enabled | 使用 Sprite 输出 |
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `WaterBall001.Spawn Burst Instantaneous.Spawn Count` | `1` | int | Details | 一次生成 1 个粒子 |
+> | `Spawn Time` | `0.0` | seconds | Details | 起始时生成 |
+> | `Spawn Probability` | `1.0` | float | Details | 生成概率 |
+> | `Loop Count Limit` | `1` | int | Details | 循环次数限制 |
+>
+> Timeline / 字幕:
+> - Timeline 当前约 `0.50`，多条轨道片段集中在起始区间。
+> - 字幕文本为“从生命时间4.9秒来看应该是一样的。”。
+>
+> 画面含义: 当前帧确认 `WaterBall001` 复制自 `WaterBall`，但 Render 改为 Sprite 输出；生成方式仍为 `Spawn Count=1` 的一次性粒子。
+> 图表转写（UE-GTXT v4）
+> - 类型: `WaterBall001.Scale Color` 颜色和 Alpha 曲线
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Parameters/Curves + Timeline + 字幕
+> - 所属: Niagara System `Cast_01`，Emitter `WaterBall001`，模块 `Scale Color`。
+> - 目的: 让复制出的 Sprite 层颜色/透明度随生命周期逐渐增强。
+>
+> Niagara Preview:
+> - `Particle Counts` 中 `WaterBall`、`Spiral_01`、`Black_01`、`Spiral_01001`、`WaterBall001` 均为 Active。
+> - Preview 中可见中心水球、周围暗灰蓝水纹和浅色透明层。
+>
+> System Overview / Stack:
+> - `WaterBall001` 的 `Scale Color` 被选中。
+> - `WaterBall001.Render` 中 `Mesh Renderer` 未启用，`Sprite Renderer` 启用。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `WaterBall001.Scale Color.Scale Mode` | `RGB and Alpha Separately` | enum | Details | RGB 与 Alpha 分开缩放 |
+> | `Scale RGB` | `Multiply Vector by Float` | mode | Details | 向量乘浮点曲线 |
+> | `Scale RGB.Vector` | `(1.0, 4.0, 5.0)` | vector | Details | 颜色偏蓝绿增强 |
+> | `Scale RGB.Float` | `Float from Curve` | curve | Details | 由曲线驱动 RGB 强度 |
+> | `Scale RGB.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取曲线 |
+> | `Scale RGB.Scale Curve` | `1.0` | float | Details | 曲线缩放 |
+> | `Scale Alpha` | `Float from Curve` | curve | Details | Alpha 由曲线驱动 |
+> | `Scale Alpha.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取 Alpha 曲线 |
+> | `Scale Alpha.Scale Curve` | `1.0` | float | Details | Alpha 曲线缩放 |
+>
+> 曲线:
+> - `Scale RGB` 曲线从接近 `0` 逐步线性上升到接近 `1`。
+> - `Scale Alpha` 曲线从接近 `0` 快速升到接近 `1`，末段保持高值。
+>
+> 字幕:
+> - 字幕文本为“然后这样线性地提高透明度”。
+>
+> 画面含义: 当前帧设置 `WaterBall001` 颜色和透明度随 `Particles.NormalizedAge` 增强，使发光/包裹层从弱到强出现。
+
+### 00:27:33-00:30:24 速度、透明度
+
+- 本段定位：速度、透明度。
+- 知识点：简单地说 渐渐变大的感觉 这个本身就是这种感觉 我们看看这个大致合适吗 变大的感觉或者其他的什么 现在的大小完全不匹配 那么这个也要从0.2变成2倍大。
+- 知识点：现在的大小有点多 变大的速度有点遗憾 一开始其实不太明显也没关系 最后我只是想适当给出那种变量的感觉 你在这里切 这里是加法的 所以透明度可能适当。
+- 知识点：这种感觉 慢慢低色调可以变得更浓 这样可能也可以适当弱一点 在这个布料上边缘区域减少也没关系 这种话这里的比例值可以变得更大 先这样调整一下 可以了。
+- 核对对象：`速度`、`透明度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `WaterBall001.Scale Sprite Size` 逐渐变大曲线
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Parameters/Curves + Timeline
+> - 所属: Niagara System `Cast_01`，Emitter `WaterBall001`，模块 `Scale Sprite Size`。
+> - 目的: 让复制出的 Sprite 发光/包裹层按生命周期逐渐变大。
+>
+> Niagara Preview:
+> - Preview 中可见中心水球和外侧暗灰蓝水纹层。
+> - `Particle Counts` 中 `WaterBall`、`Spiral_01`、`Black_01`、`Spiral_01001`、`WaterBall001` 均为 `1 Current, 1 Max (est.)` 且 Active。
+>
+> System Overview / Stack:
+> - `WaterBall001` 的 `Scale Sprite Size` 被选中。
+> - `WaterBall001.Render` 中 `Sprite Renderer` 启用，`Mesh Renderer` 未启用。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `WaterBall001.Scale Sprite Size.Scale Sprite Size Mode` | `Uniform Curve` | enum | Details | 使用统一曲线缩放 Sprite 尺寸 |
+> | `Uniform Curve Sprite Size` | `Curve for Floats` | curve | Details | 尺寸曲线 |
+> | `Uniform Curve Index` | `Particles.NormalizedAge` | Niagara attribute | Details | 按粒子归一化年龄取曲线 |
+> | `Uniform Curve Scale` | `1.0` | float | Details | 曲线缩放 |
+>
+> 曲线:
+> - 曲线从接近 `0` 开始，前段较平缓，随后逐渐上升到接近 `1`。
+> - 鼠标浮窗显示一个关键点约为 `Time=0.2`、`Value=0.104`。
+>
+> 画面含义: 当前帧把 `WaterBall001` 的 Sprite Size 做成随生命周期从小到大的曲线，用于制造逐渐扩张的包裹/发光层。
+> 图表转写（UE-GTXT v4）
+> - 类型: `WaterBall001.Scale Color` 末段增强曲线
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Parameters/Curves + Timeline
+> - 所属: Niagara System `Cast_01`，Emitter `WaterBall001`，模块 `Scale Color`。
+> - 目的: 调整 Sprite 层颜色与透明度的增强速度，让后段更明显。
+>
+> Niagara Preview:
+> - Preview 中水球下方和外侧可见较暗的旋涡水纹，亮度比白色 Ribbon 弱。
+> - `Particle Counts` 中 `WaterBall`、`Spiral_01`、`Black_01`、`Spiral_01001`、`WaterBall001` 均为 Active。
+>
+> System Overview / Stack:
+> - `WaterBall001.Scale Color` 被选中。
+> - `WaterBall001.Render` 中 `Sprite Renderer` 启用，`Mesh Renderer` 未启用。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Scale Mode` | `RGB and Alpha Separately` | enum | Details | RGB 和 Alpha 分开调整 |
+> | `Scale RGB` | `Multiply Vector by Float` | mode | Details | 颜色向量乘曲线 |
+> | `Scale RGB.Vector` | `(1.0, 4.0, 5.0)` | vector | Details | 蓝绿向颜色增强 |
+> | `Scale RGB.Float` | `Float from Curve` | curve | Details | RGB 强度由曲线驱动 |
+> | `Scale RGB.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取 RGB 曲线 |
+> | `Scale RGB.Scale Curve` | `1.0` | float | Details | RGB 曲线缩放 |
+> | `Scale Alpha` | `Float from Curve` | curve | Details | Alpha 由曲线驱动 |
+> | `Scale Alpha.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取 Alpha 曲线 |
+> | `Scale Alpha.Scale Curve` | `0.5` | float | Details | Alpha 曲线缩放 |
+>
+> 曲线:
+> - `Scale RGB` 曲线大部分时间保持较低，末段快速上升。
+> - `Scale Alpha` 曲线缓慢上升，鼠标浮窗显示一个点约为 `Time=0.8`、`Value=0.544`。
+>
+> 画面含义: 当前帧把颜色和透明度的强度集中到后段，让发光/包裹层在生命周期末段逐渐变明显，同时整体 Alpha 通过 `Scale Curve=0.5` 压低。
+> 图表转写（UE-GTXT v4）
+> - 类型: Sprite 发光/包裹层调整后的关卡预览
+> - 组成部分: 关卡 Viewport + Outliner + Content Browser + Niagara Editor 底部局部
+> - 所属: Level `06_Water_Explosion`，Content Browser 目录 `Material/06`，材质实例 `M_AdditiveDe...`。
+> - 目的: 检查 `WaterBall001` 的 Sprite Size 和透明度曲线调整后，角色周围的包裹层、水纹和颗粒是否协调。
+>
+> 关卡 Viewport:
+> - 角色位于半透明水球中心。
+> - 水球外侧有宽大的浅灰蓝透明水面层，边缘带白色颗粒环。
+> - 外圈仍有浅蓝白 Ribbon 水纹和零散颗粒亮点，右侧远端可见一簇独立颗粒。
+> - 棋盘地面仍可透过水面层辨认，整体透明度没有完全遮挡角色和背景。
+>
+> Content Browser:
+> - 当前位于 `Material/06` 目录。
+> - `M_AdditiveDe...` Material Instance 缩略图处于选中状态。
+> - 同目录可见 `M_Ribbon...`、`M_SpiralUV...`、`M_Waterball...` 等材质实例。
+>
+> Outliner / Niagara Editor 局部:
+> - Outliner 可见 `Cast 01`、`Cast 02`、`Cine Camera Ac...`、`Floor`、`PlayerStart`、`PostProcessVo...`。
+> - 底部 Niagara Editor 仍打开 `Cast_01`、`M_SpiralUV_v01_Ins_01`、`M_SpiralUV_v01_Ins_02`、`M_AdditiveDe_v01_Ins...` 标签。
+>
+> 画面含义: 当前帧用于验收发光/包裹 Sprite 层调整后的整体结果：中心水球、宽透明层、颗粒环和 Ribbon 水纹同时存在，透明度保持可读。
+
+### 00:30:30-00:33:30 粒子、发射器、生命周期
+
+- 本段定位：粒子、发射器、生命周期。
+- 知识点：我们制作的材料不会受到影响的情况下 添加一些包装会更好 这种话就可以去掉多余的包装 需要再制作一个发射器。
+- 知识点：因为这是光的布料 保持原样 可能需要把生命周期设得长一点 将仅使用4.9秒相关的光源 放入set 并将光添加到渲染中 这里的光半径大约设为500。
+- 知识点：辐射接近于白色的蓝色感觉 然后需要做成法浮点处理 5万左右 然后这里的曲线逐渐增亮 缩放量 好像没有灯光出来 爆炸不行了 现在正处于这里。
+- 知识点：这个一开始位置只是适当高一点 因为现在在地上有点变亮的感觉 在稍暗的色调中 也有点类似的颜色感。
+- 知识点：生出来的角色会 这些也有点变亮的感觉 很好 一样的 那么现在最后再来一个 像spark那样的粒子。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`发射器`、`生命周期`、`颜色`、`曲线`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 加入包装/发光层后的关卡预览
+> - 组成部分: 关卡 Viewport + Content Browser + Outliner + Niagara Editor 底部局部
+> - 所属: Level `06_Water_Explosion`，Content Browser 目录 `Material/06`，材质实例 `M_AdditiveDe...`。
+> - 目的: 检查角色、水球、透明包裹层、颗粒环和外圈水纹在关卡中的组合状态。
+>
+> 关卡 Viewport:
+> - 视口处于 `Pilot Actor: Cine Camera Actor`。
+> - 角色位于半透明水球中心，水球外侧有宽大的浅灰蓝透明水面层。
+> - 透明层边缘可见白色颗粒环，外圈还有较长的浅蓝白水纹/Ribbon 形态。
+> - 棋盘地面仍可透过透明水面层辨认，整体没有完全遮挡角色。
+>
+> Content Browser / Outliner:
+> - Content Browser 位于 `Material/06`，当前选中 `M_AdditiveDe...` Material Instance；同目录可见 `M_Ribbon...`、`M_SpiralUV...`、`M_Waterball...` 等材质实例。
+> - Outliner 可见 `06_Water_Explosion`、`Cast 01`、`Cast 02`、`Cine Camera Ac...`、`Floor`、`PlayerStart`、`PostProcessVo...`。
+>
+> Niagara Editor 局部:
+> - 底部仍打开 `Cast_01`、`M_SpiralUV_v01_Ins_01`、`M_SpiralUV_v01_Ins_02`、`M_AdditiveDe_v01_Ins...` 等标签。
+> - Details 局部显示 Owner 与 `WaterBall001` 相关。
+>
+> 画面含义: 当前帧用于确认在不改变已有水球材质主体的前提下，额外包装/发光层仍与水球、颗粒环和外圈水纹协调。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Light_01` 光源 Emitter Stack 与 `Scale Color`
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline
+> - 所属: Niagara System `Cast_01`，Emitter `Light_01`，模块 `Scale Color`。
+> - 目的: 新增一层 Light Emitter，用 Light Renderer 给角色周围提供白蓝色发光。
+>
+> Niagara Preview:
+> - Preview 中正在编译，画面显示 `Compiling...`。
+> - `Compiling Emitter` 列表包含 `WaterBall`、`Spiral_01`、`Black_01`、`Spiral_01001`、`WaterBall001`、`Light_01`。
+>
+> System Overview / Stack:
+> | Emitter | 组 | 模块/项 | 状态/设置 | 作用 |
+> |---|---|---|---|---|
+> | `Light_01` | Properties | `Properties` | `CPU` | 光源 Emitter 使用 CPU 模拟 |
+> | `Light_01` | Emitter Summary | `Emitter Summary` | 可见 | 汇总该 Emitter |
+> | `Light_01` | Emitter Update | `Emitter State(Self/Once)` | Enabled | 一次性生命周期状态 |
+> | `Light_01` | Particle Spawn | `Initialize Particle` | Enabled | 初始化光源粒子 |
+> | `Light_01` | Particle Spawn | `Set: PARTICLES LightRadius` | Enabled | 写入粒子 LightRadius |
+> | `Light_01` | Particle Update | `Particle State`、`Scale Color` | Enabled | 粒子状态与颜色/强度缩放 |
+> | `Light_01` | Render | `Light Renderer` | Enabled | 用 Light Renderer 输出光照 |
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Light_01.Scale Color.Scale Mode` | `RGB and Alpha Separately` | enum | Details | RGB 与 Alpha 分开缩放 |
+> | `Scale RGB` | `Multiply Vector by Float` | mode | Details | 颜色向量乘浮点强度 |
+> | `Scale RGB.Vector` | `(1.0, 1.0, 1.0)` | vector | Details | 白色基础颜色 |
+> | `Scale RGB.Float` | `1.0` | float | Details | RGB 缩放强度 |
+> | `Scale Alpha` | `1.0` | float | Details | Alpha 缩放强度 |
+>
+> Curves / Timeline:
+> - Curves 面板中可见一条末段快速升到约 `10` 的曲线，用于当前编辑上下文中的强度参考。
+> - Timeline 选中 `Light_01` 轨道。
+>
+> 画面含义: 当前帧确认新增 `Light_01`，并通过 `Set: PARTICLES LightRadius` 与 `Light Renderer` 输出光源；`Scale Color` 当前保持白色基础缩放。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Light_01` 加入后的关卡预览
+> - 组成部分: 关卡 Viewport + Content Browser + Outliner + Niagara Editor 底部局部 + 字幕
+> - 所属: Level `06_Water_Explosion`，Niagara System `Cast_01`。
+> - 目的: 检查 Light Emitter 对角色和周围水效果的发光影响。
+>
+> 关卡 Viewport:
+> - 角色位于画面中心，角色上半身和附近区域出现白蓝色局部亮光。
+> - 周围水球/水纹主体较前一阶段更弱或更透明，画面重点转为角色周围的局部光照。
+> - 左侧、上方和右侧可见若干小白色火花/亮点簇，地面上有较淡的光斑。
+>
+> Content Browser / Outliner:
+> - Content Browser 仍在 `Material/06`，`M_AdditiveDe...` Material Instance 处于选中状态。
+> - Outliner 可见 `Cast 01`、`Cast 02`、`Cine Camera Ac...`、`Floor`、`PlayerStart`、`PostProcessVo...`。
+>
+> Niagara Editor 局部 / 字幕:
+> - 底部仍打开 `Cast_01` 和多个材质实例标签。
+> - 字幕文本为“很好”。
+>
+> 画面含义: 当前帧用于验收 `Light_01` 的结果；角色附近已产生白蓝色局部发光，并与少量火花亮点和地面光斑一起形成更亮的角色周围区域。
+
+### 00:33:33-00:36:27 GPU、生命周期、颜色
+
+- 本段定位：GPU、生命周期、颜色。
+- 知识点：在这里的身体周围适当混合一下 和顶点的感觉一样 保存 然后我们把之前在那个轨迹里用的 spark复制过来使用 这个复制过来一个 需要把这个关掉。
+- 知识点：这个换成GPU来用吧 换成X下一个用rate 这个也就是大约4.7 来关掉delay 喷射大约100个 持续4.7秒 生命周期4秒5秒感觉不错。
+- 知识点：这个要适当大一点 形状位置要适当大一点 因为就是从身体周围出来的 只放大这个大小 既然不是从地面爆发 大小反正减少的部分保持一样 颜色要更强。
+- 知识点：300和200左右 这个范围是300和200左右 原本较厚 这里增加一个涡旋 添加涡旋boss 想让它旋转着 往身体周围上升 大约1000左右。
+- 知识点：身体周围会有一点缺乏感觉 这里的拖动不会太远 延伸 会适当控制一下力量 然后要通过加速力往上去 逐渐变成随机范围 下来 大约从500到400。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`GPU`、`生命周期`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Light_01.Initialize Particle` 光源生命周期与位置偏移
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline + 字幕
+> - 所属: Niagara System `Cast_01`，Emitter `Light_01`，模块 `Initialize Particle`。
+> - 目的: 保存 Light Emitter 状态后，继续准备复制轨迹中的 spark 粒子。
+>
+> Niagara Preview:
+> - `Particle Counts` 显示 `WaterBall`、`Spiral_01`、`Black_01`、`Spiral_01001`、`WaterBall001`、`Light_01` 均为 `1 Current, 1 Max (est.)` 且 Active。
+> - Preview 中可见水球、水面层和角色附近的亮部。
+>
+> System Overview / Stack:
+> - `Light_01` 被选中，Stack 中包含 `Emitter State(Self/Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Set: PARTICLES LightRadius`、`Particle State`、`Scale Color`、`Light Renderer`。
+> - `Initialize Particle` 当前被选中，右侧 Details 显示该模块字段。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Light_01.Initialize Particle.Lifetime Mode` | `Direct Set` | enum | Details | 直接指定生命周期 |
+> | `Lifetime` | `4.9` | seconds | Details | 光源粒子持续时间 |
+> | `Color Mode` | `Unset` | enum | Details | 不在 Initialize 中设置颜色 |
+> | `Position Mode` | `Simulation Position` | enum | Details | 使用模拟位置 |
+> | `Position Offset` | `(0.0, 0.0, 200.0)` | vector | Details | 初始位置向上偏移；坐标系按 Details 显示为 Simulation |
+> | `Position Offset Coordinate Space` | `Simulation` | enum | Details | 偏移按 Simulation 空间解释 |
+> | `Mass Mode` | `Unset / (Mass of 1)` | enum | Details | 默认质量 |
+>
+> Curves / Timeline / 字幕:
+> - Curves 面板可见一条末段快速升到约 `10` 的曲线。
+> - Timeline 选中 `Light_01` 轨道，当前播放头约在 `0.50`。
+> - 字幕文本为“保存，然后我们把之前在那个轨迹里用的”。
+>
+> 画面含义: 当前帧确认 `Light_01` 的寿命为 `4.9` 秒，并把光源粒子初始位置在 Simulation 空间中上移 `200`，随后准备复制之前轨迹中使用的 spark。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Empty` GPU spark Emitter 初始化
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline + 字幕
+> - 所属: Niagara System `Cast_01`，Emitter `Empty`，模块 `Initialize Particle`。
+> - 目的: 复制 spark 发射器后切换为 GPU，用较长寿命和较大形状范围生成角色周围粒子。
+>
+> Niagara Preview:
+> - `Particle Counts` 中 `Empty` 显示约 `46 Current, 148 Max (est.)` 且 Active。
+> - Preview 中可见水球上方/周围出现一簇白色 spark 粒子，水面层仍在背景中。
+>
+> System Overview / Stack:
+> | Emitter | 组 | 模块/项 | 状态/设置 | 作用 |
+> |---|---|---|---|---|
+> | `Light_01` | Properties | `CPU` | Enabled | 继续提供 Light Renderer 光照 |
+> | `Empty` | Properties | `GPU` | Enabled，右上有警告图标 | 新复制的 GPU spark Emitter |
+> | `Empty` | Emitter Update | `Emitter State(Self/Once)`、`Spawn Rate` | Enabled | 使用 Rate 生成 |
+> | `Empty` | Emitter Update | `Spawn Particles from Other Emitter` | 关闭 | 不从其他 Emitter 采样生成 |
+> | `Empty` | Particle Spawn | `Initialize Particle`、`Shape Location Sphere` | Enabled | 初始化寿命、大小和球形发射范围 |
+> | `Empty` | Particle Update | `Particle State`、`Scale Sprite Size`、`Curl Noise Force`、`Solve Forces and Velocity`、`Scale Color` | Enabled | 控制大小、噪声力、速度求解和颜色 |
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Empty.Initialize Particle.Lifetime Mode` | `Random` | enum | Details | 随机生命周期 |
+> | `Lifetime Min` | `4.0` | seconds | Details | 最短寿命 |
+> | `Lifetime Max` | `5.0` | seconds | Details | 最长寿命 |
+> | `Color Mode` | `Unset` | enum | Details | 初始化时不覆盖颜色 |
+> | `Position Mode` | `Simulation Position` | enum | Details | 使用模拟位置 |
+> | `Position Offset` | `(0.0, 0.0, 0.0)` | vector | Details | 不额外偏移 |
+> | `Sprite Size Mode` | `Random Non-Uniform` | enum | Details | Sprite 尺寸非均匀随机 |
+> | `Sprite Size Min` | `(1.5, 3.0)` | vector2 | Details | 最小尺寸范围 |
+> | `Sprite Size Max` | `(2.0, 5.0)` | vector2 | Details | 最大尺寸范围 |
+> | `Sprite Rotation Mode` | `Unset` | enum | Details | 不在 Initialize 中设旋转 |
+>
+> Timeline / 字幕:
+> - Timeline 选中 `Empty` 轨道，`Empty` 绿色片段从起始持续到约 `4.7` 秒后，外层蓝色轨道延伸到更长时间。
+> - 字幕文本为“形状位置要稍微大一点。”。
+>
+> 画面含义: 当前帧确认 spark 复制层 `Empty` 已作为 GPU Emitter 工作，使用 `4.0-5.0` 秒随机寿命和非均匀 Sprite 尺寸；下一步重点是放大 `Shape Location Sphere` 的发射范围，使粒子从角色周围出现。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Empty.Vortex Force` 旋转上升约束
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline + 字幕
+> - 所属: Niagara System `Cast_01`，Emitter `Empty`，模块 `Vortex Force`。
+> - 目的: 给 GPU spark 增加涡旋力，使粒子围绕角色附近旋转并向上聚拢，避免拖尾过远。
+>
+> Niagara Preview:
+> - `Particle Counts` 中 `Empty` 显示约 `46 Current, 184 Max (est.)` 且 Active。
+> - Preview 中白色 spark 粒子分布在角色/水球周围，数量比上一帧更分散；水球和水面层仍作为背景。
+>
+> System Overview / Stack:
+> - `Light_01` 仍保留 `Set: PARTICLES LightRadius` 和 `Light Renderer`。
+> - `Empty` 为 GPU Emitter，Stack 中可见 `Emitter State(Self/Once)`、`Spawn Rate`、`Initialize Particle`、`Shape Location Sphere`、`Particle State`、`Scale Sprite Size`、`Curl Noise Force`、`Vortex Force`、`Solve Forces and Velocity`、`Scale Color`、`Sprite Renderer`。
+> - `Vortex Force` 当前被选中，右侧 Details 显示该模块字段。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Empty.Vortex Force.Vortex Force Amount` | `1000.0` | float | Details | 涡旋力强度 |
+> | `Vortex Axis` | `(0.0, 0.0, 1.0)` | vector | Details | 涡旋轴向量；只按 Details 字段记录，不额外断言坐标系 |
+> | `Vortex Axis Coordinate` | `Simulation` | enum | Details | 轴向量按 Simulation 空间解释 |
+> | `Vortex Origin` | `ENGINE / EMITTER / SimulationPosition` | parameter | Details | 涡旋原点来自 Emitter 的 SimulationPosition |
+> | `Origin Pull Amount` | `1000.0` | float | Details | 向原点牵引强度 |
+> | `Origin Pull Only On Vortex Axis` | checked | bool | Details | 只沿涡旋轴牵引 |
+> | `Vortex Origin Offset` | `(0.0, 0.0, 0.0)` | vector | Details | 原点不额外偏移 |
+> | `Use Influence Falloff` | unchecked | bool | Details | 不启用影响衰减 |
+>
+> Timeline / 字幕:
+> - Timeline 选中 `Empty` 轨道。
+> - 字幕文本为“这里的拖动不会太远延伸”。
+>
+> 画面含义: 当前帧在 `Empty` 的 Particle Update 中加入 `Vortex Force`，以 `1000.0` 的涡旋强度和 `1000.0` 的 Origin Pull 控制 spark 围绕 Emitter 位置旋转/聚拢，避免粒子被拖得过远。
+
+### 00:36:33-00:38:57 材质、粒子
+
+- 本段定位：材质、粒子。
+- 知识点：只有Z值 添加了像素化粒 然后排出值 我们先看一下 这样出来是这样形成而消失的 这样看来也应该成吨了吧 为了适当控制一下 过于多的力量 为了适当控制一下。
+- 知识点：过于突出的部分 这里其实身体周围的东西 并不一定要很亮 因为这里的波浪所产生的气流 感觉加入了 大致上完成的感觉 先保存一次 这次是这样 用粒子分成两种。
+- 知识点：保存了试试看 关于沙子材质的要点 适当解释过了 现在下一次继续 爆炸部分收尾 爆炸中也能感受到的水的点是什么 这些部分一起解释一下 完成一次一起尝试吧 这次时间就在这里结束 谢谢。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`粒子`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: `Empty.Acceleration Force` 上升力设置
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline
+> - 所属: Niagara System `Cast_01`，Emitter `Empty`，模块 `Acceleration Force`。
+> - 目的: 在 Vortex/Drag 之后给 GPU spark 增加向上的随机加速度，让粒子在角色周围上升并受控消散。
+>
+> Niagara Preview:
+> - `Particle Counts` 中 `Empty` 显示约 `46 Current, 90 Max (est.)` 且 Active。
+> - Preview 中可见水球、水面层和分散的白色 spark 粒子，粒子围绕角色附近分布。
+>
+> System Overview / Stack:
+> - `Light_01` 仍包含 `Set: PARTICLES LightRadius` 和 `Light Renderer`。
+> - `Empty` 为 GPU Emitter，Particle Update 中依次可见 `Particle State`、`Scale Sprite Size`、`Curl Noise Force`、`Vortex Force`、`Drag`、`Acceleration Force`、`Solve Forces and Velocity`、`Scale Color`。
+> - `Acceleration Force` 当前被选中，位于 `Drag` 之后、`Solve Forces and Velocity` 之前。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Empty.Acceleration Force.Acceleration` | `Random Range Vector` | mode | Details | 使用随机范围向量作为加速度 |
+> | `Minimum` | `(0.0, 0.0, 500.0)` | vector | Details | 加速度随机范围下限；只按 Details 字段记录 |
+> | `Maximum` | `(0.0, 0.0, 400.0)` | vector | Details | 加速度随机范围上限；只按 Details 字段记录 |
+> | `Evaluation Type` | `Spawn Only` | enum | Details | 仅在生成时取值 |
+>
+> 画面含义: 当前帧给 `Empty` spark 粒子添加一次性随机加速度，配合前面的涡旋、拖拽和速度求解，使身体周围粒子向上运动但不长距离外扩。
+> 图表转写（UE-GTXT v4）
+> - 类型: `Empty.Scale Color` 颜色与透明度衰减
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Curves + Timeline
+> - 所属: Niagara System `Cast_01`，Emitter `Empty`，模块 `Scale Color`。
+> - 目的: 调整 GPU spark 的颜色强度和透明度，使身体周围粒子不过亮，并在生命周期内逐渐消失。
+>
+> Niagara Preview:
+> - `Particle Counts` 中 `Empty` 显示约 `46 Current, 447 Max (est.)` 且 Active。
+> - Preview 中白色 spark 粒子分布在水球周围，背景仍有水面层和旋涡水纹。
+>
+> System Overview / Stack:
+> - `Empty` 为 GPU Emitter，Particle Update 中包含 `Curl Noise Force`、`Vortex Force`、`Drag`、`Acceleration Force`、`Solve Forces and Velocity`、`Scale Color`。
+> - `Scale Color` 当前被选中，`Sprite Renderer` 位于 Render 组。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Empty.Scale Color.Scale Mode` | `RGB and Alpha Separately` | enum | Details | RGB 与 Alpha 分开缩放 |
+> | `Scale RGB` | `Multiply Vector by Float` | mode | Details | 颜色向量乘曲线强度 |
+> | `Scale RGB.Vector` | `(0.5, 2.0, 3.0)` | vector | Details | 偏蓝色的 spark 颜色缩放 |
+> | `Scale RGB.Float` | `Float from Curve` | curve | Details | RGB 强度由曲线驱动 |
+> | `Scale RGB.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取 RGB 曲线 |
+> | `Scale RGB.Scale Curve` | `0.5` | float | Details | RGB 曲线缩放 |
+> | `Scale Alpha` | `Float from Curve` | curve | Details | Alpha 由曲线驱动 |
+> | `Scale Alpha.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 按归一化年龄取 Alpha 曲线 |
+> | `Scale Alpha.Scale Curve` | `1.0` | float | Details | Alpha 曲线缩放 |
+>
+> 曲线:
+> - RGB 曲线从约 `50` 逐步下降到接近 `0`，整体再乘以 `0.5`。
+> - Alpha 曲线从约 `1` 逐步下降到接近 `0`。
+>
+> 画面含义: 当前帧把 spark 颜色设置为蓝白倾向，并让 RGB 强度和 Alpha 随 `Particles.NormalizedAge` 衰减，避免身体周围粒子过亮或持续时间过长。
+> 图表转写（UE-GTXT v4）
+> - 类型: p31 结束前的关卡效果预览
+> - 组成部分: 关卡 Viewport + Content Browser + Outliner + Niagara Editor 底部局部 + 字幕
+> - 所属: Level `06_Water_Explosion`，Niagara Systems `Cast 01` / `Cast 02`。
+> - 目的: 检查 spark 水点粒子加入后，爆炸范围内仍能感受到水点和气流。
+>
+> 关卡 Viewport:
+> - 视口处于 `Pilot Actor: Cine Camera Actor`。
+> - 角色位于棋盘地面中央偏下位置，周围一圈可见细小白色 spark/水点粒子。
+> - 粒子呈低亮度、分散分布，没有形成大面积实心光团。
+> - 角色附近仍有较淡的发光区域，地面阴影和棋盘纹理可见。
+>
+> Content Browser / Outliner:
+> - Content Browser 位于 `Particle/06`，`Cast_02` Niagara System 处于选中状态，旁边可见 `Cast_01`。
+> - Outliner 中可见 `06_Water_Explosion (Editor)`、`Cast 01`、`Cast 02`、`Cine Camera Ac`、`Floor`、`PlayerStart`、`PostProcessVo`，底部显示约 `10 actors`。
+>
+> Niagara Editor 局部 / 字幕:
+> - 底部 Niagara Editor 仍打开 `Cast_01`，右侧 Details 局部显示 `Empty`。
+> - 字幕文本为“爆炸中也能感受到的水的点是什么”。
+>
+> 画面含义: 当前帧用于最终检查粒子拆成两类后的效果；新增 spark 水点在角色周围分散可见，亮度受控，作为爆炸中的水点/气流感补充。
+
+## 补充视觉证据
+
+### S07 00:20:50
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 补充证据 `Spiral_01001.Sprite Renderer`
+> - 组成部分: Niagara Preview + System Overview + Stack + Details + Parameters/Curves + Timeline + 字幕
+> - 所属: Niagara System `Cast_01`，Emitter `Spiral_01001`，Renderer `Sprite Renderer`。
+> - 目的: 补充说明复制出的 Spiral Emitter 使用的 Sprite Renderer 材质、对齐和排序设置。
+>
+> Niagara Preview:
+> - `Particle Counts` 显示 `WaterBall`、`Spiral_01`、`Black_01`、`Spiral_01001` 均为 `1 Current, 1 Max (est.)` 且 Active。
+> - Preview 中可见中心水球和外侧旋涡水纹，说明 Spiral 类 Sprite 层参与当前水纹外观。
+>
+> System Overview / Stack:
+> - `Spiral_01001` 的 `Sprite Renderer` 被选中。
+> - `Spiral_01001` Stack 中可见 `Emitter State(Self/Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Sprite Facing and Alignment`、`Particle State`、`Scale Sprite Size`、`Scale Color`、`Sprite Renderer`。
+>
+> Details:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Spiral_01001.Sprite Renderer.Material` | `M_SpiralUV_v01_Ins_01` | Material Instance | Details | 旋涡 Sprite 材质 |
+> | `Material User Parameter Binding` | `None` | binding | Details | 不通过 User 参数覆盖材质 |
+> | `Source Mode` | `Particles` | enum | Details | 使用粒子作为渲染源 |
+> | `Alignment` | `Custom Alignment` | enum | Details | 自定义对齐 |
+> | `Facing Mode` | `Custom Facing Vector` | enum | Details | 自定义 Facing Vector |
+> | `Macro UVRadius` | `0.0` | float | Details | Macro UV 半径 |
+> | `Default Pivot in UV Space` | `(0.5, 0.5)` | vector2 | Details | Pivot 居中 |
+> | `Pixel Coverage Mode` | `Automatic` | enum | Details | 自动像素覆盖 |
+> | `Pixel Coverage Blend` | `1.0` | float | Details | 像素覆盖混合 |
+> | `Min/Max Facing Camera Blend Distance` | `0.0 / 0.0` | float | Details | 面向相机混合距离 |
+> | `Sort Mode` | `None` | enum | Details | 不额外排序 |
+> | `Renderer Visibility` | `0` | int | Details | Renderer Visibility |
+>
+> 字幕:
+> - 字幕文本为“这个复制后打开，这里连接会。”。
+>
+> 画面含义: 该补充截图证明复制出的 `Spiral_01001` 使用与 Spiral 水纹一致的 `M_SpiralUV_v01_Ins_01` Sprite 材质，并保持自定义对齐/朝向设置。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

@@ -1,0 +1,412 @@
+# 22-设置字符Sequencer
+
+# 22-设置字符Sequencer
+
+## 关键术语
+
+- `Sequencer`、`粒子`、`系统`、`网格`、`纹理`、`T actors (1 selected)`、`更多每外`、`所以这次也会先进行Sequencer设置`、`+Add`、`Niagara`、`Add`、`Niagara System`、`Emitter`、`Spawn Rate`、`Spawn`、`Lifetime`、`Alpha`、`Opacity`
+
+## 分段知识
+
+### 00:00:06-00:04:50 Sequencer、粒子
+
+- 本段定位：Sequencer、粒子。
+- 知识点：22课问候大家 这次是现在第四个例子的第一次 所以这次也会先进行序列器设置 现在打开的场景是我们第三个例子使用的场景 然后同样需要用保存当前等级来保存为新等级。
+- 知识点：名字叫Gravitex-EP 此次示的概念是现在这个物理模拟源 利用Five結果 在这方面制造这种重力感觉的爆炸这种感觉会很有趣 所以就这样就带来了。
+- 知识点：确实比较这种概念更好的是 尝试创造属于自己的风格 所以并不是在强迫 大家感觉就是 希望你能看看这个形式吧 嗯 构成然后 演出构成本身 序列器也复制打开了。
+- 知识点：这次不会上镜点去掉了 然后删除这个角色 然后也会全部删除粒子 也会删除所有的键 并且也会删除变形的键 这个数值以后再相机试图确认。
+- 知识点：嗯 这样调整 然后先把那块值和相机震动去掉 然后换成其他的 然后数值先设为0 我们得先拿到要用的角色 我们这次叫它盖灯不知道对不对。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`粒子`、`序列`。
+
+**关键画面：**
+
+这张图展示第 22 课开始时的新关卡基底状态。作者先沿用前一课场景框架，但把角色和特效主体清空，只保留地面、光照和后处理体，作为新的 Sequencer 示例起点。
+
+- 当前关卡：`Ex_03_TeleportExp (Editor)`
+- Outliner 中可见对象：
+  - `Lighting`
+  - `DirectionalLight`
+  - `SkyLight`
+  - `SM_SkySphere`
+  - `Ex_01_SpriteExp`
+  - `Floor`
+  - `PlayerStart`
+  - `PostProcessVolume`
+- 当前选中对象：`Floor`
+- `Floor` 细节面板可见：
+  - `Location = (0.0, 0.0, -0.5)`
+  - `Rotation = (0.0, 0.0, 0.0)`
+  - `Scale = (10.0, 10.0, 10.0)`
+  - `Static Mesh = SM_Template_Map_...`
+  - `Material Element 0 = MI_ProcGrid`
+- 内容浏览器当前目录：`Signature/Course_03/Level`
+  - 可见 `Ex_01_... Level`、`Ex_02_... Level`、`Ex_03_... Level` 等关卡资源
+
+复建时可以把这一步理解为“先保存出第四个例子的新关卡，再把旧角色和旧粒子移除，只保留标准地面和基础灯光”。后续所有 Sequencer、角色与 Niagara 布置都建立在这个干净场景上。
+这张图打开了新例子的 `Sequencer`，名称已经切换为 `Ex_04_GravityExp`。它说明作者沿用了前一课的镜头轨道结构，但先把大部分动画内容清空，只保留后面还要复用的模糊控制与摄像机基础轨道。
+
+- Sequencer：`Ex_04_GravityExp`
+- 时间线：
+  - 当前播放头在约 `0065` 帧
+  - 顶部 `Camera Cuts` 缩略图显示整段镜头预览
+- 当前保留的轨道：
+  - `MPC_Blur_Ctrl01`
+    - 参数：`Blur_Str`
+    - 当前显示值：`0.0`
+    - 轨道上仍保留一段带关键点的参数区间
+  - `Cine Camera Actor`
+    - `CameraComponent`
+    - `Camera Shake`
+    - `Current Aperture = 2.8`
+    - `Current FocalLength = 20.0`
+    - `Manual Focus Distance = 100000.0`
+    - `Spawned` 已启用
+    - `Transform` 轨道已存在但未展开
+
+这一步的含义更像“复制前一个 Sequencer 当模板，再先清理不需要的内容，只留镜头和少量通用参数控制”。后续新角色、重力爆炸粒子和新的关键帧都会叠加到这条 `Ex_04_GravityExp` 时间线上。
+这张图说明新例子已经把角色放回场景，并开始用 Sequencer 时间线对角色动作与镜头节奏。当前使用的角色是 `Gideon`，并且正在 `Ex_04_GravityExp` 的时间线上预览其动作展开位置。
+
+- 当前关卡：`Ex_04_GravityExp`
+- Outliner 中可见关键对象：
+  - `Cine Camera Act`
+  - `Ex_01_SpriteExp`
+  - `Floor`
+  - `Gideon`
+  - `PlayerStart`
+  - `PostProcessVol`
+- 当前选中对象：`Gideon`
+- 视口状态：
+  - 角色位于场景中心偏近处
+  - 视口 Gizmo 显示正在直接调整角色在地面上的摆放位置
+- 下方 Sequencer：
+  - 顶部缩略图仍是 `Cine Camera Actor`
+  - 当前播放头在约 `0035` 帧
+  - `MPC_Blur_Ctrl01 > Blur_Str` 轨道仍可见，并保留关键帧点
+
+从这张图可以看出本段的工作重点已经从“清场景”切到“把角色动作放回镜头结构中”。复建时应先确认角色模型和动作在镜头中的站位，再围绕这个动作起点继续配置爆炸与散开类粒子。
+
+### 00:04:50-00:07:32 粒子、网格
+
+- 本段定位：粒子、网格。
+- 知识点：最后形成爆炸 结尾针 需要调到大约140 而且我们之前用过的这些石头 就这样下落就爆炸 然后这次例子中制作的地面那块网格 就在这里 嗯 需要再用一次它。
+- 知识点：我把它带过来了 嗯 我觉得带来了动画 根据爆炸点调整这个动画 然后爆炸 这次势力中用到的铁花例子也会一起用到 所以会复制铁花。
+- 知识点：铁花 ATFG然后做成重力EXP 然后 好在现在正在复制中 这次势力可能会有点复杂的构成 再加一个这种扫描磁砖物理模拟 然后需要把圆导入使用。
+- 知识点：利用向量场做粒子外形 计划一起混合一下 测试时做的那些新的方式会合成一个 然后可能会适当长一点 过时已经完成了 可以拖动这个使用。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+这张图展示 `Ex_04_GravityExp` 中角色轨道已经正式加入 Sequencer，并挂上一个名为 `CosmicRift` 的动画片段。此时重点从镜头模板切换到“角色动作与爆炸时序”的对齐。
+
+- Sequencer：`Ex_04_GravityExp`
+- 当前播放头：约 `0048` 帧
+- 已展开轨道：
+  - `MPC_Blur_Ctrl01 > Blur_Str`
+    - 当前显示值约 `0.000021`
+  - `Cine Camera Actor`
+    - `CameraComponent`
+    - `Camera Shake`
+    - `Current Aperture = 2.8`
+    - `Current FocalLength = 20.0`
+    - `Manual Focus Distance = 100000.0`
+    - `Spawned`
+    - `Transform`
+  - `Gideon`
+    - `Animation`
+    - `Weight = 1.0`
+    - `Spawned`
+    - `Transform`
+- 角色动画片段：
+  - 时间线上可见两个连续的动画段，名称都显示为 `CosmicRift`
+  - 当前播放头正落在其中一个 `CosmicRift` 片段内部
+
+复建这一段时，可理解为“先把角色的技能演出动作放进 Sequencer，再根据动作关键时刻去安排地面裂缝、重力爆炸和后续 Niagara 生成”。如果角色动作没先对上，后面的粒子爆发点和落点就会很难对齐。
+这张图进一步把“爆炸前的地面裂缝网格”和“待复制的 Niagara 系统”一起接入工作流。左侧视口已经能看到一块黑色裂缝/破碎地面网格，右侧 Sequencer 则新增了对应的网格轨道。
+
+- 视口结果：
+  - 地面上放置了一块黑色放射状破碎裂缝网格
+  - 位置靠近角色技能落点，说明它会参与后续重力爆炸的地表破裂表现
+- Sequencer 已包含的对象：
+  - `Gideon`
+    - `Animation`
+    - `Weight = 1.0`
+    - `Spawned`
+    - `Transform`
+  - `SK Ex 02 Crack 01`
+    - `Animation`
+    - `Spawned`
+    - `Transform`
+- 其他保持项：
+  - `MPC_Blur_Ctrl01 > Blur_Str = 0.0`
+  - `Cine Camera Actor` 基础轨道仍在
+- 内容浏览器当前目录：`Signature/Course_03/Particles`
+  - 可见多个现成 Niagara 系统资源
+  - 当前选中的资源名显示为 `allExp1`（Niagara System）
+
+这一帧的重点是“把裂缝网格也纳入 Sequencer，并从粒子库挑一个现成爆炸系统作为复制起点”。复建时可以先把地面裂缝资源和角色动作对齐，再复制已有爆炸 Niagara 做重力风格改造，而不是从零开始搭系统。
+这张图和上一帧的场景布局基本一致，但内容浏览器里已经切换到新复制出来的 `Ex_04_... Niagara Sy`，说明作者不再只是挑选参考系统，而是已经建立了第四个例子要用的新 Niagara 系统资源。
+
+- 视口与 Sequencer 现状：
+  - 地面裂缝网格仍摆在技能落点附近
+  - Sequencer 里仍保留 `Gideon > Animation > CosmicRift`
+  - `SK Ex 02 Crack 01` 的 `Animation / Spawned / Transform` 轨道继续保留
+  - `MPC_Blur_Ctrl01 > Blur_Str = 0.0`
+- 内容浏览器当前目录：`Signature/Course_03/Particles`
+  - 当前高亮的 Niagara 资源已变为 `Ex_04_... Niagara Sy`
+  - 同目录内还能看到 `Ex_01_...`、`Ex_02_...`、`Ex_03_...` 等旧例子系统，可作为对照来源
+
+这一步可以理解为“先复制已有爆炸系统，再改名为第四个例子的专用系统”。后面关于重力感爆炸、向量场、扫描碎块和下落粒子的制作，都会基于这个新 `Ex_04` Niagara System 继续展开，而不是直接改旧系统原件。
+
+### 00:07:44-00:12:40 粒子、系统
+
+- 本段定位：粒子、系统。
+- 知识点：这样当现框几乎到达边缘时 抓住黑发框会比较好的话 是的 移动大约一帧设置在80帧左右 然后裂缝动画也调整到这里 是的 我本该把钥匙放在这里的。
+- 知识点：结果就放在这里了 然后这个呢 看起来这样也没关系 然后 好的 嗯 这种方式来使用 这里面放了现在在用的材料 好的就这样放进去 然后位置值需要往前移动一下。
+- 知识点：嗯 粒子本身 大概让它往前移动 500 然后我们走 这个裂缝大约要拉500 这样会产生这种感觉的爆炸 暂时像机大致这样角度固定 然后这里新做一个纳卡尔粒子放进去吧。
+- 知识点：那个爆炸粒子不会直接使用 会新建一个纳格拉系统 就叫新闻公社项目瓷砖 这里再拖一下移动过来 还有一个就是 做一下 叫做投放 把这个捧票也带过来。
+- 知识点：粒子适当关一下 投放的话从一针开始就直接生成 生成 这个就给位置的关键帧值。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`粒子`、`系统`。
+
+**关键画面：**
+
+这张图说明新复制出的 Niagara 系统已经被正式拖进关卡并命名为 `Ex 04 Gravity Exp`，当前正在对齐它与角色、地面中心和 Sequencer 时序的位置关系。
+
+- Outliner 中新增对象：
+  - `Ex 04 Gravity Ex...`，类型为 `NiagaraA...`
+  - 当前已选中该 Niagara Actor
+- 视口结果：
+  - `Gideon` 站在一块深色地面基底中央
+  - Niagara Actor 的 Gizmo 与角色位置基本重叠，说明系统被放在技能爆发中心
+- 细节面板：
+  - 当前对象为 `Ex 04 Gravity Exp`
+  - 组件为 `NiagaraComponent`
+- 下方 Sequencer：
+  - 当前时间指针约在 `0077` 帧
+  - 顶部 `Cine Camera Actor` 缩略图显示此时角色已接近动作展开阶段
+  - `MPC_Blur_Ctrl01 > Blur_Str = 0.0`
+  - `Gideon` 的 `CosmicRift` 动画段仍在时间线上延续
+
+结合本段说明，这一步是在确定“当地裂动画和角色动作推进到接近边缘时，新的重力爆炸 Niagara 应该落在什么位置”。复建时要先把 Niagara Actor 对到角色技能中心，再继续调系统内部的爆炸构成。
+这张图进一步展示了 `Ex_04_GravityExp` 在 Sequencer 中的轨道化状态。重点不再是摆放 Actor，而是让 Niagara 的启用时段与角色动画、地裂动画的关键时刻重合。
+
+- Sequencer 当前时间：
+  - 播放头位于约 `0096` 帧
+- 已可见的关键轨道关系：
+  - `Gideon` 动画片段为两段连续的 `CosmicRift / Cosmic_Rift`
+  - `Ex_04_GravityExp` 已作为独立轨道加入时间线
+  - `SK_Ex_02_Crack_01_Anim` 也作为独立动画片段排在下方
+- `Ex_04_GravityExp` 细节面板可见：
+  - `Location = (0.0, 0.0, 0.0)`
+  - `Rotation = (0.0, 0.0, 0.0)`
+  - `Scale = (1.0, 1.0, 1.0)`
+  - 当前系统资源槽绑定为 `Ex_04_GravityEx...`
+  - `Use Prerolls` 已可见并启用
+- 时间线上的 Niagara 轨道可见一段由红/蓝线与关键点构成的控制区间，说明其生成或激活时机会被 Sequencer 直接驱动
+
+这一步可理解为“把新 Niagara 系统固定为原点基准，并在 Sequencer 里给它安排具体生效区间”。如果复建时爆炸出现太早、太晚，或者与地裂动画脱节，应先回查这条 `Ex_04_GravityExp` 轨道和 `SK_Ex_02_Crack_01_Anim` 的相对起止时间。
+这张图把第四个例子的 Niagara 结构拆得更明确了。除了主爆炸 `Ex 04 Gravity Exp`，时间线上还新增了 `Ex 04 Cast` 和 `Ex 04 Projectile` 两个独立特效轨道，说明整套演出被分解为施法、投射和重力爆炸三段。
+
+- Sequencer 当前时间：
+  - 播放头回到约 `0001` 帧，用来从开头检查整段触发顺序
+- 当前可见对象轨道：
+  - `Gideon`
+    - `Animation = CosmicRift / Cosmic_Rift`
+    - `Weight = 1.0`
+    - `Spawned`
+    - `Transform`
+  - `Ex 04 Cast`
+    - `Spawned`
+    - `Transform`
+  - `Ex 04 Projectile`
+    - `Spawned`
+    - `Transform`
+  - `Ex 04 Gravity Exp`
+    - `Spawned`
+    - `Transform`
+  - `SK EX 02 Crack 01`
+    - `Animation = SK_Ex_02_Crack_01_Anim`
+    - `Spawned`
+- 轨道时序关系：
+  - `Ex 04 Gravity Exp` 的生成控制段起点比地裂动画 `SK_Ex_02_Crack_01_Anim` 更靠后
+  - 说明作者在先安排前摇/投射，再让主爆炸和地裂进入屏幕
+
+复建时不要把所有特效都塞进一个 Niagara Actor。更合理的方式是按功能拆成 `Cast`、`Projectile`、`Gravity Exp` 三段，并分别在 Sequencer 中控制 `Spawned` 和 `Transform`，这样更容易对齐角色动作与落点时机。
+
+### 00:12:40-00:17:13 粒子
+
+- 本段定位：粒子。
+- 知识点：设在第59针 59针上 59针上 500给第50作为位置的键值 第1个针给650减去的键值 这样就会做出一个圆形的球形 通过圆点 通过1 通过1。
+- 知识点：500给650作为位置的键值 然后1加560去键值 这种话这里就会有一个圆形的球体 用最糟糕的方式 要检查一下摇杆 这样升起 这样升起。
+- 知识点：这样升起 以这种下降的方式 这样构成应该可以 下降的动作本身是在粒子里会制作的样子 那么这里项目的时间 可以根据到达的点 给出键值 所以在这里的针之间。
+- 知识点：做掉落的动作 这样粒子设置基本就完成了 还有尚未制作的碎片 在空中合并的部分 可以在下次制作好带过来 几乎所有的构成已经完成了。
+- 知识点：现在只有掉落的动作没做而已 掉落的动作和粒子的细节可以在最后一次 和完成效果的过程中一起填上 然后需要做一个更强的买锡 把训列器暂时放一边。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+这张图继续使用同一套 Sequencer 轨道，但当前播放头位于约 `0057` 帧，更适合观察前中段的触发顺序。可以清楚看出施法和投射层已经处于启用状态，而主重力爆炸层还没有开始生成。
+
+- Sequencer 当前时间：`0057`
+- 轨道状态：
+  - `MPC_Blur_Ctrl01 > Blur_Str = -0.000017`
+  - `Gideon` 动画片段仍为 `CosmicRift / Cosmic_Rift`
+  - `Ex 04 Cast`
+    - `Spawned` 已勾选
+    - `Transform` 轨道存在
+  - `Ex 04 Projectile`
+    - `Spawned` 已勾选
+    - `Transform` 轨道存在
+  - `Ex 04 Gravity Exp`
+    - `Spawned` 当前未勾选
+    - 说明主爆炸此时尚未触发
+  - `SK EX 02 Crack 01`
+    - 下方已能看到 `SK_Ex_02_Crack_01_Anim` 片段区间
+
+这张图对应的设计思路是“先有施法和飞行，再有落点爆炸”。如果在复建时一开始就直接启用 `Gravity Exp`，画面会过早爆开，失去先投放、后下砸的重力感节奏。
+这张图聚焦在 `Ex 04 Cast` 的 `Transform.Location` 关键帧设置，直接对应旁白里“在这里和这里的帧之间做掉落动作”。当前截图能可靠确认的是中前段位置键值，说明施法特效会先悬在空中，再向下落到爆点。
+
+- 当前播放头：`0058`
+- 当前展开轨道：`Ex 04 Cast > Transform > Location`
+- 可确认的位置值：
+  - `X = 0.0`
+  - `Y = 500.0`
+  - `Z = 649.426997`（截图显示到 6 位小数）
+- 时间线上可见：
+  - `Location` 的三个分量都有成对关键帧点
+  - 当前正在把后一组关键帧对齐到约 `0058` 帧附近
+- 同时可见的其他轨道状态：
+  - `Ex 04 Cast > Spawned` 已启用
+  - `Ex 04 Projectile > Spawned` 当前未启用
+  - `Ex 04 Gravity Exp > Spawned` 当前未启用
+  - `SK Ex 02 Crack 01` 的动画片段仍在后段等待触发
+
+复建时可以按“先把 Cast 放在 `(0, 500, 649.43)` 一类的高位，再在后一个关键帧把它往下拉”来做下落前摇。这样能形成一个从空中聚合、随后坠向地面的重力准备动作，而不是一开始就贴地播放。
+这张图打开了相机抖动资源 `CS_03` 的 `Class Defaults`，对应本段末尾提到的“需要做一个更强的震动”。截图给出了位置抖动、旋转抖动和时长相关的默认参数。
+
+- 当前资源页签：
+  - `Ex_04_Cast*`
+  - `CS_03*`
+- `CS_03 > Class Defaults` 中可确认参数：
+  - `Location Amplitude Multiplier = 15.0`
+  - `Location Frequency Multiplier = 8.0`
+  - `Location > X`
+    - `Amplitude = 1.0`
+    - `Frequency = 1.0`
+  - `Location > Y`
+    - `Amplitude = 1.0`
+    - `Frequency = 1.0`
+  - `Location > Z`
+    - `Amplitude = 2.0`
+    - `Frequency = 1.5`
+  - `Rotation Amplitude Multiplier = 0.0`
+  - `Rotation Frequency Multiplier = 1.0`
+  - `Pitch`
+    - `Amplitude = 1.0`
+    - `Frequency = 1.0`
+  - `Yaw`
+    - `Amplitude = 1.0`
+    - `Frequency = 1.0`
+  - `Roll`
+    - `Amplitude = 1.0`
+    - `Frequency = 1.0`
+  - `Timing`
+    - `Duration = 0.75`
+    - `Blend In Time = 0.05`
+    - `Blend Out Time = 0.5`
+
+这组参数说明作者想做的是“以位置抖动为主，尤其加强 Z 轴起伏”的镜头震动，而不是大幅旋转镜头。复建时如果想保留重力砸落感，可以优先提高 `Location` 抖动，尤其是 `Z` 的幅度与频率，再用较短的 `Blend In` 和较长的 `Blend Out` 做出先猛震一下、再慢慢收回的感觉。
+
+### 00:17:13-00:18:39 纹理
+
+- 本段定位：纹理。
+- 知识点：应该 已经保存了 然后在一区器里可以调出3号 这里按照框架拿了3号 是这样呈现的 Z轴的那种震动感觉更强一些 好好利用 接下来就可以进行完成了。
+- 知识点：需要记得存档的 好的那这次的内容就准备到这里 下次需要作为设计师 制作一些纹理带来 这次的时间就到这里 谢谢你。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`。
+
+**关键画面：**
+
+这张图是第 22 课收尾时的场景总览，用来检查当前第四个例子的整体构成是否已经基本成型。画面里同时能看到角色、地裂网格、上方球体占位和三层 Niagara Actor，说明作者已经把核心演出骨架都摆齐了。
+
+- Outliner 中当前可见的关键对象：
+  - `Camera Act`
+  - `Ex 04 Cast`
+  - `Ex 04 Gravity Ex...`
+  - `Ex 04 Projectile`
+  - `Gideon`
+  - `SK EX 02 Crack 01`
+- 当前选中对象：`SK EX 02 Crack 01`
+- `SK EX 02 Crack 01` 细节面板可见：
+  - `Location = (0.0, 500.0, 0.0)`
+  - `Rotation = (0.0, 0.0, 0.0)`
+  - `Scale = (1.0, 1.0, 1.0)`
+  - `Animation Mode = Use Custom Mode`
+- 视口结果：
+  - 地面裂缝网格已经张开，中心有一团红橙色发光
+  - 角色 `Gideon` 站在裂缝后侧
+  - 上方有一个白色球体/占位体，表示还有一层高空元素或待替换纹理占位
+  - 内容浏览器当前在 `Signature/Course_03/Sequencer`，并能看到 `CS_01`、`CS_02`、`CS_03` 与 `Ex_04_... Level Sequ...`
+
+这张图说明本课结束时并不是要把所有纹理细节做完，而是先把“角色 + 地裂 + Cast/Projectile/GravityExp + 相机抖动模板”全部接好。后续只需要继续补纹理与粒子细节，就能在现有骨架上完善最终效果。
+这张图是对相机震动与高空落体构图的结果验证。画面中央有一个白色球体高悬在角色前方，而底部 Sequencer 缩略图能看到它从中段落下并在后段触发明亮爆点，这正对应旁白里“Z 轴震动感觉更强”。
+
+- 场景结果：
+  - `Gideon` 站在地面中央偏后位置
+  - 一个白色球体悬在角色前方、半空中，作为高空投放/落点占位
+  - 当前主视口还没有爆炸，只显示前摇阶段的构图
+- Outliner 中仍保留：
+  - `Camera Act`
+  - `Ex 04 Cast`
+  - `Ex 04 Gravity Ex...`
+  - `Ex 04 Projectile`
+  - `Gideon`
+- 下方 Sequencer 预览缩略图：
+  - 当前播放头约在 `0026`
+  - 缩略图从左到右能看到白球体逐步进入画面，后段转为明亮爆发帧
+
+这张图可理解为“先用高空白球或占位体确认落点轨迹和镜头震动感，再替换成正式纹理/特效”。如果复建时想突出重力砸落，应让高空元素在镜头里先停留一段，再沿 Z 轴明显下坠到爆心，而不是平移进场。
+这张图是本课结束前的最终构图确认帧。画面里只保留角色与高空白球的基础关系，底部 Sequencer 停在约 `0057` 帧，说明这一轮工作的目标不是把最终贴图做完，而是先把时序、位置和镜头关系固定下来。
+
+- 场景结果：
+  - `Gideon` 位于地面中央偏下
+  - 白色球体悬在角色前上方，仍作为高空落体或纹理占位
+  - 当前主视口没有展示完整爆炸，而是保留前中段的站位关系
+- 下方 Sequencer：
+  - 当前时间约 `0057`
+  - `MPC_Blur_Ctrl01 > Blur_Str = -0.000017`
+  - 顶部 `Cine Camera Actor` 缩略图持续展示白球体在不同阶段的位置变化
+
+这张图可以视为“本轮完成定义”的快照：只要角色、落体占位、相机震动和时序都已稳定，后续就能在这个结构上继续替换正式纹理、补足粒子细节和完善最终成片。
+
+## 补充视觉证据
+
+### S02 00:06:41
+
+这是 `S02 00:06:41` 的补充视觉证据图。它不是 Niagara 图表内部节点截图，而是新系统 `Ex_04_GravityExp` 在粒子目录中完成保存时的工作状态，用来补充说明第四个例子的 Niagara 系统已经复制并落盘。
+
+- 当前场景仍为 `Ex_04_GravityExp`
+- 视口结果：
+  - 地面裂缝网格已经摆在场景中
+  - 角色 `Gideon` 位于裂缝后侧
+- 粒子目录：
+  - 当前路径为 `Signature/Course_03/Particles`
+  - 可见多个旧例子 Niagara 系统
+  - 当前选中资源为 `Ex_04_Gravity...`（Niagara System）
+- 中央保存弹窗可见：
+  - `Saving asset /Game/Signature/Course_03/Particles/Ex_04_GravityExp`
+  - 进度约 `76%`
+  - 下方提示：`Saving file: Ex_04_GravityExp.uasset...`
+- 右下角状态提示：
+  - `Preparing Shaders (0) 100%`
+
+这张图的作用是回补“新建并保存第四个例子 Niagara 系统”的证据。复建时可以先从旧例子复制出一个新系统，命名为 `Ex_04_GravityExp`，确认它成功保存到 `Course_03/Particles` 后，再继续做后面的地裂、投射和重力爆炸构成。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+

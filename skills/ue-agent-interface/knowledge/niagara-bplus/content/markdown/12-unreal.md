@@ -1,0 +1,1046 @@
+# 12.Unreal受击效果制作
+
+# 12.Unreal受击效果制作
+
+## 关键术语
+
+- `Spawn`、`Color`、`UV`、`Add`、`Opacity`、`Texture`、`Sequencer`、`Houdini`、`VAT`、`PS`、`Niagara`、`Emitter`、`Spawn Rate`、`Lifetime`、`Masked`、`材质`、`Niagara System`、`Particle`
+
+## 分段知识
+
+### 00:00:05-00:05:03 UV、Sequencer、SD
+
+- 本段定位：UV、Sequencer、SD。
+- 知识点：Sequencer 和关卡的基础设置都弄好了 现在就打开对应资源 关卡已经打开了 上次我把它存成了 EXE 所以这个 Sequencer 也一样。
+- 知识点：结构压缩时也按这个目录来就行 这里有两个 VT 资源 这里有两项 VT 资源 按这个方式看就行 先导入资源 文件夹我已经提前建好了 从 FBX 开始导入。
+- 知识点：需要导入 Go 选了重新计算法线 和 UV 预处理这样就能完成导入 对比钢体资源可以看出容量差异 钢体主要占用静态网格空间 而流体网格相比之下静态网格的资源占用。
+- 知识点：资源占用稍高 而烘焙贴图反而更占资源 这样看就差不多了 大致如此 这里再把贴图也导入进来 贴图也导入好了 这样每组五张颜色贴图除外只用四个。
+- 知识点：首先先关闭静态网格的 Nanite 功能 Prite Mesh 这种情况下不用特意保留 UV 挺方便的 就用这个 材质效果主要靠液体本身的发现这些参数计算得出。
+- 知识点：就这么回事 这个 Logup 贴图没用 HDR 渲染 设为 SDR 模式就行 其他贴图全设成 HDR 再新建个材质叫。
+- 知识点：Pride 28 名字也起好了主材质 设置的重新调一遍 跟钢体有点不一样 UV 数量变了 以前是五个 现在只要设四个就行 设成四个就行 应该没问题把切线参数调出来就行。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`材质`、`纹理`、`贴图`、`颜色`、`流体`。
+
+**关键画面：**
+
+这张图是 `p16` 开头在 Unreal 场景里的总览，用来说明后续 Sequencer 与受击特效测试所处的关卡环境。当前图片中能可靠确认：
+
+- 当前软件界面是 Unreal Editor，窗口标题显示项目/关卡为 `DarkRuinsMegascansSampleT`
+- 视口处于 `Perspective` 视图，显示模式为 `Lit`
+- 场景中可见一个角色实例站在地面上，旁边还有一个靠近地面的灰色角色/模型实例
+- 角色前方竖直排列着多枚场景图标，能辨认出至少包含：
+  - 摄像机图标
+  - 灯光相关图标
+  - 其他场景 Actor 图标
+- 右侧 `Outliner` 里当前展开的是 `Ex_02 (Editor)` 场景层级，其中能直接看到：
+  - `Lighting`
+  - `CineCameraActor`
+  - `Ex_02_Blood`
+  - `Floor`
+  - `Greystone`
+  - `Greystone (2)`
+  - `PlayerStart`
+- `Sequencer` 列中，`CineCameraActor`、`Ex_02_Blood`、`Greystone`、`Greystone (2)` 对应行都有橙色闪电标记，说明这些对象已和当前序列关联
+- 左侧 `Content Browser` 当前定位在工程资源树中，处于 `Effects / Signature / Course_07 / Level` 一带，可见同级还存在：
+  - `Material`
+  - `Mesh`
+  - `Particles`
+  - `Sequences`
+  - `Texture`
+
+输出/预览：
+
+- 视口展示的是一个空旷测试平面，适合专门验证角色受击动作与 Niagara 特效
+- 底部字幕语义为“在 Unreal 里导入，再用 Sequencer 一步步做完动画”，与画面里 `Outliner` 的序列对象对应
+- 这张图没有展示具体材质或 Niagara 参数，而是在交代后续资源导入和 Sequencer 布局的实际场景入口
+
+这张图可以替换为对场景搭建状态的说明：先在 Unreal 中准备好测试关卡、角色、相机和 `Ex_02_Blood` 序列对象，再通过 Sequencer 去串联动作与特效。对复建来说，关键不是记住地面构图，而是确认本页后续操作都发生在这个已经挂好摄像机、角色和序列对象的测试关卡里。
+这张图把关注点从场景总览转到 `Ex_02_Blood` 资源实例和导入后的贴图/网格资源核对。当前图片中能可靠确认：
+
+- 左侧 `Content Browser` 当前打开的是与 `Ex_02` 血液资源相关的目录，能直接看到一组以 `Blood_0...` 命名的资源缩略图
+- 这组资源里可辨认出多种类型：
+  - `Texture`
+  - `Static Mesh`
+- 缩略图中既有彩色/法线风格贴图，也有噪声感较强的查找贴图与网格资源
+- 右侧 `Outliner` 中当前选中对象是：
+  - `Ex_02_Blood`
+- `Details` 面板当前针对 `Ex_02_Blood (Instance)` 展开
+- `Transform` 数值可直接确认：
+  - `Location = (20.0, 0.0, -10.0)`
+  - `Rotation = (0.0, 0.0, 0.0)`
+  - `Scale = (1.0, 1.0, 1.0)`
+- `General` 区域可以看到：
+  - `Open Level Sequence` 按钮
+  - `Level Sequence Asset` 已指向一个 `Ex_02_Blo...` 命名的序列资源
+- 视口里当前选中的正是角色附近的 `Ex_02_Blood` 位置/操纵器，说明作者在一边看资源目录，一边调整受击特效实例在场景中的落点
+
+输出/预览：
+
+- 视口中角色脚边出现了三轴操纵器，表明当前正在用场景实例的 Transform 做定位
+- 底部字幕语义为“这样每组五张颜色贴图除外，只用四个”，对应左侧正在核对的一组贴图/网格资源
+- 这张图没有展开材质内部连线，但已经给出两个关键事实：
+  - 导入后需要在内容浏览器里核对血液资源组
+  - 场景中的 `Ex_02_Blood` 实例需要挂接到正确的 `Level Sequence Asset` 并放到合适位置
+
+结合本段“UV、Sequencer、SD”的主题，这张图的核心不是参数微调，而是资源落地检查：确认导入到 Unreal 的血液资源集完整可用，再把 `Ex_02_Blood` 实例放进关卡并与相应的序列资源绑定，为后面播放 VAT/材质驱动的受击效果做准备。
+这张图进入材质编辑阶段，画面同时保留了左侧内容浏览器和下方材质编辑器窗口，用来说明血液 VAT 材质需要从现有资源组中建立。当前图片中能可靠确认：
+
+- 左侧 `Content Browser` 仍停留在 `Ex_02` 血液资源目录
+- 当前可见并已选中的资源包括：
+  - `Blood_01_mesh` 或 `Blood_02_mesh` 一类网格标签页已打开
+  - `M_FluidVAT_01` 材质标签页已打开
+  - 左侧资源缩略图中还能看到 `M_Fluid...` 命名的材质资源
+- 下方主窗口已经切到 `M_FluidVAT_01 > Material Graph`
+- 当前图中可直接辨认出的材质节点：
+  - `Base_Color` 参数节点
+- `Base_Color` 节点信息可确认：
+  - 类型为 `Param`
+  - 默认值为白色
+  - 输出通道包含 `RGB`
+- `Base_Color` 节点已经连向右侧主材质节点 `M_FluidVAT_01`
+- 右侧主材质节点可见的输入槽至少包括：
+  - `Base Color`
+  - `Metallic`
+  - `Specular`
+  - `Roughness`
+  - `Anisotropy`
+  - `Emissive`
+  - `Opacity`
+  - `Normal`
+  - `Tangent`
+  - `World Position Offset`
+- 左下 `Details` 面板中可见材质基础设置：
+  - `Material Domain = Surface`
+  - `Blend Mode = Opaque`
+
+输出/预览：
+
+- 这张图没有给出完整的材质连线全貌，只能明确看到 `Base_Color` 参数被引入主材质
+- 底部字幕语义为“请创建好”，对应当前在 Unreal 中新建/整理血液材质的步骤
+- 结合前两张图的资源导入界面，可以确认教程此时已经从“资源导入”过渡到“为 VAT 网格建立实际使用材质”
+
+这张图可替换为如下说明：在 Unreal 中新建或打开 `M_FluidVAT_01` 材质，把 `Base_Color` 这样的参数节点接入主材质，并以 `Surface / Opaque` 作为当前可见的基础材质域配置。由于截图未展示全图连线，因此这里只能确认材质搭建已经开始，后续细节需要结合下一阶段贴图与透明度设置继续补齐。
+
+### 00:05:03-00:07:50 Texture、Houdini、PS
+
+- 本段定位：Texture、Houdini、PS。
+- 知识点：保持展开 播放速度 30fps 确定后添加查找贴图 先放进去 接下来是位置设置 把 Amaray Rotation 这样放好再把静态网格暂时跳出来。
+- 知识点：确认动画能否正常运行就行 现在来加入 MRI 刚开始经常会出现这种现象 打开后发现加载并不准确 才会导致这种情况 只要准确加载一次就能正常了。
+- 知识点：通常会逐步形成正确的形态 特别是流体网格这种情况更明显 这种情况时有发生 刚提 Watt 的帧数固定问题不会规律出现 而流体网格每帧顶点数量不同。
+- 知识点：容易出现轻微形变的情况偶尔会发生 可以尝试打开纹理 逐次加载 若仍无效建议全部资源重导入 再检查设置是否出错 明明全都按正确方式做了还是不行。
+- 知识点：那就得再找找问题在哪 那就得再找找问题 Houdini 里顶点太多也会导致这种问题 看这里这个 Low Texture。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Texture`、`Houdini`、`纹理`、`贴图`、`速度`、`流体`。
+
+**关键画面：**
+
+这张图从材质图编辑切换到材质实例参数面板，重点是把 Houdini VAT 导出的贴图先填入实例。当前图片中能可靠确认：
+
+- 当前打开的 Unreal 标签页包括：
+  - `Blood_01_mesh`
+  - `Blood_02_mesh`
+  - `M_FluidVAT_01`
+  - 当前激活的是 `M_FluidVAT_01_Ins_01`
+- 中央主窗口显示的是材质实例/预览界面，而不是材质节点图
+- 右侧 `Details` 面板当前展开的主要分组有：
+  - `Global Vector Parameter Values`
+  - `Houdini VAT`
+  - `Houdini VAT - Customization`
+  - `Houdini VAT - Debug`
+- `Global Vector Parameter Values` 中：
+  - `Base_Color` 已启用
+  - `R/G/B/A = 1.0 / 1.0 / 1.0 / 1.0`
+- `Houdini VAT` 分组中可直接确认：
+  - `Auto Playback`：已勾选
+  - `Playback Speed = 1.0`
+  - `Houdini FPS = 30.0`
+  - `Position Texture`：已启用，当前指向一个 `Black_1x1_EXR_Texture` 占位资源
+  - `Rotation Texture`：已启用，当前指向一个 `Black_1x1_FBX_Texture` 占位资源
+  - `Lookup Table`：已启用，当前指向一个 `Black_1x1_EXR_Texture` 占位资源
+- `Houdini VAT - Customization` 中可见选项：
+  - `Compressed Normals Are in Position Alpha`
+  - `Support Custom Motion Blur`
+- `Houdini VAT - Debug` 中可见：
+  - `Embedded Data Rounding = 0.0001`
+
+输出/预览：
+
+- 左上预览窗口当前几乎是空的，只显示材质统计信息，说明作者此时的主要操作不是看效果，而是先把 VAT 贴图槽位填起来
+- 底部字幕语义为“先放进去”，与右侧将 `Position Texture`、`Rotation Texture`、`Lookup Table` 逐一指定的动作一致
+- 这张图能明确证明教程正在用材质实例而不是母材质本体来对接 VAT 贴图资源
+
+这张图的替换重点应写成：打开 `M_FluidVAT_01_Ins_01` 这类材质实例，在 `Houdini VAT` 参数组里先启用并填入 `Position Texture`、`Rotation Texture`、`Lookup Table` 三类核心贴图，同时保持 `Auto Playback`、`Playback Speed=1.0`、`Houdini FPS=30.0`。截图中这些槽位仍是黑色占位纹理，因此这里强调的是“先把槽位结构准备好”，而不是已经得到最终正确显示效果。
+这张图展示了把 VAT 贴图真正接入之后，在场景里预览 `Blood_01_mesh` 的结果，同时打开贴图资源核查尺寸。当前图片中能可靠确认：
+
+- 右侧 `Outliner` 中当前选中对象是：
+  - `Blood_01_mesh`
+- `Details` 面板当前针对 `Blood_01_mesh (Instance)` 展开
+- 视口中可以直接看到一大片已经在场景内显示出来的流体网格/血液形体，特点是：
+  - 形体包含大量细长分支与中部团块
+  - 边缘出现明显发亮的金黄色描边/高亮
+  - 说明网格已经不再是空白占位，而是能在 Unreal 中播放并显示形体
+- 下方同时打开了多个相关资源标签：
+  - `Blood_01_mesh`
+  - `Blood_02_mesh`
+  - `M_FluidVAT_01`
+  - `M_FluidVAT_01_Ins_01`
+  - `Blood_01_lookup`
+  - `Blood_01_pos`
+  - `Blood_01_rot`
+- 当前下方面板焦点停在贴图资源查看界面，右侧资源信息中可直接确认：
+  - `Imported: 1024x2838`
+  - `Displayed: 1024x2838`
+  - `Max In-Game: 1024x2838`
+  - `Format: FloatRGBA`
+  - `Format Supports Alpha: True`
+  - `Number of Mips: 1`
+- 下方贴图预览窗口中能看到一张以横向彩色条带为主的贴图，这符合 VAT 查找/位置类贴图的典型外观
+
+输出/预览：
+
+- 场景里的 `Blood_01_mesh` 已经能被实际渲染出来，说明贴图槽位至少已经从占位图切换到了真实资源
+- 底部字幕语义为“容易出现轻微形变的情况，偶尔会发生”，与当前“效果已能播放但仍需检查稳定性”的语境一致
+- 这张图还没有展示如何修复异常，只是在说明：即便贴图尺寸与资源都正确接入，流体 VAT 仍可能在 Unreal 预览中出现轻微形变
+
+这张图适合替换为：将 `Blood_01_lookup`、`Blood_01_pos`、`Blood_01_rot` 等真实贴图接入材质实例后，在场景中直接预览 `Blood_01_mesh`，同时核对贴图实际尺寸约为 `1024x2838`、格式为 `FloatRGBA`。如果形体已经能显示但偶发轻微变形，优先把它视为资源加载/顶点规模相关问题，而不是立刻回退整套材质结构。
+这张图继续在 Unreal 场景中检查 `Blood_01_mesh` 的显示效果，但下方切换到了另一类贴图资源，用来强调不同 VAT 贴图的尺寸与格式不一定相同。当前图片中能可靠确认：
+
+- 右侧 `Outliner` 当前选中对象仍是：
+  - `Blood_01_mesh`
+- `Details` 面板仍针对 `Blood_01_mesh (Instance)` 展开，说明作者持续在同一个场景实例上验证效果
+- 视口中血液网格已平铺展开在地面附近，可见：
+  - 中部主块较亮
+  - 向四周延伸出多条长分支
+  - 边缘依旧带有明显金黄色高亮轮廓
+- 下方资源标签仍包含：
+  - `Blood_01_lookup`
+  - `Blood_01_pos`
+  - `Blood_01_rot`
+- 当前下方预览中的贴图不再是彩色条带，而是以浅黄色横线为主的纹理，说明焦点已经切到另一张 VAT 相关贴图
+- 右下资源信息中可直接确认：
+  - `Imported: 4096x6500`
+  - `Displayed: 4096x6500`
+  - `Max In-Game: 4096x6500`
+  - `Format: BG8R8A8`
+  - `Format Supports Alpha: True`
+  - `Number of Mips: 1`
+- 视图上方 `Preview Platform = Editor Platform`
+
+输出/预览：
+
+- 场景效果此时已经处于“可正常显示”的状态，教程关注点转为核对不同贴图资源本身是否按预期导入
+- 底部字幕语义为“只要掌握这些基础要点，一般不会出大问题”，与当前逐项检查资源尺寸/格式的收尾语气一致
+- 这张图能够补充前一张未覆盖的信息：并非所有 VAT 贴图都是同一种分辨率和格式，至少这里还出现了一张 `4096x6500 / BG8R8A8` 的资源
+
+这张图适合替换为：在场景中确认 `Blood_01_mesh` 已能正常播放后，再逐一打开 `Blood_01_lookup`、`Blood_01_pos`、`Blood_01_rot` 等贴图检查资源属性。当前截图可直接证明其中至少有一张贴图使用了 `4096x6500` 分辨率和 `BG8R8A8` 格式，因此复建时不能把所有 VAT 贴图都按同一规格处理，而要逐张核对导入结果与材质槽位匹配是否正确。
+### 00:08:03-00:12:33 Opacity、材质、粒子
+
+- 本段定位：Opacity、材质、粒子。
+- 知识点：这个先关掉纹理要替换密在第二个位置也一样 这里也逐一加载这样就能正常显示了已确认效果了 良好接下来我们 在本例中后续会资源的静态网格直接连接到序列编辑器。
+- 知识点：既然要用于动画需要在本处放入数据和 JSON 文件 虽然会放进去但仅用于粒子实例化时 这类数据只需附上本课程不会使用 本课程不会使用那我们先整体保存资源。
+- 知识点：资源都已确认播放也正常先临时放进去检查下材质表现 接下来就是逐步完善材质按这个方式操作就行。
+- 知识点：我们先用 Masked 方式做个基础版本 先做个简单的试试再实际用起来 再加一个颜色参数 复制一下这里添加一个子表面 再添加一个表面颜色参数。
+- 知识点：我来加一下以连接到子表面颜色 然后把这三个材质参数都统一用参数控制都连上 加了慢反射镜面和金属度先这么设一下 看下子表面能不能跑起来。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Opacity`、`Masked`、`材质`、`纹理`、`粒子`、`序列`、`颜色`、`透明度`。
+
+**关键画面：**
+
+这张图切到第二套血液资源的场景测试，重点是检查 `Blood_02_mesh` 与第二个材质实例的联动。当前图片中能可靠确认：
+
+- 右侧 `Outliner` 当前选中对象是：
+  - `Blood_02_mesh`
+- `Details` 面板针对 `Blood_02_mesh (Instance)` 展开
+- 视口里场景地面上散布着大量黄色小碎片/液滴痕迹，形态特征包括：
+  - 数量很多，分布范围较大
+  - 既有小圆点，也有带孔洞或三角感的薄片碎块
+  - 整体更接近“地面飞溅残片”而不是前一批那种大面积主团块
+- 场景中角色仍站在测试平面上，`Blood_02_mesh` 的三轴操纵器位于碎片分布区域中部
+- 下方打开的相关标签页包括：
+  - `Blood_01_mesh`
+  - `Blood_02_mesh`
+  - `M_FluidVAT_01`
+  - `M_FluidVAT_01_Ins_01`
+  - `M_FluidVAT_01_Ins_02`
+- 下方当前激活窗口是 `M_FluidVAT_01_Ins_02`
+- `M_FluidVAT_01_Ins_02` 右侧 `Details` 面板中可直接看到：
+  - `Base_Color` 参数已启用
+  - `Houdini VAT` 参数组已展开
+  - `Auto Playback`：已勾选
+- 左下材质实例预览区可见多条黄色警告，能读出其主题是：
+  - `Position Texture samples ... as Linear Color`
+  - `Rotation Texture samples ... as Linear Color`
+  - `Lookup Table samples ... as Linear Color`
+  - 对应资源路径均指向 `.../Course_07/Mesh/Ex_02_VAT/Blood_02/...`
+
+输出/预览：
+
+- 当前画面说明第二套资源已经进入“场景实例 + 材质实例 + VAT 贴图”联合测试阶段
+- 警告信息表明教程在检查 `Blood_02` 相关贴图的采样方式/颜色空间问题
+- 这张图还没有展开材质内部修复步骤，但已经证明作者在用 `M_FluidVAT_01_Ins_02` 专门驱动 `Blood_02_mesh`
+
+这张图可替换为：为第二套碎片型血液资源单独建立并使用 `M_FluidVAT_01_Ins_02`，把它绑定到 `Blood_02_mesh` 后在场景中查看实际分布效果。如果底部出现 `Position/Rotation/Lookup Table samples ... as Linear Color` 这类警告，需要继续检查 VAT 贴图的导入与采样设置，而不是直接把问题归因于网格本身。
+这张图回到 `M_FluidVAT_01` 母材质的节点图，开始给材质补控制反射与次表面的标量参数。当前图片中能可靠确认：
+
+节点定义集：
+
+- `Base_Color` 参数节点
+- 若干 `Scalar Parameter` 标量参数节点
+- 主材质输出节点 `M_FluidVAT_01`
+
+连线集：
+
+- `Base_Color -> M_FluidVAT_01.Base Color`
+- 至少三个标量参数分别连向：
+  - `Metallic`
+  - `Specular`
+  - `Roughness`
+- 还有一条连线从下方接入：
+  - `Subsurface Color`
+
+设置/参数：
+
+- 当前选中节点是一个 `Scalar Parameter`
+- 左侧 `Details` 面板可直接确认：
+  - `Parameter Name = Param_1`
+  - `Default Value = 0.0`
+  - `Slider Min = 0.0`
+  - `Slider Max = 0.0`
+  - `Group = None`
+  - `Sort Priority = 32`
+- 右侧主材质节点当前可见输入包括：
+  - `Base Color`
+  - `Metallic`
+  - `Specular`
+  - `Roughness`
+  - `Emissive Color`
+  - `Opacity`
+  - `Opacity Mask`
+  - `Normal`
+  - `World Position Offset`
+  - `Subsurface Color`
+  - `Ambient Occlusion`
+- 图中这些标量节点还没有完成正式命名，仍保留默认样式，说明作者此时重点在于先把控制线接通
+
+输出/预览：
+
+- 材质预览窗口当前为空白球体背景，没有展示最终血液外观，而是处于参数搭建阶段
+- 底部字幕语义为“加了漫反射、镜面和金属度，先这么设一下，看次表面能不能跑起来”，与当前对 `Metallic / Specular / Roughness / Subsurface Color` 的接线完全一致
+- 这张图没有展示最终数值区间，但已经明确说明：母材质需要新增一组可实例化的标量参数来控制表面反射与次表面表现
+
+这张图应替换为：在 `M_FluidVAT_01` 母材质中补一组标量参数，把它们分别连到 `Metallic`、`Specular`、`Roughness`，并同时保留 `Base_Color` 与 `Subsurface Color` 的输入通路。现阶段参数名仍是临时名，重点是先把可调控制接口接好，后续再根据血液外观把这些参数改成有语义的命名和值域。
+这张图回到场景视口，用大面积血液网格的实际显示结果来验证前面材质参数是否已经产生视觉变化。当前图片中能可靠确认：
+
+- 视口中出现一大片高空展开的血液网格/液体薄片，形态特征包括：
+  - 中部主团较亮
+  - 边缘和部分薄片区域带有明显偏粉色调
+  - 整体同时存在高亮区与半透明感更强的薄层区域
+- 这说明材质已经不只是单纯白色显示，而是开始出现颜色、反射或次表面相关的视觉差异
+- 右侧 `Outliner` 当前选中对象变成：
+  - `DirectionalLight`
+- `Details` 面板针对 `DirectionalLight (Instance)` 展开
+- `Transform` 数值可直接确认：
+  - `Location = (0.0, 0.0, 400.0)`
+  - `Rotation = (112.36, -49.51, -324.0)`（截图可见前两项与第三项近似值）
+  - `Scale = (1.0, 1.0, 1.0)`
+- `Mobility = Movable`
+- `Light` 区域中可直接看到：
+  - `Intensity = 6.0 lux`
+  - `Light Color` 为白色
+  - `Source Angle = 0.7357`
+- 角色仍站在地面上作为观察参照，说明作者是在同一个测试关卡里通过调灯光来辅助观察血液材质
+
+输出/预览：
+
+- 当前画面最关键的信息不是节点或贴图，而是“调完材质后要回到场景里看在真实光照下的表现”
+- 底部字幕对应的是本段收尾语气，和前一张的材质参数搭建形成前后关系：先接控制参数，再回场景看高光与次表面效果是否成立
+- 这张图也说明仅靠材质编辑器预览还不够，至少这里还同时借助 `DirectionalLight` 位置/角度来观察结果
+
+这张图可替换为：完成 `M_FluidVAT_01` 中反射、镜面和次表面相关参数的接线后，回到场景直接查看血液网格在主光源下的真实效果。当前截图中血液主团已经呈现出亮白到粉色的层次变化，同时作者选中 `DirectionalLight` 继续观察光照方向与高光反馈，因此复建时要把“场景光照下的实际视觉检查”作为材质调试的一部分，而不是只在材质预览窗里判断。
+
+### 00:12:33-00:17:13 Opacity、材质、颜色
+
+- 本段定位：Opacity、材质、颜色。
+- 知识点：液体、皮肤、蜡烛这类材质 这类常用于这类材质的处理方式 大致就是这样 继续把动画做好就行 高光部分把反射值拉到最高 现在基础色太白了这个颜色可以适当调暗一点。
+- 知识点：反正射成零也行 就算归零主要用次表面色来体现即可 用次表面色表现没问题射成0.05左右就行 基础色稍带一点深灰肤色感打底到这个程度就够了。
+- 知识点：高光效果也要适当保留 虽然有高光但高光部分还是显得偏弱 这部分建议手动再加一点 把不足的地方再加强一点才能看清大气效果的主方向 还有所有产品和这里用的。
+- 知识点：法线计算后节急过曲反加上功率和成数参数连上后就能控制了 这里用来模拟镜面高光强度 可以说我们把它命名为Specular Intensity。
+- 知识点：填入默认值即可 最后再呈上一次颜色这些参数稍后会作为发射色使用 这里也通过参数来设置需要把它设置好。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Opacity`、`材质`、`颜色`。
+
+**关键画面：**
+
+这张图展示的是作者在 Unreal 场景里直接检查受击血液/液体材质在主光源下的真实效果。视口中，地面上已经出现一大片从中心向外甩开的白色液体主形和深色裂纹状分支；右侧当前选中的是 `DirectionalLight`，说明这一帧的重点是配合主光方向观察高光、次表面和基础色深浅是否成立。
+
+场景与资源信息：
+
+- 当前软件界面为 Unreal Editor，关卡标签为 `Ex_02`
+- 左侧 `Content Browser` 当前定位在：
+  - `Effects / Signature / Course_07 / Mesh / Ex_02`
+- 当前目录中可直接看到一组 `Blood_0...` 命名的资源，混合包含：
+  - `Texture`
+  - `Static Mesh`
+  - `Material Instance`
+- 右侧 `Outliner` 中当前选中对象：
+  - `DirectionalLight`
+- 同层级还能看到：
+  - `Blood_02_mesh`
+  - `CineCameraActor`
+  - `Ex_02_Blood`
+  - `Floor`
+  - `Greystone`
+  - `Greystone (2)`
+  - `PlayerStart`
+
+`DirectionalLight` 可确认参数：
+
+- `Location = (0.0, 0.0, 400.0)`
+- `Rotation ≈ (112.36, -49.51, -324.0)`
+- `Scale = (1.0, 1.0, 1.0)`
+- `Mobility = Movable`
+- `Intensity = 6.0 lux`
+- `Source Angle = 0.7357`
+
+输出/预览：
+
+- 白色主液体区域已经有比较强的受光面，边缘和中心形成明显亮暗差。
+- 深色分支裂纹从中心朝外扩散，帮助把大块白色液体分成更有方向感的结构。
+- 这张图的可复建重点不是节点连线，而是：材质参数接好后，必须回到场景里配合 `DirectionalLight` 观察高光与颜色层次，而不是只在材质预览球里判断。
+这张图展示的是在 Unreal 材质编辑器中继续搭建 `M_FluidVAT_01` 的高光、次表面和透明度控制。当前主窗口打开的是 `M_FluidVAT_01 > Material Graph`，画面里可以直接看到 `Opacity`、`SSS_Color`、`Spec`、`Roughness` 等参数节点，左下 `Details` 也给出了材质基础模式。
+
+材质图结构：
+
+- 关键可见节点：
+  - `sphereLightDirection[0]`
+  - `Dot`
+  - `Power(X, 2)`
+  - `Spec`
+  - `Roughness`
+  - `Opacity`
+  - `SSS_Color`
+- 可确认的连线关系：
+  - `sphereLightDirection[0]` 输出接入 `Dot`
+  - `Dot` 的结果继续参与后续高光/次表面计算
+  - `Power(X, 2)` 作为高光强度整形节点出现在 `SSS_Color` 与上方参数链之间
+  - `Spec`、`Roughness`、`Opacity`、`SSS_Color` 均作为参数节点接向右侧主材质输入
+
+材质基础设置：
+
+- `Material Domain = Surface`
+- `Blend Mode = Masked`
+- `Shading Model = Subsurface`
+- `Two Sided = 关闭`
+- `Use Material Attributes = 关闭`
+- `Cast Ray Traced Shadows = 开启`
+- `Subsurface Profile = None`
+
+参数可确认信息：
+
+- `Spec` 默认值：`0.0`
+- `Roughness` 默认值：`0.0`
+- `Opacity` 默认值：`1.0`
+- `SSS_Color` 默认颜色当前为白色
+- `Power(X,2)` 的指数值：`2.0`
+- 统计区可见：
+  - `Base pass shader: 179 instructions`
+  - `Resources Used: 4`
+  - `Resource Limit: 64`
+  - `Samplers Used: 1`
+  - `Sampler Limit: 32`
+
+输出/预览：
+
+- 这一帧的重点是把液体受击材质从单纯不透明表面，转成可受 `Opacity` 和 `Subsurface` 共同控制的血液/液体质感。
+- 结合上一张场景预览，本图可以直接复建为：在 `M_FluidVAT_01` 中保留较低 `Spec`、较低 `Roughness`、可调 `Opacity` 和独立的 `SSS_Color`，再用球光方向与 `Dot + Power` 链条塑造高光与次表面响应。
+这张图展示的是作者打开 `M_FluidVAT_01_Ins_02` 材质实例，一边在场景里看血液落地效果，一边直接调实例参数。上半部分视口里仍是地面血液形态，右下和下方窗口则给出了当前材质实例的一组标量与颜色参数，因此这张图是“材质图搭好后，用实例数值做最终观感微调”的直接证据。
+
+材质实例与场景联调信息：
+
+- 当前打开的标签页包括：
+  - `M_FluidVAT_01`
+  - `M_FluidVAT_01_Ins_01`
+  - `M_FluidVAT_01_Ins_02`
+- 当前用于调参的是 `M_FluidVAT_01_Ins_02`
+- 上方场景里仍选中 `DirectionalLight`，说明实例参数会立即在主光照环境中被观察
+
+实例参数可确认值：
+
+- `Metallic = 0.0`
+- `Opacity = 0.5`
+- `Roughness = 0.0`
+- `Spec = 50.0`
+- `Spec_Intensity = 30.0`
+- `Spec_Pow = 1.0`
+- `Base_Color` 为非常深的暗红色基底
+  - `R = 0.005`
+  - `G = 0.0`
+  - `B = 0.0`
+
+输出/预览：
+
+- 场景中白色液体主体保持很强的高光与明亮受光面，而底色通过极深暗红参数仅作为轻微打底存在。
+- `Opacity = 0.5` 说明材质并非完全实心，而是保留了一定半透明/遮罩过渡空间。
+- 高 `Spec` 与 `Spec_Intensity` 配合 `Roughness = 0.0`，意味着作者在追求更集中的镜面高光，使血液/液体在主光下更容易读出体积与湿润感。
+
+这张图可以直接复建为：材质主图搭好后，不在主材质里硬编码最终观感，而是通过 `M_FluidVAT_01_Ins_02` 这类实例统一调 `Opacity`、`Spec`、`Spec_Intensity` 和深色 `Base_Color`，再回场景里用 `DirectionalLight` 实时验证。
+
+### 00:17:13-00:22:11 Color、Add、材质
+
+- 本段定位：Color、Add、材质。
+- 知识点：把高光强度设为50左右就能看到这种高光分布 隐约浮现出来下落时也能看到 这时还会出现微微发亮的白色高光 能看到这么一看颜色非常。
+- 知识点：有点这种渐变感很清晰 现在这种效果正是由于使用了3S风格的材质才实现的可以这么理解 可以这么理解 将颜色调得更协调些高光色可略带一点偏红的色调不要太过接近纯白。
+- 知识点：而且3S颜色现在偏红了 再把色调压低一些让效果更贴近真实感 营造出一点暗红色的质感深色区域的基础色也会相应显现出来 可以这样理解 就差不多了大致如此受光较多的部分。
+- 知识点：3S颜色会更亮受光多的地方3S颜色会显得更亮 所以这样加进去后要是想缩小高光范围 就把功率调高点或者把强度适当调低些 或者干脆调低范围缩的特别小。
+- 知识点：就能看到效果了 能看到效果了先夸张点 做个示范观看效果基础质感已经基本到位了 看得出来 还能再优化一下 可以用Fenel值在边缘加点阴影色调再混一起。
+- 知识点：混在一起 所以把颜色用Add方式接近初始颜色用起来就顺手了 这样效果会更好把参数换成边缘强度调到这个程度。
+- 知识点：基础反射值也别忘了调低 就在这里 把Noga改成蓝色再作为边缘颜色使用 保存资源 打开Touch Color 打开后调整这个竖直就能让边缘高光。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Color`、`Add`、`材质`、`速度`、`颜色`、`流体`。
+
+**关键画面：**
+
+这张图展示的是作者把材质颜色压暗、保留高光后，回到场景里直接观察血液受击效果的分布变化。视口中地面上的血液主形已经不再是上一段那种强白液体，而是以深色主体为主，只在受光位置和边缘留下较亮区域，说明作者正在把“过白”的材质往更真实的暗红/深色液体方向收。
+
+场景与调试上下文：
+
+- 当前仍在 Unreal 关卡 `Ex_02`
+- `Outliner` 中当前选中的是 `DirectionalLight`
+- 左侧 `Content Browser` 仍位于 `Effects / Signature / Course_07 / Mesh / Ex_02`
+- 下方仍打开材质实例联调窗口，标签可见：
+  - `M_FluidVAT_01`
+  - `M_FluidVAT_01_Ins_01`
+  - `M_FluidVAT_01_Ins_02`
+
+画面结果可确认的信息：
+
+- 地面液体主体整体已经变成深色轮廓与斑块，不再由大面积白色主面主导。
+- 边缘和局部高光仍被保留下来，所以液体形状在地面上依然可读。
+- 与上一段“高光和 3S 颜色一起工作”的说明一致，这一帧能直接看到：基础色压暗后，亮部主要由受光和次表面/高光贡献来抬起来。
+
+这一帧可复建为：
+
+- 先在材质实例里把基础色调暗，避免血液整体过白。
+- 保留一定高光与次表面响应，让亮部在主光下“隐约浮现”。
+- 然后必须回场景里看最终落地结果，因为只有在真实场景光照下才能判断暗部和高光是否达到预期平衡。
+这张图展示的是作者在 `M_FluidVAT_01` 材质图中加入 `Fresnel` 边缘控制，用来给液体边缘混入额外颜色或阴影层次。画面右侧可见 `Spec_Intensity`、`Spec_Color`、`SSS_Color` 等参数节点，中央是一个 `Fresnel` 节点，左侧还有一个常数 `0` 节点接入它的输入链，这一帧对应本段里“用 Fresnel 值在边缘加点阴影色调再混一起”的说明。
+
+材质图结构：
+
+- 关键可见节点：
+  - `Spec_Intensity`
+  - `Spec_Color`
+  - `SSS_Color`
+  - `Fresnel`
+  - 常数节点 `0`
+- 可确认的连线关系：
+  - 常数节点 `0` 输出连接到 `Fresnel` 的 `ExponentIn`
+  - `Fresnel` 节点作为边缘权重计算节点独立放在中间区域
+  - `Spec_Color`、`Spec_Intensity`、`SSS_Color` 继续作为参数节点参与右侧主材质输入链
+
+参数/设置：
+
+- `Material Domain = Surface`
+- `Blend Mode = Masked`
+- `Shading Model = Subsurface`
+- `Cast Ray Traced Shadows = 开启`
+- `Subsurface Profile = None`
+- `Spec_Intensity` 默认值：`1.0`
+- `Spec_Color` 当前默认颜色：白色
+- `Fresnel` 节点当前可见数值：
+  - `BaseReflectFractionIn = 0.04`
+
+输出/预览：
+
+- 这一帧没有展示完整的最终连线终点，但足以确认作者是在建立一条“边缘权重”控制链，用于把额外颜色或高光强化限制到轮廓区域。
+- 结合本段文字，这个 `Fresnel` 分支的用途是：让材质边缘出现更明显的色调变化和高光轮廓，而不是整块液体内部均匀发亮。
+这张图展示的是作者继续在 `M_FluidVAT_01_Ins_02` 材质实例里细调边缘色、高光色和次表面色，直接给出一组偏暗红主体、偏红边缘和偏暖白高光的参数。右侧 `Layer Parameters` 面板里能看到一组完整的颜色与标量值，这一帧是本段“Color、Add、材质”最直接的数值落点。
+
+实例参数可确认值：
+
+- 标量参数：
+  - `Opacity = 0.5`
+  - `Roughness = 0.0`
+  - `Spec = 1.0`
+  - `Spec_Intensity = 30.0`
+  - `Spec_Pow = 50.0`
+
+- `Base_Color`
+  - `R = 0.005`
+  - `G = 0.0`
+  - `B = 0.0`
+  - `A = 1.0`
+
+- `Edge_Color`
+  - `R = 0.3`
+  - `G = 0.0`
+  - `B = 0.0`
+  - `A = 1.0`
+
+- `Spec_Color`
+  - `R = 1.0`
+  - `G = 0.6`
+  - `B = 0.4`
+  - `A = 1.0`
+
+- `SSS_Color`
+  - `R = 0.03`
+  - `G = 0.0`
+  - `B = 0.0`
+  - `A = 1.0`
+
+输出/预览：
+
+- 这组数值说明作者把基础主体压到极深红黑，只让边缘和次表面略微泛红。
+- `Spec_Color` 不是纯白，而是偏暖的淡橙白色，这与本段“高光色不要太接近纯白，可略带偏红”的说明一致。
+- `Spec_Pow = 50.0` 配合 `Spec_Intensity = 30.0`，说明高光被刻意收紧并加强，用于在局部形成更聚焦的湿润亮点。
+
+这张图可以直接作为材质实例初版调参参考：主体保持极暗、边缘偏红、高光偏暖白、次表面轻微暗红，再通过场景联调决定是否继续收窄高光范围。
+
+### 00:22:11-00:26:28 Sequencer、Mesh、材质
+
+- 本段定位：Sequencer、Mesh、材质。
+- 知识点：这种情形下这部分就显得很成问题了 因为针点数量不同无法差值 钢体即使放慢播放速度动画依然流畅。
+- 知识点：虽然有这个优点 但恰恰是这一环让人遗憾 确实挺可惜的 所以只能照原样呈现固定的真区间 所以最好尽量压缩优化数据 再导入这样反而更划算 就是这么回事。
+- 知识点：一开始别急着那样做 先随便怎么压缩一下 与其一上来就拼命压缩 不如先用这个大小导入试试看 先感受下效果 觉得差不多了 就当是定下来了 这时候再做一次烘焙优化效果会更好。
+- 知识点：材质差不多了 这部分可以从Mesh里删掉 再到Sequencer里调时间点和节奏 现在只要改两处就行 这些数值已经填进去了 1号还得重新加回来。
+- 知识点：还得全重新填一遍 好像是5.3来着 镜面色是0.63 C4颜色是0.0 0.1 0.05吧 记不太准了 一时想不起来了 是0.03 然后是0.5到0.6。
+- 知识点：大概在30到50之间 现在得关掉自动播放 回放改成用作显示帧 放进序列器里 在序列器里动画 正常 都确认过了 这样弄好就行 准备就绪了 这样比较清爽。
+- 知识点：连接到序列器使用时刚才关掉了的静态网格的窗口 建议保持这个状态 直接应用后再生成 这样会更清爽 如果给这个材质路径加关键帧。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`材质`、`序列`、`速度`、`颜色`。
+
+**关键画面：**
+
+这张图展示的是作者回到场景中检查血液网格/VAT 动画在实际播放时的形态，并强调“即使放慢播放速度，动画依然流畅”。视口里可见大量从中心向外拉开的深红血液丝和碎屑，说明当前已不是单纯地面贴花，而是大范围展开的动态网格受击效果。
+
+场景与调试上下文：
+
+- 当前仍在 Unreal 关卡 `Ex_02`
+- `Outliner` 中当前选中对象：`DirectionalLight`
+- 当前同级对象仍包括：
+  - `Blood_02_mesh`
+  - `CineCameraActor`
+  - `Ex_02_Blood`
+  - `Floor`
+  - `Greystone`
+  - `Greystone (2)`
+  - `PlayerStart`
+- 下方仍保持材质实例与统计窗口打开，说明作者在场景播放与材质调试之间来回对照
+
+画面结果可确认的信息：
+
+- 血液从中心爆点向四周甩出大量长条、分叉和碎片，说明当前是网格/VAT 播放后的中后段状态。
+- 地面同时能看到清晰的阴影投射，说明这些血液条带并非只有贴图效果，而是会在场景中产生实体化阴影反馈。
+- 大量细长分支仍保持连续，不像低帧序列那样明显断裂，这与字幕中“放慢播放也流畅”一致。
+
+这一帧可复建为：
+
+- 把血液网格/VAT 动画导入 Unreal 后，先在场景里直接以慢速观察其展开过程。
+- 判断重点不是颜色，而是：放慢时间后网格形变是否仍连续、是否会因为点数差异或数据压缩出现跳变。
+- 这一步是 Sequencer/Mesh/材质联调中的“动画连续性验证”。
+这张图展示的是作者在 `M_FluidVAT_01_Ins_02` 材质实例中，直接调整 `Houdini VAT` 播放控制区，为 Sequencer 接管做准备。字幕明确说明“现在得关掉自动播放，回放改成用作显示帧，放进序列器里”，而右侧参数面板正好展开到 VAT 区域。
+
+材质实例 / VAT 参数可确认信息：
+
+- 右侧仍保留上方颜色参数：
+  - `Edge_Color` 当前为偏红色
+  - `Spec_Color` 当前为偏暖白/橙白色
+  - `SSS_Color` 当前为深红色
+- `Houdini VAT` 区域可见：
+  - `Auto Playback = 开启`
+  - `Game Time at First Frame = 0.0`
+  - `Playback Speed = 1.0`
+  - `Houdini FPS = 30.0`
+  - `Support Surface Normal Maps = 关闭`
+  - `TwoSided Normals = 关闭`
+  - `Positions Require Two Textures = 关闭`
+  - `Position Texture = Blood_02_pos`
+  - `Rotation Texture = Blood_02_rot`
+  - 下方还能看到 `Blood_02_lookup` 作为查找纹理
+
+当前调整意图：
+
+- 关闭 `Auto Playback`，避免材质实例自己按时间自动播完。
+- 把 VAT 的时间推进权交给外部 Sequencer，通过“显示帧”或时间关键帧来精确控制受击动画节奏。
+- 保留 `Houdini FPS = 30.0` 作为材质读取 VAT 帧率的基础，以便 Sequencer 对齐正确的时间采样。
+
+输出/预览：
+
+- 左侧预览窗口中当前只看到一条细长白色几何片，说明作者在这个阶段主要关注的是 VAT 播放控制和贴图挂接，而不是最终场景构图。
+- 这一帧可以直接复建为：在材质实例中接好 `Blood_02_pos / Blood_02_rot / Blood_02_lookup`，然后把自动播放关掉，改为由 Sequencer 驱动时间。
+这张图展示的是作者把血液网格/VAT 动画正式放进 `Sequencer` 统一编排。窗口右上方可见序列名为 `Ex_02_Blood`，时间尺为 `30 fps`，当前播放头约停在 `0008` 帧附近，说明这里已经进入“用序列器控制镜头、角色动作和血液网格显示时间”的阶段。
+
+Sequencer 轨道结构可确认信息：
+
+- `Camera Cuts`
+- `CineCameraActor`
+  - `CameraComponent`
+  - `Current Aperture = 2.8`
+  - `Current Focal Length = 20.0`
+  - `Manual Focus Distance = 100000.0`
+  - `Spawned`
+  - `Transform`
+- `Blood_01_mesh`
+  - `StaticMeshComponent0`
+  - `Material Slot: Material_0`
+  - 一条名称被截断但可判断为 `Display Frame` 的帧显示控制轨道
+  - `Spawned`
+  - `Transform`
+- `Greystone`
+  - 两条 `Animation`
+  - `Spawned`
+  - 时间轴上可见动画片段 `Attack_A_Slow` 与 `Attack_B_Slow`
+
+这张图能确定的操作意图是：
+
+- 把血液对象 `Blood_01_mesh` 作为一个独立轨道加入 Sequencer。
+- 通过它的 `Display Frame` 轨道，不再依赖材质自动播放，而是手动指定 VAT/网格显示到哪一帧。
+- 同时保留 `Spawned` 和 `Transform`，用于控制该血液对象何时出现、在场景中的位置与姿态。
+- 让 `Greystone` 的攻击动画片段与 `Blood_01_mesh` 的显示帧在同一时间轴上对齐，从而精确同步打击动作与血液爆发时机。
+
+右下区域还能看到 `Static Mesh` 与 `Materials` 面板，说明作者正在同时检查该 Sequencer 轨道所驱动的具体血液网格与材质挂接是否正确。就本图而言，关键结论是：VAT/网格血液效果的时间推进已经从材质实例切换到 Sequencer 统一控制。
+
+### 00:26:35-00:31:18 Sequencer、Houdini、网格
+
+- 本段定位：Sequencer、Houdini、网格。
+- 知识点：这样应该可以 应该是这样先试试看的 得先把尺度调一下 得调一下位置这些参数 也挺关键的 大小调到0.1看看效果 得对准这个位置和目标角色。
+- 知识点：对齐这样操作就行 再把喷射方向调一调 调到120左右试试用序列器的好处就是 能方便逐帧查看 举个例子 比如 比如 我们不直接用后置帧 因为现在看下来如果把100帧直接按1。
+- 知识点：1的比例套进来 就会太慢了 这样运行起来可能太慢了 悬空状态持续时间可能太长了 所以适当调整一下 速度适当调快了些。
+- 知识点：模拟时适当提高速度 或者拉高时间缩放比例 也可以提高图形精度 或者降低帧率都挺合适 现在帧数拿的有点多了 有点浪费 感觉有点多 把VT设置好之后。
+- 知识点：在Houdini里改完 就能立刻渲染这边直接 直接重新导入就行 只要这样设置好 转换指挥自动同步 只需先搭好基本结构就行了 操作起来会更顺。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`Houdini`、`序列`、`速度`。
+
+**关键画面：**
+
+这张图展示的是作者先在关卡视口里手动摆放血液网格对象 `Blood_01_mesh`，把它对准角色受击位置，再准备交给 Sequencer 做逐帧调节。字幕明确强调“位置这些参数也挺关键”，而当前界面正停留在静态网格实例的变换面板。
+
+场景与对象状态：
+
+- 当前关卡仍为 `Ex_02`
+- 视口处于 `Pilot Actor: CineCameraActor`，说明作者在用镜头视角直接检查效果落点
+- `Outliner` 中当前选中对象为 `Blood_01_mesh`
+- 同一序列关联列可见这些对象都挂在 `Ex_02_Blood`：
+  - `Blood_01_mesh`
+  - `CineCameraActor`
+  - `Greystone`
+- 右侧 `Details` 面板展开的是 `Blood_01_mesh (Instance)` 的 `Transform`
+  - `Location = (0.0, 0.0, 0.0)`
+  - `Rotation = (0.0, 0.0, 0.0)`
+  - `Scale = (1.0, 1.0, 1.0)`
+
+可复建的操作要点：
+
+- 先把血液网格作为独立静态网格对象放进场景，而不是立即播放。
+- 结合角色动作和镜头视角，手动调整血液对象的出现位置，确认爆发点对在角色身前/武器命中区域。
+- 当前屏幕上的移动 Gizmo 表明这一步主要在调 `Location`，后续还要继续微调 `Rotation` 与 `Scale`。
+- 结合本段正文，后续还会把尺寸压到约 `0.1` 级别，并继续修正喷射朝向，使网格形态与角色动作对齐。
+
+这一步的核心不是材质或帧播放，而是先把 `Blood_01_mesh` 的空间落点校准好，确保之后无论用 Sequencer 调 `Display Frame` 还是调时间倍率，血液都从正确的位置喷出。
+这张图展示的是作者在 `Ex_02_Blood` 的 `Sequencer` 里，直接把血液网格的显示帧与角色攻击节奏对齐。顶部时间尺清楚显示当前序列按 `30 fps` 工作，播放头停在 `0045` 帧附近，这正对应正文里“不要直接按 1:1 用 100 帧，而是适当调快速度”的讨论。
+
+Sequencer 轨道结构可确认信息：
+
+- `CineCameraActor`
+  - `CameraComponent`
+  - `Current Aperture = 2.8`
+  - `Current Focal Length = 20.0`
+  - `Manual Focus Distance = 100000.0`
+  - `Spawned`
+  - `Transform`
+- `Blood_01_mesh`
+  - `StaticMeshComponent0`
+  - `Material Slot: Material_0`
+  - `Display Fram` 轨道当前值可见为 `100.0`
+  - `Spawned`
+  - `Transform`
+- `Greystone`
+  - 至少一条 `Animation` 轨道
+  - 下方可见动作片段 `Attack_A_Slow` 与 `Attack_B_Slow`
+  - `Spawned`
+
+这张图能直接复建出的时间控制方法：
+
+- 不按 VAT 原始总帧数机械等比播放，而是在 Sequencer 里单独给 `Blood_01_mesh` 的 `Display Fram` 打关键帧。
+- 让血液网格在攻击成立的关键区间内更快推进到需要的形态，避免按原始 100 帧完整播完时显得过慢、悬空时间过长。
+- 同时把角色动画片段 `Attack_A_Slow`、`Attack_B_Slow` 与血液显示帧放在同一时间轴上逐帧比对，这正是本段所说“用序列器的好处就是能方便逐帧查看”。
+
+从本图可以确认：这一阶段的重点已经从“物体放到哪”转成“血液帧推进速度怎么和角色动作精确同步”，而 `Display Fram` 轨道就是当前用来做这件事的核心控制项。
+这张图展示的是作者继续在 `Ex_02_Blood` 的 `Sequencer` 中细化血液时间编排：除了已有的 `Blood_01_mesh`，又加入了第二个血液对象 `Blood_02_mesh`，并继续把血液显示帧压缩到角色攻击真正生效的那一小段时间里。当前播放头停在 `0037` 帧，序列仍按 `30 fps` 工作。
+
+当前可确认的轨道结构：
+
+- `CineCameraActor`
+  - `CameraComponent`
+  - `Current Aperture = 2.8`
+  - `Current Focal Length = 20.0`
+  - `Manual Focus Distance = 100000.0`
+  - `Spawned`
+  - `Transform`
+- `Blood_01_mesh`
+  - `StaticMeshComponent0`
+  - `Material Slot: Material_0`
+  - `Display Fram` 轨道当前显示值约为 `79.199997`
+  - 该轨道上可见至少三处关键点，说明显示帧在这一小段时间内被手动重映射
+  - `Spawned`
+  - `Transform`
+- `Blood_02_mesh`
+  - `Spawned`
+  - `Transform`
+- `Greystone`
+  - `Animation`
+  - 时间轴上仍能看到 `Attack_A_Slow` 与 `Attack_B_Slow`
+  - `Spawned`
+
+这张图所对应的制作动作是：
+
+- 在同一击打镜头里，不只使用一个血液网格，而是把第二个网格 `Blood_02_mesh` 也放进 Sequencer，作为补充层或后续阶段的血液形态。
+- 对 `Blood_01_mesh` 的 `Display Fram` 单独打关键帧，让它在更短的时间里推进到需要的形态，而不是按模拟原始节奏平均播放。
+- 继续将血液对象的 `Spawned`、`Transform` 与角色 `Animation` 轨道一起对齐，以便逐帧判断“什么时候出现、在哪出现、当前该显示到第几帧”。
+
+结合本段正文，这一帧对应的结论是：如果原始 VAT 帧数过多、按原速播放显得拖沓，就直接在 Sequencer 中缩短有效播放区间、提高时间推进密度，并在需要时叠加第二个血液网格对象，使动作命中瞬间的形态更紧凑。
+
+### 00:31:18-00:34:02 Spawn、Houdini、VAT
+
+- 本段定位：Spawn、Houdini、VAT。
+- 知识点：从第8帧开始 持续到45帧 因此用了第37帧左右 持续到75帧 先这样试试 如果感觉节奏太慢 就往前调一下 这样应该就差不多 这里也照着做 先把位置对齐到角色位置。
+- 知识点：约0.1 本来应该在Houdini里 先缩小比例再导出 最后用变换导出时 把贝蒂缩10倍导入就行 这样就行 这里缩也没问题 这边转一下 约75度。
+- 知识点：不过这个位置得往旁边 偏移一下-50左右 现在悬在空中 你看到它浮在空中了吧 一开始 那个 现在可以先用Visibility设为 不可见之后再放进来。
+- 知识点：或者直接在这设置Spawn关键帧 上面 设在上面了 是下面那个 这样按帧精确设置Spawn 设置好就行 就行了 这样就行 这样就行 我们这次的Flip模拟。
+- 知识点：为了更真实的表现 还需要角色动画配合 干脆把两个都用上 要是能把雪姬 粘在身上往下流的效果 也做出来就更好了 不过这种表现方式 这类表现手法。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`Spawn`、`Houdini`。
+
+**关键画面：**
+
+这张图展示的是作者在 `Ex_02_Blood` 的 `Sequencer` 里，把两层血液网格的生成时机与显示帧分开控制，并把第一层血液持续到第 `45` 帧。字幕直接给出“持续到 45 帧”，画面中的播放头也正停在 `0045` 帧。
+
+当前可确认的 Sequencer 结构：
+
+- `Blood_01_mesh`
+  - `StaticMeshComponent0`
+  - `Material Slot: Material_0`
+  - `Display Fram = 100.0`
+  - `Spawned`
+  - `Transform`
+- `Blood_02_mesh`
+  - `StaticMeshComponent0`
+  - `Material Slot: Material_0`
+  - `Display Fram = 1.0`
+  - `Spawned`
+  - `Transform`
+- `Greystone`
+  - `Animation`
+  - 角色动作轨道仍位于下方用于对时
+
+右侧细节面板当前展示的是血液网格的变换结果：
+
+- `Location = (0.0, 150.0, 0.0)`
+- `Rotation = (0.0, 0.0, -120.0)`
+- `Scale = (0.1, 0.1, 0.1)`
+
+这张图对应的制作要点：
+
+- 第一层血液 `Blood_01_mesh` 已经被压到 `0.1` 尺度，并把朝向调到约 `-120` 度，正对应正文里“缩到 0.1 左右、喷射方向调到 120 左右”的说明。
+- `Blood_01_mesh` 的 `Display Fram` 已推进到末端 `100`，并让这一层血液至少持续到第 `45` 帧，用作主爆发层。
+- 第二层血液 `Blood_02_mesh` 此时仍停在较早的显示帧 `1.0`，说明它被作为另一层独立时间控制的补充网格，而不是和第一层完全同步播放。
+- 通过把 `Spawned`、`Transform` 和 `Display Fram` 分开打轨道，作者可以分别控制“何时出现、出现在哪、当前显示到第几帧”。
+
+就本图而言，关键结论是：这一段不再只调单个血液物体，而是开始用两个网格层做分层时序控制，并把主层的持续区间明确锁到第 `45` 帧。
+这张图展示的是作者在场景里直接查看第二层血液网格 `Blood_02_mesh` 的实际命中位置，并继续调它的朝向与偏移。当前选中对象是 `Blood_02_mesh`，画面里黄色描边的血液片状网格正贴在上方角色胸前，说明这是在做第二层近身血液的对位。
+
+场景与对象信息：
+
+- 当前关卡仍为 `Ex_02`
+- `Outliner` 中当前选中对象：`Blood_02_mesh`
+- 同一序列关联可见：
+  - `Blood_01_mesh`
+  - `Blood_02_mesh`
+  - `CineCameraActor`
+  - `Ex_02_Blood`
+  - `Greystone`
+  - `Greystone (2)`
+- 视口中同时能看到：
+  - 上方角色胸口附近的一团高亮选中血液网格
+  - 地面与角色下方拖出的长条血迹/飞溅，说明第一层与第二层网格正在叠加表现
+
+右侧 `Details > Transform` 当前可确认参数：
+
+- `Location = (约 -1.x, 150.0, 0.0)`：X 值被输入框高亮遮住，只能确认是接近 `-1` 的负值
+- `Rotation = (0.0, 0.0, -75.0)`
+- `Scale = (0.1, 0.1, 0.1)`
+
+这张图对应的可复建操作：
+
+- 选中第二层血液对象 `Blood_02_mesh`，在视口中用移动/旋转 Gizmo 继续把它贴近角色受击点。
+- 保持 `Scale = 0.1`，说明第二层网格也沿用与第一层相近的小尺度导入策略。
+- 把朝向修到 `-75` 度左右，使第二层血液喷溅方向和角色动作、相机视角更匹配。
+- 结合本段正文中的“往旁边偏移 -50 左右”“一开始会悬空”的描述，这一步就是在排除血液悬空、位置不准的问题。
+
+这一帧的关键意义是：第二层血液网格不是只在 Sequencer 里打时序，还必须回到场景中单独调 `Transform`，确保它与第一层血液形成可信的立体叠加，而不是漂浮或错位。
+这张图展示的是作者把两层血液网格放回镜头视角后，在更靠后的时间点检查整体效果。`Sequencer` 播放头已经推进到 `0056` 帧，说明这里不是爆发瞬间，而是在观察血液拖尾、悬挂和地面残留在后段时间里的画面表现。
+
+当前画面能确认的结果：
+
+- 场景中有两名 `Greystone` 角色相对站位，血液从靠前角色向右后方和地面方向拉出长条状丝带与飞溅。
+- 地面上保留了明显的红色血迹片和拖拽痕迹。
+- 空中还能看到较细的黑红色丝状残留，说明至少有一层血液网格在后段仍保持细长拖尾，而不是很快消失。
+- 下方 `Sequencer` 仍处于 `30 fps` 时间轴，当前可见轨道包括：
+  - `Blood_01_mesh`
+  - `StaticMeshComponent0`
+  - `Material Slot: Material_0`
+  - 下方还有持续展开的绿色/灰色条带，说明对应轨道在这一时段仍然有效
+
+这张图对应的制作判断：
+
+- 作者不是只看命中瞬间，而是把播放头往后拉到约 `56` 帧，确认血液在后续数十帧里的留存时长是否合适。
+- 这里重点检查的是“拖尾是否太长、是否太乱、是否仍贴合角色动作和镜头构图”，因为本段前文一直在讨论有效帧区间、是否要提前/加速以及是否会显得拖沓。
+- 通过同时观察地面血迹、空中细丝和角色相对位置，可以判断两层 VAT/网格叠加后是否形成了更完整的打击阅读，而不是只剩单一平面爆点。
+
+这一帧可作为本段收尾结论：在 `Spawn`、`Transform` 和 `Display Fram` 都经过分层调整后，血液效果已经能在后续帧中保持主爆发、近身附着和地面拖痕三类信息，因此更适合作为最终镜头中的受击血液表现。
+
+### 00:34:14-00:36:39 Sequencer、材质、网格
+
+- 本段定位：Sequencer、材质、网格。
+- 知识点：和我们用纹理 提取出来看时 感觉不太一样 好像跟场景有关 现在颜色呈现 也不太一样 数值上好像有点 好像有点不一样 要么是颜色值的问题。
+- 知识点：要么是光照方向 有点不同 这种情况是可能的 这里的基础色 可能偏亮一些 不过这两个 差不多就是这样 颜色其实还不赖。
+- 知识点：刚才那会儿 基色偏高的区域 但是这种纸感 更显粘稠些 那种粘稠感更明显了 所以干脆这样处理 能实时逐帧直观察看 这是试用Sequencer操作的。
+- 知识点：一大优势 操作时有点随性 不太讲究 把5帧左右压缩一下试试 就这样一路推进到完成 不同元素搭配不同的质感 根据可调节的参数。
+- 知识点：这次尝试匹配 更适合流体表现的材质效果 第二种 通过解绑VT 可以用Sleep模拟获取网格的方法 还有我特别强调过的几个关键点 希望大家务必认真对待。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`材质`、`纹理`、`颜色`、`流体`。
+
+**关键画面：**
+
+这张图展示的是作者把视角拉回到 `Sequencer` 的动作起始段，先只看角色、镜头和时间轴，不叠加血液网格，从而判断材质与网格效果应该插入在什么时机。当前播放头停在 `0005` 帧附近，说明这是非常靠前的准备阶段。
+
+当前画面可确认的信息：
+
+- 关卡仍为 `Ex_02`
+- 视口处于 `Pilot Actor: CineCameraActor`
+- 场景里两名 `Greystone` 正处于动作准备/挥击前段
+- `Outliner` 中能看到与当前序列关联的对象：
+  - `CineCameraActor`
+  - `Ex_02_Blood`
+  - `Greystone`
+  - `Greystone (2)`
+- 下方 `Sequencer` 当前序列为 `Ex_02_Blood`
+  - 时间轴为 `30 fps`
+  - `Camera Cuts`
+  - `CineCameraActor`
+  - `CameraComponent`
+  - `Current Aperture = 2.8`
+
+这张图对应的制作意义：
+
+- 先以无血液遮挡的状态观察角色攻击前摇和镜头构图，判断哪几帧适合开始插入血液网格。
+- 这一步能帮助排除“材质颜色不对”与“时机不对”之间的混淆，因为如果出血时机错了，画面观感也会误判为材质问题。
+- 结合本段正文“能实时逐帧直观看”“把 5 帧左右压缩一下试试”，这张图说明作者正在从 very early frame 开始逐帧审视整个镜头，而不是只盯着命中瞬间。
+
+这一帧的核心结论是：在继续微调材质与网格质感之前，先用 Sequencer 把角色动作、镜头节奏和血液介入区间重新对齐，确保后续看到的颜色和粘稠感判断建立在正确的时间点上。
+这张图展示的是作者在 `Sequencer` 中把播放头推进到中后段后，重新检查材质颜色与网格形态在场景光照下的真实观感。当前播放头位于 `0052` 帧附近，血液已经同时呈现地面残留、空中拖尾和角色近身附着三种层次，正适合判断“颜色偏不偏亮”和“质感够不够粘稠”。
+
+当前画面可确认的视觉结果：
+
+- 右侧受击角色脚边和地面上有较浓的深红血块/血迹残留。
+- 左侧与中部保留大量黑红色细丝状拖尾，向外甩出较长距离。
+- 两种血液观感并不完全一样：
+  - 深红块状部分更接近流体、黏稠、厚重的主体层
+  - 黑红丝状部分更接近拉丝、飞溅、边缘残留层
+- 场景仍只使用基础测试环境与方向光，因此颜色判断明显受到实时光照、视角和背景影响。
+
+下方 `Sequencer` 仍可确认：
+
+- 当前序列：`Ex_02_Blood`
+- `30 fps`
+- `Camera Cuts`
+- `CineCameraActor`
+- `Current Aperture = 2.8`
+
+这张图对应的制作判断：
+
+- 作者正在比较“从纹理或材质预览里看到的颜色”与“真正放回场景后看到的颜色”之间的差异。
+- 观察重点不只是亮不亮，而是当前基础色、光照方向与材质响应结合后，是否让血液显得更像黏稠流体而不是纸片。
+- 画面中同时存在块状主体和丝状拖尾，也说明作者在用不同网格层和材质参数共同塑造层次，而不是只靠一套统一颜色。
+
+这张图的关键结论是：材质是否合适不能只看静态纹理或材质球，必须放到 Sequencer 的真实镜头、真实光照和真实动作节奏里逐帧观察，才能判断当前血液是否已经具备“偏黏稠的流体感”。
+这张图展示的是作者在当前教程段落收尾时，再次用场景镜头确认最终血液效果。播放头位于 `0059` 帧附近，字幕明确表示“这期就到这里”，说明这已经是本轮材质、Sequencer 与网格联调后的阶段性定稿画面。
+
+当前最终画面可确认的信息：
+
+- 两名 `Greystone` 的相对站位已经稳定，前景角色正向右前方冲出。
+- 地面中心保留了较厚的深红色血块与血迹团，形成主要命中点。
+- 以命中点为中心向四周甩出大量黑红色细长拖尾，覆盖左侧、下方和右侧多个方向。
+- 角色腿部和地面接触区附近仍能看到少量近身附着/残留，说明效果不是单一平面贴图，而是多层网格叠加后的结果。
+- 下方 `Sequencer` 仍保持 `Ex_02_Blood` 序列和 `30 fps` 时间轴，用于边播边校验。
+
+这张图对应的验收判断：
+
+- 颜色层次：主体深红血块与黑红细丝区分明确，既有流体主体，也有飞溅边缘。
+- 质感层次：中心区域更厚重，外围拖尾更轻薄，符合本段想要强化的“更粘稠、更像流体”的视觉方向。
+- 时间层次：到 `0059` 帧时血液仍保留可读形态，但没有完全遮住角色动作，说明持续时间与镜头阅读性达到了相对平衡。
+
+这张收尾图可作为本段的最终结论：通过 Sequencer 逐帧调整播放区间、通过网格分层塑造形态、再结合场景光照下的材质微调，当前血液已经达到作者认可的阶段性表现，因此这一段教程在这里结束。
+
+## 补充视觉证据
+
+### S01 00:03:34
+
+这张补充图提供的是 `M_FluidVAT_01` 母材质当前基础参数状态的近景证据，重点在于把默认材质属性值和材质域配置补齐。当前图片中能可靠确认：
+
+- 当前打开的是 `M_FluidVAT_01 > Material Graph`
+- 左侧材质预览球显示为深色、带高光的表面，说明材质至少已经具备基础光照响应
+- 左下 `Details` 面板的 `Material` 基础设置可直接确认：
+  - `Material Domain = Surface`
+  - `Blend Mode = Opaque`
+  - `Shading Model = Default Lit`
+  - `Two Sided`：未勾选
+  - `Use Material Attributes`：未勾选
+  - `Cast Ray Traced Shadows`：已勾选
+  - `Subsurface Profile = None`
+- 右侧主材质节点当前可直接看到的输入默认值包括：
+  - `Metallic = 0.0`
+  - `Specular = 0.5`
+  - `Roughness = 0.5`
+  - `Anisotropy = 0.0`
+  - `Normal = (0.0, 0.0, 1.0)`
+  - `Tangent = (1.0, 0.0, 0.0)`
+  - `World Position Offset = (0.0, 0.0, 0.0)`
+  - `Ambient Occlusion = 1.0`
+  - `Pixel Depth Offset (Camera Vector) = 0.0`
+- 左侧资源区中还能看到：
+  - `Blood_01_mesh`
+  - `Blood_02_mesh`
+  - `M_Flu...` 材质资源
+- 底部统计区可直接确认：
+  - `Base pass shader: 164 instructions`
+  - `Resources Used: 4`
+  - `Samplers Used: 1`
+  - `Sampler Limit: 32`
+
+输出/预览：
+
+- 这张补充图没有展示新的连线，而是把母材质的“当前默认基线”明确下来
+- 预览球表现为接近黑色、带柔和高光，和右侧 `Specular=0.5 / Roughness=0.5` 的基础状态一致
+- 这张图能作为前面 `S01` 材质创建步骤的参数补证：在继续接 VAT 贴图和颜色控制前，母材质本身先建立一套可用的默认物理材质参数
+
+这张图适合替换为：创建 `M_FluidVAT_01` 后，先把母材质基线设为 `Surface / Opaque / Default Lit`，并保留一套中性的默认物理值，例如 `Metallic=0`、`Specular=0.5`、`Roughness=0.5`、`Ambient Occlusion=1`。这样后续无论接入 `Blood_01` 还是 `Blood_02` 的 VAT 资源，都有一个稳定的基础材质起点，再通过实例参数去细调颜色、反射和次表面表现。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+

@@ -1,0 +1,475 @@
+# 07 Stylized Tornado
+
+# 07 Stylized Tornado
+
+## 关键术语
+
+- `Alpha`、`UV`、`粒子`、`速度`、`目前的效果看起来相当静态，它不会移动，总是朝向一个方向`、`M_Tornado>Material Graph`、`Niagara`、`Material`、`系统`、`颜色`、`Niagara System`、`Emitter`、`Particle`、`Spawn`、`Initialize Particle`、`Lifetime`、`Color`、`Opacity`
+
+## 分段知识
+
+### 00:00:05-00:04:39 UV、速度
+
+- 本段定位：UV、速度。
+- 知识点：歡迎光臨,这是一个提示影片,在里面后续会在我们的火箭上加上聲音 效果看起来很穩定,它不会移动任何地方,它总是向一方向移动 它不会移动任何方向,任何地方。
+- 知识点：需要加動力,将磁場移动到旁邊一点,让它们移动在波浪上 并加動力在这里 在这方面,我们先去到主要物件,在我们火箭上 我们必须先加上UV的指定,以便它能够被用在任何3D物件上。
+- 知识点：我们也要看看它给我们的結果,我们只需要Z的指定 需要加一个分數,以便結果能够被看到 記得,它给我们这个面積,每一厘米的價值 如果我把價值分成1000,它会每厘米都重複。
+- 知识点：但如果我把1000分成,它会每千厘米都重複 如果我把價值每500,每200厘米都重複 越是價值越少,越是重複 我还是想要设置一个分數,以便我们能够控制这个價值。
+- 知识点：现在我们有1000,需要把它分成 如果我把2分成,需要增加 如果我把0.5分成,需要开始減少 它会依靠3D物件的高度 如果我把3D物件再次分成。
+- 知识点：它们的高度可能会不同 它說它没有看到3D物件 现在需要找到它,再次把它轉移到这里 需要用Sine,需要移到X和Y的角度 Sine会幫助我们。
+- 知识点：如果我们开始移动这个位置,有什么好奇? 我们只会關注Z的指定,需要移动它 我们把时间點拿出来,然后设置一个速度控制的範圍。
+- 核对对象：`速度`。
+
+**关键画面：**
+
+这一帧是新教程开头的“问题定义”画面，作者先指出当前龙卷材质虽然已经有形体，但运动方式太静态，只会朝单一方向流动
+
+- 视口中央能看到一根青蓝色风格化龙卷，主体由几段发亮的螺旋带组成，底部还有一圈较暗的环状形体
+- 顶部标签显示当前同时打开了：
+  - `MI_TornadoStylized_01`
+  - `MI_TornadoStylized_02`
+  - `MI_TornadoStylized_03`
+  - `M_Tornado`
+  - `NS_Tornado`
+- 右侧 `Outliner` 里可见场景中仍挂着与上一页相同的主要对象，包括 `CameraActor`、两条 `NS_Lightnir...`、以及 `NS_Tornado`
+- 字幕明确说明当前效果“看起来相当静态，它不会移动，总是朝向一个方向”
+- 这张图的作用，是交代本段接下来的目标：不是重做龙卷结构，而是在已有 `M_Tornado`/`MI_TornadoStylized_*` 基础上补进 UV 与速度控制，让材质沿不同方向流动起来
+这一帧回到 `NS_Tornado` 的系统总览，说明龙卷并不是单一发射器，而是由多条负责不同层次的子发射器拼成
+
+- 系统标签显示当前编辑的是 `NS_Tornado`
+- 总览中能辨认出多条发射器，例如：
+  - `Smoke_Far`
+  - `Smoke_Vortex`
+  - `Smoke_AroundGrount`（名称显示如此）
+  - `Sparks_Vortex`
+- 底部时间线左侧列表还能看到更多系统条目，包括：
+  - `Clouds_01`
+  - `Clouds_02`
+  - `Clouds_Glow`
+  - `GroundWinds`
+  - `Smoke_AroundGroundWi...`
+- 从可见模块可判断，这些发射器分别使用了 `Mesh Renderer` 或 `Sprite Renderer`，并在 `Particle Spawn`/`Particle Update` 中组合 `Add Velocity`、`Shape Location Ring/Disc`、`Vortex Force`、`Scale Color`、`Scale Sprite Rotation Rate` 等模块
+- 左侧预览窗口里能看到靠近地面的黑色烟雾/碎屑环，说明当前选中的并不是龙卷主体带状网格，而是围绕地面的附加层
+- 这张图的意义，是先明确系统层级：后面要解决的 UV 与速度问题，最终会服务于整套 `NS_Tornado` 中的多个层次，而不是只改一个单独粒子
+这一帧正式切到 `M_Tornado` 材质图，作者开始把后面要做运动控制的节点并入现有材质结构
+
+- 当前打开的是 `M_Tornado > Material Graph`
+- 左下角材质基础设置可明确看到：
+  - `Material Domain = Surface`
+  - `Blend Mode = Translucent`
+  - `Shading Model = Unlit`
+- 图中已可见并接入的关键节点包括：
+  - `Depth Fade`
+  - 一个名为 `Depth Fade` 的标量参数，`Default Value = 100.0`
+  - `Multiply`
+  - `Vertex Offset`
+  - `Add`
+- 右侧主材质输出 `M_Tornado` 当前至少连接了：
+  - `Emissive Color`
+  - `Opacity`
+  - `World Position Offset`
+- 中央弹出的搜索面板里能看到多个已存在的命名路由项，例如：
+  - `Base Opacity`
+  - `Dissolve`
+  - `Dissolve Edge Color`
+  - `Fresnel Opacity`
+  - `Main Color`
+  - `Mask`
+  - `Vertex Offset`
+  - `VertexOffset Wave`
+- 左侧预览窗口中当前只有一个静止的黑色/白色形体，字幕也明确说“现在这里没有任何东西在移动”，说明这一步还是在整理材质基础与接线点，真正让 UV 流动起来的速度函数还没接入
+
+### 00:04:41-00:09:29 UV
+
+- 本段定位：UV。
+- 知识点：我把它们都轉移到这里 它的数量 它们的價值很小 因为Sine给了它们的價值 從-1到1 它们移动了很多 我们需要增加它们 我们增加了它的高度。
+- 知识点：我们需要把它们都轉移到这里 我们要设置另一个範圍 来控制它们 并设置大量價值 现在需要有一个距離 -100和100的距離 在X的角度上。
+- 知识点：雖然它没有 但现在它们都移动到3个角度上 所以现在只有1个角度 我们需要设置一个这樣一个Node 可以分開X Y Z 我们只轉移到X 我们把其他2个角度都移动到0。
+- 知识点：我们再次分開 只有X的角度 现在它只移动到X的角度 它移动了 现在發生什么事? 我现在把它们都移动了 让我可以看得更清楚 它现在是不動的。
+- 知识点：现在我们来看看結果 我们把这个面具穿上 我们可观察到它们的样子 我们把面具移到Sine上 Sine產生了-1到1的價值 而白色的價值 它们会是1。
+- 知识点：黑色的價值 它们会是-1 这是一个格式 我们可观察到結果 我轉移到白色的價值 黑色的價值移到这邊 如果我现在在手動模式 需要开始移动它们 我们有一个移动面具。
+- 知识点：现在它在中间 我们可观察到它们移动到这邊 它们移动到另一邊 如果我们用Sine產生Y 它们会看起来不清楚 所以我们用Cosine產生它们。
+
+**关键画面：**
+
+这一帧开始把周期函数接进 `M_Tornado` 的顶点位移波形里，核心做法是先把现有输入组合后送入 `Sine`，再把结果写回 `Vertex Offset Wave`
+
+- 当前画面位于 `M_Tornado > Material Graph`
+- 可见的主干连线为：
+  - `Multiply` 输出接到 `Add.A`
+  - `Mask (B)` 输出接到 `Add.B`
+  - `Add` 输出接到 `Sine`
+  - `Sine` 输出接到命名路由 `Vertex Offset Wave`
+- 左下角当前选中的是 `Material Expression Sine`，`Period = 1.0`
+- 字幕明确说明“`Sine` 给出的值是从 `-1` 到 `1`，所以当前值看起来相当小”
+- 左侧预览窗口中，龙卷主体已经出现轻微起伏，但幅度仍然较弱，符合“先接入正弦波，再考虑放大范围”的阶段
+- 这一步的意义，是先把一个可周期变化的波形送进顶点位移链路，让龙卷不再完全静止；后续再通过乘数和坐标拆分控制它实际朝哪一轴摆动、摆动多大
+这一帧处理的是“正弦值太小”的问题：先把波形装回三维向量，再用独立高度参数统一放大位移量级
+
+- 当前画面仍位于 `M_Tornado > Material Graph`
+- 相比上一张，`Sine` 输出后新增了一段向量与幅度控制链路：
+  - `Sine` 输出接到 `MakeFloat3`
+  - 一个常量 `0` 接到 `MakeFloat3` 的另一个分量输入
+  - `MakeFloat3` 输出接到 `Multiply.A`
+  - 标量参数 `Vertex Offset Wave Height` 接到 `Multiply.B`
+  - `Multiply` 输出再写回命名路由 `Vertex Offset Wave`
+- `Vertex Offset Wave Height` 当前可见为 `Param (100)`，`Default Value = 100.0`
+- 左侧预览窗口里的龙卷弯曲比前一张更明显，说明作者确实在用这个高度参数把 `-1` 到 `1` 的正弦范围放大到更可见的位移尺度
+- 这一步的核心不是改变波形本身，而是把波形重新包装成三维偏移向量，并提供一个独立的振幅控制参数，方便后续快速调大或调小整体摆动强度
+这一帧把位移方向进一步拆成平面双轴波动：`Sine` 与 `Cosine` 分别驱动两个分量，第三个分量保持为 `0`，从而让龙卷在水平面上摆动而不是沿所有方向乱偏
+
+- 当前画面仍位于 `M_Tornado > Material Graph`
+- 可见的主干结构已扩展为：
+  - `Add` 同时把结果送入 `Sine` 与 `Cosine`
+  - `Sine` 输出接入 `MakeFloat3` 的一个分量
+  - `Cosine` 输出接入 `MakeFloat3` 的另一个分量
+  - 常量 `0` 接入剩余分量
+  - `MakeFloat3` 输出接到 `Multiply`
+  - `Multiply` 输出写回 `Vertex Offset Wave`
+- `Vertex Offset Wave Height` 此时显示为 `Param (50)`，`Default Value = 50.0`，说明作者把上一张较大的振幅回调到了更可控的范围
+- 左下角当前选中的是 `Power` 节点，来源为 `BoundingBoxBased_0-1_UVW` 的某个分量，这表明作者已经在同时准备基于物体包围盒坐标去控制位移分布
+- 字幕强调“无论高度如何”，结合上下文可推断此处是在为后续按高度或局部坐标调制摆动做准备，但当前图里最直接能确认的是：平面双轴运动来自 `Sine`/`Cosine` 配对，而不是单一 `Sine`
+- 这一张的结果，是把原本单轴、幅度偏弱的位移升级为可控的二维波动，为后面继续限定只在某些轴或某些高度范围内运动打基础
+
+### 00:09:34-00:13:30 速度
+
+- 本段定位：速度。
+- 知识点：跳動,它会產生 它会產生一个盒子 它们的尺寸是532,532,721 X,Y,Z 它们的價值 是自動设置的 我们製造了一个面具 需要把这个面具分成。
+- 知识点：让它们的價值 不再影响我们下面 这里是0 转换到1 需要把它转换到这里 现在我们看到 下面的價值不再移动 可以比較 需要要把面具改变 可以改变它们的转换。
+- 知识点：可能是0.5 超!它们应该是叫 我们把面具儲存了 然后看看結果 我们得到什么 我们得到一个很有趣的东西 我们看看面具的移动 它移动向下 需要它移动向上。
+- 知识点：让它们的標準價值变成負 超! 现在它们看起来 更有趣了 需要展示一个有趣的例子 需要在这个面具上 zoom in 例如 我增加了 我增加了移动 或者250。
+- 知识点：需要提升速度 让它们变成一个 有趣的地方 让它们变成一个 现在根據標準 我们的面具擴充 它们是獨立的 它们用了世界位置 它们是任何一个 無論我怎麼轉動它们。
+- 核对对象：`系统`、`速度`。
+
+**关键画面：**
+
+这一帧先把龙卷所用网格单独拿出来检查尺寸，目的是为后面的高度面具和速度控制提供一个可参照的几何范围
+
+- 当前打开的资源标签是 `SM_CylinderTwist_01`
+- 视口中显示的是一段中间收窄、上下展开的扭转圆柱网格，使用默认 `WorldGridMaterial`
+- 右侧 `Details` 面板对象是该静态网格资源本身，而不是 Niagara 发射器
+- 画面左上角的网格统计信息里能直接读到近似尺寸：
+  - `Approx Size: 532 x 532 x 721`
+- 这里的数值语义是：
+  - `subject`: `SM_CylinderTwist_01`
+  - `dimension`: 网格包围尺寸
+  - `Fread`: 静态网格编辑器左上角统计信息
+  - `Fverify`: 同一统计框中的 `Approx Size`
+- 教程在这里强调 `X、Y、Z` 三个尺寸，是为了说明后续如果用包围盒或局部坐标生成面具，龙卷在高度方向和横向的数值范围并不相同，不能把三个轴直接当成同一尺度处理
+这一帧是速度段的中间结果预览，说明前面加入的波动和速度控制已经让龙卷主体出现更明显的流动层次
+
+- 视口中龙卷主柱仍保持青蓝色发光螺旋结构，但亮带和暗带的分布不再像前页那样静止
+- 地面外围的环状碎片/烟雾层也仍然保留，说明作者改的是材质运动逻辑，不是替换龙卷整体造型
+- 时间线时间指针约在 `3.1333s`，下方可见同一龙卷画面在多个时间位置重复出现，表示作者正在直接播放并观察动画循环效果
+- 仅从当前画面可确认：龙卷表面的明暗带已经形成更强的流动感，证明速度控制已开始起作用
+- 这一张更偏结果观察图，用来检查“加了速度后视觉是否更有趣”；具体面具如何限制哪些高度移动、速度方向如何翻转，还需要结合下一张节点图确认
+这一帧是速度段末尾的结果验证图，说明当前控制值已经能明显改变“龙卷哪一段可见、哪一段在运动”
+
+- 视口中不再显示完整龙卷，而只剩中间一小段发光螺旋带
+- 上下大部分区域已经被压暗或裁掉，说明作者正在用一个与高度相关的控制值去限制可见范围或运动影响范围
+- 字幕明确说“我们所拥有的取决于这个值”，与画面一致：当前参数不是只影响亮度细节，而是直接决定最终剩下多少螺旋形体
+- 时间指针约在 `2.8333s`，下方时间线仍显示这一效果在循环镜头中的多个位置重复出现，表示作者在通过播放结果判断参数是否有趣
+- 结合本段上下文，可确认这一步的目的，是把前面基于尺寸/坐标生成的面具和速度控制联动起来，让不同高度区域受到不同程度的位移影响，而不是整根龙卷统一摆动
+
+### 00:13:38-00:16:29 Alpha、粒子、速度
+
+- 本段定位：Alpha、粒子、速度。
+- 知识点：需要放同樣的物理系统 给所有物理系统 -0.2 让我们把速度 转换到这个物理系统 然后我们改变高度 35 我们回到觀看 可以在这里點選 我们看看結果。
+- 知识点：我们的轉動從邊緣移动 到波浪 例如 跟这些增长 例如 跟波浪增长 我们想要增长或增长 可以剪輯这个数字 記得 这个数字会產生一个面積 所以我们再次转换。
+- 知识点：它会延长 如果我放少一些小的價值 例如 -0.5 那麼这个面積 也会转换 变短了 然后需要有更多的重複 我其實喜欢1.5的價值 把面積拉长一点。
+- 知识点：例如 可以增长45 我覺得速度可以 像是一樣 现在我们看看結果 现在我们的轉動 仍然從邊緣移动到邊緣移动 以助於頂部的動作 看起来比我更有動力。
+- 知识点：现在可以被管理 剪輯 我们加了動力 我们保持了 非常有趣的东西 然后需要想要 改变效果 在这里 当光线发射 需要要再加點光 在地上 但需要想要 用新的类型。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`粒子`、`系统`、`速度`、`颜色`。
+
+**关键画面：**
+
+这一帧直接展示了 `MI_TornadoStylized_01` 的实例参数，说明本段开始把前面材质图中的控制项暴露成可调参数，并在实例层面试速度、Alpha 和顶点位移强度
+
+- 当前打开的是 `MI_TornadoStylized_01`
+- 左侧预览窗口中，龙卷主体几乎被压到很弱，只剩几段淡青色条带，说明作者正在用较低或较极端的参数测试可见范围
+- 右侧可见的参数组与关键值包括：
+  - `Dissolve`
+    - `T_Dissolve = T_VoronoiNoise005`
+    - `Dissolve (ScaleScroll)`：`R = 2.0`、`G = 2.0`、`B = 0.25`、`A = 1.0`
+    - `Smoothness = 1.0`
+  - `Global Scalar Parameter Values`
+    - `Depth Fade = 100.0`
+    - `Use Texture Opacity? = 0.0`
+    - `Vertex Offset Scale = 1.0`
+    - `Vertex Offset Wave Height = 150.0`
+    - `Vertex Offset Wave Speed = 0.0`
+  - `Main Color`
+    - `T_Main = T_Inky_Smoke_Tile`
+    - `Colormap = VFX_T_ColorMap_Turquoise_08`
+  - `Mask`
+    - `Mask Multiply = 5.0`
+    - `T_Mask = T_Gradient20`
+  - `Soft Edge`
+    - `Fresnel Influence = 1.0`
+    - `Fresnel Opacity Exp = 1.0`
+    - `Fresnel Opacity Power = 5.0`
+  - `Vertex offset`
+    - `T_VertexOffset = LowResBlurredNoise`
+    - `Vertex Height = 150.0`
+- 从 `Vertex Offset Wave Speed = 0.0` 可以直接看出，作者先把波浪速度停住，以便单独观察其他参数对 Alpha、长度和可见区域的影响
+这一帧是在同一份 `MI_TornadoStylized_01` 上继续微调速度与位移强度，作者开始把“静止测试值”收敛到更适合实际播放的参数
+
+- 当前仍是 `MI_TornadoStylized_01` 的实例参数页
+- 与上一张相比，可直接确认的关键改动集中在 `Global Scalar Parameter Values`
+  - `Vertex Offset Scale` 从 `1.0` 调到 `1.5`
+  - `Vertex Offset Wave Height` 当前输入为 `45`
+  - `Vertex Offset Wave Speed` 当前为 `-1.0`
+- 其余可见材质资源仍保持不变，例如：
+  - `T_Dissolve = T_VoronoiNoise005`
+  - `T_Main = T_Inky_Smoke_Tile`
+  - `Colormap = VFX_T_ColorMap_Turquoise_08`
+  - `T_Mask = T_Gradient20`
+  - `T_VertexOffset = LowResBlurredNoise`
+- 左侧预览窗口中龙卷轮廓重新变得更细长、可辨，说明在把速度设为负值并降低波浪高度后，作者得到了比上一张更可控的流动方向和长度表现
+- 字幕提到“速度可以保持不变”，结合当前参数可理解为：作者已经找到一个相对满意的速度方向/大小，接下来更多是围绕长度、Alpha 和整体造型再微调
+这一帧把话题从龙卷材质切回 `NS_LightningStrike`，作者开始在命中点附近补一层真正的动态光，而不只是依赖发光材质贴图
+
+- 当前系统总览标签显示为 `NS_LightningStrike`
+- 左侧可见至少两个发射器：
+  - `Lightnings`
+  - `Empty`
+- 当前选中的是 `Empty` 发射器中的 `Light Renderer`
+- `Empty` 发射器可见结构至少包括：
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+  - `Initialize Particle`
+  - `Particle State`
+  - `Light Renderer`
+- 右侧 `Light Renderer` 面板中，可确认的关键设置与绑定包括：
+  - `Source Mode = Particles`
+  - `Use Inverse Squared Falloff` 已启用
+  - `Radius Scale = 1.0`
+  - `Specular Scale = 1.0`
+  - `Color Add = 0, 0, 0`
+  - `Light Rendering Enabled Binding = Particles.LightEnabled`
+  - `Position Binding = Particles.Position`
+  - `Color Binding = Particles.Color`
+  - `Radius Binding = Particles.LightRadius`
+  - `Volumetric Scattering Binding = Particles.LightVolumetricScattering`
+  - `Specular Scale Binding = Particles.LightSpecularScale`
+- 左侧预览窗口中，落雷命中点已经出现明显的白蓝色强光爆闪，说明这条 `Light Renderer` 不是只给粒子上色，而是在场景里真正生成会影响照明感知的点光效果
+
+### 00:16:34-00:19:23 Alpha
+
+- 本段定位：Alpha。
+- 知识点：为了光亮 我们设置了很高的光亮 再加上我们轉動了 再看如何把尺寸管理 现在我们可观察到 只要我选择这个 我们就没有看到 为什么 因为这里 有一个調節。
+- 知识点：控制尺寸 但这并非標準 我们需要创建 所以我们创建了新的調節 然后我们选择这里 光亮的 我们设置光亮的 为1000 我们设置了一些 調節颜色的調節。
+- 知识点：alpha影响了光亮 现在有了一件事 光亮 这里也有分數 如果我选择10 它会減少 变得很少的 例如 可以加一个彎 我改变了彎 需要选择100。
+- 知识点：需要选择正確的颜色 可以加一个彎 改变为更新 这樣它会更新 我们加一个彎 1000 或2000 我不知道如何会更好 然后可以让光亮 慢慢減少。
+- 知识点：需要用auto 来把價值減少 现在正在發生的事 我们需要減少我们的生命 要不然不太快 我们去提升光亮 散光比C 需要改变標價 这会妥協生长 看看光亮 tane。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`颜色`。
+
+**关键画面：**
+
+这一帧把焦点放在 `NS_LightningStrike` 命中点光照的 Alpha 驱动关系上，关键点是让粒子透明度同时影响光亮强度
+
+- 当前系统总览仍是 `NS_LightningStrike`
+- 左侧能看到至少两个发射器：
+  - `Lightnings`
+  - `Empty`
+- 当前选中的是 `Empty` 发射器中的 `Light Renderer`
+- 右侧 `Light Renderer` 的关键状态与上一段相比，最重要的变化是：
+  - `Alpha Scales Brightness` 已启用
+- 其余仍可确认的基础设置包括：
+  - `Source Mode = Particles`
+  - `Use Inverse Squared Falloff` 已启用
+  - `Radius Scale = 1.0`
+  - `Specular Scale = 1.0`
+  - `Color Add = 0, 0, 0`
+  - `Light Rendering Enabled Binding = Particles.LightEnabled`
+  - `Position Binding = Particles.Position`
+  - `Color Binding = Particles.Color`
+  - `Radius Binding = Particles.LightRadius`
+- 左侧预览窗口此刻几乎看不到明显命中爆闪，说明作者正在先处理“光亮如何被 Alpha 控制”这一逻辑，而不是单纯拉高亮度数值
+- 这一设置的作用是：粒子越透明，关联的动态光也会随之减弱，从而让命中光不会在粒子已经淡出后还突兀地残留
+这一帧把 Alpha 控制落实到 `Empty` 发射器的颜色缩放模块上，做法是让 Alpha 随粒子年龄走一条曲线，再由上一张的 `Light Renderer` 读取这个 Alpha 去控制亮度
+
+- 当前选中的是 `Empty` 发射器的 `Scale Color`
+- 发射器结构中还能看到一个直接设置 `Particles.LightRadius` 的模块，说明这条发射器既控制亮度衰减，也控制灯光半径
+- `Scale Color` 的关键设置可确认如下：
+  - `Scale Mode = RGB and Alpha Separately`
+  - `Scale RGB = (1.0, 1.0, 1.0)`
+  - `Scale Alpha` 使用 `Float from Curve`
+- 这条曲线以 `Particles.NormalizedAge` 为横轴
+- 从可见曲线形状看：
+  - 粒子刚出生时 Alpha 较高
+  - 中段下降到更低值
+  - 后面再次抬升
+  - 末段再回到较高值附近
+- 因为上一张已经启用了 `Alpha Scales Brightness`，所以这条 Alpha 曲线不只是影响可见透明度，也会同步塑造命中光在生命周期里的明暗起伏节奏
+这一帧把命中点光的另一个关键维度补齐了：除了 Alpha 控制亮度之外，灯光半径也按粒子年龄走曲线变化
+
+- 当前选中的是 `Empty` 发射器里的 `Set (PARTICLES) LightRadius`
+- 该模块把 `Particles.LightRadius` 设置为 `Float from Curve`
+- 这条曲线同样以 `Particles.NormalizedAge` 为横轴
+- 当前可见曲线趋势是：
+  - 出生时半径较小
+  - 中前段逐步增大
+  - 末段维持在较高值附近
+- `Scale Curve = 1000.0`，说明最终灯光半径会用一个较大的倍数统一放大
+- 结合上一张的 `Scale Alpha` 曲线与上一上一张的 `Alpha Scales Brightness` 开关，可得到这条发射器的完整控制逻辑：
+  - `Scale Alpha` 决定光亮随年龄的强弱变化
+  - `LightRadius` 曲线决定光影响范围随年龄的扩张或收缩
+  - `Light Renderer` 负责把这些粒子属性真正转成场景动态光
+- 这使得命中点光不只是简单闪一下，而是可以在生命周期里同时控制“亮到什么程度”和“照多大范围”
+
+### 00:19:29-00:24:13 关键流程 06
+
+- 本段定位：关键流程 06。
+- 知识点：incos, 光亮龍 还是可以提升它 当它不在地上 進氣 跟其他颜色一樣 也可以去加 再提升光出 也是你要提升 我们可观察到这里我们看起来是在跳動一段时间。
+- 知识点：而我不喜欢它会下降 我们就把它放下让颜色慢慢下降 而这代表什么呢? 如果我们把一些… 我们的3D物件现在也会被亮起 当然这很困難 因为在3D物件上。
+- 知识点：需要有一个光线 现在我们3D物件也会被亮起 当然这很困難 因为它会被光影响 所以我现在改变了一些东西 现在很困難 需要回到500 如果我把它推到3D物件上。
+- 知识点：我们可观察到它被光影响 现在它已经变得更有趣 我们已经有了某种光影 確定它会变得更有趣 像这樣 可能我没有选择好它的範圍 我非常不喜欢 这里。
+- 知识点：现在变得太快了 这里是 可以用它来看你喜欢的 让它变成500 改变光影。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这一帧把命中点灯光发射器整理成独立的 `Lights` 发射器，说明作者准备把之前在 `Empty` 中试出来的光照逻辑正式并入闪电系统流程
+
+- 当前系统总览仍是 `NS_LightningStrike`
+- 可见发射器至少包括：
+  - `Lightnings`
+  - `Lights`
+- `Lights` 发射器的可见结构至少包括：
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+  - `Initialize Particle`
+  - `Particle State`
+  - `Set (PARTICLES) LightRadius`
+  - `Scale Color`
+  - `Light Renderer`
+- 右侧面板对象就是 `Lights`
+- `Emitter State` 中可确认：
+  - `Life Cycle Mode = System`
+  - `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+  - `Loop Duration = 1.0`
+- `Spawn Burst Instantaneous` 中当前 `Spawn Count = 1`
+- `Initialize Particle` 的 `Point Attributes` 页签可见 `Lifetime Mode = Direct Set`
+- 左侧预览窗口中，命中点附近可以看到细长的闪电与较亮的地面高光，说明 `Lights` 发射器负责的是随闪电同步触发的局部照明，而不是主闪电几何本体
+这一帧是 `关键流程 06` 的结果观察图，重点在验证新增灯光已经不只照亮命中点，而会实际影响龙卷本体与周边 3D 物件的明暗
+
+- 视口中能看到一根青蓝色风格化龙卷，主体亮带和暗带对比明显
+- 地面外围的环状层和龙卷底部都被照亮，亮暗变化不再只是贴图自身发光
+- 下方时间线中同一个龙卷画面在多个位置重复出现，说明作者正在播放循环片段，观察灯光范围和强度是否合适
+- 结合本段文字“3D 物件现在也会被亮起”，这张图证明 `Lights` 发射器的动态光已经开始作用到场景中的实体，而不是只在粒子自身内部做颜色变化
+- 这一步的目的，是把闪电命中产生的照明从局部平面高光扩展到龙卷体积和周围几何，让整体光影关系更有层次，也更“有趣”
+这一帧是 `关键流程 06` 的另一种结果对比，说明作者在比较更大范围的照明和更收敛的地面局部高光哪一种更合适
+
+- 当前视口里几乎看不到整根龙卷，只剩地面中央一小片青白色发光区域和中间一点闪电残留
+- 与上一张“龙卷本体也被明显照亮”的结果相比，这里灯光影响范围被大幅收窄，主要集中在地面命中点附近
+- 时间线时间指针约在 `1.00s`，底部仍然能看到同一镜头在多个时间位置循环出现，说明作者是在同一镜头上反复预览不同光照设置
+- 字幕明确说“看看你更喜欢哪种”，因此这张图的重点不是新结构，而是对照不同 `LightRadius`、亮度或衰减参数带来的视觉取舍
+- 这一对比表明：`Lights` 发射器的参数已经足够灵活，可以做成大范围照亮 3D 场景的版本，也可以收成只在命中点附近留下紧凑光斑的版本
+
+### 00:24:13-00:28:12 关键流程 07
+
+- 本段定位：关键流程 07。
+- 知识点：因此 类似的东西 需要给其他建議的建議 就是你还可以用颜色圖畫 或是加一些更多的細節 例如石頭 或是加一些蛋糕 现在全都視乎可以创建什么樣的火箭。
+- 知识点：如果是水 可能会加一些水灑出来 如果是火 当然 加點火 当然 有些火質 这是你能做的 例如 很有趣的方法 这是用颜色圖畫。
+- 知识点：然后傳给大家 这里是我们的主要材料 因为 已经是更有趣的东西 而且我们有很多东西 不只靠着所有东西 因此 他們說 我们也会改变颜色。
+- 知识点：有些颜色非常有彩度 这里可以看 如何快速地做到 我还没有加細節 另外 我们 我们 很快地把这个拿出来 这可能不是最好的 因为它需要调整 誰的 什么樣的火或什么的。
+- 知识点：这很明白 兩顆雲 现在我们已经创建了 完全不同的变化 当然我还没有剪輯这个 这个也能完全不同 我们来看看这架飛機 现在的样子 还有加點細節 可以加點火。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这是调色后的龙卷最终效果预览。视口中央是一根青蓝色半透明龙卷，主体由上窄下宽的螺旋体组成，底部落点形成一圈更亮的发光旋涡，外围还能看到几片被风卷起的碎片或能量片。
+
+可确认的结果特征如下：
+- 整体主色从前面的白亮闪电风格转成偏青绿、青蓝的冷色调
+- 龙卷柱体内部仍能看到几段纵向亮纹，说明原先的闪电或高亮细节没有被完全移除，而是被统一染到当前配色里
+- 地面接触区是最亮的位置，中央有一块近白色高光，外侧包着一圈青色旋涡，用来强调龙卷与地面的接触能量
+- 画面背景和地面同时被染成偏冷的青灰色，表明材质颜色变化会直接改变整个特效的视觉氛围
+
+这一帧承担的是“颜色变化后的整体观感”展示，不是节点设置图。结合本段正文，作者要说明的是：即使不改发射器的大结构，只通过颜色贴图或颜色方向的调整，也能把同一套龙卷资产快速变成另一种风格
+这是 `NS_Tornado` 系统里 `Sparks_Vortex` 发射器的 `Initialize Particle` 设置图，作者用它说明：改动颜色参数后，同一套附属粒子也会跟着切到新的风格配色。
+
+可确认的发射器堆栈如下：
+- `Emitter Update`：`Emitter State`、`Spawn Rate`
+- `Particle Spawn`：`Initialize Particle`、`Add Velocity Linear`、`Shape Location Ring / Disc`
+- `Particle Update`：`Particle State`、`Vortex Force`、`Scale Color`、`Solve Forces and Velocity`、`Scale Sprite Size by Speed`
+- `Render`：`Sprite Renderer`
+
+当前打开的是 `Initialize Particle`，右侧细节面板可确认的参数如下：
+- `Lifetime Mode = Random`
+- `Lifetime Min = 1.5`
+- `Lifetime Max = 3.0`
+- `Color Mode = Random Range`
+- `Color Minimum = 浅青色`
+- `Color Maximum = 更亮的青蓝色`
+- `Color Channel Mode = Link RGB / Link A`
+- `Position Mode = Simulation Position`
+- `Mass Mode = Unset / (Mass of 1)`
+
+同一模块下还能看到精灵尺寸相关设置：
+- `Sprite Size Mode = Random Uniform`
+- `Uniform Sprite Size Min = 5.0`
+- `Uniform Sprite Size Max = 15.0`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+
+这张图传达的核心做法是：把涡流火花粒子的初始颜色范围限定在两种接近的青色之间，同时维持 1.5 到 3.0 秒寿命和 5 到 15 的随机尺寸，这样火花会自动融入新的龙卷主色，而不必额外重做一套发射器逻辑
+这是同一套龙卷在另一组材质配色下的效果预览。画面中的龙卷整体被改成深红到橙黄的暖色组合，柱体内部有多段高亮火焰状纹理，顶部和底部都能看到更亮的橙色发光区，视觉上已经从“电风/能量风”转成接近“火焰龙卷”的风格。
+
+可确认的结果特征如下：
+- 主体底色是深红色，说明材质的暗部和主体色已经整体偏向红色
+- 高亮细节改成橙黄发光条纹，沿着螺旋方向分布在龙卷柱体内部
+- 顶部云层或卷层边缘也出现暖色高光，表示颜色变化不只作用在主体网格，也同步影响到上方的云层部件
+- 地面接触区由原先的冷色发光旋涡变成红橙色亮环，形成更强的火焰感
+
+这张图用来证明同一套 Niagara 结构只要替换或调整颜色方向，就能快速派生出完全不同的主题版本。前一张偏青蓝冷色，这一张则是红橙火焰风格，作者想强调的就是“颜色本身就是高性价比的变化入口”
+
+## 补充视觉证据
+
+### S02 00:05:21
+
+这是材质 `M_Tornado` 中一段用于生成顶点位移波动的节点链，目标是从某个向量结果里拆出单轴分量，与另一条波形链相加后送入 `Vertex Offset Wave`
+
+节点定义集
+- `Multiply`：左侧上游输入进入该节点，输出作为第一路波形或缩放后的中间值
+- `Divide`：左侧下游输入进入该节点，用来先做一次数值归一或轴向拆分前的处理
+- `Mask (B)`：接在 `Divide` 后面，只保留 `B` 通道，也就是从向量里取单一轴分量
+- `Add`：把 `Multiply` 的结果和 `Mask (B)` 的结果相加
+- `Sine`：对 `Add` 的结果做正弦变化，得到周期性波形
+- `Scalar Parameter` `Vertex Offset Wave Height`：默认值可见为 `100.0`，用于控制位移强度
+- `Multiply`：把 `Sine` 输出与 `Vertex Offset Wave Height` 相乘，得到最终振幅
+- `Vertex Offset Wave`：接收最终结果，作为这一段材质函数或命名重定向节点的输出
+
+连线集
+- 左侧上游输入 -> `Multiply.A/B` 中的其中一路，生成第一条中间结果
+- 左侧另一组上游输入 -> `Divide`
+- `Divide` -> `Mask (B)`
+- `Multiply` -> `Add.A`
+- `Mask (B)` -> `Add.B`
+- `Add` -> `Sine`
+- `Sine` -> 右侧 `Multiply.A`
+- `Vertex Offset Wave Height` -> 右侧 `Multiply.B`
+- 右侧 `Multiply` -> `Vertex Offset Wave`
+
+设置/参数
+- `Mask` 只启用 `B` 通道，用意是从 `X/Y/Z` 中抽出一个单轴分量
+- `Vertex Offset Wave Height = 100.0`
+- 字幕明确说明这一步是在“只保留一个轴”，并且需要能够把 `X、Y、Z` 分开处理
+
+输出/预览
+- 这条链的输出是一个按正弦规律变化、并带有强度缩放的单轴顶点位移值
+- 结合左侧预览窗口，当前结果表现为一条青蓝色龙卷，说明该位移链正在参与龙卷材质的形体扰动或波浪起伏，而不只是单纯改颜色
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

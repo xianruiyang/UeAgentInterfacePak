@@ -1,0 +1,1072 @@
+# 01 Destruction Simulation In Houdini
+
+# 01 Destruction Simulation In Houdini
+
+## 关键术语
+
+- `UV`、`Add`、`Normal`、`Texture`、`Houdini`、`PS`、`Mesh`、`速度`、`液体`、`Niagara`、`颜色`、`Niagara System`、`Emitter`、`Particle`、`Spawn`、`Initialize Particle`、`Lifetime`、`Color`
+
+## 分段知识
+
+### 00:00:05-00:04:55 Houdini
+
+- 本段定位：Houdini。
+- 知识点：嘿,在这次视频中,在Houdini中制作了一种Column Distract Simulation, 后续会一起使用的这个爆炸。
+- 知识点：角色或镜头演示需要导入 FBX/骨骼/动画，并用 Sequencer 校准触发时机。
+- 知识点：是我的物件,我按下按钮,并首先创造。
+- 知识点：我们先按下按钮,并找到一个箱子,创造这种箱子。
+- 知识点：需要做什么? 需要在这个箱子里面镜头。
+- 知识点：可以选择在哪个角度需要镜头的距离。
+- 知识点：可以将它更近,可以改变到另一个角度。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Sequencer`、`Houdini`。
+
+**关键画面：**
+
+这是 `Destruction` 对象中的初始场景摆位截图，用来说明本节的预破碎/破坏模拟会从一个中心立柱和下方底座开始搭建
+
+- 当前路径位于 `obj/Destruction`
+- 左侧视口中可见一个竖直立柱，底部有几根向外撑开的支脚
+- 立柱下方是一块大尺寸的方形底座或地面网格，边缘已经有一定分段与倾斜面结构
+- 立柱底部附近有一个向下的箭头型参考标记，用于显示方向或位置参考
+- 右侧参数区显示 `No Operator Selected`，说明这张图的重点不是具体节点参数，而是整体场景布局
+- 右下节点网络里当前只露出一个 `box2` 节点，表明教程此时还在很早期的基础形体搭建阶段
+- 这一步的作用，是先确定破坏模拟的主体物件和底部承载区域，为后续切块、布尔、约束和爆炸模拟提供初始几何
+这一帧展示立柱底部支撑结构在 Houdini 中的裁切与封口处理，重点是先用 `clip1` 切出需要的形状，再用后续节点补上裁切后留下的开口
+
+- 左侧视口聚焦在立柱底部，能看到数个三角形/斜面支撑片从中心向外延伸
+- 一些切面内部显示为蓝色，说明当前几何已经被裁切，出现了需要封口的开边区域
+- 右上当前参数面板选中的是 `Clip clip1`
+- `Keep = Primitives Above the Plane`
+- `Origin = (0, 0, 0)`
+- `Direction = (0, 1, 0)`
+- 勾选 `Clip Unconnected Points`
+- 右下节点网络可见主链为 `merge1 -> clip1 -> polyfill1`
+- `merge1` 上方还能看到一个 `mirror2` 分支输入，说明部分几何先做镜像再合并
+- 右侧另一路可见 `box4`、`box5` 进入 `boolean5`，表示底部结构的某些切块来自布尔运算
+- 字幕提到“有空的地方，需要用东西关闭”，与 `clip1` 后面紧跟 `polyfill1` 的流程一致，说明裁切后会立即补面封口
+- 这一步的作用，是把支撑片或底座裁成需要的轮廓，并为后续破碎模拟准备封闭、可参与布尔和物理计算的实体网格
+这一帧展示破损边缘在 Houdini 中被单独提取成组的步骤，教程用红色高亮显示受损区域，并为它们创建后续可单独处理的分组
+
+- 左侧视口里，立柱侧边不规则破损区域被高亮成红色，白色部分是主体表面
+- 红色区域沿边缘断裂分布，表示这些面或边已经被 `edge_damage` 一类处理打碎或推挤出破损轮廓
+- 右上当前参数面板选中的是 `Group Create group1`
+- `Group Name = edgedamaged`
+- `Group Type = Primitives`
+- `Initial Merge = Replace Existing`
+- 启用了 `Base Group`
+- `Base` 表达式为 `@Cd.r==0`
+- `Geometry Filter = All Types`
+- 右下左侧节点链可见 `edge_damage1 -> group1(edgedamaged)`
+- 右下右侧还能看到另一条处理链 `boolean2 -> polybevel1 -> remesh1 -> mountain1`
+- 结合字幕“它们被红色突出显示，我为它们创建了一个特殊的组”，可判断这里是依据已有颜色或属性结果，把受损边缘区域筛选进 `edgedamaged` 组
+- 这一步的作用，是把破损边缘单独标识出来，方便后续只对这些区域做材质区分、细分、位移、噪声或破碎强化处理
+
+### 00:04:55-00:07:36 UV
+
+- 本段定位：UV。
+- 知识点：为什么需要建立一个群体? 因为需要在它们的图层上建立UV图层。
+- 知识点：首先,需要在这些编号中建立UV图层。
+- 知识点：需要分成小小的图层, 我称之为破坏物。
+- 知识点：需要在它们建立一个 kaikki的UV丝。
+- 知识点：我也会改变色彩, 这样就没有了偏暗, 景观会更加浓郁。
+
+**关键画面：**
+
+这一帧展示立柱破坏模型开始制作 UV 的步骤，教程先在已经分好受损边缘组的几何上使用 `UV Project` 生成整根立柱的基础 UV
+
+- 左侧视口中可见竖直立柱和底部支撑结构，表面已经套上检查贴图
+- 红色条带仍沿立柱边缘和底部支撑分布，表示 `edgedamaged` 组仍被保留并高亮
+- 右上当前参数面板选中的是 `UV Project uvproject1`
+- `UV Attribute = uv`
+- `Group/Attrib Type = Vertices`
+- `Projection = Orthographic`
+- `Transform Order = Scale Rot Trans`
+- 变换区当前存在非零的 `Translate`、`Rotate`、`Scale` 数值，说明作者正在手动摆放投射器的位置、朝向和缩放来覆盖整根立柱
+- `U Range = 0 -> 1`
+- `V Range = 0 -> 1`
+- 勾选 `Fix Boundary Seams`
+- 勾选 `Fix Poles`
+- 右下节点链左支为 `group1(edgedamaged) -> uvproject1 -> uvproject2`
+- 右侧并行处理链可见 `polybevel1 -> remesh1 -> mountain1 -> normal1`
+- 结合字幕“从这个节点开始，整个列的 UV 坐标”，可确定 `uvproject1` 负责先给整根柱体建立一套基础 UV，再把特定区域单独拿出来继续处理
+这一帧展示第二次 `UV Project` 的用途：只针对受损边缘组 `edgedamaged` 再单独投射一套更合适的 UV，方便后续给破损区域使用不同材质
+
+- 左侧窗口分成 UV 视图和透视视图
+- UV 视图里能看到一块不规则展开轮廓，包含立柱截面和底部支撑片的边缘区域，说明当前查看的是局部受损区域的 UV，而不是整根柱体的整体 UV
+- 透视视图中，立柱和底部支撑边缘仍被粉红/红色轮廓高亮，对应正在单独处理的破损边缘
+- 右上当前参数面板选中的是 `UV Project uvproject2`
+- `UV Attribute = uv`
+- `Group = edgedamaged`
+- `Group/Attrib Type = Vertices`
+- `Projection = Orthographic`
+- `Transform Order = Scale Rot Trans`
+- 当前变换区存在手动调整后的 `Translate`、`Rotate`、`Scale` 数值，说明作者正在把投射框对准破损边缘区域
+- `U Range = 0 -> 1`
+- `V Range = 0 -> 1`
+- 勾选 `Fix Boundary Seams`
+- 勾选 `Fix Poles`
+- 右下节点链当前可见 `uvproject1 -> uvproject2 -> color1`
+- 右侧并行链可见 `mountain1 -> normal1 -> group2(Damaged) -> boolean3/boolean4`
+- 结合字幕“These UVs will be normal”，这里的意思是：主体和破损边缘会分别拥有合适的 UV，之后可以给受损部分单独指定一套材质或贴图表现
+这一帧展示教程回到一个单独的 `Edit` 节点，对局部几何做手工变形或位置修正，作为布尔和后续破损处理之前的人工调整步骤
+
+- 左侧视口里当前只显示一根简化后的竖直柱状几何
+- 几何左侧挂着变换操纵器，说明作者正在直接拖动选中的点、面或 primitive
+- 左下表格中有多行被高亮，表示当前确实选择了一批要编辑的元素
+- 右上当前参数面板选中的是 `Edit edit1`
+- 顶部显示 `Group = 1`
+- `Group Type = Primitives`
+- 当前处于 `Transform` 模式
+- `Transform Order = Scale Rot Trans`
+- `Translate` 与 `Rotate` 均为 `0`
+- `Scale` 中前两项为 `1`，第三项约为 `0.490613`，说明作者在某一轴向上压缩或缩放了选中部分
+- `Transform Space = Global`
+- 右下节点网络当前可见主链为 `clip1 -> polyfill1 -> boolean1 -> edge_damage1`
+- `edit1` 来自 `box3` 分支，并继续送入 `boolean2`
+- 右侧还能看到 `box4 -> boolean5` 相关布尔分支，以及下游 `polybevel1 -> remesh1`
+- 结合字幕“单独的节点中更改它，称为编辑”，这一步的作用就是把某一块几何先在 `edit1` 里手工修形，再并回布尔链中参与后续破坏模型生成
+
+### 00:07:49-00:10:46 Mesh
+
+- 本段定位：Mesh。
+- 知识点：有一个设置 显示了如何把物件 显示出来 可以显示成这个样子 线条 只能看到它们的角落 需要选择这个模式 然后我们做什么 我们制作了这个模式。
+- 知识点：我用Boolean 把一个模式从另一个模式中切掉 我选择了编辑 然后从这个模式中编辑 编辑这个 它是可以从这里 从这个模式中编辑这个模式。
+- 知识点：我把它切掉 这一笔 它把地图转移 让它在角落上滑润 可以选择距离 它会有多滑 分辨是地图会有多滑 线条 它加了很多 地图 可以用来制作 我们可观察到地图的数量吗。
+- 知识点：有关node的资料 数字 数字的线条 编辑 数字 还有其他各种资料 我们可观察到这里有很多 在这里有很多 在Remesh后有很多 我们可观察到我们有多少数字。
+- 知识点：和这种东西 可以进入这些设置 有很多 不同的 场景背景和规模设置 需要展示 比如说我们有多少个画面 需要展示地图的资料 需要展示。
+
+**关键画面：**
+
+这一帧展示 `edit1` 节点下的基础柱体线框形态，教程在这里切换到合适的显示/选择模式，准备继续对几何做编辑
+
+- 左侧视口只显示一根细长的线框柱体，说明作者此时关注的是基础拓扑和轮廓，而不是表面着色结果
+- 几何底部是一个封闭的多边形截面，向上拉伸成竖直柱状结构
+- 左下表格中仍有多行元素被高亮，表示当前有一批点或 primitive 处于选中状态
+- 右上当前参数面板仍是 `Edit edit1`
+- `Group = 1`
+- `Group Type = Primitives`
+- 当前处于 `Transform` 模式
+- `Transform Order = Scale Rot Trans`
+- `Translate`、`Rotate`、`Scale` 都保持默认值 `0/1`
+- `Transform Space = Global`
+- 右下节点网络主链可见 `clip1 -> polyfill1 -> boolean1 -> edge_damage1`
+- `edit1` 由 `box3` 分支输入，并继续送入 `boolean2`
+- 右侧还可见 `box4 -> boolean5` 分支，说明当前编辑对象仍会参与后续布尔组合
+- 这一步的作用，是在明确的线框显示模式下检查和微调基础几何，为后续布尔、倒角、重拓扑和破坏细化提供稳定的原始形体
+这一帧展示破损块体经过 `Remesh` 之后的结果，原本较规则的布尔几何被重建成更均匀的三角面，便于后续噪声和法线处理
+
+- 左侧视口中可见一个被切开的块体，表面已经布满均匀的小三角面
+- 顶部断裂区域和内部缺口也被一起三角化，说明重网格化覆盖了整块破损几何，而不只是外表面
+- 右上当前参数面板选中的是 `Remesh remesh1`
+- `Iterations = 2`
+- `Smoothing = 0.1`
+- 勾选 `Recompute Normals`
+- `Edge Lengths = Uniform`
+- `Target Size = 0.128`
+- 右下节点链当前可见顺序为 `boolean2 -> polybevel1 -> remesh1 -> mountain1 -> normal1`
+- 这条链说明作者先做布尔切割，再倒角，然后用 `remesh1` 统一网格密度，之后才叠加噪声和法线调整
+- 字幕提到“节点的信息、点的数量、基元的数量”，也和 `Remesh` 阶段常见的网格密度检查一致
+- 这一步的作用，是把破坏几何转成密度更均匀的三角网格，为后续 `mountain` 之类位移节点制造更自然的破碎边缘
+这一帧展示在重网格化后的破损块体上使用 `Attribute Noise` 节点 `mountain1` 给点位置添加噪声，从而打碎过于平滑的表面
+
+- 左侧视口中的块体仍是均匀三角面结构，但轮廓已经开始呈现更自然的起伏和不规则感
+- 视口里的几何由两个相互嵌套/切开的块体组成，说明噪声处理是在布尔和重网格化之后进行
+- 右上当前参数面板选中的是 `Attribute Noise mountain1`
+- `Attribute Names = P`
+- `Attribute Class = Points`
+- 勾选 `Noise Along Vector`
+- `Vector Attribute = N`
+- `Operation = Add`
+- `Range Values = Zero Centered`
+- `Amplitude = 0.16`
+- 勾选 `Output Raw Value`
+- `Noise Type = Alligator`
+- `Location Attribute = P`
+- `Element Size = 0.67`
+- `Offset = 0`
+- 勾选 `Use VEXpression`
+- 右下节点链当前可见顺序为 `polybevel1 -> remesh1 -> mountain1 -> normal1`
+- 这表示作者先把网格变成均匀三角面，再沿法线方向对点位置加噪声，最后重算法线
+- 这一步的作用，是把过于工整的切割块体表面变得更像真实破碎混凝土或石材，为后续破坏模拟和着色提供更可信的微观起伏
+
+### 00:10:49-00:13:52 UV、Add、Normal
+
+- 本段定位：UV、Add、Normal。
+- 知识点：相关于shom 可以增加 减少 管理各种变化 并提升它们的移动量 我们把地图移动到addVariety 还有Normals 我们加到这个群体。
+- 知识点：我们称之为Damaged 这样 需要有特殊的群体 然后我们做什么 我们来取这个地图 我们用Boolean 我们把这个地图 从这个地图中切掉。
+- 知识点：设定A,B 如果对方是不同的结果 它会像一个毁了的位置 而其他地方 我们的物件 会有一个互动 我们看到我们有相对的 那些应该被毁掉的 我们可观察到。
+- 知识点：我们有这个物件 和它的相对的部分 如果我们组合它们 需要创造我们的位置 这个3D物件 被它们缩掉 而这是创造的 如果我们与它们 同时合作 需要展示给你们看。
+- 知识点：它们在这些地方互动 而在它们的地方 需要创造一个地图 需要把它们分成块 然后需要 在它们上创造一个模式 需要用这个物件 作为一个创造的物件。
+- 核对对象：`Add`。
+
+**关键画面：**
+
+这一帧继续展示 `mountain1` 对破损块体施加噪声后的结果，块体外形已经从规则切块变成更接近真实碎石/混凝土的粗糙形态
+
+- 左侧视口中可见一块高度不规则的破损几何，表面仍保持均匀三角面结构，但整体轮廓已被大幅扰动
+- 几何中央有明显的穿孔和内凹区域，说明噪声是在已有布尔切割基础上进一步增加表面变化
+- 右上当前参数面板仍是 `Attribute Noise mountain1`
+- `Operation = Add`
+- `Range Values = Zero Centered`
+- `Amplitude = 0.16`
+- `Noise Type = Alligator`
+- `Location Attribute = P`
+- `Element Size = 0.67`
+- 勾选 `Recompute Normals`
+- 右下节点链当前可见 `remesh1 -> mountain1 -> normal1 -> group2(Damaged)`
+- 结合字幕“移动几何体以增加变化，还有法线，然后将其加入到……”，这里的含义是：先通过 `mountain1` 改变点位置，再通过 `normal1` 修正法线，最后把结果送入损坏组的后续流程
+- 这一步的作用，是让破坏块体具备更丰富的破碎表面层次，避免布尔和重拓扑后仍显得过于工整
+这一帧展示把处理过的损坏部分重新并入柱体的布尔阶段，当前通过 `boolean4` 把 `Damaged` 组与另一侧结果组合成完整柱体
+
+- 左侧视口中能看到一根已经带有粗糙破损中段的立柱，下方仍连着三片支撑结构，说明局部损坏几何已重新回到整体模型中
+- 立柱中段的破碎区域比上下部分更粗糙、更不规则，符合前面 `remesh + mountain + normal` 处理后的结果
+- 右上当前参数面板选中的是 `Boolean boolean4`
+- `Set A` 与 `Set B` 都以 `Solid` 方式参与计算
+- `Operation = Intersect`
+- `Detriangulate = All Polygons`
+- 勾选 `Assume Seam Polygons Are Flat`
+- 勾选 `Correct Normals on Reversed Faces`
+- 勾选 `Collapse Tiny Seam-Adjacent Edges`
+- `Edge Length Threshold = 1e-05`
+- 右下节点链可见 `uvproject2 -> color1` 与 `normal1 -> group2(Damaged)` 两路结果汇入 `boolean3/boolean4`
+- `boolean4` 下游继续连接到 `rbdmaterialfracture1`
+- 字幕提到“如果我们把它们组合在一起，我们就创造了我们的柱子”，与这里把受损部分和相对部分重新合并的逻辑一致
+- 这一步的作用，是把单独处理过的损坏块体重新整合进完整立柱，形成可继续进入 RBD 材质破碎流程的统一模型
+这一帧展示把 `Damaged` 组送入 `Labs Auto UV` 节点自动拆 UV 的步骤，目的是给破损区域生成更适合后续贴图和材质覆盖的 UV 岛
+
+- 左侧视口中，立柱和支撑结构已经重新组成整体模型，外轮廓显示白色线框，表面能看到检查贴图
+- 破损边缘和外表面同时可见，说明当前自动 UV 是在完整模型中的指定分组上进行，而不是单独孤立网格
+- 右上当前参数面板选中的是 `Labs Auto UV autouv1`
+- `Group = Damaged`
+- `UV Attribute = uv`
+- `Method = UV AutoSeam`
+- `Grain Tolerance = 0.12`
+- `Merge Threshold = 0.5`
+- 勾选 `Merge Small Islands`
+- 勾选 `Optimize UV Border`
+- `Flattening Method = Angle-Based (ABF)`
+- `Island Rotation Step = No Rotations`
+- `Packing Iterations = 1`
+- `Island Padding = 2`
+- `UDIM Target Tile = 1001`
+- 右下节点链当前可见 `boolean3 -> autouv1 -> uvlayout1`
+- 同时 `boolean4 -> rbdmaterialfracture1 -> autouv2 -> uvunwrap1` 也在旁边可见，说明作者在不同阶段分别处理 UV 和 RBD 破碎
+- 左下属性表里可见 `groupDamaged` 等字段，和字幕中“这里有不同的属性，可以看到它是什么样的组”一致
+- 这一步的作用，是把损坏区域单独自动拆缝并排版 UV，为后续给破损面使用不同贴图、法线或材质细节做好准备
+
+### 00:13:57-00:18:51 UV
+
+- 本段定位：UV。
+- 知识点：像这个地方是伤害 这个地方是固定的 我创造UV的固定 如果伤害不是选择的 它们也会改变UV的刷子 这里可观察到固定 这里是伤害 这里是刷子。
+- 知识点：这是一个部分 这些固定是不同的 我们需要伤害 我们创造一个UV 需要适当改变它们 而浏览点 如果,例如 一个点在另一个地方 现在这里有很多点。
+- 知识点：但这时一个点 非常接近另一个 在我们的情况下 这里有很多在另一个地方 有很多缺点 我们之后再拼起来 这里有距离 如果它们很接近 它们就拼在一起。
+- 知识点：它们联合在这里 而变成了几个 在这之前 结果很差 分开是什么? 它把物件分成了圈子 其实,没有任何区别 它可以变成 分开或不分开 在拼合的部分。
+- 知识点：它是在达到一个结构 这是一个重要的事情 在创造一个优势 它把结构包起来 成为一个单独物件 它会成为一个物件 我们有很多不同的 特征和特征 现在它包起了结构。
+
+**关键画面：**
+
+这一帧继续展示 `Damaged` 组的自动 UV 处理，作者一边检查模型上的受损区域，一边通过属性表确认哪些部分属于 `Damaged` 或 `edgedamaged` 等分组
+
+- 左侧视口中可见立柱下半段和底部支撑结构，立柱中段破损区域明显比上下部分更粗糙
+- 表面仍覆盖检查贴图，便于直观看到 UV 变化是否合理
+- 右上当前参数面板仍是 `Labs Auto UV autouv1`
+- `Group = Damaged`
+- `UV Attribute = uv`
+- `Method = UV AutoSeam`
+- `Grain Tolerance = 0.12`
+- `Merge Threshold = 0.5`
+- `Flattening Method = Angle-Based (ABF)`
+- `Packing Iterations = 1`
+- `Island Padding = 2`
+- `UDIM Target Tile = 1001`
+- 右下节点链当前可见 `uvproject2 -> color1` 与 `normal1 -> group2(Damaged)` 汇入 `boolean3`
+- `boolean3` 之后连接 `autouv1 -> uvlayout1`
+- 左下属性表中可见 `groupDamaged`、`groupedgedamaged` 等字段，和字幕里“这里可以看到组，这里有损坏，有边缘损坏”一致
+- 这一步的作用，是在自动 UV 之前明确区分不同损坏分组，并确认当前 `autouv1` 只针对 `Damaged` 组处理，从而避免把不该拆分的部分一起改坏
+这一帧展示破坏模型开始进入 `Assemble` 阶段，通过生成 `piece`/`name` 等属性把几何整理成可单独识别的碎块或片段
+
+- 左侧视口里是一根已经带有损坏中段的立柱和底部支撑结构，整体几何已基本成型
+- 左下属性表当前可见两行记录，并且 `name` 列里能读到 `piece0`、`piece1`，说明模型已经被拆分成至少两个命名片段
+- 右上当前参数面板选中的是 `Assemble assemble2`
+- `Inside Group = inside`
+- `Output Prefix = piece`
+- 勾选 `Create Groups`
+- 勾选 `Create Name Attribute`
+- 勾选 `Connect Inside Edges`
+- 勾选 `Create Packed Primitives`
+- 勾选 `Create Packed Fragments`
+- `Pivot Location = Centroid`
+- `Display As = Full Geometry`
+- 右下节点链当前可见 `divide2 -> assemble2`
+- 右侧另一支还能看到 `divide1 -> assemble1`，以及 `sphere1 -> normal2 -> attribtransfer1` 的辅助链
+- 这一步的作用，是把几何整理成带 `piece` 标识的独立片段，为后续属性传递、RBD 破碎或速度/约束处理建立统一的碎块标识体系
+这一帧展示对中间破损内部区域做专门 UV 展开的步骤，当前 `uvunwrap1` 针对 `inside Damaged` 组处理内部面
+
+- 左侧视口中可见一个从顶视角观察的破损块体，中央有明显空洞和内侧面，说明当前关注的是模型内部或中间破口区域
+- 右上当前参数面板选中的是 `UV Unwrap uvunwrap1`
+- `UV Attribute = uv`
+- `Group = inside Damaged`
+- `Plane Group = 6 Planes`
+- `Layout = Square`
+- `Scale = Uniform`
+- `Spacing = 2`
+- `Rotate Order = Rx Ry Rz`
+- `Rotate = (0, 0, 0)`
+- 右下节点链当前可见 `rbdmaterialfracture1 -> autouv2 -> uvunwrap1 -> uvlayout2`
+- 旁边还能看到 `autouv1`、`uvlayout1`、`fuse1`、`explodedview1`
+- `autouv1` 下方显示 `Coverage: 62.88%`，`uvlayout2` 附近显示 `Coverage: 64.13%`，说明作者在比较不同 UV 布局阶段的覆盖率
+- 字幕提到“中间的组做 UV 扫描”，与 `Group = inside Damaged` 完全对应，表示这里只展开内部损坏面，而非外表面
+- 这一步的作用，是给破损内部面单独生成更可控的 UV，方便在材质里区分外层表面和内部断裂面，添加不同贴图与细节
+
+### 00:18:51-00:23:40 UV、速度
+
+- 本段定位：UV、速度。
+- 知识点：UV团体 把它们编辑成一部分 让它们看起来好看 这是UV模式的运作 我再加了分开 分开结构 再分开成圈子 再处理 这里有很多块子 70块 71块。
+- 知识点：这些块子 它们都算成分开的物件 我可以用这个笔记号来示范 可观察到 这块子算成一点 因为它包裹了 准备它做个演示 因为它不够 它不会处理 我创造了一个圆形。
+- 知识点：我设置了一个位置 伸向上 设置了一个正常的方向 每个圈子 都在某个方向移动 为什么我创造了一个正常方向 方向 就在这里 这里会有点难看 这是我创造的正常方向。
+- 知识点：正常方向 为什么我这样做 因为我们要设定 我们的块子会飞走 这个团体是速度 方向是飞走的方向 这些数字是用来算数的 我们用的点 我们写了一个很简单的数字。
+- 知识点：这东西创造了可以创造的这个数字 这是速度 名字已经加了 我们创造了一个分开数字 然后把它过去 这是我们的速度。
+- 知识点：我们把它们分开在正常方向 每个团体都在 它们都在这些团体的边界 需要展示它们的方向 它的团体 每个团体都会飞向一个室子 我创造的很难 这里我们设定了速度。
+- 知识点：我们分开数字 我们分开每个数字的数字 这里我们控制了这个数字 它们限制到1 但是可以进入调整器 找到这个数字 并提升它们的限制至10。
+- 核对对象：`速度`。
+
+**关键画面：**
+
+这一帧展示使用 `Exploded View` 把已经分成 `piece` 的碎块拉开显示，便于检查重新三角化和重新打包后的独立片段
+
+- 左侧视口中多个碎块被沿各自方向拉开，彼此之间留出明显空隙，方便单独观察每块几何的形状
+- 可见碎块表面多数已经是三角面结构，说明在爆开查看前经历了 `divide` 等三角化处理
+- 右上当前参数面板选中的是 `Exploded View explodedview1`
+- `Piece Attribute = name`
+- `Piece Elements = Primitive`
+- `Uniform Scale = 2.403`
+- `Scale = (1, 1, 1)`
+- 右下节点链当前可见 `uvlayout2 -> explodedview1 -> divide1 -> assemble1`
+- `uvlayout2` 旁边显示 `Coverage: 64.13%`
+- 字幕提到“再次添加 divide，将几何体分割成三角形并重新打包”，与下游 `divide1 -> assemble1` 的流程一致
+- 这一步的作用，是在继续处理速度或约束之前，先把所有碎块拉开查看，确认每个 `piece` 的拓扑、分组和 UV 状态都符合预期
+这一帧展示如何在 Houdini 中通过 `Attribute Wrangle` 给碎块写入速度向量，核心思路是沿法线方向乘以一个可调速度系数和随机值
+
+- 左侧视口里是一根带破损中段的立柱，顶部有一小块已经向外抬起，直观表现出即将沿某个方向飞出的趋势
+- 右上当前参数面板选中的是 `Attribute Wrangle attribwrangle1`
+- `Run Over = Points`
+- VEX 表达式可读为：
+
+```c
+@v = @N * ch("speed") * rand(@ptnum);
+```
+
+- 这表示把点法线 `@N` 作为基础方向，乘上可调参数 `speed`，再乘以按点号生成的随机值，最终写入速度属性 `v`
+- 下方参数区可见一个自定义控制项 `Speed = 1`
+- 左下属性表中可看到 `N[x/y/z]`、`V[x/y/z]`、`name` 等列，说明法线、速度和片段名都已存在
+- 右下节点链当前可见 `explodedview1 -> assemble1 -> sphere1 -> normal2 -> attribtransfer1 -> attribwrangle1`
+- 其中 `sphere1 + normal2 + attribtransfer1` 说明教程先准备一个方向参考或法线来源，再把这些信息传给碎块，最后在 `attribwrangle1` 里转成真正的速度
+- 这一步的作用，是为每个碎块或点生成沿外法线发散的初始速度，为之后的飞散或 RBD 爆裂动画提供基础运动方向
+这一帧展示在进入模拟前给碎块写 `active` 属性的步骤，用来标记这些片段是否会受到力和 RBD 求解影响
+
+- 左侧视口中仍是带破损中段的立柱整体，说明此时作者已经从“爆开查看”回到最终要参与模拟的组合模型
+- 左下属性表中可见 `name` 列为 `piece0`、`piece1`、`piece2` 等多行，同时存在 `N[x/y/z]`、`V[x/y/z]`，说明碎块名、法线和速度都已准备好
+- 右上当前参数面板选中的是 `Attribute Create attribcreate2`
+- `Name = active`
+- `Class = Point`
+- `Type = Float`
+- `Size = 1`
+- `Default = 0`
+- 勾选 `Write Values`
+- `Value = 1`
+- 右下节点链当前可见 `attribwrangle1 -> attribcreate2`
+- 左侧还有一个 `attribcreate1(active)` 分支汇入 `merge2`
+- `merge2` 下游继续连接 `matchsize2`
+- 字幕提到“这个物体切割成小块，它会在模拟中使用，力将作用在它上面”，与这里给碎块写 `active = 1` 的做法一致
+- 这一步的作用，是明确告诉后续模拟系统这些碎块是激活状态，会参与受力、碰撞和飞散，而不是保持静止的被动几何
+
+### 00:23:40-00:28:29 速度
+
+- 本段定位：速度。
+- 知识点：这是它的速度 这里可以找到 在这个物件中 在X,Y和Z的速度 这里没有这种东西 这些物件不是在这里 但是在这里 因为我们创造了它们 之后我们把这个物件。
+- 知识点：与这个物件混合 用混合的编号 看起来像一个洞 看起来没有改变 分别不明显 在之间我们做了这些 我们做了这些 我们做了很多不同的事情 在这里设置了不同的物件。
+- 知识点：我们设置了价值 在创造中备用了它 这些都是在创造中备用的 在这里适当调整一下 它是用来调整的 它适当在旁边 只是一点点 我们仍然在调整它。
+- 知识点：它正在同步 这次的游戏 已经有点变化了 有什么变化呢 真的没什么 我们把一些物件交给它 这里我们去 就是 我们真的需要通过 普通的方式进行 以我记得的角度。
+- 知识点：它不在 但可能在那里 现在让我们看看 让我们看看 是的 它在那里 这是在这里创造的通过 因为我们的解决器 已经在创造我们的 自动体系 它明白了。
+- 知识点：我们要用的这两个物件 是哪些 在游戏中使用的 而它们不使用 这个 我们问的那个 他使用的 需要使用 但这个不是 它只是在游戏中 会变成一个状态。
+- 知识点：放在一般位置 因为我们设定了地面 它们已经能够 准备阻力 然后这些调节就会成功 它们会从这里 从这里进行速度。
+- 核对对象：`速度`。
+
+**关键画面：**
+
+这一帧展示另一条 `active` 属性分支的设置，用来给不需要立刻参与模拟的片段写入 `active = 0`，然后再和激活分支合并
+
+- 左侧视口中仍是完整立柱模型，顶部有一小块抬起的碎块，表明场景里同时存在“会动”和“暂时不动”的片段
+- 左下属性表当前只显示两行记录，`name` 为 `piece0`、`piece1`
+- 表中 `active` 列为 `0.0`，说明当前分支明确把这些片段标记成未激活
+- 右上当前参数面板选中的是 `Attribute Create attribcreate1`
+- `Name = active`
+- `Class = Point`
+- `Type = Float`
+- `Size = 1`
+- `Default = 0`
+- 勾选 `Write Values`
+- `Value = 0`
+- 右下节点网络中，`attribcreate1(active)` 与另一条 `attribcreate2(active)` 分支一起汇入 `merge2`
+- `attribcreate2` 位于 `attribwrangle1` 下游，表示另一组片段已经被赋予速度和 `active = 1`
+- `merge2` 下游继续连接 `matchsize1`
+- 这一步的作用，是把“参与模拟的动态碎块”和“保持静止的基础部分”分开标记，再合并回同一个模型中，便于求解器只驱动需要飞散的片段
+这一帧展示碎块被送入 `RBD Bullet Solver` 后的碰撞和物理设置，教程在这里开始真正定义哪些片段会受地面和力场影响
+
+- 左侧视口中显示一个大尺寸线框地面平面，中央放着立柱模型，说明求解器已经有明确的地面碰撞环境
+- 地面四周有箭头样式的方向标记，用来表示平面边界或参考方向
+- 右上当前参数面板选中的是 `RBD Bullet Solver rbdbulletsolver1`
+- `Start Frame = 1`
+- 在 `Collision Geometry` 区域：
+- `Collision Type = Animated`
+- `Collision Shape = Convex Hull`
+- `Collision Padding = 0.02`
+- 在 `Physical` 区域：
+- `Bounce = 0.5`
+- `Friction = 1`
+- 在 `Ground Collision` 区域：
+- `Ground Type = Ground Plane`
+- `Position = (0, 0, 0)`
+- `Rotation = (0, 0, 0)`
+- 左下属性表中可见 `active`、`N`、`V`、`w`、`name` 等列，说明进入求解器前，激活状态、线速度和角速度字段都已准备
+- 右下节点链当前可见 `merge2 -> matchsize1 -> rbdbulletsolver1`
+- 旁边还存在另一条 `rbdbulletsolver2` 分支，说明教程可能在比较或拆分不同求解阶段
+- 这一步的作用，是把前面准备好的碎块、速度和激活属性真正交给 Bullet 求解器，并通过地面、摩擦和弹跳参数控制破坏模拟的物理表现
+这一帧展示 `RBD Bullet Solver` 的约束设置，教程开始给碎块定义 Glue 和 Soft 连接关系，让碎块在受力时不是立即完全散开，而是先受约束再断裂
+
+- 左侧视口中立柱被放在地面平面中央，模型已经分裂成许多小块，但整体还大致保持原先柱体轮廓
+- 这说明求解器当前不是单纯无约束散块，而是有一定连接关系在维持整体
+- 右上当前参数面板仍是 `RBD Bullet Solver rbdbulletsolver1`
+- 已切换到约束相关设置区
+- 在 `Glue` 小节：
+- `Data Name = Glue`
+- `Strength = 1`
+- `Half-Life = 1`
+- `Propagation Rate = 1`
+- `Propagation Iterations = 1`
+- 在 `Soft` 小节：
+- `Data Name = Soft`
+- `Stiffness = 1`
+- `Damping Ratio = 1`
+- `Rest Length = 1`
+- `Constraint Iterations = -1`
+- 勾选 `Disable Collisions`
+- 下方还能看到 `Plasticity`、`Hard`、`ConeTwist`、`Slider` 等可折叠约束类型
+- 左下属性表中仍可见 `active`、`name`、`N`、`V`、`w` 等列，说明当前约束设置是建立在已准备好的碎块和速度数据之上
+- 右下节点链中 `matchsize1` 进入 `rbdbulletsolver1`，并与 `rbdbulletsolver2` 并列存在
+- 这一步的作用，是通过胶水和软约束把碎块先“绑”成一个整体，再在模拟中根据力和时间逐步松脱、断裂，得到更像真实材料的破坏过程
+
+### 00:28:29-00:31:16 颜色
+
+- 本段定位：颜色。
+- 知识点：在做调节 不同的力量 都可以在这里 这是我们的 基本的力量 可以比如说 增加和减少 这里是不同的机器 如果我们 按这些框架 更多的设置会开启。
+- 知识点：这些已经是更有经验的机器 所以可以加一些 是的 按 不同的强度 我问你 会不会有更多的效果 在它们的方向 不管它是否被开启 这些调节可以被控制。
+- 知识点：比如说 需要把重量调到10 这里可以 发动推动 这是它会变成的 你看到 现在我们的较量 有些是在旋转 这是我们设置的 加强力量 影响到机器 这里是旋转。
+- 知识点：有什么在发生 需要把它删除 这是我模仿它 所有东西都会 像之前一样 在这里 所以 这些拔掉 可以用它 简单地拔掉 因为它是 在我们的设置里 我们用的所有这些物件。
+- 知识点：所有这些块子 所有这些物件 都用在一整体上 当我们拔掉它们 我们就只能再次有它的顶部 它们 非常多很多 现在所有东西 都被它们看到 我们的V硬件。
+- 知识点：都被它们看到 通常当我们已经 在我们的出发时 它们都会自动拔掉 所有东西 都在我们身上 这里简单地展示 这个拔掉的事情 再来 这里 我们把 我们只能再次删掉。
+- 知识点：而这一刀 只是一刀 它没有做任何事情 它是0 它只是用来 为了例行名字 来做一些最后的结果 它只是需要 让它更容易 理解它的名字 它是怎么做的 可观察到颜色。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这一帧展示 `RBD Bullet Solver` 在力相关设置下的实际飞散效果，地面上已经能看到碎块被重力和初始速度带开后的分布
+
+- 左侧视口中，立柱主体仍站在地面中央，但周围已经散落大量小碎块，说明模拟已经开始生效
+- 地面仍是大尺寸线框平面，用来观察碎块落点和滑动范围
+- 右上当前参数面板仍是 `RBD Bullet Solver rbdbulletsolver1`
+- 当前切换到力相关设置页
+- `Gravity` 向量为 `(0, -9.80665, 0)`
+- 下方还能看到 `Drag` 与 `Drag Spin` 选项，但当前未展开具体数值
+- 左下属性表中仍可见 `active`、`name`、`N`、`V`、`w` 等列，说明飞散行为来自前面准备好的激活、线速度和角速度数据
+- 右下节点链当前可见 `merge2 -> matchsize1 -> rbdbulletsolver1`
+- `rbdbulletsolver1` 下游接到 `uvquickshade1` 与 `OUT_SIM`
+- 并行分支 `rbdbulletsolver2` 下游接到 `OUT_SIM_VAT`
+- 这表示一个求解分支用于常规模拟预览/导出，另一个分支用于 VAT 之类的后续烘焙输出
+- 这一步的作用，是在 Bullet 求解器中结合重力与先前写入的速度，让碎块真正朝各自方向飞散，并为后续渲染或导出准备输出节点
+这一帧展示导出前的 `Unpack` 步骤，把模拟中使用的 packed 片段重新解包回普通几何，方便后续输出到 Unreal 或其他流程
+
+- 左侧视口中，立柱底部周围已经散落大量碎块，说明当前查看的是求解器运行后的几何结果
+- 右上当前参数面板选中的是 `Unpack unpack1`
+- `Iterations = 17`
+- `Detail Attributes = No Promotion`
+- 勾选 `Apply Transform`
+- 参数面板中还可见 `Transfer Attributes`、`Transfer Groups`、`Apply Style Sheets` 等相关选项
+- 左下属性表现在显示的是解包后点级别属性，包括 `N[x/y/z]`、`uv[0/1/2]` 等列，说明几何已经回到可直接访问顶点/点属性的状态
+- 右下节点链当前可见 `UE5_Transform -> OUT_SIM`，旁边是 `OUT_SIM_VAT`
+- 视图里还能看到 `OUT_SIM` 和 `OUT_SIM_VAT` 两个 `Null` 输出节点，说明当前已接近最终导出阶段
+- 字幕提到“导出时，所有内容都会自动解包”，与当前 `unpack1` 的位置和作用一致
+- 这一步的作用，是在输出模拟结果之前把 packed RBD 片段还原为普通网格，让 Unreal 或后续导出流程能直接读取几何、UV 和法线数据
+这一帧展示破坏模拟在导出前的最终场景状态，以及 `RBD Bullet Solver` 到多个输出节点的完整收尾链路
+
+- 左侧视口中可见立柱仍部分站立，周围碎块已经散落到地面四周，形成较完整的破坏落地效果
+- 画面比前一张更接近最终展示结果，说明作者正在检查导出前的场景上下文，而不是单独调某个局部节点
+- 右上当前参数面板仍是 `RBD Bullet Solver rbdbulletsolver1`
+- 当前仍停留在力相关区域，`Gravity` 保持为 `(0, -9.80665, 0)`
+- 右下节点网络中可见主链从 `merge2 -> matchsize1 -> rbdbulletsolver1`
+- `rbdbulletsolver1` 下游接到 `unpack1`、`UE5_Transform`、`uvquickshade1`、`OUT_SIM`
+- 并行链 `rbdbulletsolver2` 下游接到 `OUT_SIM_VAT`
+- 右下还打开了 Houdini 的导航圆盘，能看到 `Objects`、`Materials`、`COPs`、`DOPs`、`ROPs` 等上下文入口，和字幕里“渲染环境、导出、按 N 键”的说明一致
+- 这一步的作用，是在最终导出前确认模拟结果、查看器上下文和输出节点都已就位，确保既能输出常规模拟几何，也能输出 VAT 等专用结果
+
+### 00:31:21-00:36:06 Texture
+
+- 本段定位：Texture。
+- 知识点：这将会被删除为一个演示 这里我们需要 选择一个选择的node 这是在这种图形中 在这种图形中 在这种图形中 我们的最后node在哪里。
+- 知识点：我们特别删除的node 我们看看 这里它在这里 所以我把它叫 只是为了选择最后的node 这很方便 它是直接选择的 这是我们的开始 240 frames。
+- 知识点：这是我们的选择 这可能是 如果我们有少一点 可以删除 所以我这里留下 240 standard yaks 在这种方式 例如 可以删除 放200。
+- 知识点：会有200的最大 可以基本上删除200 但需要删除240 可以钻进 可以钻出 全 在这里 我们不需要做任何事情 这是我之前做的一样东西。
+- 知识点：只是按下 删除 就在这里 删除的窗户会出现 这是我们的结果 我们 我们把这个图形 当成了动画 现在需要展示 它是如何看起来 在这个盘子 这是我们的结果。
+- 知识点：它看起来 这是我们的方法 它是怎么存在的 这里是这个FBX的文件 后续会它们 放进Unreal Engine 这里 如果按下键盘 可观察到 全方向。
+- 知识点：可以在这里改变 名字删除 例如 设置自己的名字 这里 再次 可以如何创造 Vertex Animation Textures。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Texture`。
+
+**关键画面：**
+
+这一帧展示 Houdini 在 `/out` 输出上下文中配置 `Labs RBD to FBX` 导出节点的过程，重点是为 FBX 导出选择最终模拟节点
+
+- 左侧视口中仍显示破坏模拟后的最终散落状态，用来对应当前即将导出的结果
+- 右上当前参数面板选中的是 `Labs RBD to FBX rbd_to_fbx2`
+- `Export Path` 使用表达式 `$HIP/export/${HIPNAME}.fbx`
+- `Start/End/Inc` 设置为 `1 / 240`
+- 面板右侧弹出了 `Choose Operator` 选择框，表示正在从工程层级中挑选“最终导出节点”
+- 选择框中可见的候选节点包括：
+- `rbdbulletsolver1`
+- `rbdbulletsolver2`
+- `rbdmaterialfracture1`
+- `remesh1`
+- `sphere1`
+- `unpack1`
+- `uvlayout1`
+- `uvlayout2`
+- `uvproject1`
+- `uvproject2`
+- `uvquickshade1`
+- `uvunwrap1`
+- 以及 `out` 下的 `rbd_to_fbx1`、`rbd_to_fbx2`、`vertex_animation_textures1`
+- 右下 `Outputs` 视图里可见三个输出节点：`vertex_animation_textures1`、`rbd_to_fbx1`、`rbd_to_fbx2`
+- 字幕提到“我们要在这个层次结构中找到最终节点”，和当前打开节点选择器的操作完全一致
+- 这一步的作用，是在导出 FBX 前明确指定应该导出的最终模拟几何节点，避免把中间处理节点或错误分支导出到 Unreal
+这一帧展示使用 `Labs Vertex Animation Textures` 节点为 Unreal 导出 VAT 的设置界面，同时也暴露出当前输入几何缺少某些刚体点属性的警告
+
+- 左侧视口仍显示最终破坏散落结果，用来对应 VAT 需要捕捉的动画范围
+- 右上当前参数面板选中的是 `Labs Vertex Animation Textures vertex_animation_textures2`
+- 顶部模式设置可见：
+- `Mode / Target Engine = Rigid-Body Dynamics (Rigid) / Unreal Engine`
+- `Start/End = 1 / 240`
+- `Input Geometry = /obj/Destruction/OUT_SIM`
+- 在 `Rigid-Body Dynamics` 区域可见：
+- `Pivot Accuracy = Very High (Best Quality at Low Memory Footprint)`
+- `Rotation Interpolation = Accurate Multi-RPF Slerp with Angular Velocity`
+- 勾选 `Support Smoothly Interpolated Trajectories`
+- `Texture Format = HDR`
+- `Target Texture Width = 1024`
+- 右侧弹出的节点信息面板里出现警告：
+- `Rigid-Body Dynamics (Rigid) mode expects the point attributes "pivot" and "orient" on packed points, but at least one of them is not found on the input geometry.`
+- 同一信息面板还显示 `Range 1 to 240, every 1 frame(s)`
+- 右下 `Outputs` 视图里能看到 `vertex_animation_textures2`、`rbd_to_fbx1`、`rbd_to_fbx2`
+- 这一步的作用，是把模拟结果切换到适合 Unreal 的 VAT 导出模式，并检查输入几何是否具备刚体 VAT 所需的 `pivot` / `orient` 属性
+这一帧继续展示 VAT 导出流程，不过这次选中的是另一个 `vertex_animation_textures1` 节点，并且界面重点变成了“建议先把输入缓存到整帧磁盘文件”的性能警告
+
+- 左侧视口当前没有重点几何，说明教程此时关注的是输出节点本身而不是视口中的模型状态
+- 右上当前参数面板选中的是 `Labs Vertex Animation Textures vertex_animation_textures1`
+- `Mode / Target Engine = Rigid-Body Dynamics (Rigid) / Unreal Engine`
+- `Start/End = 1 / 240`
+- `Input Geometry = /obj/Destruction/OUT_SIM_VAT`
+- `Pivot Accuracy = Very High (Best Quality at Low Memory Footprint)`
+- `Rotation Interpolation = Accurate Multi-RPF Slerp with Angular Velocity`
+- 勾选 `Support Smoothly Interpolated Trajectories`
+- 在 `Edge Case Handling` 中可见：
+- `Max RPF Allowed = 50`
+- `Slerp Edge Case Offset = 10`
+- `Slerp Edge Case Seed = 0`
+- `Texture Format` 区域显示 HDR/EXR/TIFF 一类输出选项
+- 右侧弹出的节点信息面板给出警告：
+- 建议把输入几何缓存到整帧并从磁盘加载，因为这样能缩短该节点的渲染时间
+- 同一信息面板还显示 `Range 1 to 240, every 1 frame(s)`
+- 右下 `Outputs` 视图里能看到 `vertex_animation_textures1` 与 `rbd_to_fbx1`
+- 字幕提到“这里有一个问题，它要求我们缓存我们的帧”，与当前节点警告内容一致
+- 这一步的作用，是在 VAT 导出前确认输入链和性能前提：真正批量渲染纹理前，最好先把模拟结果按整帧缓存，避免 VAT 节点直接回算整条上游链
+
+### 00:36:06-00:40:56 PS、液体
+
+- 本段定位：PS、液体。
+- 知识点：它处理什么 一张结果被取代 这是一个 东西 它正如之前所说 录制我们的模仿 在硬盘上 因此所有东西 都会被遵守后 所以可以把它拔掉 这可以是一个很长的过程。
+- 知识点：如果模仿很困难 这通常是这种 但所有东西 都很简单 我们不会保留它 它会跟我们一样 如果我们不拔掉它 需要拔掉这个检查点 这个 Input。
+- 知识点：Geometry Sketch to Integer Frames 我们拔掉它 我们不需要它 这里基本上 我们把所有的设置 都放在standard。
+- 知识点：所有的设置都放在standard 这里是standard 我们只能把 你想要的购买点 改成哪个 folder 我们把所有的设置都放在standard。
+- 知识点：我们也得到两个40fps 质感是一样的 这里我们现在在购买 一个硬盘的模仿 如我所说 可以在模仿 某些硬盘的模仿 某些软盘 某种液体 等等。
+- 知识点：在质感上 这就是这么酷的东西 在网上有很多课程 展示如何购买 一个购买材料的模仿 也就是 可以很快地找到它 需要给它们给你 展示给你 可以有 现在需要。
+- 知识点：把结果表现出来 这是它是怎么看的 它开始了 哦 这里是它 是招购的 我们去到folder 这里有一个爹地 这是我们的模仿是招购的 这是我们的模仿。
+
+**关键画面：**
+
+这一帧展示把 RBD 模拟结果写入磁盘缓存的步骤，作者通过 `File Cache` 节点把后续 VAT 或导出所需的整帧几何先存成 `.bgeo.sc`
+
+- 左侧视口当前没有重点几何显示，说明此时重点转到缓存与导出链，而不是视口调参
+- 右上当前参数面板选中的是 `File Cache filecache1`
+- 顶部缓存路径区域可见：
+- `Base Name = $HIPNAME.$OS`
+- `Base Folder = $HIP/geo`
+- 输出扩展名为 `.bgeo.sc`
+- `Version = 1`
+- 在 `Sequence` 区域：
+- `Evaluate As = Frame Range`
+- 勾选 `Simulation`
+- `Start/End/Inc = 1 / 240 / 1`
+- `Substeps = 1`
+- `Load = All Geometry`
+- 面板中部可见按钮：
+- `Save to Disk`
+- `Save to Disk in Background`
+- `Cancel Cook`
+- 左下属性表中已能看到 `orient[0-3]`、`pivot[0-2]`、`name`、`N` 等列，说明这条缓存链保存的是适合后续刚体/VAT 使用的完整属性几何
+- 右下节点链当前可见 `matchsize1 -> rbdbulletsolver1 / rbdbulletsolver2`
+- `rbdbulletsolver2` 下游连接 `filecache1`
+- `filecache1` 下方连接 `OUT_SIM_VAT`
+- 字幕提到“它会把我们的模拟记录到硬盘上”，与 `filecache1` 当前角色完全一致
+- 这一步的作用，是先把耗时的模拟结果缓存成磁盘文件，避免后续 VAT 或导出节点每次都重新回算整条模拟链
+这一帧展示 VAT 导出结果在磁盘上的实际文件，说明位置图、旋转图和颜色图已经成功写出，可直接带入 Unreal 材质与动画流程
+
+- 画面切到 Windows 文件资源管理器
+- 当前目录路径为 `Desktop > Houdini Self > export > prebaked_destruction > tex`
+- 文件夹中可见 3 个 `EXR` 纹理文件：
+- `vertex_animation_textures1_col.exr`
+- `vertex_animation_textures1_pos.exr`
+- `vertex_animation_textures1_rot.exr`
+- 文件名含义可直接对应 VAT 常见三类输出：
+- `col` 表示颜色或辅助颜色数据
+- `pos` 表示位置贴图
+- `rot` 表示旋转贴图
+- 字幕提到“我们将会在材质引擎中创建材料，原则上一切都已经准备好了”，和当前已生成完整贴图文件组完全一致
+- 这一步的作用，是确认 VAT 所需贴图资源已经落盘，后续在 Unreal 中只需要导入这些 EXR，并配合对应材质函数或 VAT 材质网络即可驱动破坏动画
+这一帧展示为 Unreal 项目安装 SideFX Labs 插件的文件夹操作，作者把解压后的插件目录拖进项目的 `Plugins` 文件夹
+
+- 画面中打开了两个 Windows 文件资源管理器窗口
+- 左侧窗口路径位于一个解压后的 SideFX Labs 压缩包目录，顶部路径可见：
+- `Downloads > SideFXLabs-20.5.364.zip > SideFXLabs-20.5.364 > unreal > 5.4`
+- 左侧窗口中包含：
+- `SideFX_Labs` 文件夹
+- `Break CSV Point Format node as text.txt`
+- `PCG CSV Guide.txt`
+- `Plugin Installation Guide.txt`
+- `VAT Import Settings Guide.txt`
+- 右侧窗口路径为 `This PC > Local Disk (D:) > Unreal Projects > VFX_Library > Plugins`
+- 右侧窗口当前只有一个 `SideFX_Labs` 文件夹，表示插件已经被拖放进项目插件目录
+- 字幕提到“拖放，这里还没有任何内容，已经拖动，我们添加了……”，和当前双窗口的拖拽安装过程一致
+- 这一步的作用，是把 SideFX Labs 的 Unreal 插件安装到目标项目中，为后续导入 Houdini 导出的 VAT、FBX 和配套材质设置提供官方支持节点与工具
+
+### 00:40:56-00:45:36 关键流程 11
+
+- 本段定位：关键流程 11。
+- 知识点：现在我们看看 这里有一个folder链接 我们看到我们有链接 各种材料的功能都在这里 我们需要它们 还有一个链接的图形 在设备中会用。
+- 知识点：当我们把材料 拿走和走 现在我们关闭这个 这里我已经创造了 一个空气的层面 我把这个链接 叫它为链接 现在我们创造另一个folder 这是我们需要。
+- 知识点：放置的图形 这是我们需要的图形 现在我们打开folder 我们有了我们的图形 开始时 我们把你创造的 我把这个图形 拿走和走 它们给我 这些图形。
+- 知识点：在这里拿一些图形 在这里创造图形 这很重要 让我们看看Gazi 要做什么 我们没有创造新材料 这里没有什么需要 这很重要 因为在实际上 尤其是我们还要。
+- 知识点：创造图形 这很重要 要选择什么图形 如果你选择了 错误的图形 可能会不够 全部 因此 不全部 只能创造一个图形 别担心 其他就不够 然后按下创造全部。
+- 知识点：在等 在写 全部 全部都准备好了 现在看看 我们有一个图形 一些普通的图形 它是图形和动作 可以在这里吸引它 这是这种 看看这里 每个图形。
+- 知识点：这是一个分开的部分 这就是 这是在这里 突然出现的 一般材料 这很简单 创造图形作为动作 但用了 图形的图形 全部都不简单 现在让我们继续 我们把图形的动作图形。
+
+**关键画面：**
+
+这一帧展示 Unreal 编辑器中 SideFX Labs 插件安装完成后的内容浏览器，教程在这里查看 VAT 相关材质函数，准备后续搭建材质
+
+- 当前位于 Unreal 工程 `VFX_Library` 的编辑器主界面
+- 上方场景视口里可见一个带检查地面的空场景，中间站着角色 `Gideon_Inquisitor`
+- 右侧 `Outliner` 中能看到场景层级：
+- `Env`
+- `DirectionalLight`
+- `ExponentialHeightFog`
+- `Floor`
+- `PointLight`
+- `PostProcessVolume`
+- `SkyAtmosphere`
+- `SkyLight`
+- `WorldDataLayers`
+- `Gideon_Inquisitor`
+- 下方 `Content Browser` 当前路径为：
+- `Plugins > SideFX Labs Content > Materials > MaterialFunctions`
+- 可见的材质函数缩略图包括：
+- `Houdini_DecodeMotion`
+- `Houdini_DeriveNormal`
+- `Houdini_EulerAnglesTo`
+- `Houdini_EvaluateMDC`
+- `Houdini_EvaluateMDCSet`
+- `Houdini_FlipbookUVs`
+- `Houdini_SimpleRandom`
+- `Houdini_Transform`
+- `Houdini_VAT_Dynamic`
+- `Houdini_VAT_ParticleSprites`
+- `Houdini_VAT_RigidBody`
+- `Houdini_VAT_SoftBody`
+- 左侧资源树中还能看到 `Plugins > SideFX Labs Content > Blueprints / Materials / MaterialFunctions / Templates`
+- 字幕提到“各种材质功能都在这里，我们将确切需要它们，还有一个模板”，和当前浏览的插件内容完全一致
+- 这一步的作用，是确认 Unreal 侧已经具备 SideFX Labs 提供的 VAT 材质函数和模板资源，后续只需基于这些现成函数组装破坏动画材质
+这一帧展示在 Unreal 中预览导入后的破坏动画资产，作者打开了一个名为 `prebaked_destruction_Anim` 的动画资源来检查碎块播放结果
+
+- 当前界面是 Unreal 的动画/骨骼资产预览窗口
+- 中央视口中可见一根立柱正在碎裂，周围很多碎块悬在半空，说明动画已经被成功导入并能逐帧预览
+- 左侧 `Skeleton Tree` 中列出了大量节点名称：
+- `piece_3`
+- `piece_4`
+- `piece_5`
+- 一直到大量连续的 `piece_XX`
+- 这说明导入结果保留了 Houdini 中按 `piece` 命名的碎块层级
+- 顶部标签显示当前正在预览 `prebaked_destruction_Anim`
+- 视口左上覆盖信息可见大致统计：
+- `LODs = 0`
+- `Current Screen Size = 1.307`
+- `Triangles = 16,994`
+- `Vertices = 34,546`
+- `UV Channels = 1`
+- 近似贴图尺寸一类统计
+- `Framerate = 24 fps`
+- 下方时间轴范围延伸到约 `238` 帧，和前面 Houdini 导出的 `1-240` 帧区间基本一致
+- 右下 `Asset Browser` 中当前选中的资源也是 `prebaked_destruction_Anim`
+- 这一步的作用，是在 Unreal 里验证 FBX/动画导入后的碎块层级与逐帧运动是否正确，确保破坏动画资源本身可用
+这一帧展示在 Unreal 中检查 VAT 纹理资源本身的贴图设置，重点是确认它使用 HDR 压缩并关闭 mipmaps
+
+- 当前界面是 Unreal 的纹理资产查看器
+- 中央预览区显示一张很窄、很高的 VAT 纹理，尺寸看起来像逐帧堆叠的数据图，而不是普通美术贴图
+- 顶部标签显示当前打开的是一个 `vertex_animation_text...` 纹理资源
+- 右侧 `Details` 面板顶部可见该纹理的关键信息：
+- `Imported = 74x240`
+- `Displayed = 74x240`
+- `Max In-Game = 74x240`
+- `Resource Size = 139 KB`
+- `Has Alpha Channel = True`
+- `Source Alpha Detected = True`
+- `Format = FloatRGBA`
+- `Number of Mips = 1`
+- 在 `Level Of Detail` 区域：
+- `Mip Gen Settings = NoMipmaps`
+- `LOD Bias = 0`
+- `Texture Group = 16 Bit Data`
+- 在 `Advanced` 区域可见：
+- `Never Stream` 已启用
+- 在 `Compression` 区域：
+- `Compression Settings = HDR (RGBA16F, no sRGB)`
+- 字幕提到“这里可以看到 HDR 给我们带来的效果……没有 mipmaps 我们也能做好”，和当前细节面板中的设置完全一致
+- 这一步的作用，是确保 VAT 数据贴图在 Unreal 中按“数据纹理”而不是普通颜色纹理来处理，避免被 mipmap、sRGB 或错误压缩破坏数值精度
+
+### 00:45:36-00:50:14 UV、Houdini
+
+- 本段定位：UV、Houdini。
+- 知识点：它已经会被操作在这个物体上 在这个圖層上 因此我们需要設立一个特别的物体 我们設立在这里 这就是它 现在我们需要找到 我们正在写的 我们找到物体的功能。
+- 知识点：它这麼大和恐怖 我完全不明白 謝謝你我们需要的 我们也需要在空空中投資 适当调整物体 我们需要把这个筆記取走 这樣我们不会有彈性 我们把它拿走。
+- 知识点：或者 等等,我们把它拿走 然后我们需要什么? 我们把它轉移 这樣我们能看到標準的圖案 现在我们需要找到它们 你看,这里甚至写着圖層標準 我们把它们轉移。
+- 知识点：我们需要将圖層的位置折斷 这很重要 我们的物体会移动我们 它会让圖層移动 在这个圖層上显示 这是它们的位置 它们的轉移 这就是它们剛好被。
+- 知识点：在一个圖層中的圖層里燒焦 然后 我们也需要設立5个圖案 这里有些資訊 它们是在UV圖層里燒焦的 我說过这里可以有很多UV圖層 这里也有很多。
+- 知识点：在这个圖層里燒焦的 可观察到 这里有多少个UV圖層 它们是用的 UV0是我们的標準 我们把它燒焦 还有其他資訊 这里甚至没有显示 这是为了让所有东西都能運作。
+- 知识点：这些操作 我们把它们拉起来 这是它的样子 这是它的样子 这里可以继续 让我们想显示的電源 这是我们需要的 颜色、所有物質。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Houdini`、`颜色`。
+
+**关键画面：**
+
+这是一张 Unreal Editor 场景与资源浏览器截图，用来说明从 Houdini 导入并在 UE 中查看预烘焙破碎资源后的结果
+
+- 顶部当前打开的工程场景为 `Explosion`
+- 视口中央摆放了两个外形相同的细长锥状模型，右侧模型处于选中状态，旁边放有一个人物模型作为尺寸参照
+- 右侧 `Outliner` 中可见当前选中的对象名为 `prebaked_destruction_Ai`
+- 底部 `Content Browser` 当前位于 `Content/VFX_Library/Misc/Explosion/prebaked_destruction` 目录
+- 该目录下能看到与这套破碎资源相关的一组资产，包括：
+  - `prebaked_destruction` 文件夹
+  - `prebaked_destruction` Skeletal Mesh
+  - `prebaked_destruction...` Animation Sequence
+  - `prebaked_destruction...` Physics Asset
+  - `prebaked_destruction...` Skeleton
+- 这张图表达的重点是：Houdini 生成的预烘焙破碎结果已作为一组骨骼网格相关资源导入 UE，并且可以直接拖入关卡中进行预览和后续特效制作
+这张图是材质 `M_Destruction_VAT` 的 Material Graph 截图，重点在于为 VAT 材质启用足够的自定义 UV 通道，并把函数输出接到材质主节点
+
+节点定义集
+- 材质主节点：`M_Destruction_VAT`
+- 细节面板中的 `Material > Advanced`
+- 一个 VAT 相关函数或函数实例的输出列，截图中可见的输出项包括：
+  - `Normal (Tangent Space Normal Off)`
+  - `World Position Offset`
+  - 多个 `Customized UV` 输出
+
+连线集
+- VAT 输出列中的 `Normal (Tangent Space Normal Off)` 接到材质主节点的 `Normal`
+- VAT 输出列中的 `World Position Offset` 接到材质主节点的 `World Position Offset`
+- 图中可见该函数还提供多路 `Customized UV` 输出，用于把顶点动画所需的中间数据写入自定义 UV 通道
+
+设置/参数
+- 在左下角 `Details` 面板搜索 `UV`
+- `Num Customized UVs` 被设置为 `5`
+- 这一设置用于给 VAT 材质预留足够的自定义 UV 通道，以承载位置、插值或分片相关的数据
+
+输出/预览
+- 左侧球体预览窗口用于检查材质是否能正常显示
+- 这一步的操作重点不是外观调色，而是确认材质已经具备 VAT 所需的 UV 通道和核心输出连接
+这张图展示的是为 Houdini VAT 资源配置材质实例参数，并从纹理目录中挑选对应贴图
+
+节点定义集
+- 材质实例窗口：`MI_Destruction_VAT_01`
+- 父材质：`M_Destruction_VAT`
+- 资源目录：`Content/VFX_Library/Misc/Explosion/prebaked_destruction/tex`
+- 贴图资源：目录中可见两张 `vertex_animation...` 纹理，其中一张被选中
+
+连线集
+- 这一步不是节点连线，而是在材质实例参数面板中把 VAT 所需的贴图资源指定到对应槽位
+
+设置/参数
+- 在 `Layer Parameters` 面板顶部，`Rotation Texture` 已被勾选启用
+- `Rotation Texture` 槽位中填入一张旋转贴图，名称可见为 `vertex_animation_textures1_rot`
+- 面板中还能看到 `Houdini VAT - Customization`、`Houdini VAT - Debug`、`Houdini VAT - Instancing` 等参数分组，说明当前材质实例来自 Houdini VAT 模板
+- 教程此处强调不需要启用所有开关，而是保持默认主流程，只把当前资源真正需要的贴图与参数填进去
+
+输出/预览
+- 左侧视口中，场景里的破碎模型仍摆放在关卡中作为结果参照
+- 材质实例预览球当前呈深色，用于检查贴图指定后材质是否正常工作
+- 底部 `Content Browser` 中同时打开 `tex` 目录，便于把位置贴图、旋转贴图等 VAT 纹理逐个指定到材质实例
+
+### 00:50:14-00:54:01 Houdini、速度
+
+- 本段定位：Houdini、速度。
+- 知识点：它馬上告訴我们 它会影响表现 可以把它转换掉 你看到嗎? 当我们把它转换掉 它会给我们一些錯誤 而我们需要 在这里加一个特别的物件 我们進入物件。
+- 知识点：我们找到它了 这是速度 这是它 我们把所有物件都转换掉 我们存取 我们存取所有物件 现在所有物件都可以做得很好 只是现在物件 变得比較不有效。
+- 知识点：都显示得很好 那可以用这个選項 我剛才展示的 可以怎樣做 我们把VN的孩子 都转换到这个画面 你看到嗎? 这里我们有240画面 我们做了一件。
+- 知识点：在 Unreal Engine 我们也把所有240画面都转换掉 如果我们已经 把240画面都转换掉了 它就直接会重複 你看到嗎? 240画面都重複了。
+- 知识点：因此 可以在这里和这里 都隱藏起来 你看到嗎? 这里它就直接 把角落都控制住 每一塊都錄製 它们的位置 它的中心 所有的东西 所有的物件 然后它的表面。
+- 知识点：都被控制住 然后它都控制住 这樣一切 更多的是 它是在画面的过程中 所以并没有重複 并没有影响到表现 这點很流暢 需要用普通的動作 但它们的形状。
+- 知识点：来做出一些提示 而为了做到这 我们必须要 为所有的物件 設立特别的材料 也就是 使用这些材料的功能 也就是用標準的物件 来设置 也就是 它们是同一种物件。
+- 核对对象：`Houdini`、`速度`。
+
+**关键画面：**
+
+这张图展示在材质实例 `MI_Destruction_VAT_01` 中为 Houdini VAT 资源补齐关键贴图与播放参数，以解决材质报错并让动画数据能够正确驱动模型
+
+节点定义集
+- 材质实例：`MI_Destruction_VAT_01`
+- 参数面板分组：`Houdini VAT`
+- 当前纹理目录：`Content/VFX_Library/Misc/Explosion/prebaked_destruction/tex`
+- 可见纹理资源：两张 `vertex_animation...` 贴图
+
+连线集
+- 这一步不是节点连线，而是在材质实例参数面板中把 VAT 的数据贴图指定到对应参数槽位
+
+设置/参数
+- `Auto Playback` 已启用
+- `Display Frame` 可见，当前数值为 `1.0`
+- `Houdini FPS` 可见，数值为 `60.0`
+- `Interframe Interpolation` 已启用
+- `Position Texture` 已启用，并指向 `vertex_animation_textures1_pos`
+- `Rotation Texture` 已启用，并指向 `vertex_animation_textures1_rot`
+- `Smoothly Interpolated Trajectories` 已启用
+- 这些设置的作用是让材质读取位置贴图与旋转贴图中的 VAT 数据，并按插值方式在帧间平滑播放
+
+输出/预览
+- 材质实例预览球已经显示出分片块面效果，说明贴图数据已开始影响顶点动画显示
+- 左侧关卡视口中仍保留破碎模型作为场景结果参照
+- 底部 `tex` 目录保持打开，便于继续从同一目录中挑选需要的 VAT 纹理
+这张图是在同一个材质实例窗口中，通过手动推进显示帧来预览 VAT 破碎动画的中间状态，验证动画播放不依赖 CPU 逐块驱动且不会明显影响性能
+
+节点定义集
+- 材质实例：`MI_Destruction_VAT_01`
+- 参数分组：`Houdini VAT`
+- 纹理槽位：
+  - `Position Texture`
+  - `Rotation Texture`
+
+连线集
+- 本图仍然不是节点连线操作，而是利用已指定好的 VAT 纹理，在材质实例内直接预览不同帧下的结果
+
+设置/参数
+- `Auto Playback` 已启用
+- `Display Frame` 当前被调到约 `19.26742`
+- `Houdini FPS` 为 `60.0`
+- `Interframe Interpolation` 已启用
+- `Position Texture` 继续指向 `vertex_animation_textures1_pos`
+- `Rotation Texture` 继续指向 `vertex_animation_textures1_rot`
+- `Smoothly Interpolated Trajectories` 保持启用
+
+输出/预览
+- 左侧关卡视口中的模型已经从完整柱状物体破碎为大量分离碎块，说明位置和旋转贴图正在驱动各分片运动
+- 预览球仍呈深色，用于确认材质实例本身保持有效
+- 这一步的重点是通过改变显示帧观察破碎动画展开，确认 VAT 数据在 GPU 侧播放时能稳定复现碎块位置变化
+这张图是 Houdini 中生成破碎前基础几何的节点与参数界面，重点是先用噪声把球体表面顶点推成不规则形状，再交给材质破碎节点切碎
+
+节点定义集
+- `sphere1`：基础输入球体
+- `mountain1`：`Attribute Noise` 节点，用于给点位置加入噪声
+- `rbdmaterialfracture1`：RBD 材质破碎节点，用于把变形后的几何切成碎块
+- 左侧主视口显示当前节点输出的网格结果
+- 下方 `Geometry Spreadsheet` 显示当前节点的点属性数据
+
+连线集
+- `sphere1` 输出连接到 `mountain1`
+- `mountain1` 输出连接到 `rbdmaterialfracture1`
+- 当前被选中并显示参数的是 `mountain1`
+
+设置/参数
+- `Attribute Noise` 的 `Noise Type` 为 `Worley Cellular F1`
+- `Location Attribute` 为 `P`
+- `Element Size` 约为 `1.11`
+- `Fractal Type` 为 `Standard (fBm)`
+- `Max Octaves` 为 `8.1`
+- `Lacunarity` 为 `2.746`
+- `Roughness` 为 `0.305`
+- `Lattice Warp` 为 `0`
+- `Lattice Warp Size` 为 `1`
+- `Gradient Warp` 为 `0`
+- 这些参数的作用是直接改写点位置 `P`，先把原始球体推成不规则石块状外形，再进行后续切割
+
+输出/预览
+- 视口中可见一个带三角面线框的不规则块体，说明球体已被噪声变形成岩石状轮廓
+- 底部时间轴当前在后段帧位，右下角可见总帧数为 `240`
+- 这一步传达的核心做法是：先通过顶点噪声塑形，再把塑形后的结果送入破碎流程，以得到更自然的碎裂外观
+
+### 00:54:04-00:58:11 UV、Texture
+
+- 本段定位：UV、Texture。
+- 知识点：让我们来看看 她把这个物件 都切成这些类似的片 然后 这里有一个小部分的定義 它所做的 是成形一个圖案 这个东西让我们看得出 这个圖案不是个整体。
+- 知识点：是整体 这是1234 不可能是个整体 但如果我们把这个拿走,它会再次被我们分割 需要回到原位,但是的 我们来比較一下这个點數 这里是这个东西,会把點數分出来。
+- 知识点：让我来看看,你看到嗎? 这里我们有20點,如果我们算0點,就是25點 这就是这个點數的所有数字 人和人,然后我们选择这个值,我们需要的點數。
+- 知识点：UV 和 雷 并列出一张普通的图片,来列入我们的光线 是的,我偶爾把點數分掉了 在最後,我们把 Unreal Engine 转换成 100 倍 并列出了我们需要的點數,为了輸出。
+- 知识点：我们需要的是,我们拿出,例如 我们拿出,我们保留 我们把它当作需要的點數,需要把它改成 我们只要把點數转换,就这樣了 这就是在这里的第一点,我们先把它拆掉。
+- 知识点：我们再拆掉,首先 我们先拆掉,因为它不想保留我 我们来看看 它没有保留我们这个图片 全部都被拆掉了 從我看来,我没有在它存在的地方清楚。
+- 知识点：可以选择我们想要的點數 选择你的文件,你能选择的點數 并列出你所想要的點數 我们必须要說明,这是 FBX 这就是它,點在这里 所以,每个點數都要分開。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Texture`。
+
+**关键画面：**
+
+这张图展示在 Houdini 中用 `Attribute Wrangle` 只保留一个破碎 piece，用来单独检查分片编号与后续贴图或导出所需的数据对应关系
+
+节点定义集
+- `assemble1`：上游节点，负责给碎块建立 piece 标识
+- `pointwrangle1`：`Attribute Wrangle` 节点，当前被选中
+- `matchsize1`：下游节点
+- 左侧视口显示当前仅保留的一块碎片
+- 下方 `Geometry Spreadsheet` 显示当前只剩 1 个 point，名称为 `piece10`
+
+连线集
+- `assemble1` 输出连接到 `pointwrangle1`
+- `pointwrangle1` 输出连接到 `matchsize1`
+
+设置/参数
+- `Group Type` 为 `Guess from Group`
+- `Run Over` 为 `Points`
+- Wrangle 代码为：
+
+```c
+if(ch("PieceToSelect") != i@ptnum)
+{
+    removepoint(0, i@ptnum);
+}
+```
+
+- 自定义参数 `PieceToSelect` 当前值为 `10`
+- 这段代码的含义是：如果当前点号不等于指定的 `PieceToSelect`，就删除该点，从而只保留选中的那一个 piece
+
+输出/预览
+- 视口中只剩单独一块白色碎片，说明筛选已生效
+- `Geometry Spreadsheet` 中只有一行数据，进一步确认当前输出被压缩到单个对象
+- 这一步的目的，是在大量碎块中逐个定位指定编号，便于核对 piece 与贴图、UV 或导出数据的对应关系
+这张图展示把筛选出的单个碎片导出为独立 FBX 文件，作为后续在 Unreal 中逐块核对、比对 UV 或材质贴图的中间资产
+
+节点定义集
+- `autouv1`
+- `soften_normals1`
+- `Transform UE5`
+- `rop_fbx1`：`ROP FBX Output` 节点，当前被选中
+- 左侧视口显示当前待导出的单个碎片
+- 下方 `Geometry Spreadsheet` 显示碎片名称为 `piece0`
+
+连线集
+- `autouv1` 输出连接到 `soften_normals1`
+- `soften_normals1` 输出连接到 `Transform UE5`
+- `Transform UE5` 输出连接到 `rop_fbx1`
+
+设置/参数
+- `Output File` 指向：
+  `D:/Unreal_Projects/VFX_Test/Content/Developers/PC/Collections/Explosion/fract01.fbx`
+- `Create Intermediate Directories` 已启用
+- `Export in ASCII Format` 已启用
+- `FBX SDK Version` 为 `FBX202000`
+- `Vertex Cache Format` 为 `Maya Compatible (MC)`
+- `Axis System` 为 `Z Up (Right-handed)`
+- `Convert Units` 已启用
+- `Conversion Level of Detail` 数值为 `1`
+- `Detect Constant Point Count Dynamic Objects` 已启用
+
+输出/预览
+- 左侧视口中可见一块带棋盘字母纹理的碎片，用于检查当前导出对象的 UV 展开是否正常
+- 这一步的核心是把单个 piece 单独导出成 `fract01.fbx`，方便在 UE 中逐块验证 UV、贴图方向和材质映射是否正确
+这张图回到 Unreal Editor，用来确认预烘焙破碎资源目录中的 VAT 材质与材质实例已经建立，并且关卡中能看到分散开的碎片结果
+
+节点定义集
+- 资源目录：`Content/VFX_Library/Misc/Explosion/prebaked_destruction`
+- 目录内可见 4 个资源：
+  - `geo`
+  - `tex`
+  - `M_Destruction_VAT`
+  - `MI_Destruction_VAT_01`
+- 右侧 `Outliner` 中可见场景对象：
+  - `prebaked_destruction_Ai`
+  - `vertex_animation_textur...`
+
+连线集
+- 本图不是节点连线，而是资源组织与场景结果确认
+
+设置/参数
+- 当前光标停留在 `M_Destruction_VAT` 材质资源上，说明教程在强调这是这套预烘焙破碎资源所依赖的基础 VAT 材质
+- `MI_Destruction_VAT_01` 作为材质实例与其并列放在同一目录中，便于为具体贴图和播放参数做实例化配置
+
+输出/预览
+- 关卡视口中可以看到多个白色碎片散落在地面上，说明预烘焙破碎结果已经能在 UE 场景里正确显示
+- 底部 `Content Browser` 中同时保留 `geo`、`tex`、基础材质和材质实例，表示这套资产至少由几何、纹理和 VAT 材质两部分构成
+- 这一步传达的重点是：把单独检查过的 piece、贴图和材质整合回 UE 工程后，可以作为完整的 vertex animation texture 破碎示例使用
+
+## 补充视觉证据
+
+### S01 00:03:02
+
+这张补充截图展示 Houdini 中用于制作破坏几何的早期节点网络，重点是先裁切基础模型、用 `PolyFill` 给开口补面，再进入布尔和倒角流程
+
+节点定义集
+- `clip1`：对基础几何做切割
+- `polyfill1`：当前选中的 `PolyFill` 节点，用于封住切割后产生的开口
+- `boolean1`：接收 `polyfill1` 输出，进入第一次布尔计算
+- `box3`
+- `edit1`
+- `boolean2`
+- `box4`
+- `boolean5`
+- `polybevel1`
+- 左侧视口显示的是当前节点输出的截面几何，能看到切面已经被白色多边形封住
+
+连线集
+- `clip1` 输出连接到 `polyfill1`
+- `polyfill1` 输出连接到 `boolean1`
+- 右侧另一支路为 `box3 -> edit1 -> boolean2`
+- `box4` 也接入 `boolean5`
+- `boolean2` 的结果继续送到 `polybevel1`
+- 从可见网络关系可判断，这一段是在用多个布尔节点和辅助 box 几何逐步塑造破碎外形
+
+设置/参数
+- 当前参数面板属于 `PolyFill polyfill1`
+- `Fill Mode` 为 `Quadrilaterals`
+- `Auto-Complete Boundaries` 已启用
+- `Unique Points` 已启用
+- `Update Point Normals` 已启用
+- `Smooth` 值为 `50`
+- `Patch Group` 可见为 `patch1`
+- 这些设置说明当前步骤是在为裁切后形成的洞口自动补四边形面，并生成后续布尔计算可用的封闭表面
+
+输出/预览
+- 左侧视口能看到一组黑白相间的大平面与切面几何，说明模型处于被裁切后的局部细节检查状态
+- 下方 `Geometry Spreadsheet` 显示当前点坐标数据，表明此节点已经实际生成了新点和新面
+- 这张图的核心作用是补充说明教程前段几何准备流程：`PolyFill` 在破坏建模里用于把切割后的开放边界封住，之后才能稳定进行布尔减法、合并和倒角
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

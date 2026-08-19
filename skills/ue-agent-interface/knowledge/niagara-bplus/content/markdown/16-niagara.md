@@ -1,0 +1,1092 @@
+# 16-使用-Niagara-纹理示例模块
+
+# 16-使用-Niagara-纹理示例模块
+
+## 关键术语
+
+- `Velocity`、`Collision`、`GPU`、`UV`、`Texture`、`Sequencer`、`Curve`、`材质`、`粒子`、`Niagara`、`Particle`、`Spawn`、`Particle Spawn`、`Normalized Age`、`Renderer`、`纹理`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:05-00:05:04 GPU、粒子、系统
+
+- 本段定位：GPU、粒子、系统。
+- 知识点：你好,我在16强问好,这次我们要一起看一下关于纹理样本的内容。
+- 知识点：上次我们测试的那个粒子和静态网格,还有手术刀网格那个位置进行了操作。
+- 知识点：呢,首先是利用网格生成粒子的一种方法。
+- 知识点：比如说当按下网格的粒子生成按钮时就会变成这样。
+- 知识点：这种话,网格中的粒子生成就是根据100×100粒子的数量生成的这个模块。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`GPU`、`纹理`、`粒子`、`系统`。
+
+**关键画面：**
+
+这张图是第 16 课 `使用 Niagara 纹理示例模块` 的开场定位图，用来说明本课工作目录已经切换到新的课程资源目录，并且当前仍在一个空的示例关卡中准备开始新的纹理采样实验。
+
+当前画面可直接确认的信息如下：
+
+- 当前关卡标签为 `Ex_01_SpriteExp*`
+- Outliner 中可见的场景对象包括：
+  - `Lighting`
+  - `DirectionalLight`
+  - `SkyLight`
+  - `SM_SkySphere`
+  - `Ex_01_SpriteExp`
+  - `Floor`
+  - `NewLevelSequence1`
+  - `PlayerStart`
+  - `PostProcessVolume`
+- 视口中当前没有角色或粒子实例，只能看到带棋盘格的空场地和若干编辑器图标
+
+左下内容浏览器当前位于：
+
+- `Content/Signature/Course_03`
+
+该目录下能直接看到 6 个子文件夹：
+
+- `Level`
+- `Material`
+- `Mesh`
+- `Particles`
+- `Sequencer`
+- `Texture`
+
+这张图的作用是建立本课资源组织与起始场景基线：
+
+- 课程资源已切到 `Course_03`
+- 后续关于 `Texture Sample` 的示例会从这些分类目录中继续展开
+- 当前截图还没有展示 Niagara System、Emitter、材质图或纹理节点，只是在说明“本课准备在这个目录和这个关卡里开始”
+这张图展示 `NewNiagaraSystem11` 中发射器 `Empty003` 的网格生成方案，重点是使用 `Spawn Particles in Grid` 和 `Grid Location` 在三维网格中一次性布满大量粒子。
+
+当前画面可直接确认的发射器结构如下：
+
+- 发射器：`Empty003`
+- `Emitter Update`
+  - `Emitter State = Self / Infinite`
+  - `Spawn Particles in Grid`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Grid Location`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+左侧预览与统计信息：
+
+- 预览窗口中可见一个被高亮填满的平面区域，说明粒子已经按规则铺成规则网格
+- 粒子统计显示 `10000 Current, 20000 Max (est.) - [Empty003] [Active]`
+
+右侧 `Details` 面板当前选中 `Grid Location`，可直接确认的参数如下：
+
+- `Grid Origin = PARTICLES Position`
+- `Coordinate Space = Local`
+
+`Offset` 分组：
+
+- `Normalize Offsets` 已开启
+- `Randomize Placement = (1.0, 1.0, 1.0)`
+- `Offset = (0.0, 0.0, 0.0)`
+
+`Dimensions` 分组：
+
+- `Dimensions Definition = Padding Per Cell`
+- `XYZ Dimensions = (10.0, 10.0, 10.0)`
+
+复现时，这一图对应的关键操作是：
+
+- 在 `Emitter Update` 中加入 `Spawn Particles in Grid`
+- 在 `Particle Spawn` 中加入 `Grid Location`
+- 用 `10 x 10 x 10` 的维度生成规则网格粒子
+
+结合左侧 `10000` 粒子统计，可以把这一步理解为“先生成一个 100×100 量级的规则粒子块作为后续纹理采样实验的基底”。本图没有展示材质或纹理节点，只能确认当前是规则网格粒子初始化阶段。
+这张图展示在 `Empty003` 发射器的规则网格粒子基础上，进一步加入 `Sample Texture` 模块，用纹理采样结果为粒子写入 RGBA 与 UV 数据。
+
+当前画面可直接确认的发射器结构如下：
+
+- 发射器：`Empty003`
+- `Properties` 标签显示为 `GPU`
+- `Emitter Update`
+  - `Emitter State = Self / Infinite`
+  - `Spawn Particles in Grid`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Grid Location`
+  - `Sample Texture`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+左侧属性列表中，`Sample Texture` 已经向粒子写入以下属性：
+
+- `PARTICLES SampledA`
+- `PARTICLES SampledB`
+- `PARTICLES SampledColor`
+- `PARTICLES SampledG`
+- `PARTICLES SampledR`
+- `PARTICLES SampleUV`
+- 另外还能看到现有粒子属性 `SpriteSize`
+
+左下 `Module Outputs` 列表中，当前还能直接看到 `Grid Location` 相关输出：
+
+- `OUTPUT GRID LOCATION GridCellCoordinate`
+- `OUTPUT GRID LOCATION GridSpacing`
+- `OUTPUT GRID LOCATION GridUVW`
+- `OUTPUT GRID LOCATION Normalized Array Location`
+
+右侧 `Sample Texture` 详情面板可直接确认的参数如下：
+
+- 顶部页签包含：
+  - `Texture Sampling`
+  - `Importance Sampled UVs`
+  - `Sample Rejection`
+- 当前停留在 `All`
+
+`Texture` 分组：
+
+- `Sample Texture` 已开启
+- `Texture = Texture Sample`
+- 资源槽当前显示 `None`
+- `Texture User Parameter = None`
+- `Mip Level = 0.0`
+- `Apply Sampled RGBA to P...` 已开启
+- `Sampled RGBA Mask = (1.0, 1.0, 1.0, 0.0)`
+
+`Texture UV` 分组：
+
+- `UV = (0.0, 0.0)`
+- `Generate UV Using Import` 关闭
+
+`Transform` 分组：
+
+- `Transform UV Into Positi...` 关闭
+
+`Sample Rejection` 分组：
+
+- `Enable Sample Rejection` 关闭
+
+复现时，这一图对应的关键操作是：在规则粒子网格的 `Particle Spawn` 阶段加入 `Sample Texture`，先把纹理采样得到的 RGBA 和 UV 数据写入粒子属性，后续再用这些属性驱动颜色、尺寸或筛选逻辑。当前图里还没有指定实际纹理资源，因此这里只能确认“采样模块与通道写入结构已建立”，不能断定最终使用的是哪一张纹理。
+
+### 00:05:05-00:09:55 Curve、粒子、网格
+
+- 本段定位：Curve、粒子、网格。
+- 知识点：在第一个粒子中用的,比如说序列适当放一下,提供了一个魔法阵纹理。
+- 知识点：现在这里有100×10000粒子展开着。
+- 知识点：眼睛现在颜色消失了,看不见,所以看起来像消失了一样。
+- 知识点：像这样使用的时候就用Curve Particle设置为全,就是取参数。
+- 知识点：我们要在这里拿之前做的Make Fold Vector,这里会获取粒子颜色值。
+- 知识点：会放这个颜色值,因为这里已经应用了这个纹理颜色值。
+- 知识点：我拿到了颜色值,现在因为是黑白的嘛,RGB颜色值都一样。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Particle`、`Curve`、`纹理`、`粒子`、`序列`、`颜色`。
+
+**关键画面：**
+
+这张图延续 `Empty003` 发射器中的纹理采样方案，但当前预览窗口没有显示出可见图案，重点是在解释“UV 里还没有有效内容，所以采样结果看起来像没有生效”。
+
+当前画面可直接确认的发射器结构如下：
+
+- 发射器：`Empty003`
+- `Properties = GPU`
+- `Emitter Update`
+  - `Emitter State = Self / Infinite`
+  - `Spawn Particles in Grid`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Grid Location`
+  - `Sample Texture`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+左侧当前属性列表仍可见 `Sample Texture` 写入的粒子属性：
+
+- `SampledA`
+- `SampledB`
+- `SampledColor`
+- `SampledG`
+- `SampledR`
+- `SampleUV`
+- `SpriteSize`
+
+左侧预览统计信息：
+
+- `10000 Current, 10000 Max (est.) - [Empty003] [Active]`
+- 预览窗口当前几乎全黑，没有明显可见的纹理分布图案
+
+右侧当前选中的是 `Grid Location`，可直接确认的参数如下：
+
+- `Grid Origin = PARTICLES Position`
+- `Coordinate Space = Local`
+- `Normalize Offsets` 已开启
+- `Randomize Placement = (1.0, 1.0, 1.0)`
+- `Offset = (0.0, 0.0, 0.0)`
+- `Dimensions Definition = Padding Per Cell`
+- `XYZ Dimensions = (5.0, 5.0, 5.0)`
+
+与上一批中 `10.0, 10.0, 10.0` 的设置相比，这张图能确认课程此处把网格维度缩小到了 `5 x 5 x 5`。结合字幕内容“UV 里现在还没有任何东西”，这一步的重点不是新建更多模块，而是说明：
+
+- 规则网格和纹理采样模块已经都在
+- 但在 UV 尚未正确建立或写入前，预览不会直接出现想要的纹理轮廓
+
+因此，这张图应作为“纹理采样前置条件未满足时的中间状态”记录，而不是最终效果图。
+这张图展示 `Empty003` 发射器在 `Sample Texture` 之后加入 `Kill Particles`，利用采样出来的数值做浮点比较，把不满足条件的粒子剔除，从而在规则网格里留下接近纹理图案的点阵轮廓。
+
+当前画面可直接确认的发射器结构如下：
+
+- 发射器：`Empty003`
+- `Properties = GPU`
+- `Emitter Update`
+  - `Emitter State = Self / Infinite`
+  - `Spawn Particles in Grid`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Grid Location`
+  - `Sample Texture`
+  - `Kill Particles`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+左侧预览与统计信息：
+
+- 预览窗口中已经出现由大量白色点阵组成的图案轮廓，说明粒子不再均匀铺满网格，而是根据采样条件被选择性保留
+- 粒子统计仍显示 `10000 Current, 20000 Max (est.) - [Empty003] [Active]`
+
+左下粒子属性列表中，当前高亮的是：
+
+- `PARTICLES Color`
+
+右侧 `Kill Particles` 详情面板可直接确认的参数如下：
+
+- 顶层逻辑为 `Set Bool by Float Comparison`
+- `A` 输入通过 `Make Float from Vector` 取得分量
+- `Vector = (0.0, 0.0, 0.0)`
+- `Channel = X`
+- `B = 0.0`
+- `Comparison Type = A Greater Than B`
+
+根据当前图可直接确认的逻辑，可以把这一模块理解为：
+
+- 从某个向量值中抽取 `X` 分量
+- 将该分量与 `0.0` 做比较
+- 当 `A > B` 时得到布尔结果，并据此决定粒子保留或剔除
+
+结合本段上下文“获取粒子颜色值，因为黑白图里 RGB 一样”，这张图是在用采样得到的颜色/通道数值做筛选。但图中没有完整露出 `A` 向量究竟来自 `SampledColor`、`SampledR` 还是其他中间变量，因此只能确认当前比较结构与阈值是 `X > 0.0`，不能编造未显示的上游接线。
+这张图展示 `Empty003` 在纹理筛选后的点阵基础上继续加入 `Curl Noise Force`，让原本静态的图案点阵开始出现流动和扰动趋势。
+
+当前画面可直接确认的发射器结构如下：
+
+- 发射器：`Empty003`
+- `Properties = GPU`
+- `Emitter Update`
+  - `Emitter State = Self / Infinite`
+  - `Spawn Particles in Grid`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Grid Location`
+  - `Sample Texture`
+  - `Kill Particles`
+- `Particle Update`
+  - `Particle State`
+  - `Curl Noise Force`
+  - `Solve Forces and Velocity`
+- `Render`
+  - `Sprite Renderer`
+
+左侧预览与统计信息：
+
+- 当前可见粒子已经不是完整均匀的纹理平面，而是被筛选后留下的一组稀疏白色点阵
+- 粒子统计为 `1960 Current, 20000 Max (est.) - [Empty003] [Active]`
+
+左下当前可见粒子属性包括：
+
+- `Age`
+- `Color`
+- `DistanceTraveled`
+- `Lifetime`
+- `Mass`
+- `MaterialRandom`
+- `NormalizedAge`
+- `Position`
+
+右侧 `Curl Noise Force` 详情面板可直接确认的参数如下：
+
+- `Noise Strength = 20.0`
+- `Noise Frequency = 50.0`
+- `Noise Quality / Cost = Baked (Medium)`
+- `Pan Noise Field = (0.0, 0.0, 0.0)`
+- `Mask Curl Noise` 关闭
+
+结合前一张里的 `Kill Particles` 结果，这一步的作用可以明确为：
+
+- 先根据纹理采样结果保留部分粒子
+- 再在 `Particle Update` 阶段对保留下来的粒子施加卷曲噪声力
+- 最后通过 `Solve Forces and Velocity` 让这些受力变化真正作用到粒子运动上
+
+因此，这张图应记录为“纹理筛选之后加入动态噪声”的阶段，而不是单纯的静态纹理显示图。
+
+### 00:09:55-00:14:27 UV、渲染器、网格
+
+- 本段定位：UV、渲染器、网格。
+- 知识点：不过这样用起来有点不方便,所以我不太常用这种方式。
+- 知识点：我们那时候写的,放入基本计划应该没问题。
+- 知识点：的UA要换成那个UV,要把静态位置的UA带过来。
+- 知识点：换一个纹理看起来会更干净,去掉其他的卷曲噪声。
+- 知识点：这个太吵了,想放入之前用过的顺滑噪音呢?这种噪音就很容易找到。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`渲染器`、`噪声`。
+
+**关键画面：**
+
+这张图展示 `Empty003` 里基于粒子颜色阈值剔除粒子的核心比较链。当前预览中留下的是一组稀疏的白色点阵轮廓，而右侧面板明确说明筛选依据来自 `PARTICLES Color`。
+
+当前画面可直接确认的发射器结构如下：
+
+- 发射器：`Empty003`
+- `Properties = GPU`
+- `Emitter Update`
+  - `Emitter State = Self / Infinite`
+  - `Spawn Particles in Grid`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Grid Location`
+  - `Sample Texture`
+  - `Kill Particles`
+- `Particle Update`
+  - `Particle State`
+  - `Curl Noise Force`
+  - `Solve Forces and Velocity`
+- `Render`
+  - `Sprite Renderer`
+
+左侧预览与统计信息：
+
+- 预览中只剩被筛选保留的白色点阵图案
+- 粒子统计为 `1960 Current, 20000 Max (est.) - [Empty003] [Active]`
+
+右侧 `Kill Particles` 面板可直接确认的比较逻辑如下：
+
+- 顶层节点：`Set Bool by Float Comparison`
+- `A` 来源链：
+  - `Make Float from Vector`
+  - 上游为 `Make Vector from Linear Color Ri...`
+  - `Color = PARTICLES Color`
+  - `Channel = X`
+- `B = 0.1`
+- `Comparison Type = A Less Than B`
+
+因此，本图对应的关键操作是：从 `PARTICLES Color` 中取一个颜色分量，转换为浮点值后与 `0.1` 比较，并用 `A Less Than B` 的结果控制 `Kill Particles`。这一步本质上是在把纹理采样得到的灰度/颜色强度当作遮罩阈值，剔除低于阈值或高于阈值的一侧粒子。截图只能确认当前比较式和阈值，不能进一步确认具体是“保留亮部”还是“保留暗部”的最终语义映射。
+这张图继续停留在 `Kill Particles` 模块，用同一组参数说明筛选结果已经稳定落在预览窗口里。它和上一张一起构成了“颜色阈值筛选”的参数证据组。
+
+当前画面可直接确认的信息与上一张一致：
+
+- 发射器为 `Empty003`
+- 结构中包含：
+  - `Spawn Particles in Grid`
+  - `Grid Location`
+  - `Sample Texture`
+  - `Kill Particles`
+  - `Curl Noise Force`
+  - `Solve Forces and Velocity`
+  - `Sprite Renderer`
+- 左侧粒子统计仍为 `1960 Current, 20000 Max (est.) - [Empty003] [Active]`
+
+右侧 `Kill Particles` 细节仍可直接确认如下：
+
+- `Set Bool by Float Comparison`
+- `Make Float from Vector`
+- `Make Vector from Linear Color Ri...`
+- `Color = PARTICLES Color`
+- `Channel = X`
+- `B = 0.1`
+- `Comparison Type = A Less Than B`
+
+从这一张图可以直接确认两点：
+
+- 教程此处没有改动 `Kill Particles` 的阈值，仍使用 `0.1`
+- 当前纹理筛选结果已经足够形成稳定的点阵轮廓，后续可以在此基础上继续调整 UV、渲染器或噪声
+
+由于这一张和上一张没有展示新的上游接线或新的面板页签，报告应把它视为同一筛选逻辑的持续验证图，而不是新的独立模块搭建步骤。
+这张图已经切到新的发射器 `Empty004`。教程从“规则网格 + 纹理筛选”的方案转向“静态网格表面采样 + 纹理采样”的方案，并在同一系统里保留前一个 `Empty003` 作为对照。
+
+当前画面可直接确认的发射器状态如下：
+
+- `Empty003` 仍在系统里，但处于较暗的非当前状态
+- 当前选中发射器为 `Empty004`
+- `Properties = GPU`
+
+`Empty004` 当前可见的模块结构：
+
+- `Emitter Update`
+  - `Emitter State = Self / Infinite`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Particles in Grid`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Grid Location`
+  - `Static Mesh Location = Triangles / Random`
+  - `Sample Texture`
+- `Particle Update`
+  - `Particle State`
+  - `Curl Noise Force`
+  - `Kill Particles`
+  - `Solve Forces and Velocity`
+- `Render`
+  - `Sprite Renderer`
+  - `Light Renderer`
+  - `Mesh Renderer`
+
+左侧预览与统计信息：
+
+- 统计中可见：
+  - `0 Current ... [Empty003] [Disabled]`
+  - `92353 Current, 300000 Max (est.) - [Empty004] [Active]`
+- 预览窗口中显示一个被大量红色粒子填满的球状体，内部夹杂少量绿色与蓝色区域，说明这里已经在用静态网格和颜色/纹理采样做高密度可视化
+
+左下当前可见的粒子属性中，除 `Sample Texture` 相关项外，还能直接看到 `Static Mesh Location` 输出：
+
+- `SampledNormal`
+- `SampledPosition`
+- `SampledRotation`
+- `SampledUV`
+- `SampledVelocity`
+- `SampledVertexColor`
+
+右侧当前选中的是 `Static Mesh Location` 模块，可直接确认的参数如下：
+
+- `Source Mode = Default`
+- `Preview Mesh = None`
+- `Default Mesh = SM_FX_BasePlane`
+- `Source Actor = None`
+- `Section Filter` 折叠
+- `Mesh Parameter = None`
+- `Instance Index = -1`
+- `Filtered Sockets = 0 Array element`
+
+`LOD` 分组：
+
+- `Allow Sampling...` 关闭
+- `LODIndex = 0`
+- `LODIndex User... = None`
+
+`Sampling` 分组：
+
+- `Mesh Sampling Type = Triangles`
+- `Triangle Sampling Mode = Random (All Triangles)`
+
+`Apply` 分组中当前可见：
+
+- `Position Sampling = Apply (Rigid)`
+- `Sampled Position Offset = (0.0, 0.0, 0.0)`
+- `Sampled Position Offset Space = Sampled Mesh`
+- `Write To Particle Position` 已开启
+- `Velocity Sampling = Output`
+- `Sampled Velocity Coordinate Space = World`
+- `Orientation Sampling = Apply`
+- `Vertex Color Sampling = Output`
+
+这张图对应的关键变化是：教程开始把纹理采样与静态网格表面采样结合，而不是只在规则网格中铺粒子。复现时，应先为新发射器加入 `Static Mesh Location`，指定 `SM_FX_BasePlane`，再把 `Sample Texture`、`Curl Noise Force`、`Kill Particles` 串到这个新流程里。图中没有展示完整的颜色来源或渲染材质设置，因此不能继续推断红绿蓝区域各自绑定了哪些具体通道。
+### 00:14:27-00:19:19 GPU、UV、Sequencer
+
+- 本段定位：GPU、UV、Sequencer。
+- 知识点：倒不如放纹理,这样给点消失效果的话。
+- 知识点：这种方式的纹理利用有一点需要注意的。
+- 知识点：样本纹理是根据这个网格使用的。
+- 知识点：获取网格使用材质中的颜色值,或是没使用材料中的颜色值。
+- 知识点：但基本的样本纹理节点只用的话,只能得到烘焙的颜色感有点遗憾。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`GPU`、`Sequencer`、`材质`、`纹理`、`序列`、`颜色`、`噪声`。
+
+**关键画面：**
+
+这张图展示系统里两个发射器同时存在时的对照状态：`Empty004` 仍在活跃输出，而右侧 `Details` 面板选中的是已经禁用的 `Empty003`，用于回看它的 `Spawn Particles in Grid` 参数。
+
+当前画面可直接确认的信息如下：
+
+- `Empty003` 当前被禁用
+  - 右侧标题下明确显示：`Emitter is not enabled. Excluded from code.`
+- `Empty004` 仍是活跃发射器
+
+左侧预览统计能直接确认：
+
+- `0 Current, 11960 Max (est.) - [Empty003] [Disabled]`
+- `3053 Current, 300000 Max (est.) - [Empty004] [Active]`
+
+预览窗口中当前只剩少量白色斑块或弧形碎片，说明 `Empty004` 的粒子已经不再像前一批那样形成完整大球面，而是经过更强的筛选或不同采样条件后，只保留了局部区域。
+
+右侧 `Details` 面板当前选中的是 `Empty003` 的 `Spawn Particles in Grid`，可直接确认的参数如下：
+
+- `X Count = 100`
+- `Y Count = 100`
+- `Z Count = 1`
+- `Spawn Time = 0.0`
+
+中间 Stack 画面中还能确认两组发射器的相对状态：
+
+- `Empty003` 整体显示为较暗的停用状态
+- `Empty004` 当前可见的结构仍包括：
+  - `Spawn Burst Instantaneous`
+  - `Spawn Particles in Grid`
+  - `Static Mesh Location`
+  - `Sample Texture`
+  - `Curl Noise Force`
+  - `Kill Particles`
+  - `Solve Forces and Velocity`
+  - `Sprite Renderer`
+  - `Light Renderer`
+  - `Mesh Renderer`
+
+因此，这张图的作用是建立“旧网格粒子方案”和“新静态网格采样方案”的对照证据：
+
+- 旧方案 `Empty003` 使用 `100 x 100 x 1` 的规则网格粒子铺底
+- 新方案 `Empty004` 已接管预览输出，并把可见结果压缩成局部纹理片段
+
+图中没有展开 `Empty004` 当前选中的具体模块面板，所以不能从这张图单独断定局部碎片是由哪一个精确阈值、UV 设置或渲染器参数直接造成的。
+这张图切到新的发射器 `Empty005`。教程此处继续沿用“静态网格表面采样 + 纹理采样”的总体结构，但把前一个 `Empty004` 停用，准备把同类流程应用到新的网格对象上。
+
+当前画面可直接确认的系统状态如下：
+
+- `Empty004` 当前已禁用
+  - 统计中显示：`0 Current, 100000 Max (est.) - [Empty004] [Disabled]`
+- `Empty005` 当前为活跃发射器
+  - 统计中显示：`0 Current, 100000 Max (est.) - [Empty005] [Active]`
+
+当前可见的 `Empty005` 模块结构如下：
+
+- `Emitter Update`
+  - `Emitter State = Self / Infinite`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Particles in Grid`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Grid Location`
+  - `Static Mesh Location = Triangles / Random`
+  - `Sample Texture`
+- `Particle Update`
+  - `Particle State`
+  - `Curl Noise Force`
+  - `Kill Particles`
+  - `Solve Forces and Velocity`
+- `Render`
+  - `Sprite Renderer`
+  - `Light Renderer`
+  - `Mesh Renderer`
+
+右侧当前选中的是 `Empty005` 的 `Static Mesh Location`，可直接确认的参数如下：
+
+- 页签包含：
+  - `Sampling`
+  - `Apply`
+  - `Static Mesh`
+  - `All`
+- `Source Mode = Default`
+- `Preview Mesh = None`
+- `Default Mesh = SM_FX_BasePlane`
+- `Source Actor = None`
+- `Section Filter` 折叠
+- `Mesh Parameter = None`
+- `Instance Index = -1`
+- `Filtered Sockets = 0 Array element`
+
+`LOD` 分组：
+
+- `Allow Sampling...` 关闭
+- `LODIndex = 0`
+- `LODIndex User... = None`
+
+`Sampling` 分组：
+
+- `Mesh Sampling Type = Triangles`
+- `Triangle Sampling Mode = Random (All Triangles)`
+
+`Apply` 分组当前可见：
+
+- `Position Sampling = Apply (Rigid)`
+- `Sampled Position Offset = (0.0, 0.0, 0.0)`
+- `Sampled Position Offset Space = Sampled Mesh`
+- `Offset Position Along Normal = 1.0`
+- `Write To Particle Position` 已开启
+- `Velocity Sampling = Output`
+
+这张图的重点不在最终效果，而在“把上一发射器的静态网格采样模板复制到新发射器并准备换网格”的过程。虽然字幕提到“应用在不同的网格上”，但当前画面里 `Default Mesh` 仍显示为 `SM_FX_BasePlane`，因此不能提前写成已经切换到新网格成功。
+这张图从 Niagara 编辑器回到关卡视口，重点转为查看角色 `Phase GDC` 以及其可用纹理资源目录。它用于说明：如果要把纹理采样应用到不同网格或角色表面，就需要先回到角色资源目录中确认可用贴图。
+
+当前画面可直接确认的信息如下：
+
+- 关卡仍为 `Ex_01_SpriteExp`
+- Outliner 中可见并当前选中的对象为 `Phase GDC`
+- Outliner 中还可见：
+  - `Lighting`
+  - `DirectionalLight`
+  - `SkyLight`
+  - `SM_SkySphere`
+  - `Ex_01_SpriteExp`
+  - `Floor`
+  - `New Niagara S...`
+  - `PlayerStart`
+  - `PostProcessVolume`
+
+右侧 `Details` 面板当前选中 `Phase GDC`，可直接确认的角色资源信息如下：
+
+- 组件为 `SkeletalMeshComponent`
+- `Skeletal Mesh Asset = Phase_GDC`
+- `Skin Cache Usage = 0 Array element`
+- `Materials`
+  - `Element 0 = MIC_Phase_jack`
+  - `Element 1 = MIC_Phase_body`
+
+左下内容浏览器当前位于：
+
+- `Content/Signature/Course_01/Texture`
+
+当前能直接看到的一组纹理资源包括：
+
+- `512x512`
+- `Arrow`
+- `Circle_01`
+- `Circle_02`
+- `Circle_03`
+- `Flare_01`
+- `Mask_Disc_01`
+- `Mask_Smoke_01`
+- `Mask_Crumble_01`
+- `Normal_01`
+- `Normal_02`
+- `Normal_00`
+- `Normal_Noise_01`
+- `Normal_Dot_01`
+- `Seq_Spark_01`
+- `Spark_02`
+- `T_Fire_01`
+- `T_Stretch_01`
+- `Tile_01`
+- `Tile_02`
+- `Tile_04`
+- `Tile_Noise_01`
+
+这张图的意义是资源定位而不是参数设定：
+
+- 教程正在从角色和纹理资源角度确认“采样哪种贴图更合适”
+- 角色 `Phase GDC` 已经在场景中就位，可作为后续纹理投射或采样对象
+- 可用纹理目录已经打开，后续更换 `Sample Texture` 的实际资源时应从这些贴图中选择
+
+图中没有展示 Niagara `Sample Texture` 面板与具体纹理槽的绑定动作，因此不能把任意一个当前可见贴图写成已经绑定成功。
+
+### 00:19:19-00:24:09 Velocity、Collision、Texture
+
+- 本段定位：Velocity、Collision、Texture。
+- 知识点：因为我们需要用一张纹理解决所有问题。
+- 知识点：现在我们试试这个肤色纹理吧。
+- 知识点：虽然是这样显示,但这个颜色值。
+- 知识点：在所有部件上都有这个颜色值。
+- 知识点：为了获取这种网格的颜色值,需要一个。
+- 知识点：因为纹理也会一起导入。
+- 知识点：应用velocity。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Velocity`、`Texture`、`Collision`、`Sequencer`、`纹理`、`颜色`。
+
+**关键画面：**
+
+这张图回到角色 `Phase GDC` 的纹理资源目录，教程在为后续 `Sample Texture` 试验挑选一张“肤色纹理”作为输入贴图。
+
+当前画面可直接确认的信息如下：
+
+- 关卡仍为 `Ex_01_SpriteExp`
+- Outliner 中当前选中对象是 `Phase GDC`
+- 场景中还可见 `New Niagara S...`，说明角色与 Niagara 系统仍在同一测试场景中
+
+右侧 `Details` 面板当前选中 `Phase GDC`，在 `Materials` 列表里能直接看到：
+
+- `Element 0 = MIC_Phase_jack`
+- `Element 1 = MIC_Phase_body`
+- `Element 2 = MIC_T_Phase_SI...`
+- `Element 3 = MIC_T_Phase_Je...`
+- `Element 4 = MIC_Phase_bac...`
+- `Element 5 = MIC_T_Phase_SI...`
+
+左下内容浏览器当前位于：
+
+- `Content/ParagonPhase/Characters/Heroes/Phase/Textures`
+
+当前可见的贴图资源中，能直接辨认出的名称包括：
+
+- `T_A...`
+- `T_D...`
+- `T_Laoe_M...`
+- `T_Laoe_N...`
+- `T_Phase_Ra...`
+- `T_Phase_we...`
+- `T_Phase_Rnsmec`
+- `T_Phase_Ra...`
+- `T_Phase_Bod...`
+- `T_Phase_Head_ha...`
+- `T_Phase_Hea...`
+- `T_Phase_Ru...`
+- `T_Phase_lasoha...`
+- `T_Phase_Heada...`
+- `T_ROOT...`
+
+其中当前高亮选中的缩略图名称以 `T_Phase_Ra...` 开头，缩略图内容呈现角色肤色贴图的典型肤色块分布。结合字幕“现在试试这个肤色纹理”，可以确认这一步是在纹理目录里挑选角色皮肤相关贴图，准备作为 Niagara `Sample Texture` 的输入。
+
+但截图里资源名被缩略，无法可靠写出完整文件名，因此报告只能确认“当前选中的是一张以 `T_Phase_Ra...` 开头的角色肤色相关纹理”，不能编造完整资产名。
+这张图切换到 `Sequencer`，说明教程此处已经不只是单独测试纹理资源，而是把新的 Niagara 系统放进时间轴，与不同角色动画一起联播检查。
+
+当前画面可直接确认的 Sequencer 结构如下：
+
+- 轨道 `Capoeira`
+  - `Animation`
+  - `Spawned`
+  - `Transform`
+- 轨道 `New Niagara System 11`
+  - `Attach`
+  - `Spawned`
+  - `Transform`
+- 轨道 `Phase GDC`
+  - `Animation`
+  - `Spawned`
+  - `Transform`
+
+时间轴上的可见片段与状态：
+
+- 当前序列为 `NewLevelSequence1`
+- 帧率为 `30 fps`
+- 播放头位于大约 `0030`
+- `Capoeira` 轨道上可见动画片段 `Capoeira_Anim`
+- `Phase GDC` 轨道上可见动画片段 `Jog_Fwd`
+- `New Niagara System 11` 的轨道已经插入在两组角色轨道之间，并带有 `Attach` 子轨道
+
+从这个画面可以直接确认两个要点：
+
+- 教程正在比较或测试不同角色动作下的 Niagara 附着表现，至少同时涉及 `Capoeira` 和 `Phase GDC`
+- `New Niagara System 11` 已经作为独立轨道加入 Sequencer，并准备通过 `Attach` 跟随某个角色对象或骨骼
+
+这张图没有展开 `Attach` 的具体父对象、骨骼名或插槽名，也没有显示 Niagara 内部模块参数，因此它的作用是时间轴组织和联播关系验证图，而不是 Niagara 采样参数图。
+这张图回到 Niagara 编辑器，当前活跃发射器为 `Empty005`。教程此处已经把流程从单纯的静态网格采样推进到“静态网格 + 骨骼网格 + 纹理采样 + 颜色缩放”的组合，并开始用 `Scale Color` 压低整体亮度。
+
+当前画面可直接确认的系统统计如下：
+
+- `0 Current, 11960 Max (est.) - [Empty003] [Disabled]`
+- `0 Current, 100000 Max (est.) - [Empty004] [Disabled]`
+- `5005 Current, 120005 Max (est.) - [Empty005] [Active]`
+
+当前可见的 `Empty005` 模块结构如下：
+
+- `Emitter Update`
+  - `Emitter State = Self / Infinite`
+  - `Spawn Rate`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Particles in Grid`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Grid Location`
+  - `Static Mesh Location = Triangles / Random`
+  - `Skeletal Mesh Location = Triangles / Random`
+  - `Sample Texture`
+- `Particle Update`
+  - `Particle State`
+  - `Curl Noise Force`
+  - `Kill Particles`
+  - `Gravity Force`
+  - `Solve Forces and Velocity`
+  - `Scale Color`
+- `Render`
+  - `Sprite Renderer`
+  - `Light Renderer`
+  - `Mesh Renderer`
+
+左侧预览窗口当前只能看到一组较暗的人体轮廓，说明粒子或颜色已经被显著压暗，不再像前面的高亮白色点阵那样醒目。
+
+右侧 `Details` 面板当前选中的是 `Scale Color`，可直接确认的参数如下：
+
+- `Scale Mode = RGB and Alpha Separately`
+- `Scale RGB = (0.1, 0.1, 0.1)`
+- `Scale Alpha = 0.1`
+
+从这张图可以直接确认两个关键变化：
+
+- 发射器里已经新增 `Skeletal Mesh Location`，说明采样对象开始同时涉及角色骨骼网格
+- 最终输出前通过 `Scale Color` 把颜色和透明度都统一缩小到 `0.1` 量级，使预览中的轮廓变得很暗
+
+这张图没有展开 `Skeletal Mesh Location` 的具体网格来源、过滤设置或 `Sample Texture` 使用的实际贴图，因此只能确认当前流程结构与颜色缩放参数，不能进一步推断角色表面颜色究竟取自哪一张贴图的哪一个通道。
+
+### 00:24:09-00:26:44 Velocity、GPU、UV
+
+- 本段定位：Velocity、GPU、UV。
+- 知识点：这种感觉像是沙子掉落一样。
+- 知识点：现在有点缩起来了。
+- 知识点：这种方式可以用的方法还很多吧。
+- 知识点：这次我们看一下纹理样本。
+- 知识点：重要的是一定要使用gpu模式。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Velocity`、`Texture`、`GPU`、`纹理`、`速度`、`颜色`。
+
+**关键画面：**
+
+这张图展示 `Empty005` 发射器进入 `Collision` 配置阶段。教程开始把前面基于纹理与网格采样得到的粒子，进一步接入 GPU 碰撞，让粒子下落和接触地面时表现得更像“沙子掉落”。
+
+当前画面可直接确认的系统统计如下：
+
+- `0 Current, 11960 Max (est.) - [Empty003] [Disabled]`
+- `0 Current, 100000 Max (est.) - [Empty004] [Disabled]`
+- `16540 Current, 106672 Max (est.) - [Empty005] [Active]`
+
+当前可见的 `Empty005` 模块结构如下：
+
+- `Emitter Update`
+  - `Emitter State = Self / Infinite`
+  - `Spawn Rate`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Particles in Grid`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Grid Location`
+  - `Static Mesh Location = Triangles / Random`
+  - `Skeletal Mesh Location = Triangles / Random`
+  - `Sample Texture`
+- `Particle Update`
+  - `Particle State`
+  - `Curl Noise Force`
+  - `Kill Particles`
+  - `Gravity Force`
+  - `Collision`
+  - `Solve Forces and Velocity`
+  - `Scale Color`
+- `Render`
+  - `Sprite Renderer`
+  - `Light Renderer`
+  - `Mesh Renderer`
+
+左侧预览窗口中当前可见一组偏暗的纵向下落/拉伸粒子轮廓，符合“受重力和碰撞影响后向下坍塌”的效果趋势。
+
+右侧 `Collision` 面板当前停留在 `All` 页签，能直接确认的参数如下：
+
+- `GPU Collision Type = GPU Depth Buffer`
+- `Collision Enabled` 已开启
+- `Z Depth Query Type = Scene Depth`
+
+`Collision Radius` 分组：
+
+- `Radius Calculation Type = Sprite`
+- `Method for Calculating P... = Bounds`
+- `Particle Radius Scale = 1.0`
+
+`Bounce` 分组：
+
+- `Restitution = 0.0`
+- `Randomize Collision ... = (0.1, 0.0)`  
+  说明：字段名右半部分被截断，只能可靠确认这是随机化碰撞相关参数，两个当前可见值为 `0.1` 与 `0.0`
+- `Control Roll On Collision` 关闭
+
+`Friction` 分组：
+
+- `Simple Friction` 已开启
+- `Friction = 0.25`
+- `Friction During a Bounce = 0.0`
+
+`Depth Buffer` 分组：
+
+- `Allow Offscreen Depth B...` 关闭
+- `Kill Occluded Particles` 已开启
+- `Max Distance To Collisi... = 10000000.0`
+- `Maximum time offs... = 1.0`
+
+`Rest` 分组：
+
+- `Enable Rest State` 已开启
+- `Manually Enter Rest` 关闭
+
+左下粒子属性列表里还能直接看到碰撞相关属性族已经存在，例如：
+
+- `Collision ...`
+- `Collision Query and Response ...`
+- `OffscreenCounter`
+- `SafeCombinedCollisionNormal`
+
+这张图对应的关键操作是：在 GPU 发射器 `Empty005` 的 `Particle Update` 阶段加入 `Collision`，并使用 `GPU Depth Buffer + Scene Depth` 方案处理碰撞。它为后续“像沙子一样落下并堆积”的效果提供基础。
+这张图回到关卡视口，展示 GPU 碰撞后的场景结果。角色已经切到 `Capoeira`，粒子从角色附近落到地面后形成一片向外散开的细碎颗粒，整体视觉确实接近“沙子掉落并铺开”。
+
+当前画面可直接确认的信息如下：
+
+- Outliner 中当前可见并与本段相关的对象包括：
+  - `Capoeira`
+  - `New Niagara S...`
+  - `Ex_01_SpriteExp`
+  - `Floor`
+  - `PlayerStart`
+  - `PostProcessVol...`
+- 场景中的角色已经不是 `Phase GDC`，而是 `Capoeira` 角色模型
+- 白青色粒子大量聚集在角色脚下和地面附近，并沿地面向周围扩散
+- 角色左侧和身后还能看到少量仍在下落中的粒子拖尾，说明系统同时存在“空中坠落”和“落地散开”两种状态
+
+左下内容浏览器当前位于：
+
+- `Content/Signature/Test/NewFolder`
+
+当前可见资源包含与 `Capoeira` / `Vampire` 相关的一组资产，例如：
+
+- `Capoeira` Skeletal Mesh
+- `Capoeira_Anim...`
+- `Capoeira_Physics As...`
+- `Capoeira_Skeleton`
+- 多个 `Vampire_*` 纹理与材质资源
+
+这张图的用途是场景级验证：
+
+- GPU 碰撞与重力已经让粒子从角色附近向下坠落
+- 落地后粒子没有直接消失，而是沿地面铺开成一层离散颗粒
+- 更换角色与纹理资源后，系统仍能正常工作
+
+图中没有展开 Niagara 参数面板，因此不能从这一张单独确认具体是哪个 UV、哪个纹理通道或哪一个碰撞字段直接造成了当前地面分布，只能确认最终场景结果符合“沙子散落”方向。
+这张图回到 `Empty005` 的 `Sample Texture` 模块，并首次把当前实际使用的纹理资源与 UV 来源完整露出来。教程此处明确把 `Vampire_diffuse` 作为采样贴图，并且用粒子持有的骨骼网格 UV 作为纹理坐标输入。
+
+当前画面可直接确认的系统统计如下：
+
+- `0 Current, 11960 Max (est.) - [Empty003] [Disabled]`
+- `0 Current, 100000 Max (est.) - [Empty004] [Disabled]`
+- `68965 Current, 203225 Max (est.) - [Empty005] [Active]`
+
+当前可见的 `Empty005` 模块结构如下：
+
+- `Emitter Update`
+  - `Emitter State = Self / Infinite`
+  - `Spawn Rate`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Particles in Grid`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Grid Location`
+  - `Static Mesh Location = Triangles / Random`
+  - `Skeletal Mesh Location = Triangles / Random`
+  - `Sample Texture`
+- `Particle Update`
+  - `Particle State`
+  - `Curl Noise Force`
+  - `Kill Particles`
+  - `Gravity Force`
+  - `Collision`
+  - `Solve Forces and Velocity`
+  - `Scale Color`
+- `Render`
+  - `Sprite Renderer`
+  - `Light Renderer`
+  - `Mesh Renderer`
+
+左侧预览窗口中当前能看到一整个人体轮廓，说明经过换贴图和换 UV 来源后，粒子再次沿角色表面分布，而不是只剩零散的地面碎屑。
+
+右侧 `Sample Texture` 面板当前停留在 `All` 页签，可直接确认的参数如下：
+
+- 顶部页签包含：
+  - `Texture Sampling`
+  - `Importance Sampled UVs`
+  - `Sample Rejection`
+- `Sample Texture` 已开启
+- 当前资源类型为 `Texture Sample`
+- `Texture = Vampire_diffuse`
+- `Texture User Parameter = None`
+- `Mip Level = 0.0`
+- `Apply Sampled RGBA to P...` 关闭
+
+`Texture UV` 分组：
+
+- `UV` 输入来自：
+  - `PARTICLES`
+  - `SKELETAL MESH LOCATION ...`
+  说明：字段右侧被截断，但可以明确确认 UV 来源是粒子保存的某个 `Skeletal Mesh Location` 输出
+- `Generate UV Using Import` 关闭
+
+`Transform` 分组：
+
+- `Transform UV Into Positi...` 关闭
+
+`Sample Rejection` 分组：
+
+- `Enable Sample Rejection` 关闭
+
+这张图对应的关键变化是：
+
+- 贴图资源已经从前面的角色/测试纹理切换为 `Vampire_diffuse`
+- 纹理采样坐标不再是默认常量，而是来自 `Skeletal Mesh Location` 写入粒子的 UV 数据
+
+因此，复现时应确保在 `Skeletal Mesh Location` 中把采样 UV 正确写入粒子，然后在 `Sample Texture` 的 `UV` 输入里引用这组粒子 UV，再把 `Texture` 指向 `Vampire_diffuse`。图中虽然没有完整展开 UV 字段的后缀名，但足以证明这里是“骨骼网格 UV 驱动的贴图采样”。
+
+## 补充视觉证据
+
+### S01 00:03:44
+
+这张补充截图回到早期的发射器 `Empty003`，专门补足 `Grid Location` 的维度参数证据，说明为什么该示例会直接生成一整块约一万粒子的规则平面网格。
+
+当前画面可直接确认的发射器结构如下：
+
+- 发射器：`Empty003`
+- `Properties = CPU`
+- `Emitter Update`
+  - `Emitter State = Self / Infinite`
+  - `Spawn Particles in Grid`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Grid Location`
+- `Particle Update`
+  - `Particle State`
+- `Render`
+  - `Sprite Renderer`
+
+左侧预览与统计信息：
+
+- 预览窗口中是一整块高密度、规则排列的点阵平面
+- 粒子统计显示 `10000 Current, 20000 Max (est.) - [Empty003] [Active]`
+
+右侧当前选中的是 `Grid Location`，可直接确认的参数如下：
+
+- `Grid Origin = PARTICLES Position`
+- `Coordinate Space = Local`
+
+`Offset` 分组：
+
+- `Normalize Offsets` 已开启
+- `Randomize Placement = (1.0, 1.0, 1.0)`
+- `Offset = (0.0, 0.0, 0.0)`
+
+`Dimensions` 分组：
+
+- `Dimensions Definition = Padding Per Cell`
+- `XYZ Dimensions = (10.0, 10.0, 10.0)`
+
+结合字幕“这里是 100x100，所以会出现一万个粒子”，这张图的用途是补证：
+
+- `Grid Location` 的维度控制了规则粒子网格覆盖的空间范围
+- 在当前设置下，示例形成了一块高密度的规则粒子底板
+- 这一规则网格正是后续 `Sample Texture`、`Kill Particles` 和噪声/碰撞实验的基础输入
+
+虽然字幕提到了 `100x100` 的粒子规模，但截图里直接可见的参数仍是 `XYZ Dimensions = 10, 10, 10`。因此报告应同时保留两层信息：
+
+- 可见事实：`Grid Location` 维度值为 `10.0, 10.0, 10.0`
+- 结果事实：左侧当前统计为 `10000` 活跃粒子
+
+不能把两者简单等同为“维度字段直接就是 100x100”的界面显示。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

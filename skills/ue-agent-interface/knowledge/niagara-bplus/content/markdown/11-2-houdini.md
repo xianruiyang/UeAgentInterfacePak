@@ -1,0 +1,531 @@
+# 11-2.Houdini血液
+
+# 11-2.Houdini血液
+
+## 关键术语
+
+- `Texture`、`Houdini`、`网格`、`贴图`、`纹理`、`刚体`、`缓存`、`fluidcompress1`、`particlefluidsurface2`、`Niagara`、`Particle`、`Material`、`材质`、`系统`、`蓝图`、`用户参数`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:00-00:04:56 网格、纹理、刚体
+
+- 本段定位：网格、纹理、刚体。
+- 知识点：同样基本都用网格来做 用的是0.04,如果初始的顶点数少转换时顶点数也会相应减少 所以做模拟时若能先让顶点数少一点 把形状适当简化些做BAT资源时会轻松不少。
+- 知识点：这儿改成表面多边形 适应性设为0.2左右,把这个值尽量拉高 只要别让形状崩坏,这个值可以尽量往上提 调太高了形状就容易崩 太容易崩坏0.5左右还勉强可以,但数量仍有30万。
+- 知识点：得降到4万左右,这是我们的最低要求 每格几帧加一个polyreduce节点,它能智能精简多边形 我们先是简到20飞 按一白飞算,来算一下,简到20飞就变成4.2万了。
+- 知识点：点数最多的区域在中间部分 若点数约30万按45帧为基准,该帧点数控制在4万左右即可 控制在4万左右基本不会出问题 3万9千左右也合适。
+- 知识点：简20飞试试看,就这样,如果当纹理达到4K或更高时垂直方向的尺寸,就是这个 也就是水平方向的尺寸,垂直方向的尺寸会随顶点数量变化,会不断拉长,甚至可能远远超过。
+- 知识点：一旦超过8K导入Unreal Engine后,动画就可能出现异常,所以最好尽量控制在8K以内 建议不要超过8K 所以这里不妨干脆把Time。
+- 知识点：Scale调快一点让动画跑得更快从而减少总帧数 也是个不错的办法,太棒了,这种方法真的很实用 这里标注的是First Path 首先,会提取几何体和插招表数据。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`流体`。
+
+**关键画面：**
+
+这一步延续上一页的 `/obj/mesh` 网格化流程，重点开始转向“为 BAT/VAT 资源准备更轻的网格版本”。当前图中可可靠转写的结构如下。
+
+节点定义集：
+
+- `dopimport1`
+- `fluidcompress1`
+- `particlefluidsurface1`
+- `filecache1`
+- `particlefluidsurface2`
+
+连线集：
+
+- `dopimport1 -> fluidcompress1 -> particlefluidsurface1 -> filecache1 -> particlefluidsurface2`
+
+设置/参数：
+
+- 当前选中节点：`particlefluidsurface2`
+- `Surfacing` 页签中可确认：
+  - `Method = Average Position`
+  - `Particle Separation = 0.03`
+  - `Voxel Scale = 0.75`
+  - `Influence Scale = 3`
+  - `Droplet Scale = 1`
+  - `Union Compressed Fluid Surface`：已勾选
+  - `Erosion Scale = 0.8`
+- `Output` 区域中：
+  - `Convert To = Surface Polygon Soup`
+  - `Isovalue = 0`
+  - `Adaptivity = 0.005`
+  - `Transfer Attributes`：已勾选
+  - 传输属性包括：
+    - `v`
+    - `vorticity`
+    - `rest`
+    - `rest2`
+  - `Attribute Radius = 2`
+  - `Attribute Samples = 10`
+  - `Visualize = None`
+
+输出/预览：
+
+- 左侧视口显示的是已经表面化的灰色血液网格
+- 网格保留了大量细长喷溅分支与中心主团
+- 左下 `Geometry Spreadsheet` 当前重点是速度字段：
+  - `v[x]`
+  - `v[y]`
+  - `v[z]`
+- 当前帧位置在时间轴约 `41`
+
+结合正文“同样基本都用网格来做”“如果初始顶点数少转换时顶点数也会相应减少”“做 BAT 资源时会轻松不少”的说明，这张图的关键不是新增节点，而是把上一页的网格化结果作为“待优化原型”来审视：先得到一版完整形体，再围绕顶点数、适应性和表面化参数逐步压缩到资源可用的规模。
+这一步正式进入减面优化阶段，用 `polyreduce1` 把用于 BAT/VAT 的血液网格从高点数压到可接受范围。当前图中可直接确认：
+
+- `/obj/mesh` 的当前链路已经变成：
+  - `dopimport1`
+  - `fluidcompress1`
+  - `particlefluidsurface1`
+  - `filecache1`
+  - `particlefluidsurface2`
+  - `polyreduce1`
+- `polyreduce1` 节点下方明确显示：
+  - `Reduced To: 15.00%`
+- 当前选中的还是 `filecache1`，右侧缓存设置保持：
+  - `Base Name = Ex_02_Blood_01.filecache1`
+  - `Base Folder = $HIP/geo`
+  - `Start/End/Inc = 1 / 100 / 1`
+- 左侧弹出的节点信息面板当前针对 `filecache1`，其中可明确看到：
+  - `Points = 301,894`
+  - `Unconnected Points = 301,894`
+  - 存在点组：
+    - `particles 182,942`
+    - `stream_volumesource1 118,952`
+
+输出/预览：
+
+- 左侧视口里仍是高密度喷溅结果，形态很完整但线状分支很多
+- 当前帧时间约 `42`
+- 左下 `Geometry Spreadsheet` 中仍能看到大量 `Cd` 字段值为 `1.0`，说明减面前的缓存结果仍保留了颜色属性
+
+这张图对应的关键操作是：
+
+- 在最终缓存/表面化结果后追加 `polyreduce1`
+- 先尝试把总量压到 `15%`
+- 用节点统计面板查看当前原始点数规模约为 `30` 万级
+- 对照目标资源要求，再判断是否需要继续下压到 4 万左右
+
+结合正文“点数最多的区域在中间部分”“30 万按 45 帧为基准，该帧控制在 4 万左右即可”“简到 20 飞就变成 4.2 万了”的说明，这张图的意义是把优化问题量化：先测清原始规模，再通过 `polyreduce` 逐步试压，目标不是盲目减到最小，而是在形状不崩的前提下，把单帧点数压进 BAT 资源更稳妥的区间。
+这一步把减面结果单独接到第二级缓存，并观察 20% 目标下的实际处理开销。图中可直接确认：
+
+- `/obj/mesh` 的链路已经进一步延长为：
+  - `dopimport1`
+  - `fluidcompress1`
+  - `particlefluidsurface1`
+  - `filecache1`
+  - `particlefluidsurface2`
+  - `polyreduce1`
+  - `filecache2`
+- `polyreduce1` 节点下方现在明确显示：
+  - `Reduced To: 20.00%`
+- 当前选中节点是 `filecache2`
+- 右侧 `filecache2` 设置仍是标准缓存模式：
+  - `File Path = Constructed`
+  - `Time Dependent Cache`：已勾选
+  - `Base Name = $HIPNAME.$OS`
+  - `Base Folder = $HIP/geo`
+  - `Version = 1`
+  - `Start/End/Inc = 1 / 100 / 1`
+- 输出路径预览可见为：
+  - `$HIPNAME.$OS_v1.$F4.bgeo.sc`
+
+输出/预览：
+
+- 左上弹出的进度窗口当前明确显示：
+  - `render frame 4 (4 of 100)`
+  - 当前步骤：`Reducing Polygons`
+- 说明这一步不是瞬时完成，而是在逐帧对网格做减面缓存
+- 左侧视口中的喷溅形体仍保留长分支，但比高密度版本已经更“干净”
+- 底部字幕提示这个过程大约要十分钟左右
+
+这张图对应的关键操作可以整理为：
+
+- 把 `polyreduce1` 的结果单独接入 `filecache2`
+- 用第二级缓存把减面后的 100 帧序列写盘
+- 当前示例尝试的是 `Reduced To: 20%`
+- 在减面过程中实时观察形状是否仍能保持血液喷溅的主要轮廓
+
+结合正文“得降到 4 万左右，这是最低要求”“简 20 飞试试看”以及字幕“这个过程大概还要十分钟左右”的说明，这一步的重点是：减面不是只调一个百分比就结束，还要接受逐帧烘焙时间成本，并用缓存结果验证 20% 这一档是否在形状质量和资源规模之间达到可接受平衡。
+
+### 00:04:56-00:09:35 Texture、网格、贴图
+
+- 本段定位：Texture、网格、贴图。
+- 知识点：一般需要把VT资源做成这种流体网格用的VT资源其实不太适合实机使用 2048左右的多边形数实机用也够了,勉强能用,差不多就是这样所以。
+- 知识点：这个网格怎么优化,怎么用才能发挥效果,模拟做得多简单也直接影响使用效果 关键看,就看情况了 不用多边形简化改用重新布线也是个不错的选择。
+- 知识点：尽量去试试看,也算一种方法 可行的方案,也有可能 不过重新布线耗时稍长,而且初始状态下,贴图可能被禁用 贴图打不开去偏好设置里的旧合成器烘焙那块的数值很可能设得太低。
+- 知识点：太低,设得太低的话根本没法渲染,所以得调高一点 所以建议适当放宽最大宽度限制,这样设置后,用起来会更顺手 用起来会更顺手,而且烘焙也很快,耗时不多。
+- 知识点：去掉一个试试,先渲染一下,把圆设成这样导出 第一次生成的就是Geometry和LookupTexture两个数据。
+- 知识点：就是这样,会出现两个文件顺便提醒一下LookupTexture 这里设成了非HDR格式 所以导入Unreal时只用把HDR部分交给脚本处理就行了。
+- 知识点：毕竟烘焙已经完成花不了多少时间 再做一次第二步渲染,最终渲染就完成了 这样就完成了,动画过程中生成的纹理。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Texture`、`纹理`、`贴图`、`流体`。
+
+**关键画面：**
+
+这张图对应 `S02` 小节开头，重点是把减面后的流体网格整理成最终导出链，并明确交给渲染输出节点。当前图片中能可靠确认的结构如下。
+
+节点定义集：
+
+- `fluidcompress1`
+- `particlefluidsurface1`
+- `filecache1`
+- `particlefluidsurface2`
+- `polyreduce1`
+- `filecache2`
+- `OUT_Render`
+
+连线集：
+
+- `fluidcompress1 -> particlefluidsurface1 -> filecache1 -> particlefluidsurface2 -> polyreduce1 -> filecache2 -> OUT_Render`
+
+设置/参数：
+
+- 当前选中节点：`OUT_Render`
+- 右侧参数面板显示 `Null` 节点名为：
+  - `OUT_Render`
+- `Copy Input` 已勾选
+- `Cache Input` 未勾选
+- `polyreduce1` 节点下方仍显示：
+  - `Reduced To: 20.00%`
+- `filecache1` 与 `filecache2` 节点标签中都能看到缓存文件命名预览：
+  - `Ex_02_Blood_01.filecache1_v1.$F4.bgeo.sc`
+  - `Ex_02_Blood_01.filecache2_v1.$F4.bgeo.sc`
+
+输出/预览：
+
+- 左侧视口显示的是减面后的血液网格结果，主团块与多条细长飞溅分支仍然可见
+- 底部时间轴当前停在第 `45` 帧
+- 左下 `Geometry Spreadsheet` 当前查看的是 `OUT_Render` 输出，表格中可见：
+  - 位置列 `P[x]`、`P[y]`、`P[z]`
+  - 速度列 `v[x]`、`v[y]`、`v[z]`
+- 说明最终输出节点并不是重新生成几何，而是把 `filecache2` 后的减面结果作为导出/下游引用的正式出口
+
+结合正文“再做一次第二步渲染，最终渲染就完成了，这样就完成了动画过程中生成的纹理”的说明，这张图的关键意义是先把减面缓存链整理出明确终点：用 `OUT_Render` 锁定最终几何出口，确保后续贴图烘焙、纹理渲染或资源转换都引用这一版已经减面并缓存完成的网格序列。
+这一步已经切到 `/out`，开始用 Houdini Labs 的顶点动画纹理节点把前一步的 `OUT_Render` 网格序列烘焙成贴图资源。当前图中可可靠确认的内容如下。
+
+节点定义集：
+
+- `Blood_01`（`Labs Vertex Animation Textures`）
+
+连线集：
+
+- 当前截图只显示单个导出节点，未展示其他 `/out` 内连接关系
+
+设置/参数：
+
+- 当前选中节点：`Blood_01`
+- 节点类型：`Labs Vertex Animation Textures`
+- 顶部按钮：
+  - `Render All`
+- `Mode / Target Engine = Dynamic Remeshing (Fluid) / Unreal Engine`
+- `Start/End = 1 / 100`
+- `Input Geometry = /obj/mesh/OUT_Render`
+- 当前页签在 `Settings`
+- `Dynamic Remeshing` 区域：
+  - `Render Pass = First Pass (Geometry, Lookup Table, Data/Material)`
+  - `Export Compressed Normals in Position Alpha`：未勾选
+  - `Export Surface UVs in Position Alpha and Color Alpha`：未勾选
+  - `Export Surface UVs in Color Red and Green`：未勾选
+- `Cleanup` 区域：
+  - `Fuse Point Group`：已勾选
+  - `Fuse Distance = 0.001`
+  - `Fix Overlaps`：未勾选
+- `All Modes` 区域：
+  - `Input Geometry Is Cached to Integer Frames`：已勾选
+  - `Lookup Table Format = Non-HDR (Any Format as RGBA 8 in Engine)`，输出扩展名显示为 `.png`
+  - `Texture Format = HDR (EXR/TIFF as RGBA 16/32 in Engine)`，输出扩展名显示为 `.exr`
+  - `Export Spare Color Texture`：未勾选
+  - `Include Hidden Debug Plane in Geometry`：已勾选
+- 贴图尺寸相关：
+  - `Lookup Table Width = 4096`
+  - `Target Texture Width = 1024`
+- 底部限制提示：
+  - `Input Geometry Limit: 110592 Triangles per Frame`
+
+输出/预览：
+
+- 中央弹窗显示导出已启动：
+  - `render_mesh_fbx frame 1`
+  - 进度约 `20%`
+- 底部状态栏可见当前正在对 `Blood_01` 相关对象执行 `Cooking Op`
+- 左侧视口此时没有展示几何细节，而是进入导出阶段的空场景视图
+
+这张图对应的实际操作是：
+
+- 在 `/out` 新建并选中 `Labs Vertex Animation Textures` 节点
+- 把 `Input Geometry` 指向 `/obj/mesh/OUT_Render`
+- 目标模式选择 `Dynamic Remeshing (Fluid)`，目标引擎设为 `Unreal Engine`
+- 从 `1-100` 帧执行第一遍导出，生成几何、查找表和材质/数据贴图所需资源
+
+结合正文“再做一次第二步渲染，最终渲染就完成了”“这样就完成了动画过程中生成的纹理”的说明，这张图的核心是把前面做好的减面血液网格正式接入 VAT 贴图烘焙流程，并确认第一遍导出配置已经指向 Unreal 使用的动态重网格流体方案。
+这张图切到 `/obj/source`，展示的是一个单独的源形体生成网络。它不是前面 `mesh` 链上的缓存导出图，而是用基础几何加噪声处理做出一块血滴/碎片原型。当前图片中能可靠确认：
+
+节点定义集：
+
+- `sphere1`
+- `clip1`
+- `transform1`
+- `polyfill1`
+- `attribnoise1`
+- `normal1`
+- `pointvop1`
+- `attribwrangle1`
+
+连线集：
+
+- 主干链路：
+  - `sphere1 -> clip1 -> transform1 -> polyfill1 -> attribwrangle1`
+- 分支链路：
+  - `polyfill1 -> attribnoise1 -> normal1 -> pointvop1 -> attribwrangle1`
+
+设置/参数：
+
+- 当前选中节点：`transform1`
+- `Transform Order = Scale Rot Trans`
+- 旋转模式显示为：
+  - `Rx Ry Rz`
+- `Translate = 0, 0, 0`
+- `Rotate = -30, 0, 0`
+- `Scale = 1, 1, 1`
+- `Shear = 0, 0, 0`
+- `Uniform Scale = 1`
+- 法线相关选项：
+  - `Recompute Point Normals`：已勾选
+  - `Recompute Affected Normals`：已勾选
+  - `Preserve Normal Length`：已勾选
+  - `Invert Transformation`：未勾选
+
+输出/预览：
+
+- 左侧视口显示的是一个被裁切并倾斜后的椭圆状半封闭几何体，外形接近单个血滴/液滴块
+- `polyfill1` 之后的右侧分支说明作者在基础体块上继续叠加噪声、法线与 VOP 处理，再在 `attribwrangle1` 汇总
+- 底部字幕可辨识出的语义是“把它放在这里，只要调整一下属性里的噪点数值”，说明这一网络的重点在于后续通过属性噪声微调形态细节
+
+结合 `S02` 段“Texture、网格、贴图”的主题，这张图更像是在说明贴图/网格资源旁边的辅助源模型是怎样搭出来的：先用 `sphere1` 做基础体，经过 `clip1` 裁切、`transform1` 倾斜，再通过 `attribnoise1`、`normal1`、`pointvop1` 等节点制造更自然的液体表面起伏，最后汇入 `attribwrangle1` 做进一步处理。
+
+### 00:09:35-00:10:33 缓存
+
+- 本段定位：缓存。
+- 知识点：这些参数,边微调边运行模拟 多试试微调边跑,模拟边找合适形状效果更好 所以就改这么一点马上 这里建个第二版缓存一下再看看形状 满意的那个,找到满意的形状后。
+
+**关键画面：**
+
+这张图继续停留在 `/obj/source`，展示的是把液滴基础体块接到 FLIP 源之前，如何用属性噪声驱动表面起伏。当前图片中能可靠确认的内容如下。
+
+节点定义集：
+
+- `clip1`
+- `transform1`
+- `polyfill1`
+- `attribnoise1`
+- `normal1`
+- `pointvop1`
+- `attribwrangle1`
+- `vdbfrompolygons1`
+- `flipsource1`
+
+连线集：
+
+- 主干链路：
+  - `clip1 -> transform1 -> polyfill1 -> attribwrangle1 -> vdbfrompolygons1 -> flipsource1`
+- 细化分支：
+  - `polyfill1 -> attribnoise1 -> normal1 -> pointvop1 -> attribwrangle1`
+
+设置/参数：
+
+- 当前选中节点：`attribnoise1`
+- `Attribute Names = offset`
+- `Attribute Class = Point`
+- `Noise Value` 区域：
+  - `Operation = Multiply`
+  - `Range Values = Positive`
+  - `Amplitude = 1`
+  - `Output Raw Value`：未勾选
+  - `Enable Remap Ramp`：未勾选
+- `Noise Pattern` 区域：
+  - `Noise Type = Simplex`
+  - `Location Attribute = P`
+  - `Element Size = 0.7`
+  - `Offset = 9.5`
+  - `Use VEXpression`：未勾选
+- `Fractal` 区域：
+  - `Fractal Type = Standard (fBm)`
+  - `Max Octaves = 3`
+  - `Lacunarity = 2.01234`
+  - `Roughness = 0`
+
+输出/预览：
+
+- 左侧视口显示出一个多瓣液滴状体块，整体像由数个鼓起的血滴片组合而成
+- 中央网络说明 `attribnoise1` 的输出不是直接结束，而是继续经过 `normal1`、`pointvop1` 后再并回 `attribwrangle1`
+- `attribwrangle1` 下游已经接入 `vdbfrompolygons1` 和 `flipsource1`，说明这一套噪声形体会继续被转换成体积并作为 FLIP 源使用
+- 底部字幕可读出的语义是“边微调边运行模拟”，与当前噪声参数调整画面一致
+
+这张图对应的关键操作是：在基础液滴几何上通过 `attribnoise1` 生成名为 `offset` 的点属性噪声，先用 `Simplex` 噪声控制体块起伏，再把这一分支结果送往法线与 VOP 处理，最后汇入 `attribwrangle1`，为后续 `vdbfrompolygons1 -> flipsource1` 的流体源形态提供更自然的初始轮廓。
+这张图切回 `/obj/mesh`，重点是确认缓存链前后两个 `filecache` 的版本与输出关系。当前画面中能可靠确认：
+
+节点定义集：
+
+- `dopimport1`
+- `fluidcompress1`
+- `particlefluidsurface1`
+- `filecache1`
+- `particlefluidsurface2`
+- `polyreduce1`
+- `filecache2`
+- `OUT_Render`
+
+连线集：
+
+- `dopimport1 -> fluidcompress1 -> particlefluidsurface1 -> filecache1 -> particlefluidsurface2 -> polyreduce1 -> filecache2 -> OUT_Render`
+
+设置/参数：
+
+- 当前选中节点：`filecache1`
+- `Load from Disk`：已勾选
+- `Time Dependent Cache`：已勾选
+- `File Path = Constructed`
+- `Base Name = Ex_02_Blood_01.filecache1`
+- `Base Folder = $HIP/geo`
+- `Version = 2`
+- `Cache` 区域按钮可见：
+  - `Save to Disk`
+  - `Save to Disk in Background`
+  - `Cancel Cook`
+- `Sequence` 区域：
+  - `Evaluate As = Frame Range`
+  - `Simulation`：已勾选
+  - `Start/End/Inc = 1 / 100 / 1`
+  - `Substeps = 1`
+- `Load` 区域：
+  - `All Geometry`
+- 节点标签中可见缓存文件预览：
+  - `filecache1`：`Ex_02_Blood_01.filecache1_v2.$F4.bgeo.sc`
+  - `filecache2`：`Ex_02_Blood_01.filecache2_v1.$F4.bgeo.sc`
+- `polyreduce1` 仍显示：
+  - `Reduced To: 20.00%`
+
+输出/预览：
+
+- 左侧视口当前没有显示完整血液网格，而是接近空场景状态，说明此时关注点在缓存链配置而不是某一帧几何外观
+- 中央网络把两个缓存节点的先后关系展示得很清楚：
+  - `filecache1` 是表面化前段缓存
+  - `filecache2` 是减面后的二级缓存
+- `OUT_Render` 仍挂在最终输出末端
+
+这张图的关键意义是把缓存职责拆清楚：先用 `filecache1` 保存前段模拟/表面化来源，并把其版本切到 `v2`，再经过 `particlefluidsurface2` 与 `polyreduce1` 生成减面结果，最后交给 `filecache2` 和 `OUT_Render`。结合 `S03` 的“缓存”主题，这一步是在强调资源链条里不同缓存层的分工，而不是新增新的形体处理节点。
+这张图是本页收尾时的总览截图，左侧仍是 `/obj/mesh` 的最终缓存链，右侧重新显示 `Labs Vertex Animation Textures` 的导出配置，用来说明整套缓存与贴图烘焙流程已经闭合。当前图片中可可靠确认：
+
+节点定义集：
+
+- `fluidcompress1`
+- `particlefluidsurface1`
+- `filecache1`
+- `particlefluidsurface2`
+- `polyreduce1`
+- `filecache2`
+- `OUT_Render`
+- `Blood_01`（`Labs Vertex Animation Textures`）
+
+连线集：
+
+- 左侧 `mesh` 主链：
+  - `fluidcompress1 -> particlefluidsurface1 -> filecache1 -> particlefluidsurface2 -> polyreduce1 -> filecache2 -> OUT_Render`
+- 右侧截图未展示 `/out` 内其他节点连接，只能确认当前导出节点是 `Blood_01`
+
+设置/参数：
+
+- 右侧当前选中节点：`Blood_01`
+- `Mode / Target Engine = Dynamic Remeshing (Fluid) / Unreal Engine`
+- `Start/End = 1 / 100`
+- `Input Geometry = /obj/mesh/OUT_Render`
+- `Render Pass = First Pass (Geometry, Lookup Table, Data/Material)`
+- `Fuse Point Group`：已勾选
+- `Fuse Distance = 0.001`
+- `Input Geometry Is Cached to Integer Frames`：已勾选
+- `Lookup Table Format = Non-HDR (Any Format as RGBA 8 in Engine)`，扩展名显示 `.png`
+- `Texture Format = HDR (EXR/TIFF as RGBA 16/32 in Engine)`，扩展名显示 `.exr`
+- `Include Hidden Debug Plane in Geometry`：已勾选
+- `Lookup Table Width = 4096`
+- `Target Texture Width = 1024`
+- 本次截图新增可直接确认的渲染尺寸反馈：
+  - `Last Render's Texture Size: 1024 x 2889`
+  - `Input Geometry Limit: 110592 Triangles per Frame`
+- 左侧网络中同时可见：
+  - `filecache1` 输出名：`Ex_02_Blood_01.filecache1_v2.$F4.bgeo.sc`
+  - `filecache2` 输出名：`Ex_02_Blood_01.filecache2_v1.$F4.bgeo.sc`
+  - `polyreduce1` 仍是 `Reduced To: 20.00%`
+
+输出/预览：
+
+- 左侧视口仍接近空场景，说明此时主讲的不是某一帧流体外形，而是资源链配置和导出结果
+- 底部字幕语义明确表示“本节课到此为止，完成收尾”
+- 右侧新增的 `Last Render's Texture Size` 可以作为导出已实际跑过一轮的结果证据
+
+这张图的作用是把本页内容收束成一个完整的交付链：`mesh` 侧完成模拟缓存、表面化、减面和最终输出；`out` 侧用 `Blood_01` 从 `/obj/mesh/OUT_Render` 读取序列，按 Unreal 的 `Dynamic Remeshing (Fluid)` 方案烘焙 VAT 贴图。换言之，这一张不是新增步骤，而是在收尾时确认缓存链、导出节点和贴图尺寸结果都已经对齐。
+
+## 补充视觉证据
+
+### S01 00:03:46
+
+这张补充图对应 `S01` 的材质/参数补证，画面显示的是 VAT 导出节点在第二步动画纹理阶段的设置。当前图片中能可靠确认：
+
+节点定义集：
+
+- `vertex_animation_textures1`（`Labs Vertex Animation Textures`）
+
+连线集：
+
+- 当前截图只显示单个导出节点，未展示 `/out` 内其他连接关系
+
+设置/参数：
+
+- 当前选中节点：`vertex_animation_textures1`
+- `Mode / Target Engine = Dynamic Remeshing (Fluid) / Unreal Engine`
+- `Start/End = 1 / 100`
+- `Input Geometry` 一栏在截图中不可完整辨认，结合当前页面上下文可确认它属于同一套 `mesh` 导出链，但此图内无法可靠抄出完整路径，因此不补写具体字符串
+- `Render Pass` 下拉菜单已展开，可明确看到两个阶段：
+  - `First Pass (Geometry, Lookup Table, Data/Material)`
+  - `Second Pass (Animation Textures)`
+- 当前选中的项目是：
+  - `Second Pass (Animation Textures)`
+- `Export Surface UVs in Color Red and Green`：未勾选
+- `Cleanup` 区域：
+  - `Fuse Point Group`：未勾选
+  - `Fix Overlaps`：未勾选
+- `All Modes` 区域：
+  - `Input Geometry Is Cached to Integer Frames`：已勾选
+  - `Lookup Table Format = Non-HDR (Any Format as RGBA 8 in Engine)`，扩展名 `.png`
+  - `Texture Format = HDR (EXR/TIFF as RGBA 16/32 in Engine)`，扩展名 `.exr`
+  - `Export Spare Color Texture`：未勾选
+  - `Export Static Mesh Vertex Colors`：未勾选
+  - `Include Hidden Debug Plane in Geometry`：已勾选
+- 贴图尺寸：
+  - `Lookup Table Width = 4096`
+  - `Target Texture Width = 2048`
+- 结果区当前显示：
+  - `Last Render's Texture Size: 0 x 0`
+  - `Input Geometry Limit: 110592 Triangles per Frame`
+
+输出/预览：
+
+- 左侧视口显示的是细长分支较多的血液网格，说明当前仍在围绕同一份流体几何做 VAT 资源导出
+- 左下 `Geometry Spreadsheet` 可见位置与速度字段：
+  - `P[x]`、`P[y]`、`P[z]`
+  - `v[x]`、`v[y]`、`v[z]`
+- 底部字幕语义为“接着通过第二步生成动画纹理”，与右侧 `Render Pass` 选到 `Second Pass (Animation Textures)` 完全对应
+
+这张补充图的关键价值在于把 VAT 流程拆成两个明确阶段：第一步生成几何、查找表与数据/材质；第二步切换到 `Second Pass (Animation Textures)`，专门输出动画纹理。对照本页前文的缓存与导出链，可以据此确认教程并不是一次按钮完成所有资源，而是按两步渲染顺序生成最终可供 Unreal 使用的 VAT 贴图集。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+

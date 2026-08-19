@@ -1,0 +1,1006 @@
+# 10 Stylized Water Splash
+
+# 10 Stylized Water Splash
+
+## 关键术语
+
+- `Alpha`、`UV`、`PS`、`Water`、`粒子`、`发射器`、`速度`、`透明度`、`Plet Actor. Can`、`Niagara`、`Emitter`、`Spawn Rate`、`Spawn`、`Lifetime`、`颜色`、`Niagara System`、`Particle`、`Initialize Particle`
+
+## 分段知识
+
+### 00:00:06-00:05:03 发射器
+
+- 本段定位：发射器。
+- 知识点：可以看看它们的样子 我需要加强一点点的评分 当它们在打的时候 发生了一些影响 这个最开始的锁就太大了 我认为这可能会 把最开始的分析提升了一点。
+- 知识点：0.1或0.15 我还想把水平调整一点 0.5 我们来加强一点点的影响 在这里创造了 新的物质体系 我们需要什么影响 首先,我们需要一些光。
+- 知识点：我认为这个会很好 我们来拿这个 我们来加强一点点 我们创造了新的发射器 空气 需要自动自动发生 需要把这些物质 用在一块块上 我们的主要目的。
+- 知识点：是把色彩调整 我们需要一些亮的 非常亮的 我认为像这个 我认为像这个 时间的时间会很快 它会很快地发生 然后就会消失 适当高一点 这样它会显示。
+- 知识点：它会伸直 不一样 它会有点多 在高度上 我们看看它现在是怎么看 我们需要一段阻力 这样它会再发生 在某一段时间后 在这个时刻中 它会发生了一段阻力。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`发射器`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 预览截图
+> - 组成部分: Viewport 效果预览 + Sequencer 时间线 + Outliner/Details
+> - 所属: `LQ_StylizedWaterSplash` 关卡中的 `NS_StylizedWaterSplash`
+> - 目的: 作为 `发射器` 段开头的基线效果，观察当前水花只剩地面中心的弱发光区域，顶部飞溅尚未明显建立
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 中央 | Viewport 效果图 | `NS_StylizedWaterSplash` | 画面中央只有一团贴地的蓝色辉光，范围较扁平，几乎看不到向上喷起的粒子形体 | 用于对照后续发射器增强前的初始状态 |
+> | 下方 | Sequencer 时间线 | `LQ_StylizedWaterSplash` | 播放头位于约 `3.90s`，轨道中可见 `CameraActor` 与 `NS_StylizedWaterSplash` | 说明此图仍在镜头时间线内观察 Niagara 系统 |
+> | 右侧 | Details 属性图 | `Floor (Instance)` | 右侧显示 `Floor` 实例属性，能见到 `Transform` 与 `Static Mesh=Plane` | 右侧内容不是 Niagara 发射器参数，只是场景当前选中对象 |
+>
+> 效果观察:
+> - 当前主视觉只有地面接触区的蓝色亮斑，说明系统此时更接近“水面辉光”而不是完整飞溅
+> - 这与正文里“需要加强影响、把发射器做亮一些”的语境一致
+> - 本图主要提供发射器调节前的效果基线，没有直接暴露模块字段
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: Preview 预览 + Niagara System Overview + User Parameters + Timeline + Details 属性图
+> - 所属: `NS_StylizedWaterSplash`
+> - 目的: 记录系统里新增的辅助发射器 `Empty`，以及主发射器 `DropsSplash` 当前可见的模块栈
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左上 | Preview 效果图 | `NS_StylizedWaterSplash` | 预览窗口正在 `Compiling...`，当前没有可读的稳定粒子结果 | 该区域此图不用于效果判读 |
+> | 中央偏左 | Niagara Stack | `DropsSplash` | 可见 `Emitter State(Self Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Sub UVAnimation`、`Shape Location(Cylinder)`、`Add Velocity in Cone`、`Particle State`、`Scale Sprite Size`、`Sprite Rotation Rate`、`Gravity Force`、`Drag`、`Solve Forces and Velocity`、`Scale Color`、`Dynamic Material Parameters`、`Sprite Renderer` | 这是主飞溅发射器的生成与更新链 |
+> | 中央偏右 | Niagara Stack | `Empty` | 发射器包含 `Emitter State(System)`、`Initialize Particle`、`Particle State`、`Sprite Renderer` | 这是教程中新加的简单辅助发射器 |
+> | 右侧 | Details 属性图 | `Empty > Emitter State` | `Life Cycle Mode = Self`，`Scalability Mode = System` | 右侧属性对应当前选中的 `Empty` 发射器 `Emitter State` |
+> | 左下 | 参数面板 | `User Parameters` | 可见 `Delay = 2.4` | 继续沿用同一系统的延迟参数 |
+> | 下方 | 时间线 | `NS_StylizedWaterSplash` | 播放头位于约 `5.02s`，轨道包含 `Bubbles_AroundSphere`、`Bubbles_SplashBurst`、`Bubbles_SplashSpawn`、`Dark_Puddle`、`Dots_AroundSphere`、`DotsDark_AroundSphere`、`DropsSplash`、`Empty` | 说明 `Empty` 已加入系统时间线 |
+>
+> 模块栈:
+> | 顺序 | 发射器 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|---|
+> | 1 | `DropsSplash` | Emitter Update | `Emitter State` | Enabled | `Self Once` | 让主发射器按一次性生命周期运行 |
+> | 2 | `DropsSplash` | Emitter Spawn | `Spawn Burst Instantaneous` | Enabled | 图中未展开 | 瞬时生成一批飞溅粒子 |
+> | 3 | `DropsSplash` | Particle Spawn | `Initialize Particle` | Enabled | 图中未展开 | 初始化粒子 |
+> | 4 | `DropsSplash` | Particle Spawn | `Sub UVAnimation` | Enabled | 图中未展开 | 配置贴图序列动画 |
+> | 5 | `DropsSplash` | Particle Spawn | `Shape Location` | Enabled | `Cylinder` | 设定生成体积 |
+> | 6 | `DropsSplash` | Particle Spawn | `Add Velocity in Cone` | Enabled | 图中未展开 | 赋予锥形初速度 |
+> | 7 | `DropsSplash` | Particle Update | `Particle State` | Enabled | 图中未展开 | 管理生存状态 |
+> | 8 | `DropsSplash` | Particle Update | `Scale Sprite Size` | Enabled | 图中未展开 | 调整贴片大小 |
+> | 9 | `DropsSplash` | Particle Update | `Sprite Rotation Rate` | Enabled | 图中未展开 | 添加旋转 |
+> | 10 | `DropsSplash` | Particle Update | `Gravity Force` | Enabled | 图中未展开 | 施加重力 |
+> | 11 | `DropsSplash` | Particle Update | `Drag` | Enabled | 图中未展开 | 添加阻力 |
+> | 12 | `DropsSplash` | Particle Update | `Solve Forces and Velocity` | Enabled | 图中未展开 | 解算运动 |
+> | 13 | `DropsSplash` | Particle Update | `Scale Color` | Enabled | 图中未展开 | 调整颜色与透明度 |
+> | 14 | `DropsSplash` | Particle Update | `Dynamic Material Parameters` | Enabled | 图中未展开 | 向材质传参 |
+> | 15 | `DropsSplash` | Render | `Sprite Renderer` | Enabled | 图中未展开 | 渲染主飞溅 |
+> | 16 | `Empty` | Emitter Update | `Emitter State` | Enabled | `Life Cycle Mode=Self`, `Scalability Mode=System` | 让辅助发射器独立按一次性或自生命周期触发 |
+> | 17 | `Empty` | Particle Spawn | `Initialize Particle` | Enabled | 图中未展开 | 初始化辅助粒子 |
+> | 18 | `Empty` | Particle Update | `Particle State` | Enabled | 图中未展开 | 管理辅助粒子状态 |
+> | 19 | `Empty` | Render | `Sprite Renderer` | Enabled | 图中未展开 | 用单张材质渲染辅助粒子 |
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: Preview 预览 + Niagara System Overview + User Parameters + Timeline + Details 属性图
+> - 所属: `NS_StylizedWaterSplash`
+> - 目的: 补充 `Empty` 发射器 `Emitter State` 的生命周期与延迟设置，说明这个辅助发射器如何在延后时间点触发
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左上 | Preview 效果图 | `NS_StylizedWaterSplash` | 预览窗口可见地面中心一团模糊的浅蓝亮区，没有稳定读得出的单独粒子形态 | 该图重点不在预览，而在右侧发射器参数 |
+> | 中央偏左 | Niagara Stack | `DropsSplash` | 主发射器仍保持 `Spawn Burst Instantaneous`、`Shape Location(Cylinder)`、`Add Velocity in Cone`、`Gravity Force`、`Drag`、`Scale Color` 等模块 | 作为主飞溅层继续存在 |
+> | 中央偏右 | Niagara Stack | `Empty` | 发射器包含 `Emitter State(Self Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Particle State`、`Sprite Renderer` | 相比上一张，这里明确出现了一次性 Burst 生成 |
+> | 右侧 | Details 属性图 | `Empty > Emitter State` | `Life Cycle Mode = Self`，`Inactive Response = Complete (Let Particles Finish then Kill Emitter)`，`Loop Behavior = Once`，`Loop Duration Mode = Fixed`，`Loop Duration = 5.0`，`Loop Delay = User.Delay`，`Scalability Mode = System` | 这些设置定义 `Empty` 先延迟，再在固定时长窗口内一次性触发 |
+> | 左下 | 参数面板 | `User Parameters` | `Delay = 2.4` | `Loop Delay` 直接绑定该用户参数 |
+> | 下方 | 时间线 | `NS_StylizedWaterSplash` | 播放头位于约 `2.92s`，位于多发射器轨道段内 | 说明当前截图对应延迟触发前后的观察时刻 |
+>
+> 模块栈:
+> | 顺序 | 发射器 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|---|
+> | 1 | `Empty` | Emitter Update | `Emitter State` | Enabled | `Loop Behavior=Once`, `Loop Duration=5.0`, `Loop Delay=User.Delay` | 让辅助发射器延迟 `2.4s` 后按一次性生命周期运行 |
+> | 2 | `Empty` | Emitter Spawn | `Spawn Burst Instantaneous` | Enabled | 图中未展开 | 在触发时一次性生成粒子 |
+> | 3 | `Empty` | Particle Spawn | `Initialize Particle` | Enabled | 图中未展开 | 初始化这批粒子 |
+> | 4 | `Empty` | Particle Update | `Particle State` | Enabled | 图中未展开 | 管理粒子生命周期 |
+> | 5 | `Empty` | Render | `Sprite Renderer` | Enabled | 图中未展开 | 输出带指定材质的辅助粒子 |
+>
+> 参数:
+> | 参数 | 命名空间/类型 | 值或来源 | 作用 |
+> |---|---|---|---|
+> | `Delay` | User / float | `2.4` | 作为 `Empty.Emitter State > Loop Delay` 的输入，控制该发射器延后出现 |
+
+### 00:05:03-00:09:40 关键流程 02
+
+- 本段定位：关键流程 02。
+- 知识点：2.4秒过了 它出现了 现在我们把它放在这样 我们看看它现在是怎么看 它这里没有出现 为什么 我们现在要做一个 有趣的事情 加镜头的阻力 它会需要这个镜头阻力。
+- 知识点：它会在时间过程中减少 100 然后它会降到0 这样我们可观察到它 超级 这里你应该需要阻力 现在它是0 我们把数字调到100 现在我们看看。
+- 知识点：它很棒 它应该是比较大 现在它们的大小 会跟镜头阻力一样 也是因为我们要安排摄影机 它在两个方向一致 需要选择X和Y 选择一个不一体 的角度。
+- 知识点：首先我们找到X 从1就会全都降到0 X就会伸长这样 Y就会这样 我们看到X就会 有点多 这就会降得很快 这是结果 看看結果,看看如何 非常好,你只要確保,Sort。
+- 知识点：Order会在所有的部分显示 我们稱之为 Impact,再看看 非常好,只要再加點光 我们有了一顆,我们还需要一个背景灯 我们来設立一个新的空氣,还有自然的自然,让我们加點延迟。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: Preview 预览 + Niagara System Overview + User Parameters + Timeline + Details 属性图
+> - 所属: `NS_StylizedWaterSplash`
+> - 目的: 记录 `关键流程 02` 中对辅助发射器 `Empty` 增加延迟后的生命周期设置，确认它在 `2.4s` 之后再触发
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左上 | Preview 效果图 | `NS_StylizedWaterSplash` | 预览中未显示稳定的独立飞溅，只是地面上的浅灰蓝亮区 | 本图重点不在效果预览，而在时间与生命周期设置 |
+> | 中央偏左 | Niagara Stack | `DropsSplash` | 主发射器保持 `Spawn Burst Instantaneous`、`Shape Location(Cylinder)`、`Gravity Force`、`Drag`、`Scale Color` 等链路 | 作为主飞溅层继续存在 |
+> | 中央偏右 | Niagara Stack | `Empty` | 当前可见 `Emitter State(Self Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Particle State`、`Sprite Renderer` | 这是被延迟触发的辅助发射器 |
+> | 右侧 | Details 属性图 | `Empty > Emitter State` | `Life Cycle Mode = Self`，`Inactive Response = Complete (Let Particles Finish then Kill Emitter)`，`Loop Behavior = Once`，`Loop Duration Mode = Fixed`，`Loop Duration = 5.0`，`Loop Delay = User.Delay`，`Scalability Mode = System` | 右侧设置定义 `Empty` 延时后只触发一次 |
+> | 左下 | 参数面板 | `User Parameters` | `Delay = 2.4` | 这个用户参数直接驱动 `Loop Delay` |
+> | 下方 | 时间线 | `NS_StylizedWaterSplash` | 播放头位于约 `0.43s`，尚处于延迟触发前的早期时段 | 用于对照“还没到 2.4 秒所以还未生成” |
+>
+> 模块栈:
+> | 顺序 | 发射器 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|---|
+> | 1 | `Empty` | Emitter Update | `Emitter State` | Enabled | `Loop Behavior=Once`, `Loop Duration=5.0`, `Loop Delay=User.Delay` | 让辅助发射器在延迟后只运行一次 |
+> | 2 | `Empty` | Emitter Spawn | `Spawn Burst Instantaneous` | Enabled | 图中未展开 | 到达延迟时间点时一次性生成粒子 |
+> | 3 | `Empty` | Particle Spawn | `Initialize Particle` | Enabled | 图中未展开 | 初始化延迟生成的粒子 |
+> | 4 | `Empty` | Particle Update | `Particle State` | Enabled | 图中未展开 | 管理辅助粒子存活 |
+> | 5 | `Empty` | Render | `Sprite Renderer` | Enabled | 图中未展开 | 输出辅助粒子贴片 |
+>
+> 参数:
+> | 参数 | 命名空间/类型 | 值或来源 | 作用 |
+> |---|---|---|---|
+> | `Delay` | User / float | `2.4` | 作为 `Empty.Emitter State > Loop Delay` 的输入，控制辅助发射器何时出现 |
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: Preview 预览 + Niagara System Overview + User Parameters + Timeline + Details 曲线属性图
+> - 所属: `NS_StylizedWaterSplash`
+> - 目的: 记录辅助发射器 `Empty` 的 `Scale Sprite Size` 非均匀缩放曲线，说明粒子在生命周期中按 X/Y 分别拉伸与衰减
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左上 | Preview 效果图 | `NS_StylizedWaterSplash` | 预览中可见一束向上拉高、两侧外甩的亮蓝色水花 | 用于验证右侧尺寸曲线对粒子外形的影响 |
+> | 中央偏左 | Niagara Stack | `DropsSplash` | 主发射器继续保留 `Gravity Force`、`Drag`、`Scale Color` 等模块 | 仍提供主体飞溅层 |
+> | 中央偏右 | Niagara Stack | `Empty` | 当前可见 `Emitter State(Self Infinite)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Particle State`、`Scale Sprite Size`、`Camera Offset`、`Sprite Renderer` | 这一层承载额外的 Impact 贴片或高光层 |
+> | 右侧 | Details 曲线属性图 | `Empty > Scale Sprite Size` | `Scale Sprite Size Mode = Non-Uniform Curve`；曲线类型为 `Curve for Vector2D's`；曲线索引为 `Particles.NormalizedAge`；可见 `Non-Uniform Curve Scale=(1.0, 1.0)`；图中 X 为红色、Y 为绿色，两条曲线都从左低右高，Y 上升更明显 | 右侧曲线决定粒子随生命周期的 X/Y 尺寸变化 |
+> | 左下 | 参数面板 | `User Parameters` | `Delay = 2.4` | 系统仍保留同一延迟参数 |
+> | 下方 | 时间线 | `NS_StylizedWaterSplash` | 播放头位于约 `2.58s` | 对应延迟之后已经能看到辅助粒子的时段 |
+>
+> 模块栈:
+> | 顺序 | 发射器 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|---|
+> | 1 | `Empty` | Emitter Update | `Emitter State` | Enabled | `Self Infinite` | 让该辅助层持续存在于当前系统阶段 |
+> | 2 | `Empty` | Emitter Spawn | `Spawn Burst Instantaneous` | Enabled | 图中未展开 | 生成辅助贴片 |
+> | 3 | `Empty` | Particle Spawn | `Initialize Particle` | Enabled | 图中未展开 | 初始化粒子 |
+> | 4 | `Empty` | Particle Update | `Particle State` | Enabled | 图中未展开 | 管理生命周期 |
+> | 5 | `Empty` | Particle Update | `Scale Sprite Size` | Enabled | `Mode=Non-Uniform Curve`, `CurveIndex=Particles.NormalizedAge` | 按粒子年龄分别控制 X/Y 尺寸变化 |
+> | 6 | `Empty` | Particle Update | `Camera Offset` | Enabled | 图中未展开 | 调整与镜头的相对偏移 |
+> | 7 | `Empty` | Render | `Sprite Renderer` | Enabled | 图中未展开 | 渲染辅助贴片 |
+>
+> 曲线设置:
+> | Owner.Property | 值 | 类型/单位 | 来源 | 作用 |
+> |---|---|---|---|---|
+> | `Empty.ScaleSpriteSize.Mode` | `Non-Uniform Curve` | enum | Details | 允许分别控制 X/Y 尺寸 |
+> | `Empty.ScaleSpriteSize.CurveType` | `Curve for Vector2D's` | curve | Details | 用二维向量曲线驱动尺寸 |
+> | `Empty.ScaleSpriteSize.CurveIndex` | `Particles.NormalizedAge` | Niagara attribute | Details | 以粒子归一化年龄采样曲线 |
+> | `Empty.ScaleSpriteSize.CurveScale` | `(1.0, 1.0)` | Vector2D | Details | 作为曲线整体缩放系数 |
+>
+> 曲线观察:
+> - 红色 X 曲线从生命周期起点的低值逐渐上升到终点，表示横向尺寸在后段被拉长
+> - 绿色 Y 曲线同样上升且斜率更明显，表示纵向尺寸也随时间增大
+> - 这与正文“X 会拉伸，Y 也要这样做”的说明一致
+> 图表转写（UE-GTXT v4）
+> - 类型: 材质实例参数图
+> - 组成部分: Viewport 预览 + Material Instance 参数面板
+> - 所属: `MI_GlowAdditive_01`
+> - 目的: 检查用于 Impact 或补光层的发光材质实例，并指出当前版本缺少 `Depth Fade`
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左侧 | Viewport 效果图 | `MI_GlowAdditive_01` 预览 | 地面中心显示一团强烈的白蓝色发光斑，边缘向外柔和扩散，背景建筑与地面被明显提亮 | 用于验证右侧 Glow 材质参数的视觉结果 |
+> | 右侧 | 参数面板 | `MI_GlowAdditive_01` | 当前展开 `Base Texture`、`Dissolve`、`Distortion` 等参数组，可见底部还有 `Global Scalar Parameter Values` 区域；字幕说明“这个 glow 没有 depth fade，需要再做一个带 depth fade 的版本” | 右侧设置决定左侧发光贴片的颜色、贴图与溶解/扭曲方式 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `BaseTexture.Colormap` | `VFX_T_ColorMap_Blue_06` | 参数面板 | 给发光贴片提供蓝色渐变 |
+> | `BaseTexture.Main(Scale|Scroll)` | `R=1.0, G=1.0, B=0.0, A=0.0` | 参数面板 | 控制主贴图缩放与滚动 |
+> | `BaseTexture.Premultiply Color?` | `0.0` | 参数面板 | 当前未启用预乘颜色 |
+> | `BaseTexture.T_Main` | `T_Glow` | 参数面板 | 指定主发光纹理 |
+> | `BaseTexture.T_Mask` | `WhiteSquareTexture` | 参数面板 | 当前可见的遮罩纹理输入 |
+> | `BaseTexture.Use Colormap?` | `0.0` | 参数面板 | 当前不额外启用颜色映射开关 |
+> | `Dissolve.T_Dissolve` | `T_Noise111` | 参数面板 | 用噪声贴图控制溶解边缘 |
+> | `Dissolve.Dissolve(Scale|Scroll)` | `R=1.0, G=1.0, B=0.0, A=0.0` | 参数面板 | 控制溶解贴图的缩放与滚动 |
+> | `Dissolve.Smoothness` | `0.1` | 参数面板 | 控制溶解过渡平滑度 |
+> | `Distortion.Distortion(Scale|Scroll)` | `R=1.0, G=1.0, B=0.0, A=0.0` | 参数面板 | 控制扭曲噪声的缩放与滚动 |
+> | `Distortion.Distortion Influence` | `0.0` | 参数面板 | 当前不施加额外扭曲强度 |
+> | `Distortion.T_Voronoise002` | `T_Voronoise002` | 参数面板 | 作为扭曲噪声纹理 |
+> | `GlobalScalar.DepthFade` | 未在当前可见值中体现 | 字幕与参数区标题 | 当前版本缺少有效的 `Depth Fade` 设置，需要另建带 `Depth Fade` 的 glow 版本 |
+>
+> 输出/预览:
+> - 当前预览表现为高亮、边缘柔和的加色发光斑，适合做冲击点或补光层
+> - 由于没有有效的 `Depth Fade`，这类 glow 在贴地或接触几何体时容易显得过硬，因此教程在这里决定制作新的带 `Depth Fade` 的材质版本
+
+### 00:09:40-00:14:15 粒子
+
+- 本段定位：粒子。
+- 知识点：我们需要设置颜色 也会很快,需要在0.2秒內 我们要看看它会如何 我们来看看,这里是光线 我覺得它不太亮 需要它可能会更亮 加點鏡頭的光线到150。
+- 知识点：但这次只会在粒子上發生損坏 这里是損坏光线 需要快速地调整它的大小 还需要颜色,会快速地損坏。
+- 知识点：慢慢地消失 需要有影响光,需要稱之为 让它更亮,加點光线 光线,我不明白什么,为什么我没有看到它 鏡頭的損坏,光线,延迟,維持圖形。
+- 知识点：我们把它放在5,爆炸 不爆炸 不要有任何損坏 我認为它不显示 这顆光线是標準的,但我没有看到这顆光线 我再设置光线 光线不需要被定義,我们加了光线大小,而不是光线大小。
+- 知识点：现在它明顯地显示它不显示 光线变成光线 光线是更新的 之后的时间 我認为它可以再提升一点 它看起来很好 你也可以減少損坏。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: Preview 预览 + Niagara System Overview + User Parameters + Timeline + Details 属性图
+> - 所属: `NS_StylizedWaterSplash`
+> - 目的: 记录粒子段里新增的 `Impact` 发射器，以及 `Empty` 发射器的 `Sprite Renderer` 已切换到新的带 `Depth Fade` 的发光材质
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左上 | Preview 效果图 | `NS_StylizedWaterSplash` | 画面中可见高亮蓝白色主水花，顶部竖向喷流明显，两侧有外甩碎片，底部亮斑更柔和 | 用于验证新的 glow 材质与额外发射器叠加后的结果 |
+> | 中央偏左 | Niagara Stack | `Impact` | 可见 `Emitter State(Self Infinite)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Particle State`、`Scale Sprite Size`、`Camera Offset`、`Sprite Renderer` | 这是新加入的冲击或补光发射器 |
+> | 中央偏右 | Niagara Stack | `Empty` | 当前仍可见 `Emitter State(Self Infinite)`、`Initialize Particle`、`Particle State`、`Sprite Renderer` | 作为已有的辅助 Glow 层继续存在 |
+> | 右侧 | Details 属性图 | `Empty > Sprite Renderer` | `Material = MI_GlowAdditive_02`，`Material User Param Binding=None`，`Source Mode=Particles`，`Alignment=Automatic`，`Facing Mode=Automatic`，`Default Pivot in UV Space=(0.5,0.5)`，`Pixel Coverage Mode=Automatic`，`Pixel Coverage Blend=1.0`，`Sort Mode=None`，`Renderer Visibility=0` | 右侧说明 `Empty` 已经改用新的 Glow 材质版本 |
+> | 左下 | 参数面板 | `User Parameters` | `Delay = 2.4` | 系统继续沿用延迟参数 |
+> | 下方 | 时间线 | `NS_StylizedWaterSplash` | 播放头位于约 `2.62s` | 对应辅助层和冲击层已经可见的时段 |
+>
+> 模块栈:
+> | 顺序 | 发射器 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|---|
+> | 1 | `Impact` | Emitter Update | `Emitter State` | Enabled | `Self Infinite` | 让冲击层在当前阶段持续有效 |
+> | 2 | `Impact` | Emitter Spawn | `Spawn Burst Instantaneous` | Enabled | 图中未展开 | 一次性生成冲击贴片 |
+> | 3 | `Impact` | Particle Spawn | `Initialize Particle` | Enabled | 图中未展开 | 初始化冲击粒子 |
+> | 4 | `Impact` | Particle Update | `Particle State` | Enabled | 图中未展开 | 管理冲击粒子生命周期 |
+> | 5 | `Impact` | Particle Update | `Scale Sprite Size` | Enabled | 图中未展开 | 控制冲击贴片大小变化 |
+> | 6 | `Impact` | Particle Update | `Camera Offset` | Enabled | 图中未展开 | 调整相机方向上的层次关系 |
+> | 7 | `Impact` | Render | `Sprite Renderer` | Enabled | 图中未展开 | 输出冲击贴片 |
+> | 8 | `Empty` | Render | `Sprite Renderer` | Enabled | `Material=MI_GlowAdditive_02` | 用新的发光材质渲染辅助光斑，提供更平滑的深度过渡 |
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: Preview 预览 + Niagara System Overview + User Parameters + Timeline + Details 属性图
+> - 所属: `NS_StylizedWaterSplash`
+> - 目的: 记录将辅助 Glow 发射器整理为 `ImpactGlow` 后的 `Initialize Particle` 基础属性，尤其是寿命、颜色与位置偏移
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左上 | Preview 效果图 | `NS_StylizedWaterSplash` | 当前预览画面没有明显可分离的新光斑，只是场景背景与地面接触区 | 本图重点在发射器参数排查 |
+> | 中央偏左 | Niagara Stack | `Impact` | 继续保留 `Emitter State(Self Infinite)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Particle State`、`Scale Sprite Size`、`Camera Offset`、`Sprite Renderer` | 作为主体冲击层 |
+> | 中央偏右 | Niagara Stack | `ImpactGlow` | 发射器包含 `Emitter State(Self Infinite)`、`Initialize Particle`、`Camera Offset`、`Particle State`、`Scale Sprite Size`、`Scale Color`、`Sprite Renderer` | 这是重命名后的 Glow 发射器 |
+> | 右侧 | Details 属性图 | `ImpactGlow > Initialize Particle` | `Lifetime Mode=Direct Set`，`Lifetime=0.2`；`Color Mode=Direct Set`；颜色为 `R=0.102579, G=0.512257, B=1.0, A=1.0`；`Position Mode=Simulation Position`；`Position Offset=(0.0,0.0,0.0)`；`Position Offset Coordinate Space=Simulation`；`Mass Mode=Unset (/ Mass of 1)`；`Mesh Scale Mode=Uniform`，`Mesh Uniform Scale=500.0` | 这些参数定义 Glow 粒子的基础寿命、颜色和默认位置 |
+> | 左下 | 参数面板 | `User Parameters` | `Delay = 2.4` | 系统仍保留延迟参数 |
+> | 下方 | 时间线 | `NS_StylizedWaterSplash` | 播放头位于约 `2.62s` | 与前一张保持同一观察时段 |
+>
+> 模块栈:
+> | 顺序 | 发射器 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|---|
+> | 1 | `ImpactGlow` | Emitter Update | `Emitter State` | Enabled | `Self Infinite` | 让 Glow 层持续参与当前效果 |
+> | 2 | `ImpactGlow` | Particle Spawn | `Initialize Particle` | Enabled | `Lifetime=0.2`, `Color=(0.102579,0.512257,1,1)` | 给 Glow 粒子设定短寿命与蓝色发光基色 |
+> | 3 | `ImpactGlow` | Particle Spawn | `Camera Offset` | Enabled | 图中未展开 | 控制相机方向上的层次位置 |
+> | 4 | `ImpactGlow` | Particle Update | `Particle State` | Enabled | 图中未展开 | 管理 Glow 粒子的存活 |
+> | 5 | `ImpactGlow` | Particle Update | `Scale Sprite Size` | Enabled | 图中未展开 | 调整 Glow 大小 |
+> | 6 | `ImpactGlow` | Particle Update | `Scale Color` | Enabled | 图中未展开 | 让颜色或透明度随时间变化 |
+> | 7 | `ImpactGlow` | Render | `Sprite Renderer` | Enabled | 图中未展开 | 输出 Glow 贴片 |
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 预览截图
+> - 组成部分: Viewport 效果预览 + Sequencer 时间线 + Outliner/Details
+> - 所属: `LQ_StylizedWaterSplash` 关卡中的 `NS_StylizedWaterSplash`
+> - 目的: 验证加入额外 glow 和 illumination 后的中心亮斑效果，确认发光层已经明显可见
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 中央 | Viewport 效果图 | `NS_StylizedWaterSplash` | 画面中央是强烈的白蓝色亮斑，中心近白色，外围有淡蓝色光晕；主水花主体被压缩为发光核心，底部左右伸出两道水平亮刺 | 用于验证额外的 glow 与 illumination 已叠加到水花中心 |
+> | 下方 | Sequencer 时间线 | `LQ_StylizedWaterSplash` | 播放头位于约 `2.45s`，仍在 `CameraActor` 与 `NS_StylizedWaterSplash` 的同一镜头段内 | 对应 glow 层开始可见的时间点 |
+> | 右侧 | Details 属性图 | `Floor (Instance)` | 右侧显示 `Floor` 实例常规属性，而非 Niagara 参数 | 本图右侧不承担参数说明作用 |
+>
+> 效果观察:
+> - 与前面主要表现水花形体的截图相比，这一帧更强调中心的附加发光和照明感
+> - 字幕明确说明“we made glow, illumination is additional”，对应当前中心亮斑明显强于普通水花贴片
+> - 如果继续增强，该层可进一步抬高中心亮度，但当前结果已经能清楚区分出单独的 glow 核心
+
+### 00:14:15-00:19:13 粒子、透明度
+
+- 本段定位：粒子、透明度。
+- 知识点：它可能会更好 我認为它已经是更好的 看起来很好 我会示範一个很有趣的技巧 如何加上更新的損坏 因为它会更好 来做这个,我们先去到物理设计師。
+- 知识点：很简单的 我们有一个NOTA叫做Grunge 它看起来像是它 它已经像是水晶 它是一种噪音 很简单 我们可能会再剪輯 可以改变它们的数字。
+- 知识点：可以改变它的光线 一些会更暗,其他会更明顯 就像很多小水晶 需要示範如何使用它们 我们改变它的大小 为1024 我们也会加上一个格式圖。
+- 知识点：来转换到RGBA 让它有8bit的设置 需要把它设置为SRGB 需要把它放進Unreal Engine 我已经输入了 现在需要创建材料。
+- 知识点：Ctrl C,Ctrl V 这个聲音是主要的质感 我们也会使用颜色圖 我们也会加上了調校 让它有一点動力 让它動一点 我覺得可以加上溶解 或是更加的順滑。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`颜色`、`透明度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 预览截图
+> - 组成部分: Viewport 效果预览 + Sequencer 时间线 + Outliner/Details
+> - 所属: `LQ_StylizedWaterSplash` 关卡中的 `NS_StylizedWaterSplash`
+> - 目的: 验证进入 `粒子、透明度` 段后，中心发光和主体水花的叠加观感是否已经改善，并观察排序顺序对前后层的影响
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 中央 | Viewport 效果图 | `NS_StylizedWaterSplash` | 中心是一团高亮白蓝色发光核心，顶部有细长水花喷流，底部左右仍有细窄的水平亮刺；外围蓝色光晕比前段更均匀 | 用于验证新的透明度与排序调整是否让效果更干净 |
+> | 下方 | Sequencer 时间线 | `LQ_StylizedWaterSplash` | 播放头位于约 `2.47s`，仍在同一镜头段中 | 对应 glow 和主体层同时可见的时刻 |
+> | 右侧 | Details 属性图 | `Floor (Instance)` | 右侧仍是 `Floor` 实例常规属性，不提供 Niagara 参数信息 | 本图右侧不承担参数说明作用 |
+>
+> 效果观察:
+> - 中心亮斑与喷发主体已经融合得更自然，画面不再像前一段那样只剩独立的硬亮斑
+> - 字幕提到可以再降低 `Sort Order`，避免某层始终压在最前面，说明当前图主要在评估透明层前后关系
+> - 从当前结果看，作者认为观感已经“much better”，可作为后续继续调透明度和噪声材质的基线
+> 图表转写（UE-GTXT v4）
+> - 类型: 结果预览与资源浏览截图
+> - 组成部分: Viewport 效果预览 + Content Browser 纹理目录 + Outliner/Details
+> - 所属: `NS_StylizedWaterSplash` 与 `VFX_Library/Textures/Noises`
+> - 目的: 在保持当前水花效果预览的同时，从噪声纹理库中挑选可用于透明度或细碎晶体感的 `Grunge/Noise` 贴图
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 上方中央 | Viewport 效果图 | `NS_StylizedWaterSplash` | 当前水花主体呈淡蓝色，中心亮度比前一张收敛，顶部有较短的喷溅尖刺，底部仍有圆形积水亮区 | 作为挑选新噪声材质前的效果参考 |
+> | 下方 | 资源浏览图 | `VFX_Library/Textures/Noises` | Content Browser 已定位到 `VFX_Library > Textures > Noises`，可见一整页噪声纹理缩略图，例如 `T_Noise121`、`T_Noise122`、`T_Noise_1` 到 `T_Noise_17`、`T_PerlinSoft_Packed`、`T_PerlinNoise`、`T_PerlinNoise2`、`T_PerlinNoise3`、`T_SmokeNoise`、`T_SpotsNoise_01` 等 | 这些噪声图将作为后续材质中的透明度/溶解/晶体细节输入 |
+> | 右侧 | Details 属性图 | `Floor (Instance)` | 右侧仍是 `Floor` 实例常规属性 | 本图右侧不承担材质参数说明作用 |
+>
+> 资源选择要点:
+> - 教程在这里从 `Noises` 目录中挑选可产生不规则碎裂、晶体或雾状边缘的灰度纹理
+> - 这类纹理适合接到材质的 `Opacity/Alpha`、`Dissolve` 或遮罩链路，用来打破单一发光斑的平滑轮廓
+> - 预览中的水花仍保持可接受外形，说明这一步主要是为下一张材质编辑做资源准备，而不是继续改 Niagara 模块
+> 图表转写（UE-GTXT v4）
+> - 类型: 材质实例参数图
+> - 组成部分: Viewport 预览 + Material Instance 参数面板
+> - 所属: `MI_GlowAdditive_03`
+> - 目的: 使用噪声贴图重做 Glow 材质的主纹理、遮罩、溶解和扭曲，让粒子边缘更碎、更像水晶或雾状飞沫
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左侧 | Viewport 效果图 | `MI_GlowAdditive_03` 预览 | 画面中央只剩一些零散的蓝色亮点和碎片，整体轮廓比之前的完整 glow 斑更破碎 | 用于验证右侧噪声贴图和溶解参数是否让形态更细碎 |
+> | 右侧 | 参数面板 | `MI_GlowAdditive_03` | 当前展开 `Base Texture`、`Dissolve`、`Distortion`，底部还能看到 `Global Scalar Parameter Values` 区域 | 右侧参数决定左侧粒子碎片的颜色、主纹理、遮罩、溶解和扭曲 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `BaseTexture.Colormap` | `VFX_T_ColorMap_Blue_01` | 参数面板 | 提供蓝色渐变映射 |
+> | `BaseTexture.Main(Scale|Scroll)` | `R=1.0, G=1.0, B=0.0, A=0.0` | 参数面板 | 控制主纹理缩放与滚动 |
+> | `BaseTexture.Premultiply Color?` | `1.0` | 参数面板 | 启用预乘颜色，避免发光边缘过硬 |
+> | `BaseTexture.T_Main` | `T_SpotsNoise_01` | 参数面板 | 把斑点噪声作为主纹理，制造碎点状形态 |
+> | `BaseTexture.T_Mask` | `T_Glow6` | 参数面板 | 作为发光遮罩输入 |
+> | `BaseTexture.Use Colormap?` | `1.0` | 参数面板 | 启用颜色映射 |
+> | `Dissolve.T_Dissolve` | `T_Swirly_Noise` | 参数面板 | 用旋涡噪声控制溶解边缘 |
+> | `Dissolve.Dissolve(Scale|Scroll)` | `R=1.0, G=1.0, B=0.0, A=0.0` | 参数面板 | 控制溶解噪声的缩放与滚动 |
+> | `Dissolve.Smoothness` | `0.25` | 参数面板 | 让溶解边界略微平滑 |
+> | `Distortion.Distortion(Scale|Scroll)` | `R=5.0, G=5.0, B=0.1, A=0.3` | 参数面板 | 提高扭曲噪声缩放并加入轻微滚动 |
+> | `Distortion.Distortion Influence` | `0.01` | 参数面板 | 施加轻度扭曲，避免碎点完全静止 |
+>
+> 输出/预览:
+> - 左侧预览不再是完整发光团，而是许多不规则蓝色碎点，说明 `T_SpotsNoise_01` 已把形态打散
+> - `T_Swirly_Noise` 与轻度 `Distortion Influence` 让碎点边缘更自然，不会像单一圆斑那样过于规整
+> - 这张图对应正文里“先把参数设好，再生成一定数量粒子”的阶段，重点是先把透明度/纹理外观准备好
+
+### 00:19:13-00:24:12 Alpha、PS、速度
+
+- 本段定位：Alpha、PS、速度。
+- 知识点：需要把数字的数量 例如從2到3 首先我们设置颜色和透明度 时速生命体,随机,空氣,200-300 加上随机轉動 会有 B-drops 把这个材料转换出来。
+- 知识点：我们来看看 现在它们很難看 可以改变它们的alpha 需要它们会飛起来一点 加上速度,随机,空氣,50-100。
+- 知识点：让它们飛起来 它们应该是 我们现在要加上光线 需要加快 2.2秒 它们的量度会开始 变小,再快速增加 还需要改变颜色。
+- 知识点：我们要怎麼做? 需要很快地增加颜色的濃度 加上2 1,然后它会变 非常快 我们看到颜色变亮,然后它快速消失。
+- 知识点：我们还需要加速增加 它会飛起来 非常快,加速增加 我可能会加速增加 500-700 轉動,它会很快地飛起来 它很快地飛起来 然后它会慢慢地掉下来。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`速度`、`颜色`、`透明度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: Preview 预览 + Niagara System Overview + User Parameters + Timeline + Details 属性图
+> - 所属: `NS_StylizedWaterSplash`
+> - 目的: 在 `Alpha、PS、速度` 段开头确认系统当前由 `Impact`、`ImpactGlow` 和 `Empty` 三层发射器组成，并检查 `Empty` 的生命周期设置，准备继续调颜色、透明度和随机寿命
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左上 | Preview 效果图 | `NS_StylizedWaterSplash` | 预览窗口正在 `Compiling...`，当前没有稳定可读的粒子结果 | 本图重点不在效果观察，而在系统层级和发射器状态 |
+> | 中央偏左 | Niagara Stack | `Impact` | 可见 `Emitter State(Self Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Particle State`、`Scale Sprite Size`、`Camera Offset`、`Sprite Renderer` | 作为冲击主体层存在 |
+> | 中央 | Niagara Stack | `ImpactGlow` | 可见 `Emitter State(Self Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Camera Offset`、`Particle State`、`Scale Sprite Size`、`Scale Color`、`Sprite Renderer` | 作为发光辅助层存在 |
+> | 中央偏右 | Niagara Stack | `Empty` | 当前可见 `Emitter State(Self Once)`、`Initialize Particle`、`Particle State`、`Sprite Renderer` | 这是仍在保留的额外粒子层 |
+> | 右侧 | Details 属性图 | `Empty > Emitter State` | `Life Cycle Mode = Self`，`Inactive Response = Complete (Let Particles Finish then Kill Emitter)`，`Loop Behavior = Once`，`Loop Duration = 5.0`，`Loop Delay = 0.0`，`Scalability Mode = System` | 右侧说明 `Empty` 当前是立即触发、持续 5 秒的一次性发射器 |
+> | 左下 | 参数面板 | `User Parameters` | `Delay = 2.4` | 系统仍保留延迟参数，但本图里 `Empty` 的 `Loop Delay` 已显示为 `0.0` |
+> | 下方 | 时间线 | `NS_StylizedWaterSplash` | 播放头位于约 `-0.08s`，轨道仍显示 `Bubbles_AroundSphere`、`Dark_Puddle` 等条目 | 表明作者正回到序列前段重新检查发射器起始设置 |
+>
+> 模块栈:
+> | 顺序 | 发射器 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|---|
+> | 1 | `Impact` | Emitter Update | `Emitter State` | Enabled | `Self Once` | 冲击层按一次性生命周期触发 |
+> | 2 | `Impact` | Emitter Spawn | `Spawn Burst Instantaneous` | Enabled | 图中未展开 | 一次性生成主体冲击粒子 |
+> | 3 | `ImpactGlow` | Emitter Update | `Emitter State` | Enabled | `Self Once` | Glow 层按一次性生命周期触发 |
+> | 4 | `ImpactGlow` | Emitter Spawn | `Spawn Burst Instantaneous` | Enabled | 图中未展开 | 一次性生成 Glow 粒子 |
+> | 5 | `Empty` | Emitter Update | `Emitter State` | Enabled | `Loop Behavior=Once`, `Loop Duration=5.0`, `Loop Delay=0.0` | 额外粒子层在当前序列中立即开始 |
+> | 6 | `Empty` | Particle Spawn | `Initialize Particle` | Enabled | 图中未展开 | 初始化额外粒子层 |
+> | 7 | `Empty` | Particle Update | `Particle State` | Enabled | 图中未展开 | 管理粒子生命周期 |
+> | 8 | `Empty` | Render | `Sprite Renderer` | Enabled | 图中未展开 | 输出该层贴片 |
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: Preview 预览 + Niagara System Overview + User Parameters + Timeline + Details 曲线属性图
+> - 所属: `NS_StylizedWaterSplash`
+> - 目的: 记录 `Empty` 发射器开始加入上抛速度与尺寸缩放曲线，使粒子向上飞并在生命周期中逐渐放大
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左上 | Preview 效果图 | `NS_StylizedWaterSplash` | 预览窗口仍在编译后的静止状态，没有稳定可读的粒子结果 | 本图重点在发射器参数而不是效果预览 |
+> | 中央偏左 | Niagara Stack | `Impact` | 保持 `Emitter State(Self Once)`、`Spawn Burst Instantaneous`、`Scale Sprite Size`、`Camera Offset` 等模块 | 作为主体冲击层继续存在 |
+> | 中央 | Niagara Stack | `ImpactGlow` | 保持 `Emitter State(Self Once)`、`Spawn Burst Instantaneous`、`Scale Sprite Size`、`Scale Color` 等模块 | 作为发光辅助层存在 |
+> | 中央偏右 | Niagara Stack | `Empty` | 当前可见 `Emitter State(Self Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Add Velocity(Linear)`、`Solve Forces and Velocity`、`Particle State`、`Scale Sprite Size`、`Sprite Renderer` | 这一层现在承担向上飞散的小粒子 |
+> | 右侧 | Details 曲线属性图 | `Empty > Scale Sprite Size` | `Scale Sprite Size Mode = Uniform Curve`；曲线类型是 `Curve for Floats`；`Uniform Curve Index = Particles.NormalizedAge`；`Uniform Curve Scale = 1.0`；曲线从年龄起点约 `0.0` 线性上升到终点约 `0.8-1.0` | 右侧曲线让粒子随生命周期逐步变大 |
+> | 左下 | 参数面板 | `User Parameters` | `Delay = 2.4` | 系统继续保留延迟参数 |
+> | 下方 | 时间线 | `NS_StylizedWaterSplash` | 播放头位于约 `-0.08s` | 表示仍在起始阶段调初始参数 |
+>
+> 模块栈:
+> | 顺序 | 发射器 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|---|
+> | 1 | `Empty` | Particle Spawn | `Initialize Particle` | Enabled | 图中未展开 | 初始化小粒子 |
+> | 2 | `Empty` | Particle Spawn | `Add Velocity` | Enabled | `Linear` | 给粒子一个向上的初始速度，字幕提到范围向量约 `50,100` |
+> | 3 | `Empty` | Particle Update | `Solve Forces and Velocity` | Enabled | 图中未展开 | 解算速度带来的位移 |
+> | 4 | `Empty` | Particle Update | `Particle State` | Enabled | 图中未展开 | 管理生命周期 |
+> | 5 | `Empty` | Particle Update | `Scale Sprite Size` | Enabled | `Mode=Uniform Curve`, `Index=Particles.NormalizedAge` | 让粒子随年龄增长而放大，匹配精灵大小变化 |
+> | 6 | `Empty` | Render | `Sprite Renderer` | Enabled | 图中未展开 | 输出飞散粒子贴片 |
+>
+> 曲线观察:
+> - 尺寸曲线是单一浮点曲线，从起始接近 `0` 逐步升到末端高值，表示粒子不是一出生就很大
+> - 这与字幕“they should be scaled to scale sprite size”一致，即先给上抛速度，再用尺寸曲线控制视觉成长
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 预览截图
+> - 组成部分: Viewport 效果预览 + Sequencer 时间线 + Outliner/Details
+> - 所属: `LQ_StylizedWaterSplash` 关卡中的 `NS_StylizedWaterSplash`
+> - 目的: 验证当前小粒子层在加了上抛速度后是否飞得过快、消失过快，并判断尺寸是否需要继续加大
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 中央 | Viewport 效果图 | `NS_StylizedWaterSplash` | 画面中央几乎看不到独立粒子，只剩非常淡的圆形蓝灰亮区，没有明显可辨认的水花碎片 | 用于证明当前参数下粒子存在感过弱 |
+> | 下方 | Sequencer 时间线 | `LQ_StylizedWaterSplash` | 播放头位于约 `2.72s`，仍在同一镜头段内 | 对应飞散粒子已经上抛并快速消失后的时刻 |
+> | 右侧 | Details 属性图 | `Floor (Instance)` | 右侧是 `Floor` 实例常规属性，不提供 Niagara 参数信息 | 本图重点在结果判断而非参数面板 |
+>
+> 效果观察:
+> - 当前上抛小粒子层在这个时刻几乎不可见，说明它们要么飞得过快离开镜头，要么透明度和寿命让它们太早消失
+> - 字幕明确给出结论：`fly up quite quickly and will disappear`，并提出把尺寸提高到 `300, 400` 再观察
+> - 这张图因此承担失败结果验证作用，支持后续继续增大粒子尺寸或调整寿命/Alpha，而不是保留当前参数
+
+### 00:24:12-00:28:55 Alpha
+
+- 本段定位：Alpha。
+- 知识点：我認为它的量度可以更大 300-400 现在我们来看看它们的样子 还需要更多 750000 在这个範圍內 需要把它们放在更高的位置上 所以需要把位置的调整降低。
+- 知识点：150 让它们從上方更顯现 很好 我们稱之为 它们像圆形 所以我用这个膠膜来分辨 Ctrl Z 让它们圆形 每个膠膜都分開 如果我只用一个損傷的物体。
+- 知识点：是一个物体,这里是 我可以剪輯 让它们变成 因为它们会用这个膠膜来分辨 这很酷的技巧 用这个聲音 随机轉動 我損傷了幾个膠膜 它们会飛起来,然后掉下来。
+- 知识点：我们可观察到它们都变成了 我们有很多水的水分 我们来看看它们的样子 很好,你应该把5个数字 提高一点 我喜欢它 掉落的水分可以被取走 但我只会让它们变得很少。
+- 知识点：的細節 需要用这个聲音 需要用这个聲音 我認为 我们需要更快的反光 这樣我们能看到 这个水分不從0开始 我们可能会改变它的Alpha。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 预览截图
+> - 组成部分: Viewport 效果预览 + Sequencer 时间线 + Outliner/Details
+> - 所属: `LQ_StylizedWaterSplash` 关卡中的 `NS_StylizedWaterSplash`
+> - 目的: 在 `Alpha` 段继续检查当前小粒子与主体叠加后的结果，确认仍需扩大分布范围或调整位置
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 中央 | Viewport 效果图 | `NS_StylizedWaterSplash` | 中心仍是高亮白蓝色发光核心，顶部保留少量竖向喷流，左右有短而细的水平亮刺；外围额外粒子存在感不强 | 用于验证当前 Alpha/速度/颜色调整后的整体观感 |
+> | 下方 | Sequencer 时间线 | `LQ_StylizedWaterSplash` | 播放头位于约 `2.45s`，仍在同一镜头段中 | 对应 glow 与主体层已经可见但细碎粒子还不充分的时刻 |
+> | 右侧 | Details 属性图 | `Floor (Instance)` | 右侧仍是 `Floor` 实例常规属性，不提供 Niagara 参数 | 本图右侧不承担参数说明作用 |
+>
+> 效果观察:
+> - 当前中心亮核和主水花仍成立，但外围碎粒子层没有明显把体积撑开
+> - 字幕直接说明 `still more needs to be done`，并提到把数值提到 `750000`、在某个 `range/zone` 内把粒子稍微扔开，说明作者准备继续扩大分布范围
+> - 这张图因此是中间结果检查，不是最终满意状态
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: Preview 预览 + Niagara System Overview + Timeline + Details 属性图
+> - 所属: `NS_StylizedWaterSplash`
+> - 目的: 记录系统里新增或继续保留的细节发射器，并说明其中一层 `SpotDrips` 的渲染器只作为不那么显眼的附加细节
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左上 | Preview 效果图 | `NS_StylizedWaterSplash` | 预览仍停在静态场景背景，没有稳定可读的粒子结果 | 本图重点在系统分层与渲染器设置 |
+> | 中左 | Niagara Stack | `DropsPuddle` | 可见 `Emitter State(Self Infinite)`、`Initialize Particle`、`Sprite Facing and Alignment`、`Particle State`、`Scale Sprite Size`、`Scale Color`、`Event Handler - Source: CollisionEvent`、`Receive Location Event`、`Sprite Renderer` | 这是接收碰撞位置事件的地面积水层 |
+> | 中央 | Niagara Stack | `DropsSplash` | 可见 `Emitter State(Self Once)`、`Spawn Burst Instantaneous`、`Sub UVAnimation`、`Shape Location(Cylinder)`、`Add Velocity in Cone`、`Gravity Force`、`Drag`、`Solve Forces and Velocity`、`Scale Color`、`Sprite Rotation Rate`、`Dynamic Material Parameters` 等 | 这是主飞溅层 |
+> | 中右 | Niagara Stack | `Impact` | 可见 `Emitter State(Self Once)`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Particle State`、`Scale Sprite Size`、`Camera Offset`、`Sprite Renderer` | 冲击层继续存在 |
+> | 右侧 | Details 属性图 | `SpotDrips > Sprite Renderer` | `Material = MI_NoiseDrips_01`，`Source Mode=Particles`，`Alignment=Automatic`，`Facing Mode=Automatic`，`Default Pivot in UV Space=(0.5,0.5)`，`Pixel Coverage Mode=Automatic`，`Pixel Coverage Blend=1.0`，`Sort Mode=None`，`Renderer Visibility=0`，`Cast Shadows` 已启用，`Sort Order Hint=5` | 说明 `SpotDrips` 使用噪声滴落材质，并通过排序提示控制显示层级 |
+> | 下方 | 时间线 | `NS_StylizedWaterSplash` | 播放头位于约 `-0.08s`，可见多条发射器轨道 | 表示作者在序列起点检查整体系统层次 |
+>
+> 系统分层要点:
+> - `DropsPuddle` 负责接收 `CollisionEvent` 并在落点位置生成地面积水或附着贴片
+> - `DropsSplash` 保持主水花飞溅体
+> - `Impact` 负责额外冲击亮斑
+> - `SpotDrips` 的 `Sprite Renderer` 使用 `MI_NoiseDrips_01`，字幕说明这些附加细节不是删除，而是让它们“much less noticeable”
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 预览截图
+> - 组成部分: Viewport 效果预览 + Sequencer 时间线 + Outliner/Details
+> - 所属: `LQ_StylizedWaterSplash` 关卡中的 `NS_StylizedWaterSplash`
+> - 目的: 验证缩放或 Alpha 调整后的亮斑是否过度集中，并判断是否需要恢复到之前的参数状态
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 中央 | Viewport 效果图 | `NS_StylizedWaterSplash` | 画面中央只剩一个极亮的白蓝色十字形光斑，竖直方向形成单根尖柱，周围缺少更丰富的碎粒子或侧向飞溅 | 用于验证当前缩放/透明度方案是否把效果压得过于单一 |
+> | 下方 | Sequencer 时间线 | `LQ_StylizedWaterSplash` | 播放头位于约 `2.43s`，与前两张相近的镜头时段 | 用于对比同一时间点不同参数下的结果 |
+> | 右侧 | Details 属性图 | `Floor (Instance)` | 右侧仍为 `Floor` 实例常规属性 | 本图右侧不承担 Niagara 参数说明作用 |
+>
+> 效果观察:
+> - 当前视觉已经退化成一个过于明亮、过于集中的中心光点，缺少水花细节
+> - 字幕说明“if it were bigger it would be bright... I will return as it was”，表示继续放大会只让它更亮，甚至可能衰减到接近零，因此作者决定回退到之前更合适的状态
+> - 这张图是一次失败参数组合的结果验证，结论是不要继续沿当前方向放大或压缩，而应恢复先前版本
+
+### 00:28:55-00:33:50 UV、Water、颜色
+
+- 本段定位：UV、Water、颜色。
+- 知识点：幾百秒,看起来有點不一樣 现在我们来談談制作 我们先說一下制作 我们先說一下制作 我们先說一下制作 我们先說一下制作 我们先說一下制作 现在我们来談談制作。
+- 知识点：可以在这里按下 在主流的制作中,可以刷出不同的效果 我制作了一种材料,叫做Stylized 我制作了一种材料,叫做Stylized。
+- 知识点：有很多有趣的东西 我现在在制作这个 標準1,这里是超級操作的 这里是超級操作的,如果你再增加,就这樣了 这里是超級操作的,如果你再增加,就这樣了。
+- 知识点：还没有其他东西 这里有很多很棒的功能 我会展示 首先我制作一张图片 Stylized Water,特别是水,在这里可以再加一张。
+- 知识点：Stylized Water,特别是水,在这里可以再加一张 按下加,然后在这里他們都加了 这邊的指定點很重要 这个会是主流的 现在我展示它们的功能。
+- 知识点：的功能非常的酷 这里的功能非常的酷 可以做什么呢?可以按下选择 可以按下选择,这點会比較重要 可以按下选择,这點会比較重要。
+- 知识点：是一个设置,可以把黑和白調到另一邊 这里是一个设置,可以把黑和白調到另一邊 这里可以选择色調 可以选择色彩 转过来 你能控制它的纯度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 预览截图
+> - 组成部分: Viewport 效果预览 + Sequencer 时间线 + Outliner/Details
+> - 所属: `LQ_StylizedWaterSplash` 关卡中的 `NS_StylizedWaterSplash`
+> - 目的: 检查上一轮 Alpha/速度调整后，飞起粒子与地面落点是否已经形成更清晰的上下分离
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 中央 | Viewport 效果图 | `NS_StylizedWaterSplash` | 画面上方单独悬着一个细长的蓝白色高亮粒子，下方中心保留一个较弱的圆形蓝色落点亮斑，两者之间有少量细小残迹 | 用于验证小粒子已经被抛离地面，而地面层仍保留落点提示 |
+> | 下方 | Sequencer 时间线 | `LQ_StylizedWaterSplash` | 播放头位于约 `2.33s`，仍在同一镜头段中 | 对应上抛粒子刚离开主落点后的时刻 |
+> | 右侧 | Details 属性图 | `Floor (Instance)` | 右侧仍为 `Floor` 实例常规属性，不提供 Niagara 参数 | 本图右侧不承担参数说明作用 |
+>
+> 效果观察:
+> - 上下两层视觉已经分离，说明上抛粒子不再完全埋在中心发光核心里
+> - 字幕说明当前看起来“pretty good now”，表明这一版动画状态已经比前几张更接近可接受结果
+> - 仍可继续微调动画其他部分，但这张图体现的是一次有效的中间改进
+> 图表转写（UE-GTXT v4）
+> - 类型: 后处理材质参数图
+> - 组成部分: Viewport 效果预览 + Content Browser 资源浏览 + Material Instance 参数面板 + PostProcessVolume 属性图
+> - 所属: `MI_PP_Stylized_01`
+> - 目的: 演示把 Stylized 后处理材质加入场景，并测试 `Black/White` 之类的颜色控制开关，同时强调后处理材质的数组顺序需要调整
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左上主视口 | Viewport 效果图 | 当前场景 + 后处理 | 场景中仍能看到上方蓝白色高亮粒子和下方较弱的落点亮斑 | 用于实时观察后处理材质对整体画面的影响 |
+> | 中央浮窗 | 材质实例参数图 | `MI_PP_Stylized_01` | 参数面板当前展开 `Black/White`、`Blur`、`Chromatic`、`Color Remap`；可见 `Enable Black/White=False`，`Blur Influence=0.333334`，`Blur Intensity(0-1)=0.0`，`Chromatic Intensity=0.0`，`Color Remap Max=1.0` | 这些参数控制屏幕级调色与模糊效果 |
+> | 下方 | 资源浏览图 | `VFX_Library/Misc/Levels` | Content Browser 选中 `MI_PP_Stylized_01`，同目录还能看到 `MI_BasicMapGround`、`MI_PP_StylizedWater_01`、`PP_ML_Toon`、`PPML_DepthFog_01`、`PPML_DepthFog_02` 等资源 | 表示作者正在从关卡/后处理资源库中挑选并应用后处理材质 |
+> | 右侧 | PostProcessVolume 属性图 | `PostProcessVolume (Instance)` | `Post Process Materials > Array` 中有 4 个元素；可见多个材质槽前的权重均为 `1.0`，字幕说明需要“change the order” | 后处理材质顺序决定哪些屏幕效果先后叠加 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `MI_PP_Stylized_01.BlackWhite.Enable` | `False` | 参数面板 | 当前未启用黑白反转/黑白模式 |
+> | `MI_PP_Stylized_01.Blur Influence` | `0.333334` | 参数面板 | 控制模糊影响强度 |
+> | `MI_PP_Stylized_01.Blur Intensity` | `0.0` | 参数面板 | 当前不额外增加模糊强度 |
+> | `MI_PP_Stylized_01.Chromatic Intensity` | `0.0` | 参数面板 | 当前不加色差 |
+> | `MI_PP_Stylized_01.Color Remap Max` | `1.0` | 参数面板 | 控制颜色重映射上限 |
+> | `PostProcessVolume.PostProcessMaterials.ArrayCount` | `4` | 右侧属性图 | 场景同时挂了多个后处理材质，需要调整执行顺序 |
+>
+> 输出/观察:
+> - 这张图的重点不是局部粒子参数，而是把屏幕级后处理作为风格化效果的一部分接入关卡
+> - 字幕明确提出可以尝试启用 `Black and White`，并且必须调整数组顺序，否则后处理叠加结果会不对
+> 图表转写（UE-GTXT v4）
+> - 类型: 后处理材质参数图
+> - 组成部分: Viewport 效果预览 + Content Browser 资源浏览 + Material Instance 参数面板
+> - 所属: `MI_PP_StylizedWater_01`
+> - 目的: 展示自定义 Stylized Water 后处理材质的主纹理、遮罩和扭曲相关参数，说明它如何给整张画面增加风格化噪声和水感失真
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左上主视口 | Viewport 效果图 | 当前场景 + 后处理 | 场景里仍可见上方蓝白色高亮粒子和下方蓝色落点，同时整体画面带有轻微柔化与雾状水感 | 用于实时验证右侧后处理参数对全屏的影响 |
+> | 中央浮窗左侧 | 材质预览 | `MI_PP_StylizedWater_01` | 球体预览显示方格状/条带状明暗块，说明主纹理和遮罩正在驱动后处理图样 | 便于单独观察材质实例本身的图案变化 |
+> | 中央浮窗右侧 | 参数面板 | `MI_PP_StylizedWater_01` | 当前可见 `Chromatic Intensity=0.0`，`Color Remap Max=1.0`，`Color Remap Min=0.0`，`Distortion Intensity=0.0`；`Main Texture=T_Noise1`，`Main Texture Scale U=1.0`，`Main Texture Scale V=15.0`，`Center U=-0.5`，`Center V=-0.5`，`Use U or V?=1.0`；`Mask=DefaultWhiteGrid_Low`，`Mask one minus ?` 已启用，`Mask Texture Scale U=1.0`，`Mask Texture Scale V=1.0`，`Mask Multiply=1.0`，`Mask Power=1.0` | 这些参数共同决定全屏噪声分布、遮罩范围与可见图样 |
+> | 下方 | 资源浏览图 | `VFX_Library/Misc/Levels` | Content Browser 仍定位在后处理/关卡相关资源目录，当前选中 `MI_PP_StylizedWater_01` | 说明作者正在分析这张自定义材质的构成而不是继续改 Niagara 发射器 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `MI_PP_StylizedWater_01.Chromatic Intensity` | `0.0` | 参数面板 | 当前不加色差 |
+> | `MI_PP_StylizedWater_01.Color Remap Max` | `1.0` | 参数面板 | 颜色重映射上限 |
+> | `MI_PP_StylizedWater_01.Color Remap Min` | `0.0` | 参数面板 | 颜色重映射下限 |
+> | `MI_PP_StylizedWater_01.Distortion Intensity` | `0.0` | 参数面板 | 当前不额外加全屏扭曲强度 |
+> | `MI_PP_StylizedWater_01.Main Texture` | `T_Noise1` | 参数面板 | 作为主噪声图样驱动后处理纹理 |
+> | `MI_PP_StylizedWater_01.Main Texture Scale U/V` | `1.0 / 15.0` | 参数面板 | 在 V 方向拉伸主噪声，形成竖向更强的条纹或水流感 |
+> | `MI_PP_StylizedWater_01.Center U/V` | `-0.5 / -0.5` | 参数面板 | 偏移主纹理中心 |
+> | `MI_PP_StylizedWater_01.Mask` | `DefaultWhiteGrid_Low` | 参数面板 | 用网格遮罩控制后处理覆盖区域 |
+> | `MI_PP_StylizedWater_01.Mask one minus ?` | 已启用 | 参数面板 | 对遮罩做反相处理 |
+> | `MI_PP_StylizedWater_01.Mask Multiply/Power` | `1.0 / 1.0` | 参数面板 | 控制遮罩强度与对比度 |
+>
+> 输出/观察:
+> - 这张图强调 `MI_PP_StylizedWater_01` 是一张自定义后处理材质，而不是简单套用现成模板
+> - 字幕提到接下来要分析它们是如何创建的，并把失真加到整个“舞台”上，说明后面会继续沿着主纹理、遮罩和全屏扭曲去讲解
+
+### 00:33:57-00:38:26 颜色
+
+- 本段定位：颜色。
+- 知识点：很有趣 例如 我把舞台上的 样子展示一下 我把相机拿起 这是需要示范的方式 这里是色彩 可以调整调色 左右上 下面还有一个面膜 可以把光亮拿起。
+- 知识点：它会在这个面膜的 背景上使用 我把色彩拿起 这里只有这个面膜 我用这个面膜 可以把其他形状拿起 这是一个 从底下到最上的 一种光亮 白色的颜色。
+- 知识点：它会被使用 这是一个光亮 如果我把白色拿起 它会在整个面膜上 白色调整 可以把面膜调整 面膜 盘 这是一个模式 这种东西 非常有效 需要把它返回。
+- 知识点：旋律 它会把黑色的面膜 在旁边折叠 需要把它返回 需要把这种 在这里的面膜调整 为我们需要的 我们把光亮拿起 比如这个 我们有光亮 我们有音乐 我们看看它是否有浮动。
+- 知识点：我们把它放下 一点点向旁边 然后放下 这是我们的影响 这是它会有浮动的样子 现在我们把它调成色彩 这是一个非常有效的效果 试着把它使用 在创造效果之后。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 后处理材质参数图
+> - 组成部分: 材质预览 + Material Instance 参数面板
+> - 所属: `MI_PP_StylizedWater_01`
+> - 目的: 演示这张 Stylized Water 后处理材质在舞台/相机视图中的实际观感，并说明可从色差、扭曲、遮罩和屏幕叠加几个方向继续调
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左侧 | 材质预览 | `MI_PP_StylizedWater_01` | 预览球体表面是深色主体，边缘被主纹理与遮罩切成很多尖刺状毛边；背景画面也出现明显拉伸扭曲 | 用于直观看后处理图样与扭曲强度 |
+> | 右侧 | 参数面板 | `MI_PP_StylizedWater_01` | 可见 `Enable Black/White?` 处于关闭；`Blur Influence=0.333334`，`Blur Intensity=0.0`，`Chromatic Intensity=0.0`，`Color Remap Max=1.0`，`Color Remap Min=0.0`，`Distortion Intensity=2.392396`；`Main Texture=T_Noise1`，`Main Texture Scale U=1.0`，`Main Texture Scale V=15.0`，`Center U=0.0`，`Center V=0.0`，`Use U or V?=1.0`；`Mask=DefaultWhiteGrid_Low`，`Mask one minus ?` 已启用，`Mask Texture Scale U/V=1.0`，`Mask Multiply=1.0`，`Mask Power=1.0`；`Screen Overlay Pattern Texture=T_GridChecker_PNG`，`Screen Overlay Scale U=150.0` | 这些参数共同决定全屏扭曲、遮罩边缘和叠加花纹 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `MI_PP_StylizedWater_01.Distortion Intensity` | `2.392396` | 参数面板 | 明显提高全屏扭曲强度 |
+> | `MI_PP_StylizedWater_01.Main Texture` | `T_Noise1` | 参数面板 | 作为主噪声图驱动水感纹理 |
+> | `MI_PP_StylizedWater_01.Main Texture Scale U/V` | `1.0 / 15.0` | 参数面板 | 让主噪声在 V 方向强烈拉伸 |
+> | `MI_PP_StylizedWater_01.Mask` | `DefaultWhiteGrid_Low` | 参数面板 | 提供基础遮罩形状 |
+> | `MI_PP_StylizedWater_01.Screen Overlay Pattern Texture` | `T_GridChecker_PNG` | 参数面板 | 给屏幕增加额外叠加图案 |
+> | `MI_PP_StylizedWater_01.Screen Overlay Scale U` | `150.0` | 参数面板 | 控制叠加图案在 U 方向的密度 |
+>
+> 输出/观察:
+> - 当前材质已经不只是轻微后处理，而是显著扭曲背景并把遮罩边缘切成尖刺状
+> - 字幕点明这里要演示“how it looks on stage”，说明作者正在把抽象参数转成实际舞台/镜头里的视觉判断
+> 图表转写（UE-GTXT v4）
+> - 类型: 后处理材质参数图
+> - 组成部分: 主视口预览 + 材质预览浮窗 + Material Instance 参数面板 + Content Browser
+> - 所属: `MI_PP_StylizedWater_01`
+> - 目的: 继续调这张 Stylized Water 后处理材质的扭曲位置与遮罩中心，让影响区域偏向一侧并落到指定位置
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左上主视口 | Viewport 效果图 | 当前场景 + 后处理 | 场景里上方蓝色粒子和下方落点仍可见，整体画面继续带有柔和水感扭曲 | 用于验证后处理在实际镜头里的落点位置 |
+> | 中央浮窗左侧 | 材质预览 | `MI_PP_StylizedWater_01` | 球体预览下方中心形成深色球状遮罩，背景建筑也被轻度扭曲 | 直观看遮罩中心和扭曲中心偏移后的效果 |
+> | 中央浮窗右侧 | 参数面板 | `MI_PP_StylizedWater_01` | `Chromatic Intensity=0.0`，`Color Remap Max=1.0`，`Color Remap Min=0.0`，`Distortion Intensity=1.043094`；`Main Texture=T_Noise1`，`Main Texture Scale U=4.0`，`Main Texture Scale V=17.0`，`Center U=-0.000686`，`Center V=-0.082744`，`Use U or V?=1.0`；`Mask=T_Glow2`，`Mask one minus ?` 已启用，`Mask Texture Scale U/V=1.0`，`Mask Multiply=1.0`，`Mask Power=1.0` | 这组参数把影响中心稍微往侧面和下方挪动 |
+> | 下方 | 资源浏览图 | `VFX_Library/Misc/Levels` | 当前仍选中 `MI_PP_StylizedWater_01` | 说明作者仍在调同一张后处理材质实例 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `MI_PP_StylizedWater_01.Distortion Intensity` | `1.043094` | 参数面板 | 相比前一张降低扭曲强度 |
+> | `MI_PP_StylizedWater_01.Main Texture Scale U/V` | `4.0 / 17.0` | 参数面板 | 提高主纹理密度，并继续强调 V 方向拉伸 |
+> | `MI_PP_StylizedWater_01.Center U/V` | `-0.000686 / -0.082744` | 参数面板 | 把后处理中心轻微向下偏移 |
+> | `MI_PP_StylizedWater_01.Mask` | `T_Glow2` | 参数面板 | 用新的 Glow 遮罩替换之前的默认网格遮罩 |
+>
+> 输出/观察:
+> - 字幕说明“to the side, and down. This is where our impact will take place”，直接对应当前 `Center U/V` 的调整方向
+> - 这一版后处理比前一张更像把影响区域定位到具体撞击点，而不是整屏平均铺开
+> 图表转写（UE-GTXT v4）
+> - 类型: 后处理顺序配置图
+> - 组成部分: 主视口预览 + Sequencer 轨道菜单 + PostProcessVolume 属性图
+> - 所属: `PostProcessVolume`
+> - 目的: 明确后处理材质在 `Post Process Materials` 数组中的顺序，并指出当前需要检查的是顺序里的第 3 个槽位
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 中央背景 | Viewport 效果图 | 当前场景 + 后处理 | 中心仍可见蓝白色发光喷点与上方细碎粒子，说明场景后处理已经在生效 | 用于对照调整顺序前后的最终视觉 |
+> | 左下 | Sequencer 菜单 | `PostProcessVolume` 轨道 | 右键菜单已展开到 `Settings > Post Process Materials [0]`，同级还列出 `[1]`、`[2]`、`[3]` 等条目 | 说明 Sequencer 里可以直接操作后处理数组中的具体索引 |
+> | 右侧 | PostProcessVolume 属性图 | `PostProcessVolume (Instance)` | `Post Process Materials > Array` 可见 4 个元素；当前第 1、2、4 个槽位权重为 `1.0`，第 3 个槽位权重为 `0.0`；字幕说明“it is the third one in our order” | 右侧属性与左侧菜单共同指出当前关注的是数组里的第 3 个后处理材质 |
+>
+> 顺序/槽位说明:
+> | 项目 | 当前可见状态 | 含义 |
+> |---|---|---|
+> | `Post Process Materials [0]` | 菜单可选 | 第一个后处理槽位 |
+> | `Post Process Materials [1]` | 菜单可选 | 第二个后处理槽位 |
+> | `Post Process Materials [2]` | 菜单可选 | 第三个后处理槽位，当前需要重点检查 |
+> | `Post Process Materials [3]` | 菜单可选 | 第四个后处理槽位 |
+> | 数组元素权重 | `1.0, 1.0, 0.0, 1.0` | 第 3 个槽位当前没有实际生效强度，需要同时看顺序和权重 |
+>
+> 输出/观察:
+> - 这张图把“需要改顺序”落到了具体操作位置：`PostProcessVolume -> Settings -> Post Process Materials [索引]`
+> - 这里的结论不是继续调单个材质参数，而是先确认哪一个后处理槽位在执行链中的位置
+
+### 00:38:26-00:43:19 颜色
+
+- 本段定位：颜色。
+- 知识点：这个重量控制 从0到1 需要如何使用 现在它变成了 不是第二个 而是第三个 我再次展示 把它放在这里 设置 现在是我们的最后一个 它会使用 我们看看它怎么做。
+- 知识点：我还想改变 我还想改变 它是哪个点的灯 目标是可以改变它的颜色 更近于蓝色 让它更蓝色 让它更蓝色 我们看看 这个阻挡的影响 在哪里 在这个阻挡。
+- 知识点：需要加 需要甚至在这里 这里可以加键 我们把数字调到0 这里我们把键放在这里 可以按下控制 转动键键增长 这里我们放一 它立刻创造键。
+- 知识点：您可观察到 它会迅速转换 还有几个画面 我们看到这里是0 两个画面之后 它会改变到1 这里它会逐渐减低到0 很严重 但我们可观察到 这个场景在移动。
+- 知识点：目标是可以改变这个地 把这个物件 把它叫做基本水 同样的水 创造新的一种 然后改变 因为影响是圆形的 它会把背景移动 需要做到 不需要一个键盘。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 后处理权重配置图
+> - 组成部分: 主视口预览 + Sequencer 轨道 + PostProcessVolume 属性图
+> - 所属: `PostProcessVolume`
+> - 目的: 继续验证后处理数组的最后一个槽位是否应用到场景，并通过 Sequencer 里 `Weight(Array[2])` 的关键帧轨道控制它的权重
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 中央 | Viewport 效果图 | 当前场景 + 后处理 | 中心是极亮的白蓝色四角星形亮斑，上方仍有少量蓝色碎粒子 | 用于验证当前后处理与粒子结果的合成效果 |
+> | 左下 | Sequencer 轨道 | `PostProcessVolume` | 轨道中新增 `Weight(Array[2])` 项，当前数值显示为 `0.0` | 说明正在对后处理数组中某个元素的权重做动画或开关控制 |
+> | 右侧 | PostProcessVolume 属性图 | `PostProcessVolume (Instance)` | `Post Process Materials > Array` 仍有 4 个元素；当前可见前三个槽位权重为 `1.0`，最后一个槽位权重为 `0.0` | 字幕提到“now it is our last one”，说明作者此时把注意力放到最后一个后处理条目上 |
+>
+> 权重/顺序要点:
+> | 项目 | 当前可见状态 | 含义 |
+> |---|---|---|
+> | `Weight(Array[2])` | `0.0` | 当前被 Sequencer 控制的数组权重是关闭状态 |
+> | 后处理数组前 3 项 | `1.0` | 这些后处理槽位保持生效 |
+> | 最后一项后处理 | `0.0` | 当前不生效，等待进一步测试或启用 |
+>
+> 输出/观察:
+> - 这张图把“哪个后处理槽位正在生效”进一步落到了 Sequencer 轨道层，而不只是属性面板里的静态数组
+> - 当前场景效果仍然可见，说明把最后一项权重降到 `0.0` 不会移除全部后处理，只会关掉其中一个叠加层
+> 图表转写（UE-GTXT v4）
+> - 类型: 结果预览与资源浏览截图
+> - 组成部分: 主视口预览 + Content Browser 资源浏览 + Outliner/Details
+> - 所属: `NS_StylizedWaterSplash` 与 `VFX_Library/Misc/Levels`
+> - 目的: 说明水体/后处理效果也要像前面的后处理材质那样，先创建新的实例再单独编辑
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 上方中央 | Viewport 效果图 | `NS_StylizedWaterSplash` | 画面上方是竖向拉长的蓝白色亮滴，下方是一个较弱的蓝色落点，高低层次分明 | 用于验证当前场景中的水体/后处理效果实例 |
+> | 下方 | 资源浏览图 | `VFX_Library/Misc/Levels` | Content Browser 当前选中一个名为 `*_WaterSt...` 的材质实例缩略图，同目录可见 `MI_PP_Stylized_01`、`MI_PP_StylizedWater_01`、`PP_ML_Toon`、`PPML_DepthFog_01/02` 等资源 | 说明作者准备为水相关效果新建并编辑单独的实例 |
+> | 右侧 | Details 属性图 | `Floor (Instance)` | 右侧仍是 `Floor` 实例的 `Transform`、`Static Mesh=Plane` 等常规属性 | 本图右侧不承担后处理参数说明作用 |
+>
+> 观察与结论:
+> - 字幕直接说明 `The same for water. Create a new instance and edit it`，表明水体风格化效果不应直接改母材质，而应复制出新实例再调
+> - 这张图的核心不是某个具体参数值，而是资源管理方式：为水效果单独建立可迭代的材质实例
+> 图表转写（UE-GTXT v4）
+> - 类型: 材质颜色调节图
+> - 组成部分: 主视口预览 + Sequencer 轨道 + 材质实例参数面板 + Color Picker
+> - 所属: `MI_BasicMapGround_*` 相关地面/底图材质实例
+> - 目的: 演示给场景底图或辅助材质加一点颜色，让最终效果更偏蓝并与主水花保持统一色调
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左侧主视口 | Viewport 效果图 | 当前场景 + 后处理 | 中心是明亮的蓝白色四角星形亮核，上方有细碎蓝色颗粒，底部相机轨道预览中可见多个阶段的亮点变化 | 用于实时观察颜色调整对最终效果的影响 |
+> | 下方 | Sequencer 轨道 | `PostProcessVolume` | 当前可见 `Weight(Array[3])` 轨道，数值为 `1.0`，轨道上有多个关键点 | 表示最后一个后处理槽位已经被启用并参与动画 |
+> | 右侧浮窗 | 材质实例参数图 | `MI_BasicMapGround_*` | 参数面板中可见 `ColorB` 向量颜色，当前 RGBA 约为 `0.021 / 0.021 / 0.021 / 0.1`；另有 `Tint` 向量 `R=0.289, G=0.313, B=0.45, A=1.0`；`Tile power=0.0`，`Hight=0.0`，`MSR` 已启用，贴图槽位使用 `T_Ceramic_Tile_M` | 这些参数控制地面或背景材质的整体色调与贴图表现 |
+> | 中下 | Color Picker | 当前选中颜色参数 | 颜色选择器当前选中偏蓝紫色，`R=0.289, G=0.313, B=0.45, A=1.0`；底部显示 `Hex Linear 4A5073FF`、`Hex sRGB 9298B3FF` | 用于给材质增加一点偏冷色调 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Material.ColorB` | `R=0.021, G=0.021, B=0.021, A=0.1` | 参数面板 | 提供较暗的基础色块 |
+> | `Material.Tint` | `R=0.289, G=0.313, B=0.45, A=1.0` | 参数面板 / Color Picker | 给材质整体叠加偏蓝冷色 |
+> | `Material.Tile power` | `0.0` | 参数面板 | 当前不额外增强平铺强度 |
+> | `Material.Texture` | `T_Ceramic_Tile_M` | 参数面板 | 地面底图贴图来源 |
+> | `Weight(Array[3])` | `1.0` | Sequencer 轨道 | 最后一个后处理槽位当前完全启用 |
+>
+> 输出/观察:
+> - 字幕明确说“you can add a little color”，与当前 Color Picker 里的偏蓝色选择一致
+> - 这张图说明最终色彩不只靠 Niagara 粒子本身，也会通过场景底图或后处理相关材质一起统一到偏蓝的风格
+
+### 00:43:19-00:48:01 颜色
+
+- 本段定位：颜色。
+- 知识点：您可以加一点颜色 我们把它编辑到这里 完美的 现在在笔上 我们还有一种 颜色的效果 如果我把它设置到这里 就像这样 它会有颜色的效果。
+- 知识点：这已经太多了 当然了 我把它设置到0.3 这里并没有太多的现象 需要它会再长久一点 这里它会有缩缩的变化 这里它会完全变化 它会活了一段时间。
+- 知识点：它会慢慢地消失 我们已经创造了这个效果 我们开始设置这个场景 颜色 您可以改变点灯 也可以调整光线 让它变成蓝色 这里有很多不同的设置。
+- 知识点：在后期的过程中 也有各种不同的材料 在后期的过程中 也有各种不同的设置 如果您看看 这里是一个高光 您可观察到 这里是一个高光 如果我把灯关掉。
+- 知识点：灯光就消失了 如果我提升这个价值 后期的灯光会更亮 而在整个情况下 场景会更亮 按照原理 这是原理 这是我们的原理 这里有另一个类 原理价值通常是用的。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 颜色与后处理联调图
+> - 组成部分: 主视口预览 + Sequencer 轨道 + 材质实例参数面板
+> - 所属: `PostProcessVolume` 与 `MI_BasicMapGround_*`
+> - 目的: 验证在节拍/关键帧过程中仍然保留色差或偏色效果，并通过材质颜色参数微调整体冷色倾向
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左侧主视口 | Viewport 效果图 | 当前场景 + 后处理 | 上方是竖向蓝白亮滴，下方是蓝色落点，二者中间保留细小粒子链 | 用于验证调色和后处理仍与粒子主效果同步 |
+> | 下方 | Sequencer 轨道 | `PostProcessVolume` | 当前可见 `Weight(Array[3])` 轨道，播放头位于约 `2.40s`，轨道上存在多个关键点 | 表示某个后处理槽位权重随时间变化 |
+> | 右侧浮窗 | 材质实例参数图 | `MI_BasicMapGround_*` | 可见 `ColorB` 向量约为 `R=0.021, G=0.021, B=0.021, A=0.1`；`Tint` 向量约为 `R=0.274797, G=0.299092, B=0.409, A=1.0`；`Tile power=0.0`，`Hight=0.0`，并继续使用 `T_Ceramic_Tile_M` 贴图 | 这些参数让底图保持较暗，同时叠加偏蓝色调 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Weight(Array[3])` | 关键帧驱动 | Sequencer | 控制最后一个后处理槽位在时间轴中的启停/强度 |
+> | `Material.ColorB` | `0.021, 0.021, 0.021, 0.1` | 参数面板 | 提供低亮度基础底色 |
+> | `Material.Tint` | `0.274797, 0.299092, 0.409, 1.0` | 参数面板 | 让场景材质整体偏冷蓝色 |
+>
+> 输出/观察:
+> - 字幕明确说“during the beats we still have a chromatic effect”，说明当前目标是保留节拍期间的颜色/色差感
+> - 这张图说明最终蓝色氛围不仅靠后处理权重，也靠场景底图材质一起配合
+> 图表转写（UE-GTXT v4）
+> - 类型: 后处理 Bloom 配置图
+> - 组成部分: 主视口预览 + Sequencer 轨道 + PostProcessVolume 属性图
+> - 所属: `PostProcessVolume`
+> - 目的: 调整后处理里的 Bloom 模式与强度，让高亮核心保留电影感但不过曝
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 中央 | Viewport 效果图 | 当前场景 + 后处理 | 中心是强烈的白蓝色四角星亮斑，上方有一团蓝色碎粒子云，整体亮度明显高于前几段 | 用于判断 Bloom 是否过强 |
+> | 下方 | Sequencer 轨道 | `PostProcessVolume` | 当前仍显示 `Weight(Array[3])` 轨道，播放头约在 `2.47s`，轨道有多个关键点 | 表示后处理权重仍在时序控制中 |
+> | 右侧 | PostProcessVolume 属性图 | `PostProcessVolume (Instance)` | 当前展开 `Bloom` 分组；`Method=Standard` 下拉已打开，另一个可选值为 `Convolution`；字幕说明标准值通常用于一些 cinematic 设置，并且可能会降低强度 | 这组设置决定高亮区域的发光扩散方式 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `PostProcessVolume.Bloom.Method` | `Standard` | 属性图 | 使用标准 Bloom 计算方式 |
+> | `PostProcessVolume.Bloom.Method.Alt` | `Convolution` | 下拉菜单 | 另一种更偏电影/卷积的 Bloom 方案 |
+> | `Weight(Array[3])` | `1.0` | Sequencer 轨道 | 当前相关后处理槽位保持启用 |
+>
+> 输出/观察:
+> - 字幕说明 `Standard values are usually used. It's for some cinematics. Maybe we will reduce the intensity`
+> - 这表明当前选择是先保留 `Standard` Bloom，再通过强度微调避免中心亮斑过度刺眼
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara Stack
+> - 组成部分: Preview 预览 + Niagara System Overview + Timeline + Details 属性图
+> - 所属: `NS_StylizedWaterSplash`
+> - 目的: 在教程收尾前回到系统总览，确认主要发射器仍处于可编译状态，并给出 `DropsSplash` 的重力参数作为可自行实验的调节点
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左上 | Preview 效果图 | `NS_StylizedWaterSplash` | 预览窗口当前没有稳定可读的粒子结果 | 本图重点不在预览，而在系统参数和编译状态 |
+> | 中央 | Niagara Stack | `DropsPuddle`、`DropsSplash`、`Impact`、`ImpactGlow` | 系统总览里仍可见多个核心发射器；中心弹窗显示 `Waiting for compilation to complete`，进度 `0%`，下方为 `Compiling shaders...` | 表示当前正在等待 Niagara 或相关材质/着色器编译完成 |
+> | 右侧 | Details 属性图 | `DropsSplash > Gravity Force` | `Gravity = (0.0, 0.0, -1200.0)` | 右侧明确给出主飞溅层当前使用的重力值 |
+> | 下方 | 时间线 | `NS_StylizedWaterSplash` | 播放头位于约 `7.88s`，轨道里可见 `Bubbles_AroundSphere`、`Bubbles_SplashBurst`、`Bubbles_SplashSpawn`、`Dark_Puddle`、`DropsSplash` 等条目 | 说明作者在较后段时间点回顾整个系统 |
+> | 左下 | 参数面板 | `User Parameters` | 可见 `Delay = 2.43` | 与 earlier 批次里的 `Delay=2.4` 相近，表明用户参数仍可继续微调 |
+>
+> 模块栈:
+> | 顺序 | 发射器 | 组 | 模块/项 | 状态 | 关键设置 | 作用 |
+> |---:|---|---|---|---|---|---|
+> | 1 | `DropsSplash` | Particle Update | `Gravity Force` | Enabled | `Gravity=(0,0,-1200)` | 让主飞溅粒子向下回落更快 |
+> | 2 | `DropsSplash` | 尾部输出链 | `Scale Color`、`Dynamic Material Parameters`、`Sprite Renderer` | Enabled | 图中仍能见到这些尾部模块，但具体数值不可稳定辨认 | 维持主飞溅层的最终外观输出 |
+>
+> 输出/观察:
+> - 字幕说明效果已经准备好，并鼓励用户自己继续设置和实验
+> - 这张图因此更像最终交接状态：核心系统已经成型，`Gravity Force` 和 `Delay` 这类参数可以作为后续个性化微调入口
+
+### 00:48:01-00:48:53 关键流程 11
+
+- 本段定位：关键流程 11。
+- 知识点：我们需要找到这个材料 例如可以加點噪音 一点點,就交给你了 需要問他一点點 这就是这个效果 我们已经準備好了 謝謝大家觀看 我们下个影片再見。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 最终成片视口与后处理挂载确认图
+> - 组成部分: 主视口预览 + Outliner + PostProcessVolume 属性图 + 内容浏览器
+> - 所属: `PostProcessVolume`、`MI_PP_StylizedWater_*`
+> - 目的: 在教程收尾时确认最终蓝白水花的成片观感，并展示后处理材质数组已经挂在 `PostProcessVolume` 上，后续是否继续加一点 blur 由个人决定
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 中央 | Viewport 效果图 | 当前场景 + `NS_StylizedWaterSplash` | 画面中央是强烈发光的蓝白色竖向水花，底部有横向亮面，顶部散出少量亮点碎粒子，整体已经是最终成片状态 | 用于直接判断教程最终视觉效果 |
+> | 右上 | Outliner | 当前关卡 | 可见 `PostProc...`、`SkyAtmo`、`SkyLight`、`WorldData`、`CameraAct...`、`NS_Styliz...` 等对象 | 表明当前镜头同时依赖相机、Niagara 系统和后处理体积 |
+> | 右下 | PostProcessVolume 属性图 | `PostProcessVolume (Instance)` | 搜索关键字为 `material`；`Post Process Materials > Array` 下有 `4 Array elements`，4 个权重均为 `1.0`；元素名可辨认为 `PP_MI_Toon...`、`PP_MI_Dep...`、两个 `MI_PP_Styl...` | 说明最终成片叠加了 4 层后处理材质且都处于启用状态 |
+> | 下方 | 内容浏览器 | `Materials` 文件夹 | 当前选中一个 `MI_PP_StylizedWater_01` 类材质实例，旁边还能看到 `M_BasicMapGround`、`M_PP_Stylized...` 等资源缩略图 | 说明此时正在围绕成片所用材质实例做最后微调 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `PostProcessVolume.PostProcessMaterials.Array[*].Weight` | `1.0 x 4` | 属性图 | 让 4 个后处理材质在最终镜头里全部生效 |
+> | `PostProcessVolume.PostProcessMaterials.Array.Num` | `4` | 属性图 | 表示最终画面至少叠加了 4 层后处理材质 |
+>
+> 输出/观察:
+> - 字幕说明可以“add blur a little”，表示当前画面已经完成，剩下只是是否再加一点轻度模糊的主观微调
+> - 这张图是教程的结果确认图之一，重点不是新建节点，而是锁定最终效果和后处理挂载状态
+> 图表转写（UE-GTXT v4）
+> - 类型: 后处理材质实例最终参数图
+> - 组成部分: 主视口预览 + 材质实例窗口 + Sequencer + PostProcessVolume 属性图
+> - 所属: `MI_PP_StylizedWater_*` 与 `PostProcessVolume`
+> - 目的: 在最终成片状态下直接展示可继续微调的 blur、chromatic、color remap 参数，说明这些值就是教程当前采用的结果
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左侧 | Viewport 效果图 | 当前场景 + `NS_StylizedWaterSplash` | 画面中心是强发光蓝白色飞溅，外围有柔和蓝色晕光，整体处于成片状态 | 用于对照参数改动后的实际视觉结果 |
+> | 中上浮窗 | 材质实例参数图 | `MI_PP_StylizedWater_*` | 可见 `Blur Influence=0.333334`、`Blur Intensity(0-1)=0.235886`、`Chromatic Intensity=0.3`、`Color Remap Max=1.0`、`Color Remap Min=0.0`、`Distortion Intensity=0.0` | 这些参数共同定义最终镜头的轻度模糊、色差和颜色重映射效果 |
+> | 下方 | Sequencer 轨道 | `CameraActor`、`NS_StylizedWaterSplash`、`PostProcessVolume` | 播放头位于约 `2.53s`，说明此时正在最终镜头关键帧处比对画面 | 让材质参数与最终镜头时间点一一对应 |
+> | 右下 | PostProcessVolume 属性图 | `PostProcessVolume (Instance)` | `Post Process Materials > Array` 仍显示 `4 Array elements`，各元素权重为 `1.0` | 说明材质实例参数是通过后处理数组参与成片的 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `MI_PP_StylizedWater.Blur Influence` | `0.333334` | 材质实例窗口 | 控制模糊作用范围 |
+> | `MI_PP_StylizedWater.Blur Intensity(0-1)` | `0.235886` | 材质实例窗口 | 提供轻微柔化，不让亮斑边缘过硬 |
+> | `MI_PP_StylizedWater.Chromatic Intensity` | `0.3` | 材质实例窗口 | 保留适度色差感 |
+> | `MI_PP_StylizedWater.Color Remap Max` | `1.0` | 材质实例窗口 | 维持颜色重映射上限 |
+> | `MI_PP_StylizedWater.Color Remap Min` | `0.0` | 材质实例窗口 | 维持颜色重映射下限 |
+> | `MI_PP_StylizedWater.Distortion Intensity` | `0.0` | 材质实例窗口 | 当前不叠加额外扭曲 |
+>
+> 输出/观察:
+> - 这张图把“你可以稍微加一点 blur”具体落实到一组实际参数
+> - 从画面状态看，教程默认结果已经稳定，后续只需要围绕这些参数做个人口味微调
+> 图表转写（UE-GTXT v4）
+> - 类型: 最终落点成片确认图
+> - 组成部分: 主视口预览 + Outliner + Sequencer + PostProcessVolume 属性图
+> - 所属: `NS_StylizedWaterSplash`、`PostProcessVolume`
+> - 目的: 用最终时间点的单帧结果收尾，确认水花爆发后会回落成带发光外圈的水洼形态，并且后处理仍保持启用
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 中央 | Viewport 效果图 | 当前场景 + `NS_StylizedWaterSplash` | 中央主体已从高亮爆发态过渡到较低矮的蓝色发光水洼，顶部保留少量锯齿状浅蓝水冠，外围有柔和蓝色圆环晕光，周围散落少量小粒子 | 用于确认最终效果不是一直停留在爆发峰值，而是自然回落 |
+> | 下方 | Sequencer 轨道 | `CameraActor`、`NS_StylizedWaterSplash`、`PostProcessVolume` | 播放头约在 `2.92s`，已晚于上一张的 `2.53s` | 说明这是同一镜头更靠后的收尾帧 |
+> | 右侧 | PostProcessVolume 属性图 | `PostProcessVolume (Instance)` | `Post Process Materials > Array` 仍为 `4 Array elements`，前 3 个权重为 `1.0`，最后一个可见为 `0.0` | 表明收尾帧仍在检查后处理数组状态，且最后一个槽位已被关闭 |
+> | 右上 | Outliner | 当前关卡 | 依然可见 `PostProc...`、`CameraAct...`、`NS_Styliz...` 等对象 | 说明镜头仍由同一套场景对象驱动 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Sequencer.Playhead` | `2.92s` | 时间线 | 对应收尾落点时刻 |
+> | `PostProcessVolume.PostProcessMaterials.Array[0..2].Weight` | `1.0` | 属性图 | 保持主要后处理层继续生效 |
+> | `PostProcessVolume.PostProcessMaterials.Array[3].Weight` | `0.0` | 属性图 | 关闭最后一个后处理槽位，减少额外叠加 |
+>
+> 输出/观察:
+> - 这张图展示了教程最终效果的收束状态：爆发结束后留下一个带蓝色辉光的水洼
+> - 和上一张相比，重点从“参数可继续微调”切换成“最终动画停在什么形态”
+
+## 补充视觉证据
+
+### S10 00:44:26
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 后处理材质实例补充参数图
+> - 组成部分: 材质实例预览球 + Details 参数面板
+> - 所属: `MI_PP_StylizedWater_*`
+> - 目的: 补充展示教程后期为提升可见度而设置场景/后处理时所用的材质实例参数，尤其是主纹理、遮罩、叠屏图案与暗角控制
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左侧 | 材质实例预览球 | `MI_PP_StylizedWater_*` | 预览球边缘带轻微暖色轮廓，背景是被模糊处理的室外场景 | 用于预览当前后处理材质在场景中的总体观感 |
+> | 右侧上部 | 基础效果参数 | `MI_PP_StylizedWater_*` | `Enable Black/White?` 未启用；`Blur Influence=0.333334`；`Blur Intensity(0-1)=0.0`；`Chromatic Intensity=0.3`；`Color Remap Max=1.0`；`Color Remap Min=0.0`；`Distortion Intensity=0.0` | 说明当前版本重点保留色差，模糊强度在这张补充图里仍为 0 |
+> | 右侧中部 | Main Texture 参数组 | `MI_PP_StylizedWater_*` | `Main Texture=T_Noise1`；`Main Texture Scale U=4.0`；`Main Texture Scale V=17.0`；`Center U=-0.008686`；`Center V=-0.082744`；`Use U or V?=1.0` | 用噪声贴图塑造后处理中的条纹/扰动分布 |
+> | 右侧中下 | Mask 参数组 | `MI_PP_StylizedWater_*` | `Mask=T_Glow2`；`Mask one minus ?` 已启用；`Mask Texture Scale U=1.0`；`Mask Texture Scale V=1.0`；`Mask Multiply=1.0`；`Mask Power=1.0` | 用发光遮罩控制后处理叠加的空间范围 |
+> | 右侧下部 | Screen Overlay 与 Vignette | `MI_PP_StylizedWater_*` | `Screen Overlay Pattern Texture=T_GridChecker_PNG`；`Screen Overlay Scale U=150.0`；`Screen Overlay Scale V=150.0`；`Screen Overlay Intensity≈0.005`；`Vignette Hard=0.2`；`Vignette Smooth=0.15` | 叠加很弱的屏幕图案并配合暗角收束画面注意力 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Blur Influence` | `0.333334` | 参数面板 | 保留模糊影响范围，但此图中的模糊强度仍为 0 |
+> | `Blur Intensity(0-1)` | `0.0` | 参数面板 | 说明这张补充图记录的是加 blur 之前或更保守的版本 |
+> | `Main Texture` | `T_Noise1` | 参数面板 | 提供主噪声图案 |
+> | `Mask` | `T_Glow2` | 参数面板 | 提供发光型遮罩分布 |
+> | `Screen Overlay Pattern Texture` | `T_GridChecker_PNG` | 参数面板 | 提供极弱的屏幕叠图纹理 |
+> | `Vignette Hard / Smooth` | `0.2 / 0.15` | 参数面板 | 调整边缘暗角收束程度 |
+>
+> 输出/观察:
+> - 这张补充图解释了字幕里“为了让效果更明显，我们开始设置场景”的具体落点，核心是后处理材质实例参数而不是 Niagara 栈本身
+> - 它和 `S11_2` 一起说明：教程在不同时间点试过更保守和更柔化的 blur 版本，最终结果可以在这些参数之间自行取舍
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

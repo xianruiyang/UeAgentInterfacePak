@@ -1,0 +1,1203 @@
+# 02 Stylized Ice Spikes
+
+# 02 Stylized Ice Spikes
+
+## 关键术语
+
+- `Alpha`、`Material`、`UV`、`Lerp`、`Fresnel`、`Normal`、`Camera`、`粒子`、`系统`、`Niagara`、`颜色`、`噪声`、`Niagara System`、`Emitter`、`Particle`、`Spawn`、`Initialize Particle`、`Lifetime`
+
+## 分段知识
+
+### 00:00:06-00:04:45 Material、UV、Normal
+
+- 本段定位：Material、UV、Normal。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：对,很有趣,你可能会覺得眼睛已经变得透明了 但我会解釋,所有东西都会变得慢慢的 首先,我们需要创建一个普通的圖圖 这会让光影很有趣和漂亮地落在上面。
+- 知识点：需要解釋一下,它会让光影反射在上面 它会创建一种光影,就像是它在表面上反射 我们来创建这个圖圖 需要用兩个方向盤 需要把它们分成兩种,然后需要立刻创建一个模式。
+- 知识点：它会改变X和Y的模式 Normal是一个人类標準 需要设置一个适合的圖圖,就像这个样子 然后我立刻选择一个特别的普通模式 我立刻会给你们看,需要给你们这些眼睛的圖圖。
+- 知识点：它们都在这裏 YouTube上有很多教學 可以找到如何创建相似的模式,或是不同的眼睛 眼睛的物理设计師可以找到 做一些自己的模式 需要给你这些模式的圖圖和所有的东西。
+- 知识点：在简单的詞語上 它会控制Normal的模式的強烈影响 它会有多強烈的效果 可以立刻把它轉移到这里 把它拿走,然后把它轉移到Normal。
+- 知识点：例如,如果你把它轉移到这里 我把Flat N移掉了 如果没有它,它仍然在上面 光线已经反射出来了 用Normal的模式来幫助 Flatness,我们有更多Flatness的光线。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`Opacity`、`Material`、`Panner`、`Emissive`、`材质`、`纹理`、`贴图`。
+
+**关键画面：**
+
+这是新章节 `02 Stylized Ice Spikes` 的起始关卡画面。场景里当前只有一个角色参考体 `Gideon_Inquisitor` 和 Niagara 演员 `NS_IceSpikes`，尚未出现成型冰刺效果，说明这一帧的重点是建立项目目录和基础材质，而不是预览最终特效
+
+右上 `Outliner` 可见：
+- `Stylized_IceSpikes (Editor)` 世界
+- `Env`
+- `Gideon_Inquisitor`
+- `NS_IceSpikes`
+
+下方 `Content Browser` 当前路径定位在：
+- `Content / VFX_Library / Materials / MM / _Special / IceSpikes`
+
+该目录中当前只可见一个新建材质资源，名称被选中高亮，但文字分辨率不足，只能可靠确认它是一个新创建的 `Material` 资产。字幕也明确说明“我们将在这里创建一个新材质”，因此这张图的核心作用是交代本章的起点：先在 `IceSpikes` 专用目录下建立材质资源，为后续 `Material、UV、Normal` 网络搭建提供入口
+这是材质 `M_Ice` 的 `Material Graph` 局部截图，当前正在处理冰材质的法线强度控制。左侧预览球体表面已经出现细微的高光起伏，但整体仍比较平滑，说明这一帧是在调“法线有多强”，而不是在做颜色或透明
+
+可见节点定义集：
+- `FlattenNormal`
+- 一个位于其下方的参数/常量节点，当前可见数值为 `1.0`
+- 主材质输出节点 `M_Ice`
+
+可见连线集：
+- 下方 `1.0` 节点输出连接到 `FlattenNormal.Flatness (S)`
+- `FlattenNormal.Result` 输出连接到主材质的 `Normal`
+
+可见材质输出槽与默认值：
+- `Base Color` 已接入白色
+- `Metallic = 0.0`
+- `Specular = 0.5`
+- `Roughness = 0.5`
+- `Anisotropy = 0.0`
+- `Emissive Color` 已接入白色
+- `Normal = (0.0, 0.0, 1.0)` 当前正被新的法线链路覆盖
+- `Tangent = (1.0, 0.0, 0.0)`
+- `World Position Offset = (0.0, 0.0, 0.0)`
+
+ 左侧 `Details` 面板还能确认当前选中的是 `Material Function Call`，函数名就是 `FlattenNormal`。这说明本段做法不是直接把法线贴图硬接到 `Normal`，而是先通过 `FlattenNormal` 加一个可调的 `Flatness` 控制量，用来压低或增强法线细节在冰表面的反射效果
+这张图继续位于 `M_Ice` 的 `Material Graph`，但重点已经从单纯压法线强度，转到把法线信息送入反射向量相关的计算。左侧预览平面表面可见明显的裂纹/冰纹高光，说明这一步是为了让冰面的法线细节更直接地影响视角相关反射
+
+可见节点定义集：
+- `Normal Map`
+- `CustomReflectionVector`
+- `TransformVector`
+- 上方参数节点 `Normal Influence`
+
+可见连线集：
+- `Normal Map` 输出连接到 `CustomReflectionVector.Normal (V3)`
+- 左侧还有一条来自 `TransformVector` 的连线进入 `CustomReflectionVector.CameraVector (V3)`
+- 上方 `Normal Influence` 参数连接到上方另一条法线相关链路，但这张图里它与 `CustomReflectionVector` 之间的完整路径未全部展开
+
+设置/参数：
+- 左侧 `Details` 面板确认当前选中的是 `Material Function Call`
+- 函数名为 `CustomReflectionVector`
+- 上方参数节点名称是 `Normal Influence`
+- `Default Value = 0.0`
+
+输出/预览：
+- 左侧预览平面不是纯白，而是能看到细碎裂纹状的亮暗起伏
+- 这表明法线贴图已经开始参与视角相关的反射/高光塑形，而不只是作为静态表面凹凸
+
+从这张图可以确认本段的核心做法：除了把法线送到材质 `Normal` 输入，还额外把法线接入 `CustomReflectionVector`，并结合 `CameraVector` 计算反射方向，让冰面在观察角度变化时产生更丰富的镜面感和边缘亮度变化。字幕“Here, we throw normal”也与这种“把 normal 丢进反射向量函数”的操作一致
+
+### 00:04:48-00:09:41 UV
+
+- 本段定位：UV。
+- 知识点：如果我们把RG的XY 它会產生这种UV的图片 这是我们的质感 我们可观察到 我走到旁邊,它馬上会变成它们 有趣的是,我把它放在一邊 我们就有UV的图片。
+- 知识点：如果,例如,你把质感过了 如果我把质感,比如說,我不知道 需要用同一个图片 可能是这个 然后它会开始預覽 它已经增加了一些深度 我们可观察到它变化了。
+- 知识点：需要也会把它取出 把它设置为0,然后在这里 把它控制成这樣 因为通常会有兩个大量的價值 需要按0.8 你看,像一顆鏡子 我们有图片,它会变化。
+- 知识点：这是相似的东西 它会產生这种UV的图片 以通常的图片和鏡子的幫助 如果我们把它取出 它会变成很奇怪的东西 因为我们没有把它变化 我只是把鏡子变化了。
+- 知识点：它没有变化,通常是 世界的空间 所以我们需要從世界的空间变成單位的空间 当我们把它变化,它就会变化 它就会变得很OK,它就会变得很超。
+- 知识点：它就会变得很棒 所以它只会通常的变化 在这里做了一个这樣的东西 在原則上,我们明白了原則上的工作 它是怎樣的 它变化,就像是增加了。
+- 知识点：这是一个很大的疑問 我们不需要它,我们需要这个 的调整,所以我们 会設立一个 对应的儲存的设置 全球的 这是 一个白色的 我们做好了 接下来我们不需要的,我们会用颜色。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这是 `M_Ice` 材质图中处理法线贴图 UV 与通道拆分的局部网络。当前选中的是法线贴图参数 `T_Normal`，左侧预览窗口显示红绿通道构成的彩色法线预览，说明这一帧正在检查法线贴图的 XY 信息，而不是最终表面着色
+
+可见节点定义集：
+- 左上 `Multiply`
+- `T_Normal`，`Param2D`
+- `FlattenNormal`
+- 右侧 `Normal Map`
+- 下方参数 `Normal Influence`
+- 下方可见一个 `Mask (R G)` 节点，当前处于 `Previewing`
+
+可见连线集：
+- 左上 `Multiply` 输出连接到 `T_Normal.UVs`
+- `T_Normal.RGB` 输出连接到 `FlattenNormal.Normal (V3)`
+- `Normal Influence` 输出连接到 `FlattenNormal.Flatness (S)`
+- `FlattenNormal.Result` 输出连接到右侧 `Normal Map`
+
+设置/参数：
+- 左侧 `Details` 面板确认当前选中的参数名为 `T_Normal`
+- `Sampler Source = From texture asset`
+- `MipValueMode = None (use computed mip level)`
+- `Const Coordinate = 0`
+- `Const Mip Value = -1`
+- `Normal Influence` 的 `Default Value = 0.0`
+
+输出/预览：
+- 左侧预览平面出现典型法线图的红绿渐变与裂纹形态
+- 说明作者正在用法线纹理的 RG/XY 方向信息构建冰面凹凸，而不是只把整张蓝色法线贴图直接原样使用
+
+从这张图可以确认本段的重点是“让 UV 驱动法线贴图，再通过 `FlattenNormal` 控制其强弱”。下方露出的 `Mask (R G)` 也说明作者已经开始把法线的 XY 通道单独拿出来观察，这与本段围绕 UV 工作的主题一致
+这是 `M_Ice` 材质图里被作者单独框出的 `Reflection` 子网络，目的是把法线和相机方向组合成一个可继续分通道使用的反射向量。左侧预览当前是一块纯白平面，说明这一步在看中间结果结构，而不是最终表面颜色
+
+可见节点定义集：
+- `Normal Map`
+- `Camera Vector`
+- `TransformVector`
+- `CustomReflectionVector`
+- `Mask (R G)`
+- `Mask (B)`
+- 命名重路由/结果节点 `Reflection Vector RG`
+- 命名重路由/结果节点 `Reflection Vector B`
+
+可见连线集：
+- `Normal Map` 输出连接到 `CustomReflectionVector.Normal (V3)`
+- `Camera Vector` 输出连接到 `TransformVector`
+- `TransformVector` 输出连接到 `CustomReflectionVector.CameraVector (V3)`
+- `CustomReflectionVector.Reflection Vector` 输出分成两路：
+  - 一路接到 `Mask (R G)`，再输出到 `Reflection Vector RG`
+  - 一路接到 `Mask (B)`，再输出到 `Reflection Vector B`
+
+结构含义：
+- `Reflection Vector RG` 表示把反射向量的 XY 分量单独提取出来
+- `Reflection Vector B` 表示把 Z 分量单独提取出来
+- 这种拆分通常用于后续分别控制 UV 扰动、边缘亮度或与 Fresnel/颜色混合相关的不同方向分量
+
+左侧 `Details` 面板当前选中的是一个 `Comment` 框，标题就是 `Reflection`，说明作者有意把这一组节点作为独立逻辑块整理出来。由此可以确认，本段并不是简单读取世界空间向量，而是先把相机向量经过变换后，与法线共同送入 `CustomReflectionVector`，再把结果分解给后续材质使用
+这张图把 `M_Ice` 材质里的两个注释分组同时放进视野：上方是 `Normal` 子网络，下方是 `Reflection Vector` 子网络。左侧预览再次显示红绿通道主导的彩色法线效果，说明作者此时是在整体核对“法线贴图链”和“反射向量链”是否都能输出正确的方向信息
+
+可见结构分组：
+- `Normal` 区块：
+  - `TexCoord[0]`
+  - `Multiply`
+  - `T_Normal`
+  - `FlattenNormal`
+  - `Normal Map`
+  - 两个强度/控制参数节点
+- `Reflection Vector` 区块：
+  - `Normal Map`
+  - `Camera Vector`
+  - `TransformVector`
+  - `CustomReflectionVector`
+  - 两个 `Mask`
+  - `Reflection Vector RG`
+  - `Reflection Vector B`
+
+当前可确认的关系：
+- 上方 `Normal` 区块先生成一个可调的法线结果，并命名为 `Normal Map`
+- 下方 `Reflection Vector` 区块直接复用这个 `Normal Map` 结果作为 `CustomReflectionVector` 的法线输入之一
+- 因此，法线贴图的 UV、强度和扁平化设置会同步影响后续反射向量分解出来的 `RG` 与 `B` 通道
+
+输出/预览：
+- 左侧预览平面呈现大面积红绿渐变，并保留裂纹状细节
+- 这证明当前预览的不是最终冰面颜色，而是作为后续 UV 扭曲或反射控制基础的向量/通道数据
+
+这张图的价值在于确认两块子网络之间的依赖关系已经搭好：`Normal` 负责从贴图生成稳定法线，`Reflection Vector` 负责把该法线结合相机方向转成可拆分的方向通道。后续无论是做 UV 扭曲还是 Fresnel/边缘效果，都会建立在这两组结果之上
+
+### 00:09:41-00:14:31 UV
+
+- 本段定位：UV。
+- 知识点：我真的在進入 是的,这件事發生了 质量很少見到 太大了 是的,没錯 没錯 但發生了什么事,需要把它 当作原則,我们有这种东西 这种深度。
+- 知识点：这是反射器,需要再次删除 它再次加上深度 我们再看看 再次删除 我可以增加这个價值 我们有这个靠,其實 因为这个,我们有很多靠 我们需要它。
+- 知识点：像是一种鏡子的瞄準 很有趣 我们继续 可以删除这个东西 这是另一个分別 这是兩層 需要用这个 我们需要这个 API 像这樣,像这樣 所有东西都很好。
+- 知识点：我们分開它 然后 我们再次删除 另一个有趣的东西 1 我们分開它 像是分開的能力 我们的視角 按照標準 我们删除它,所以我们再次删除 这个东西 它只是非常。
+- 知识点：重視这个质量 现在可能很差 这里我調到50,所以会有趣 結果改变了,所有东西都改变了 所有东西都很有趣 像这樣,我们只是在操作 然后我拿了这个东西。
+- 知识点：我们应该分開 然后再次删除 1分2048 这个價值很小,我再次删除 所以我只減少了 我们視角变小 所以我拿的價值是 我拿一个計算器 1分2048。
+- 知识点：这个價值是非常小的 如果是非常小的價值 就像我 把它數起来 这个價值 其實它不会是一樣的 我们看看結果 把它删除在这里 基本上没有改变 我只是这樣做,以確認。
+
+**关键画面：**
+
+这是 `M_Ice` 材质图中把反射向量转换成纹理采样坐标的一段 UV 网络。左侧预览已经显示一张带有冰裂纹和高光起伏的灰白纹理，说明当前不是在看纯向量结果，而是在验证反射向量驱动后的纹理外观
+
+可见节点定义集：
+- `Reflection Vector RG`
+- `Reflection Vector B`
+- `Reflection Influence Layer 1`
+- `Abs`
+- `Divide`
+- `Multiply`
+- `Texture Sample`
+
+可见连线集：
+- `Reflection Vector B` 输出连接到 `Abs`
+- `Abs` 输出连接到 `Divide.B`
+- `Reflection Influence Layer 1` 输出连接到 `Divide.A`
+- `Divide` 输出连接到 `Multiply.B`
+- `Reflection Vector RG` 输出连接到 `Multiply.A`
+- `Multiply` 输出连接到 `Texture Sample.UVs`
+
+设置/参数：
+- `Reflection Influence Layer 1` 的 `Default Value = 1.0`
+- 左侧 `Details` 面板可见此时材质级属性为：
+  - `Material Domain = Surface`
+  - `Blend Mode = Opaque`
+  - `Shading Model = Default Lit`
+- 当前正在预览 `Texture Sample`
+
+输出/预览：
+- 左侧预览平面呈现较高对比度的灰白冰裂纹图案
+- 这说明作者已经不再只把反射向量当作抽象数据，而是把 `RG` 作为主要二维坐标，用 `1 / abs(B)` 一类的比例去修正尺度，再驱动纹理采样，让观察角度变化时纹理分布产生明显的透视/深度感
+
+从这张图可以确认本段 UV 处理的关键逻辑：先把反射向量拆成横向分量 `RG` 和纵深分量 `B`，再用 `B` 的绝对值作为缩放参考，最后去偏移纹理采样坐标。这样能让冰表面纹理随视角变化而变化，而不是始终固定贴在模型上
+这张图继续位于 `M_Ice` 的同一条反射向量 UV 链，但已经加入更细的缩放系数控制。左侧预览仍是红绿主导的法线/方向结果，字幕也在强调“来看结果”，说明这一帧的重点是验证参数量级而不是新增节点类型
+
+可见节点定义集：
+- `Reflection Vector RG`
+- 上方 `Multiply`
+- 上方 `Divide`
+- 中间蓝色高亮的 `Multiply`
+- `Texture Sample`
+- 参数 `Reflection Influence Layer 1`
+- 参数 `Reflection Influence Layer 2`
+- 常量 `1`
+- 常量 `2048`
+- 中间 `Divide`
+- 右下黄色高亮的 `Multiply(0.000488)`
+- 左下还有一个 `Divide`
+
+可见连线集：
+- `Reflection Vector RG` 输出接入上方 `Multiply.A`
+- `Reflection Influence Layer 1` 通过 `Divide` 结果接入上方 `Multiply.B`
+- 上方 `Multiply` 的结果继续接到蓝色高亮 `Multiply.A`
+- 常量 `1` 接到中间 `Divide.A`
+- 常量 `2048` 接到中间 `Divide.B`
+- 中间 `Divide` 的结果接到蓝色高亮 `Multiply.B`
+- 蓝色高亮 `Multiply` 输出连接到 `Texture Sample.UVs`
+
+可见数值/参数：
+- `Reflection Influence Layer 1` 的局部可见默认值是 `0.0`
+- `Reflection Influence Layer 2` 的 `Default Value = 10.0`
+- 右下黄色高亮 `Multiply` 的常量值显示为 `0.000488`
+- 这个值与 `1 / 2048` 一致，说明作者明确在按纹理尺寸把偏移量缩放到非常小的 UV 级别
+
+输出/预览：
+- 左侧预览与上一张同属方向/法线可视结果，没有直接显示最终冰材质
+- 这说明当前链路关注的是 UV 位移量级是否合适，而不是颜色本身
+
+从这张图可以确认，本段的一个关键工程处理是把反射向量带来的位移影响缩放到纹理尺寸级别：先按影响层参数放大或缩小，再乘上 `1/2048` 这样的极小系数，避免 UV 扰动过大而让纹理拉扯失真。这也正对应正文里反复提到的“这个值非常小”“1 divided by 2048”
+这张图把同一套冰面纹理采样推进成了双层 UV 结构。左侧预览仍然是灰白冰裂纹，但层次更完整，右侧节点里已经能看到 `Layer 1 UV Scale`、`Layer 2 UV Scale` 和多条 `Multiply / Add` 链，说明作者开始为不同纹理层准备不同的 UV 缩放方式
+
+可见节点定义集：
+- 上方 `TexCoord[0]`
+- 参数 `Layer 1 UV Scale`
+- 上方 `Multiply`
+- 上方 `Add`
+- 中间 `Divide`
+- 中下两个 `Multiply`
+- 下方 `TexCoord[0]`
+- 参数 `Layer 2 UV Scale`
+- 右侧 `Add(0,1)`
+- 右上 `Texture Sample`
+
+可见连线集：
+- 上方 `TexCoord[0]` 输出连接到上方 `Multiply.A`
+- `Layer 1 UV Scale` 输出连接到上方 `Multiply.B`
+- 上方 `Multiply` 输出连接到上方 `Add.A`
+- 中间另一条链输出连接到上方 `Add.B`
+- 下方 `TexCoord[0]` 输出连接到下方 `Multiply.A`
+- `Layer 2 UV Scale` 输出连接到下方 `Multiply.B`
+- 下方 `Multiply` 输出连接到右侧 `Add(0,1)`
+- `Add(0,1)` 继续向上游链路输出，用作另一组 UV 结果
+
+设置/参数：
+- `Layer 1 UV Scale` 的 `Default Value = 1.0`
+- `Layer 2 UV Scale` 的 `Default Value = 1.0`
+- 当前选中的 `Add(0,1)` 在左侧 `Details` 中显示：
+  - `Const A = 0.0`
+  - `Const B = 1.0`
+
+输出/预览：
+- 左侧预览显示一张具有明显碎裂边、深浅交错的冰面图案
+- 说明不同 UV 层已经开始共同影响最终纹理采样，而不是只有单层反射扭曲
+
+从这张图可以确认，本段的 UV 工作已经从“用反射向量扭曲一张纹理”扩展到“为不同层设置不同的 UV Scale，再用 `Add` 叠加偏移”。字幕里也提到“我们只是会使用不同的纹理”，与这里的多层 UV 组织完全一致：后续可以把这两层分别喂给不同贴图或不同细节层，得到更丰富的冰面结构
+
+### 00:14:31-00:18:28 Alpha、Lerp、Fresnel
+
+- 本段定位：Alpha、Lerp、Fresnel。
+- 知识点：这是第一个方式 这是第二層的方式 这是第三層的方式 我把这个都加上了 这个 我把这个加上了 基本上,这就是它 我们看看 結果 这里可以,例如,增加標準的價值。
+- 知识点：4,就这樣,它们会有一点不同 像这樣,它们会是一樣的 所以我们就把它们加到4 这里就有一个更大的層次 跟最初的價值更多 我们就把它们加上。
+- 知识点：可以,例如,用RGB 可以用RGB 我们把它们連接起来 我把結果混合成这个 像这樣 这个我们有 所以我把它们加起来 我把它们混合起来。
+- 知识点：結果很漂亮 现在我们有深度 感覺上质感很平 我们只是用它的调整 这里可观察到 一層的冰層在另一層的冰層上 对,这真是有趣的东西 接下来我们基本上会用色彩来操作。
+- 知识点：透过Lerp我们把这个变成Alpha 然后 创建兩种颜色 这会是標準的,就像是深度 这是上層的颜色。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`Fresnel`、`Lerp`、`颜色`。
+
+**关键画面：**
+
+这是 `M_Ice` 材质图中开始做多层冰面纹理叠加的画面。左侧预览平面已经呈现较柔和的冰裂纹表面，字幕直接说明“Second layer”，因此这一帧的核心是把第二层纹理采样加入原有材质结构
+
+可见节点定义集：
+- 上方 `T_Layer1`，`Param2D`
+- 下方 `T_Layer1`，`Param2D`
+- 两组 `Multiply`
+- 两组 `Add`
+
+可见连线/结构：
+- 上方一组 `Multiply -> Add -> T_Layer1.UVs`
+- 下方一组 `Multiply -> Add -> T_Layer1.UVs`
+- 说明两份同名纹理参数当前被当作两层独立采样使用，每层都通过自己的一组 UV 变换后再采样
+
+设置/参数：
+- 左侧 `Details` 面板确认当前选中的参数名为 `T_Layer1`
+- `Sampler Source = From texture asset`
+- `MipValueMode = None (use computed mip level)`
+- `Const Coordinate = 0`
+- `Const Mip Value = -1`
+
+输出/预览：
+- 左侧预览平面表面带有细小裂纹和霜状高光，但整体仍较均匀
+- 这与“第二层”刚加入的状态一致：层次已经增加，但还没出现更强的颜色或 Fresnel 对比
+
+从这张图可以确认，本段不是换新贴图类型，而是把同一张或同类冰层纹理作为第二层重新采样，并给它单独的 UV 链。这样可以让不同层在方向、尺度或偏移上稍有差异，从而避免冰表面只像一张单薄贴图
+这张图进入 `Alpha、Lerp、Fresnel` 段的颜色构建部分。左侧预览仍是冰裂纹表面，但作者已经打开颜色选择器，并用两个颜色参数去驱动 `Lerp`，说明此时正在给冰材质建立“深层颜色”和“表层颜色”的分层混合
+
+可见节点定义集：
+- 向量参数 `Color Deep`
+- 向量参数 `Color Top`
+- `Add`
+- `Lerp(1)`
+
+可见连线集：
+- `Color Deep` 输出连接到 `Lerp(1).A`
+- `Color Top` 输出连接到 `Add.A`
+- `Add` 输出连接到 `Lerp(1).Alpha`
+- `Lerp(1).B = 1.0`，当前使用默认常量
+
+设置/参数：
+- `Color Deep` 的节点标题可见默认值近似为 `(0.005280, 1, 1)`，节点预览为蓝色
+- `Color Top` 当前被选中，左侧 `Details` 与颜色选择器可见：
+  - `Parameter Name = Color Top`
+  - `R = 0.702912`
+  - `G = 0.909235`
+  - `B = 1.0`
+  - `A = 1.0`
+  - `Hex Linear = B3E8FFFF`
+  - `Hex sRGB = DAF5FFFF`
+- 颜色选择器显示 `Color Top` 是一种接近冰蓝白的浅色
+
+输出/预览：
+- 左侧预览材质仍以灰白裂纹为主，没有大面积着色污染
+- 说明这一步的颜色更像是“冰体深浅层的色调基础”，而不是立即把整块材质染成强饱和色
+
+从这张图可以确认，本段的做法是先准备两种冰色：`Color Deep` 用于深层、偏冷的蓝色区域，`Color Top` 用于上层更亮、更接近霜白的部分，然后通过 `Lerp` 让某个遮罩/Alpha 链决定两者如何过渡。这正对应正文里“创建两种颜色，这会是深度，这是上层的颜色”
+这张图继续在 `M_Ice` 材质图中处理边缘高光与透明/插值控制，关键节点已经从前一张的颜色过渡扩展到 `Fresnel`。左侧预览平面明显变成冷蓝色冰层，并且边缘与裂纹区域的亮度层次更丰富，说明当前正在把边缘视角效应叠加进冰材质
+
+可见节点定义集：
+- `Fresnel`
+- `Power(X,2)`
+- 参数 `Fresnel Exp`
+- 上方仍可见：
+  - `Mask (B)`
+  - `Reflection Vector B`
+  - `Abs`
+  - 一个反射影响参数节点
+
+可见连线集：
+- 左侧一条链路连接到 `Fresnel.ExponentIn`
+- 另一条链路连接到 `Fresnel.BaseReflectionFractionIn`
+- `Fresnel` 输出连接到 `Power(X,2).Base`
+- `Power(X,2).Exp = 2.0`
+- 参数 `Fresnel Exp` 位于下方，作为该段 Fresnel 强度/指数调节的控制量之一，但当前截图里还看不到它与 `Fresnel` 或 `Power` 的完整连线终点
+
+设置/参数：
+- `Power(X,2)` 的指数常量为 `2.0`
+- 左侧 `Details` 面板显示当前选中的 `Fresnel Exp` 是一个标量参数
+- 其 `Parameter Name` 当前仍是默认的 `Param`
+
+输出/预览：
+- 左侧预览材质呈现浅蓝到深蓝的冰层分布
+- 边缘高光更明显，裂纹区域仍然保留原有纹理细节
+- 说明 `Fresnel` 没有覆盖掉先前的层次，而是在原有颜色/Alpha 基础上增加视角相关的亮边和深度感
+
+从这张图可以确认，本段最终是在把 `Lerp` 得到的分层冰色与 `Fresnel` 边缘响应结合：先通过 `Fresnel` 生成随视角变化的边缘因子，再用 `Power` 把这种边缘变化压得更集中、更硬朗。这样冰体既有内部层次，也有典型的边缘发亮效果，符合“Alpha、Lerp、Fresnel”这一段的目标
+
+### 00:18:32-00:23:19 粒子、系统
+
+- 本段定位：粒子、系统。
+- 知识点：当然,它看起来很奇怪 在平面的物件上 但例如在这个样子 可以用我们的釘 需要用,哪里是 只要看它会怎麼看 我们就把它放在这里 在这里,我们看到了。
+- 知识点：这个有趣的效果 所以我们必须设置颜色 我们也要设置颜色 和颜色,它看起来 更有趣 好,我们拾一看 接下来,有趣的事情 需要做的,就是设置。
+- 知识点：冰層的颜色 需要要看它 看它多遠,多高 我们的阻力是在上面添加一些雪 在这里做一些有趣的事情 需要把主题取出来 需要从某些地方取出来。
+- 知识点：需要取出它的质感 它可以是一个调节,还是没有 我,例如,不会把它做成一个调节 因为 它可以使用一些声音 让我们看看哪个 这个非常非常多。
+- 知识点：这个 或者这个 好,我们来看看这个 我其实想把它们分成这些 所以它不太出现 需要取出 我只想取出 Y,即是V的硬件 像XVR,所以V硬件 我得到什么。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`系统`、`颜色`。
+
+**关键画面：**
+
+这是 `Stylized_IceSpikes` 场景的关卡总览画面，当前还没有把冰刺效果真正打出来，重点在于切回项目资源层检查地图和系统入口，而不是继续停留在材质图里
+
+右侧 `Outliner` 可见当前场景对象：
+- `Stylized_IceSpikes (Editor)` 世界
+- `Env`
+- `Gideon_Inquisitor`
+- `NS_IceSpikes`
+
+下方 `Content Browser` 当前定位在：
+- `Content / VFX_Library / Maps`
+
+可见的地图资源包括：
+- `Level_Realistic`
+- `Level_Stylized`
+- `Realistic_MagicProjectiles`
+- `Stylized_IceSpikes`
+- `Stylized_Tornado`
+- `Stylized_WaterSplash`
+- `Stylized_Wisps`
+
+这张图说明作者已经从材质制作阶段切回到“粒子、系统”层面，开始把前面做好的冰材质放回 `NS_IceSpikes` 所在的关卡环境里考虑整体效果。由于画面中系统尚未激活出明显冰刺，因此这一帧更像是项目结构与测试场景确认，而不是参数修改步骤
+这张图又回到 `M_Ice` 的材质图，但关注点不再是颜色，而是给粒子系统阶段准备用的冰面噪声/细节贴图。作者正在为一个 `Texture Sample` 选择噪声纹理，同时开始布置一条新的 UV 链
+
+可见节点定义集：
+- `TexCoord[0]`
+- `Subtract(1)`
+- `Texture Sample`
+- 上方还露出上一段遗留的一条 `Divide -> Multiply` 链的尾部
+
+可见连线/结构：
+- `TexCoord[0]` 输出连接到 `Subtract(1).A`
+- `Subtract(1).B = 1.0`
+- 当前选中的 `Texture Sample` 还没有看到完整接线，但显然正在为其指定纹理资源
+
+贴图选择与设置：
+- 左侧 `Texture` 资源选择器搜索关键字是 `noise`
+- 可见候选贴图包括：
+  - `T_VoronoiNoise006`
+  - `T_VoronoiNoise007`
+  - `T_VoronoiNoiseCA001`
+- 鼠标悬浮信息框显示当前关注的是 `T_VoronoiNoise007`
+- 该贴图的关键信息可见：
+  - 路径：`/Game/VFX_Library/Textures/Noises`
+  - 尺寸：`1024 x 1024`
+  - `X-axis Tiling Method = Wrap`
+  - `Y-axis Tiling Method = Wrap`
+  - `Compression Settings = Default`
+  - `Format = DXT1`
+  - `Texture Group = World`
+  - `Mip Load Options = Default`
+  - `sRGB = True`
+
+这张图说明在“粒子、系统”阶段，作者除了回看关卡，还开始为冰刺表面选择更合适的噪声贴图资源。字幕 “This one.” 也表明他正在从多个噪声候选里挑选一个具体纹理，准备用于后续冰层颜色、雪层或表面扰动效果
+这张图继续在 `M_Ice` 材质图中推进，但重点已经从“选哪张噪声图”切到“如何用这张噪声控制平滑溶解和边缘”。左侧预览窗口里已经出现一个孤立的冰刺模型，说明这段材质开始直接在冰刺几何体上验证效果，而不是只在平面上看贴图
+
+可见节点定义集：
+- `MF_SmoothDissolve`
+- 标量常量 `0.2`
+- 两个 `1-x` 节点
+
+可见连线集：
+- 常量 `0.2` 输出连接到 `MF_SmoothDissolve.Smoothness (S)`
+- 一路 `1-x` 输出连接到 `MF_SmoothDissolve.Dissolve (S)`
+- 另一路 `1-x` 输出连接到 `MF_SmoothDissolve.Value (S)`
+
+`MF_SmoothDissolve` 的输入输出可见为：
+- 输入：
+  - `Dissolve (S)`
+  - `Smoothness (S)`
+  - `Value (S)`
+- 输出：
+  - `Edge`
+  - `Mask`
+
+设置/参数：
+- 左侧 `Details` 面板确认当前选中的函数是 `MF_SmoothDissolve`
+- `Smoothness` 当前使用常量值 `0.2`
+
+输出/预览：
+- 左侧预览中的冰刺模型已经具有清晰轮廓和材质体积感
+- 这说明 `MF_SmoothDissolve` 不是单纯为贴图做数学处理，而是准备作为冰刺几何的可见性/边缘控制函数，用于后续生成更自然的消融、雪边或层叠过渡
+
+从这张图可以确认，本段“粒子、系统”的工作已经开始把材质逻辑真正服务于冰刺实体：先用噪声或其他遮罩信号经过 `1-x` 翻转，再送入 `MF_SmoothDissolve` 生成 `Mask` 与 `Edge` 两类输出。这样后续既能控制主体出现范围，也能单独利用边缘带做额外的颜色、雪层或高光效果
+
+### 00:23:19-00:28:01 粒子、系统、颜色
+
+- 本段定位：粒子、系统、颜色。
+- 知识点：我们看看,我把这个高度改变 这个面積从下面来 我把它设置为0 我把它设置为1 0.6 我们接近了 哦,我们来取这个 我们来取这个结果 我们来看看。
+- 知识点：但我认为它应该是介绍成长的 我们需要看看这个面積 哦,因为它是介绍成长的 哦,需要要展示这个 当我们把它设置为0 我们没有什么 在这里和这里没有。
+- 知识点：我只是把它调整 以便于通过这个价值 接下来我们把价值 从粒子系统中的1来设置 例如,我设置的比较多 雪会开始 1,意味着它完全掩盖 例如,我们设置在0.3或0.2的小价值。
+- 知识点：哦,这会是什么 我们觉得雪在这个价值上掩盖 这是我所说的 它可以像雪一样 像这种 好 这是面積 接下来我们准备了所有东西 需要有一个高度面積。
+- 知识点：像雪面積 或者什么你喜欢叫它 好 我们先看看我们需要的设置 开始者可以把主题放在这里 我们把所有有关的东西 都准备好 我们把雪色和雪花色 我们再次调整。
+- 知识点：需要创造一个 调整雪色的调整器 继续在这里 所以需要有这种结果 接下来需要有一个东西 需要控制雪花 需要要控制它 通过一个粒子系统。
+- 知识点：我也想要我们的眼睛做一样 首先,它应该是这么亮的 需要直接通过耳机去调整 然后它突然会提升雪花的亮度 需要把它调整到一个平均的价值 在做什么?。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`系统`、`颜色`。
+
+**关键画面：**
+
+这张图延续上一张 `MF_SmoothDissolve` 的做法，但关键变化是把原本固定的溶解控制改成可由粒子系统写入的动态参数，从而让雪层/冰层的生长高度能够在 Niagara 里实时驱动
+
+可见节点定义集：
+- `Subtract`
+- `Mask (G)`
+- 两个 `1-x`
+- 常量 `0.2`
+- `MF_SmoothDissolve`
+- `Dynamic Parameter`
+
+可见连线关系：
+- 左侧一条高度相关链进入 `Subtract`，再经过 `Mask (G)` 取绿色通道
+- `Mask (G)` 输出进入上方 `1-x`
+- 上方 `1-x` 输出连接到 `MF_SmoothDissolve.Value`
+- 常量 `0.2` 连接到 `MF_SmoothDissolve.Smoothness`
+- `Dynamic Parameter` 的绿色通道输出先进入下方 `1-x`
+- 下方 `1-x` 输出连接到 `MF_SmoothDissolve.Dissolve`
+
+`Dynamic Parameter` 细节面板可确认：
+- `Param Names` 共 4 个
+- `Index [0] = Param1`
+- `Index [1] = Height Mask Mult`
+- `Index [2] = Param3`
+- `Index [3] = Param4`
+- 当前 `Parameter Index = 0`
+- 默认值里绿色通道可见为约 `2.17916`
+
+左侧预览窗口里，黑色冰刺模型已经单独立起，说明这里正在用材质函数直接预览溶解遮罩在模型上的生长结果，而不是只看 2D 材质球
+
+这一步的含义是：材质内部已经预留了一个给粒子系统使用的“高度遮罩倍数”入口。后续 Niagara 可以按粒子生命周期或用户参数去写这个动态值，从而控制冰刺从下往上长出来、或在某个阈值下被雪层覆盖的程度
+这张图是 `M_Ice` 的结果检查画面。作者把视图拉回材质输出端，只保留最终 `Material` 输出节点附近的区域，用预览窗口直接查看冰刺模型的整体外观
+
+可见节点定义集：
+- `Material` 输出节点
+- 一个名为 `Normal Map` 的输入结果节点
+- 左侧远处还能看到一个紫色 `Ice Color` 节点的尾部，但当前不在编辑焦点内
+
+画面可确认的信息：
+- `Material` 输出节点当前可见的主要插槽包括 `Base Color`、`Metallic`、`Specular`、`Roughness`、`Emissive Color`、`Opacity Mask`、`Normal`
+- `Normal Map` 节点位于输出端左侧，说明法线结果已经被整理到最终输出区
+- 左侧预览窗口中的冰刺模型已经呈现灰蓝色半透明质感，不再是上一张那种纯黑遮罩测试状态
+- 底部统计栏可见当前材质大致为：
+  - `Texture samplers: 3/16`
+  - `Shader Count: 4`
+  - `Preshaders: 4`
+
+这张图的作用不是新增一个具体节点步骤，而是确认前面搭出的冰层颜色、法线和溶解结果已经能够共同作用在模型上。也就是说，材质已经从“单独验证某个函数”推进到“回看最终成品外观”，为后续把颜色与系统参数继续联动做准备
+这张图继续停留在 `M_Ice` 的最终输出区，但这次作者开始把发光/颜色相关结果也并入动态控制，让材质不只是长出来，还能随系统参数调整亮度表现
+
+可见节点定义集：
+- `Dynamic Parameter`
+- `Add(1)`
+- `Multiply`
+- 第二个 `Multiply`
+- `Emissive` 参数节点
+- `Mask (G)`
+- `1-x`
+- `Normal Map`
+- `Material` 输出节点
+
+可见连线关系：
+- `Dynamic Parameter` 的红色通道输出连接到 `Add(1).A`
+- `Add(1).B = 1.0`
+- `Emissive` 参数节点输出连接到第一个 `Multiply.A`
+- `Add(1)` 输出连接到第一个 `Multiply.B`
+- 第一个 `Multiply` 的结果继续进入上方第二个 `Multiply`
+- `Normal Map` 结果连接到 `Material.Normal`
+- 下方还能看到一条 `Mask (G) -> 1-x` 的链，说明上一阶段的高度/遮罩逻辑仍然保留在同一材质中
+
+左侧模型预览中，冰刺已经变成明亮的白色，说明当前预览焦点是某个 `1-x` 或发光相关节点的结果，而不是完整着色后的最终冰蓝材质
+
+这一步说明作者希望把“亮度增强”也交给系统侧去驱动。结合本段正文“粒子、系统、颜色”，可以把它理解为：除生长遮罩外，粒子系统还会通过 `Dynamic Parameter` 的某个通道去调节冰刺的发光或颜色强度，使雪花覆盖、生长推进时，视觉亮度也能同步变化
+
+### 00:28:01-00:32:54 Lerp、系统、噪声
+
+- 本段定位：Lerp、系统、噪声。
+- 知识点：我们没有什么 如果我调整到3,5 我们的面膜正在工作 可以调整到0 我们的面膜正在工作 我们的电池的结果 通过这里 我们来看看结果 可以调整到25。
+- 知识点：我们看到下面没有什么 我们的底色是平常的 面膜被A的结果调整到 越高越有效 我们只是把面膜调整到 这些结果的结果 然后就成功了 好,现在我调整到0。
+- 知识点：我调整到1 基本上,我们剩下的最后一件事 好,最后一件事 最后一件事 这是一些控制 我们也会把电池调整到0 我们现在怎么办 需要把电池调整到0。
+- 知识点：需要把电池调整到0 这是一个很奇怪的可能性 但我只是会调整到0 让它是0 我只是会调整到噪声 噪声 需要把它调整到一些数字 所以 加 现在需要解释为什么。
+- 知识点：需要调整到Saturate 只是以防碎 然后调整到 Lerp 这是第一个价值 这是第二个价值 然后需要把我们的Mask 在雪中编织的Mask。
+- 知识点：调整到A 这个Mask 我们来看看结果 所以当在Mask中编织 有一个很奇怪的东西 就是Mask 在它的结构中 我可以把其他盖子 把它调整到蓝色。
+- 知识点：和亮 然后把它调整到这里 这样可以明白 这里这里这里 我们有这个雪 第二个这个Mask在走 而这些白色的价值 从结构中走到B 但是我把B调成。
+- 核对对象：`Lerp`、`系统`、`噪声`。
+
+**关键画面：**
+
+这张图展示的是 `M_Ice` 输出区附近的新一轮混合逻辑，重点已经从单纯的动态参数控制，转到把遮罩结果进一步加工后送入最终材质输出，作为颜色或发光混合的控制量
+
+可见节点定义集：
+- `Add(1)`
+- 两个 `Multiply`
+- `Multiply(0,1)`
+- `Mask (G)`
+- `1-x`
+- `Power`
+- `Normal Map`
+- `M_Ice` 材质输出节点
+
+可见连线/结构：
+- 左下方 `Mask (G)` 输出进入 `1-x`
+- `1-x` 输出继续送入 `Power.Base`
+- 中间选中的 `Multiply` 节点接收左侧另一条结果，并把输出接到 `M_Ice.Emissive Color`
+- 上方还有一条独立的 `Multiply` 链接到 `M_Ice.Base Color`
+- `Normal Map` 结果继续连接到 `M_Ice.Normal`
+- 右侧还放着一个 `Multiply(0,1)` 常量乘法节点，当前没有看到完整接线，但显然在为后续数值缩放做准备
+
+左侧预览窗口中，冰刺上半部分是亮白色，下半部分接近黑色，说明当前正在预览一条沿高度或遮罩渐变变化的中间结果，而不是最终完整着色
+
+结合本段标题 `Lerp、系统、噪声`，这一步可以理解为：作者先把一张雪层/噪声遮罩通过 `1-x` 和 `Power` 调整分布，再把它送进乘法链，作为后续 `Lerp` 或发光强度混合前的控制基础
+这张图把本段最关键的混合逻辑完整露出来了：作者使用一个 `Lerp`，把上方已有结果与另一组颜色/噪声结果按 `Height Mask` 进行混合，并在进入 `Lerp` 之前先用 `Add + Saturate` 整理遮罩
+
+可见节点定义集：
+- 两个上游 `Multiply`
+- `Mask (G)`
+- `1-x`
+- `Power`
+- `Add`
+- `Saturate`
+- `Height Mask`
+- `Lerp`
+- `Texture Sample`
+- 一个 `Constant3Vector`
+- `Normal Map`
+
+可见连线关系：
+- `Mask (G) -> 1-x -> Power.Base`
+- 下方参数 `Emissive Mask Exp` 连接到 `Power.Exp`
+- `Power` 输出进入 `Add.A`
+- 下方 `Texture Sample` 的红色通道输出进入 `Add.B`
+- `Add` 输出进入 `Saturate`
+- `Saturate` 输出接到 `Lerp.Alpha`
+- 右下 `Constant3Vector` 输出接到 `Height Mask`
+- `Height Mask` 输出接到 `Lerp.B`
+- 上方一条 `Multiply` 结果接到 `Lerp.A`
+- `Lerp` 的输出继续送往右上方的材质输出链
+- `Normal Map` 仍然单独连接到材质法线输入
+
+参数与数值：
+- `Constant3Vector` 当前可见值约为：
+  - `R = 23.202551`
+  - `G = 0.0`
+  - `B = 25.0`
+- 该常量当前显示为亮洋红色，用来强调这一路正在作为独立颜色/遮罩输入被调试
+
+左侧预览中的冰刺已呈现更接近成品的蓝白冰面效果，说明这一轮 `Lerp` 混合正在把雪层遮罩与颜色结果真正结合到模型外观上
+
+这一步的核心作用是：先把噪声/雪层遮罩限制到 `0..1` 区间，再用它控制 `Lerp` 的插值权重。这样冰刺表面哪些区域显示原始结果、哪些区域切换到雪层/附加颜色，就不再是硬切换，而是由高度遮罩与噪声共同决定
+这张图说明作者已经结束当前 `M_Ice` 基础材质的主要搭建，开始回到内容浏览器，用它去创建一个材质实例，供后续系统或场景中单独调参使用
+
+可见界面锚点：
+- 顶部当前仍打开 `M_Ice`
+- `Outliner` 中可见场景对象：
+  - `Stylized_IceSpikes (Editor)`
+  - `Env`
+  - `Gideon_Inquisitor`
+  - `NS_IceSpikes`
+- 下方 `Content Browser` 当前目录位于：
+  - `Content / VFX_Library / Materials / MM / _Special / IceSpikes`
+
+当前选中的资源：
+- `M_Ice`
+- 资源类型：`Material`
+
+悬浮信息里可确认的材质属性：
+- 路径：`/Game/VFX_Library/Materials/MM/_Special/IceSpikes`
+- `Shading Model = Default Lit`
+- `Lighting Mode = Volumetric Non Directional`
+- `Material Domain = Surface`
+- `Blend Mode = Opaque`
+
+字幕明确说“we'll create an instance”，因此这一步的实际含义是：接下来不会继续直接修改母材质，而是基于 `M_Ice` 新建实例，把本段做出的雪层、噪声、发光和高度遮罩参数留给实例层去单独调节。这样既能复用同一套冰刺着色逻辑，也方便在 `NS_IceSpikes` 或不同场景里做出多个风格变体
+
+### 00:32:54-00:37:37 Fresnel、颜色
+
+- 本段定位：Fresnel、颜色。
+- 知识点：把它们 调到适合的盘子 现在需要玩用设定 把这些都拿起来 把它们这样转上去 首先 我们要调整到 我们需要的东西 需要开始调整颜色。
+- 知识点：需要拿到 它 例如 需要把它调成黑色 在这个-线上 调整到亮度 好 这就是它 现在我们要继续 现在我们有颜色。
+- 知识点：在上面 顶颜色 还有 我们看看 我喜欢哪个 我认为可以 用这个 这种东西 我们也把它们调整好 现在 需要调整到 粑子的 这也是很重要的 我们也有。
+- 知识点：粑子的内部 我们有这种东西 是的 青色可能看起来很奇怪 但是 是的 这些也存在 它们会让它看起来 更有趣 这是我们的第一粑子 还有我们有的 粑子外面。
+- 知识点：有时候 这个东西 会在我身上消失 哦 这是它 我们来调整 我喜欢这个 哦 看 我在延伸 55 哇 看看 可以改变 比如说 3D的物件 它很亮 我们把它弄得更亮。
+- 知识点：5 总共 看起来很好 而我来调整 光线会怎么下降 所以在这个情况下 需要把它完全拔掉 可以把粑子 调到0.5 我们可观察到 它基本上会变化 如果我们有光线。
+- 知识点：看看我们有的光线 这是光线反射的方式 光线在这里 我告诉你PBR 希望你能看到 0.5 这里 比如说 0.37 我们把它这样设置 我们没有任何价值的。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Fresnel`、`颜色`。
+
+**关键画面：**
+
+这张图显示作者已经创建并打开了材质实例 `MI_IceSpikes_01`，开始不再改母材质节点，而是在实例细节面板里集中调 `Fresnel`、颜色、反射和贴图资源
+
+实例与父材质关系：
+- 当前打开的资源标签是 `MI_IceSpikes_01`
+- `Parent = M_Ice`
+
+右侧 `Details` 面板中可见的 `Global Scalar Parameter Values`：
+- `Base Color = 1.0`
+- `Emissive = 1.0`
+- `Emissive Mask Exp = 0.0`
+- `Fresnel Exp = 1.0`
+- `Fresnel Exponent = 1.0`
+- `Fresnel Reflect = 0.0`
+- `Layer 1 UV Scale = 1.0`
+- `Layer 2 UV Scale = 4.0`
+- `Normal Influence = 0.0`
+- `Normal UV Scale = 1.0`
+- `Reflection Influence Layer 1 = 50.0`
+- `Reflection Influence Layer 2 = 10.0`
+
+`Global Texture Parameter Values`：
+- `T_Layer1 = T_stylized_ice_roughness`
+- `T_Layer2 = T_stylized_ice_roughness`
+- `T_Normal = T_stylized_ice_normal`
+
+`Global Vector Parameter Values` 可见条目：
+- `Color Deep`
+- `Color Top`
+- `Fresnel Color Inside`
+- `Fresnel Color Outside`
+- `SMR`
+
+左侧预览窗口当前是一个平面样片而不是冰刺模型，这说明作者在实例阶段先用平面快速看材质分布、颜色和 Fresnel 效果，再决定如何把这些参数用于最终模型
+
+这一帧的作用是把前面在 `M_Ice` 中硬编码或节点级调试过的结果，提升成实例参数。后续调 `Fresnel` 和颜色时，主要就是在这些标量、向量和贴图槽位上反复试值，而不再回去改母材质结构
+这张图展示的是 `MI_IceSpikes_01` 的颜色调参过程。作者打开 `Color Picker`，直接修改实例里的向量参数，让冰材质从偏深蓝逐步推向更亮、更偏青色的高光表现
+
+可见实例参数状态：
+- `Global Scalar Parameter Values` 中一批控制项已全部勾选启用
+- `Global Texture Parameter Values` 仍保持：
+  - `T_Layer1 = T_stylized_ice_roughness`
+  - `T_Layer2 = T_stylized_ice_roughness`
+  - `T_Normal = T_stylized_ice_normal`
+
+当前正在编辑的颜色值：
+- `Color Picker` 中可见：
+  - `R = 0.0`
+  - `G = 2.902731`
+  - `B = 5.0`
+  - `A = 1.0`
+  - `H = 205.167221`
+  - `S = 1.0`
+  - `V = 5.0`
+- 这组值对应的是一类高亮的青蓝色
+
+右侧 `Global Vector Parameter Values` 当前可见并已启用：
+- `Color Deep`
+- `Color Top`
+- `Fresnel Color Inside`
+- `Fresnel Color Outside`
+- `SMR`
+
+预览结果：
+- 左侧材质球已经呈现明显的青蓝色冰面
+- 球体表面仍保留粗糙冰裂纹理，说明这里只是在替换颜色，不是在改贴图结构
+
+这一步的意义是把冰体的层次拆开来调：深处颜色、顶部颜色，以及 Fresnel 内外颜色都能单独控制。这样作者就可以通过实例参数把“核心偏蓝、边缘更亮、外圈偏青”这类风格快速试出来，而不需要回到材质节点里重接颜色线
+这张图是在 `MI_IceSpikes_01` 中继续微调并观察最终配色效果。画面把预览平面放大到近景，方便直接检查冰层纹理、颜色分层和反射参数组合后的成品观感
+
+右侧当前可见并启用的 `Global Vector Parameter Values`：
+- `Color Deep`
+- `Color Top`
+- `Fresnel Color Inside`
+- `Fresnel Color Outside`
+- `SMR`
+
+当前显示的数值/状态：
+- 展开的向量值仍为：
+  - `R = 0.0`
+  - `G = 2.902731`
+  - `B = 5.0`
+  - `A = 1.0`
+- `SMR` 组当前可见参数：
+  - `Metallic = 0.337`
+  - `Specular = 0.0`
+  - `Roughness = 0.5`
+  - `A = 1.0`
+
+材质外观结果：
+- 预览平面顶部更亮、更偏浅青
+- 底部更深、更偏饱和蓝色
+- 纹理细节仍然明显，说明颜色叠加没有把冰面 roughness / normal 的层次完全冲掉
+
+这张图对应的是实例调色后的结果确认阶段。作者不是再去改节点，而是在实例里同时平衡：
+- 深浅两层颜色
+- Fresnel 内外边缘色
+- `SMR` 里的金属度、镜面和粗糙度
+
+这样做的目标是把冰刺材质调到既有明亮边缘、又保留内部深蓝厚度的状态，为后续放回真实角色和场景光照里做准备
+
+### 00:37:37-00:42:18 颜色
+
+- 本段定位：颜色。
+- 知识点：现在它会被显示 已经有什么了 也加在这里 哦 哦 这就是一个很不同的故事 我们看看 看起来是什么样的 是的 其实我们需要 把它们移动一点 大概是这样。
+- 知识点：这个角色的边界 现在我们有这种材料 光线也影响了 我们有光从上方 看 我在移动 哦 哦 天啊 看不见 哦 看 为什么我把它弄成热水 因为光线仍然影响了。
+- 知识点：比如说 我可以把光线的方向变化 然后所有东西都会影响 所以我现在想给你们看 在拯救所有的东西 所有的东西都准备好了 材料都准备好了。
+- 知识点：有一个特定的出现 很棒 我们把这个东西 在视觉面前 如果我把它打开 所有东西都会看起来 像从一开始的样子 当我把它打开 首先 颜色会变化。
+- 知识点：第二 出现了一个外景 颜色会变化 整体上 它的显示会变化 为什么 因为在后製中 我们有了这个照片 然后 一定的效果 会被我们选择的某些物件 我们选择它。
+- 知识点：后製效果 我们有的在这里 如果它被转移 它不会做任何事情 而我转移了 是的 我转移了 它会做什么 而且 它只会用 偶像的物件 如果它是透明的物件 它只会用偶像的物件。
+- 知识点：它就拿起颜色 然后就在颜色上 也就是它加了颜色 它就会切掉 就会做成这种 有色彩的光影 转移 我们也可以在这里 改变颜色。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这张图显示作者已经从材质实例切回 Niagara 系统 `NS_IceSpikes`，开始把刚做好的冰材质实例真正挂到粒子系统的网格渲染器上
+
+系统结构可见：
+- 当前系统为 `NS_IceSpikes`
+- 中间 `System Overview` 中有两个发射器：
+  - `Spikes_Center`
+  - `Spikes_Sides`
+
+当前聚焦对象：
+- 右侧 `Details` 标题显示当前选中的是 `Spikes_Sides`
+- 顶部可见 `9 Particles`
+
+`Mesh Renderer` 设置可见内容：
+- `Meshes` 里 `Index [0]` 使用网格 `SM_ice_01`
+- `Enable Material Overrides` 已开启
+- `Override Materials` 有 `1 Array element`
+- `Index [0]` 的 `Explicit Mat` 被设置为 `MI_IceSpikes_01`
+- 悬浮提示说明这里是在把内容浏览器中的资源指定给该材质槽
+- `Source Mode = Particles`
+- `Facing Mode = Default`
+- `Sort Mode = None`
+
+左侧预览窗口里，侧向一排冰刺已经使用新的蓝色冰材质显示出来，说明材质实例不再只是单独预览，而是已经被真正接入 Niagara 网格发射器
+
+这一步的作用是把材质工作和系统工作接上：`Spikes_Sides` 发射器继续使用原网格 `SM_ice_01`，但渲染时改用 `MI_IceSpikes_01`，这样后续所有颜色、Fresnel、粗糙度和反射调整都会直接反馈到系统里的冰刺效果上
+这张图说明作者开始准备一个只作用于选定物体的后处理颜色效果，不再只改冰刺材质本身，而是转向“关卡对象 + 后处理材质”的配合
+
+场景与资源锚点：
+- 当前仍在 `Stylized_IceSpikes` 关卡
+- `Outliner` 中选中对象为 `Gideon_Inquisitor`
+- 同一层级下还能看到：
+  - `DirectionalLight`
+  - `ExponentialHeightFog`
+  - `Floor`
+  - `PointLight`
+  - `PostProcessVolume`
+  - `SkyAtmosphere`
+  - `SkyLight`
+  - `NS_IceSpikes`
+
+下方 `Content Browser` 当前目录：
+- `Content / VFX_Library / Misc / Levels`
+
+当前选中的资源：
+- `PP_MI_Toon_IceSpikes`
+- 资源类型为 `Material Instance`
+
+右侧 `Details` 面板显示的是 `Gideon_Inquisitor` 的组件设置，且搜索关键字为 `custom`
+
+可见的关键渲染设置：
+- 在 `Rendering` 下，`Render CustomDepth Pass` 已启用
+- `CustomDepth Stencil Value = 1`
+- `CustomDepth Stencil Write Mask = Default`
+
+这一步的实际作用是：给角色 `Gideon_Inquisitor` 写入自定义深度/模板标记，使后处理材质 `PP_MI_Toon_IceSpikes` 能够只识别并影响这个被标记的对象，而不是把同样的颜色变化应用到整个场景。结合本段正文“颜色”，这里是在搭建一个“只对指定角色生效”的局部色彩/描边/冰化后处理选择机制
+这张图继续验证局部后处理/颜色效果，但这次选中的对象变成了 `NS_IceSpikes`，说明作者正在比较“把自定义深度标记给角色”与“把标记给 Niagara 效果本体”时，画面表现会有什么差异
+
+界面锚点：
+- 顶部打开的资源标签包含 `PP_MI_Toon_IceSpikes`
+- `Outliner` 中当前选中对象为 `NS_IceSpikes`
+- 下方 `Content Browser` 仍选中 `PP_MI_Toon_IceSpikes`
+
+右侧 `Details` 当前显示的是 `NS_IceSpikes` 的 `NiagaraComponent` 设置，搜索关键字仍为 `custom`
+
+可见设置：
+- `Render CustomDepth Pass` 已启用
+- `CustomDepth Stencil Value = 0`
+- `Custom Depth Stencil Write Mask = Default`
+
+预览结果：
+- 视口里已经能看到一条大范围延展的冰刺带
+- 角色站在效果起点附近
+- 冰刺整体呈现明亮的青蓝色，说明后处理材质、实例材质和 Niagara 系统已经开始共同作用
+
+这张图的关键意思不是新增某个材质节点，而是验证选择掩码的归属对象。上一张是给 `Gideon_Inquisitor` 写自定义深度模板，这一张则把同类设置展示到 `NS_IceSpikes` 上，并观察效果当前是否开启或应写为哪个模板值。结合字幕 “for it now, it's turned off”，可理解为作者在测试这类局部颜色后处理开关时，确认把它应用到谁身上、以及当前是否暂时关闭某一路选择效果
+
+### 00:42:20-00:45:28 颜色
+
+- 本段定位：颜色。
+- 知识点：还有这件东西 我们看到 这种转移 很奇怪吧 我们转移它 这里它们在下面 我们也看到它们 所以这件事也没发生 我们的楼层 我们也需要转移它 但我们没有给它任何颜色。
+- 知识点：我们转移它 把它调到0 然后就这样 那我们就不会有问题了 就这样 好 因为它没有自动调整 它不像是在读的 它就像是在调整这些物件 而不是自动调整。
+- 知识点：它在前面在调整它们 这是一个特征 好 现在我们把它们设置好 我们的展示 所以开始者 需要要 至少是可以的 好 让我们这样设定一个价值 出口 可以增加它。
+- 知识点：力量 这里可以 这里可以 可以跳过 这种一个方式 高价值 我们不切闪光 这里是我们的闪光 我们基本上把它们留下来 这是我们的出口色 这是我们的出口色。
+- 知识点：反光 哦 让我给你们看看 它能否反光 它能否反光 我们有这个东西 哦 看 我正在玩反光 哦 所以它就相关于这个 好 让我们说 总结来说 我应该把价值调整了。
+- 知识点：这是我们的反光 哦 不 一切都很好 看 我正在改变它 嗯 大调 我把价值调整了 如果有反光 就代表我们正在调整颜色。
+- 知识点：这应该是大调 让我们快速调整 例如 需要拿到什么 哦 好 或者我们把它们留下来 因为需要把它们 调整成一样 我刚才被混合了 它是相对的 反光是我们的光调。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这张图延续上一段对 `CustomDepth/Stencil` 的测试，不过现在画面已经明确显示：作者把 `NS_IceSpikes` 的模板值改成了 `1`，并直接观察整条冰刺链在场景里的显示效果
+
+界面锚点：
+- 顶部仍打开 `PP_MI_Toon_IceSpikes`
+- `Outliner` 中同时可见 `Gideon_Inquisitor` 与 `NS_IceSpikes`
+- 当前选中对象是 `NS_IceSpikes`
+
+右侧 `NiagaraComponent` 的 `Rendering` 设置可见：
+- `Render CustomDepth Pass` 已启用
+- `CustomDepth Stencil Value = 1`
+- `Custom Depth Stencil Write Mask = Default`
+
+下方 `Content Browser` 里仍选中后处理实例：
+- `PP_MI_Toon_IceSpikes`
+
+视口结果：
+- 一整排冰刺已经大范围展开
+- 冰刺保持亮青蓝色，并带有明显的底部深蓝投影/染色
+- 角色站在冰刺起点附近，说明作者正在检查后处理选择效果是否会影响到系统与角色之间的关系
+
+与上一张 `S09_3` 相比，这里最直接的变化是模板值从 `0` 变成了 `1`。这说明作者正在通过切换 `CustomDepth Stencil Value`，让后处理材质只命中特定对象组，从而避免颜色效果错误地作用到不该被处理的物体上
+这张图把后处理材质实例 `PP_MI_Toon_IceSpikes` 本身打开了，作者开始直接调整后处理参数，而不再只在场景对象的 `CustomDepth` 开关之间切换
+
+外层场景状态：
+- 右侧仍选中 `NS_IceSpikes`
+- `NiagaraComponent` 的 `Render CustomDepth Pass` 仍启用
+- `CustomDepth Stencil Value = 1`
+
+前景弹出的材质实例窗口：
+- 资源为 `PP_MI_Toon_IceSpikes`
+- 右侧 `Details` 中 `Global Scalar Parameters` 已勾选并可见
+
+当前可见参数与数值：
+- `Contrast = 0.0`
+- `Hue Shift = -2.0`
+- `Outline Multiply = 0.07`
+- `Outline Power = 2.0`
+- `Outline Size = 1.0`
+- `Second Outline = 0.9`
+- `Shadow Cutoff = 0.0`
+- `Stencil Value = 1.0`
+
+左侧实例预览窗口显示的是一个简单平面/测试片，说明作者在这里主要校准后处理逻辑本身，而不是依赖完整场景截图来调参数
+
+这一步的意义是把“命中谁”与“怎么着色”拆开：
+- `NS_IceSpikes` 的 `CustomDepth Stencil Value` 决定后处理命中对象
+- `PP_MI_Toon_IceSpikes` 的这些标量参数决定命中后如何偏色、提轮廓、控制阴影截断
+
+其中 `Hue Shift = -2.0` 与多组 `Outline` 参数表明，作者此时重点在校准整体色相偏移和轮廓/阴影风格，而不是继续修改冰刺母材质
+这张图继续保持 `PP_MI_Toon_IceSpikes` 实例窗口打开，但重点已经转到最终画面观察：作者确认当前后处理结果让冰刺链变得非常明亮且高度饱和
+
+可见场景状态：
+- 大范围冰刺从角色脚边一路向前展开
+- 冰刺整体发出强烈的青蓝光感
+- 角色在远处几乎被亮度压暗，说明当前调色更强调冰刺本身的视觉主导性
+
+前景实例窗口中，当前仍可见的参数值包括：
+- `Contrast = 0.0`
+- `Hue Shift = -2.0`
+- `Outline Multiply = 0.07`
+- `Outline Power = 2.0`
+- `Outline Size = 1.0`
+- `Second Outline = 0.9`
+- `Shadow Cutoff = 0.0`
+- `Stencil Value = 1.0`
+
+右侧 `NS_IceSpikes` 组件设置仍处于选中状态，说明作者是在保持系统选择掩码有效的前提下，直接观察后处理实例参数对整条 Niagara 冰刺链的影响
+
+这张图的结论与字幕一致：当前结果已经“super bright and saturated”。也就是说，这一轮参数把冰刺的亮度和色彩推得过高了，作者正在用实景预览判断是否需要继续回调 `Hue Shift`、对比度或轮廓相关参数，避免后处理把原本的冰材质细节完全冲掉
+
+### 00:45:31-00:49:07 颜色
+
+- 本段定位：颜色。
+- 知识点：调整它们的光调 比如说 角色不需要调整 我们只需要解释 它们的效果 我们有一个圖案 可以在招购时 调整颜色。
+- 知识点：调整 让我们继续调整最后的设置 调整我们的光调 所以 我们要调整 物品的动态 我刚才说 我们要从开始调整它们的光调 是的 我们把这个调整成一个圆形。
+- 知识点：在很短的时间 它们会降至0.4点 我已经选择了这些颜色 我基本上明白 它们的效果 我们来看看结果 我们看到 它们现在已经亮了 所以我们要强调。
+- 知识点：我只是想要 用这个调整的方式 调整这个颜色 我现在要做什么 我现在要做一个重返 什么重返 所以我拿 例如 我们要调整它的颜色。
+- 知识点：我们要调整它的颜色 它们通常从0到这里 从0到100 所以这个是它的颜色 我现在要调整它的颜色在Z。
+- 知识点：调整它从0到50 或者100 所以我调整它从0到100 从0到100 调整它从0到100 所以我们把这个调整到它们的颜色。
+- 知识点：它们不值得调整 因为它们的颜色太多了 如果它们的颜色 比0.1更多 那么基本上 已经太多了 所以我们就把我们的颜色调整到这里。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这张图仍然停留在后处理材质实例 `PP_MI_Toon_IceSpikes` 的调参阶段，不过重点已经从前一段的亮度/饱和度回看，转向描边色与阴影色本身的设定
+
+资源与界面锚点：
+- 当前打开的实例为 `PP_MI_Toon_IceSpikes`
+- 下方 `Content Browser` 仍选中 `PP_MI_Toon_IceSpikes`
+- 右侧场景 `Outliner` 中可见 `NS_IceSpikes`
+
+当前可见的 `Global Scalar Parameters`：
+- `Outline Size = 1.0`
+- `Second Outline = 0.9`
+- `Shadow Cutoff = 0.0`
+- `Stencil Value = 1.0`
+
+当前可见的 `Global Vector Parameters`：
+- `Outline Color`
+- `Shadow Color`
+
+其中 `Shadow Color` 已展开，可见数值为：
+- `R = 0.286458`
+- `G = 0.286458`
+- `B = 0.286458`
+
+从颜色块可以看出：
+- `Outline Color` 当前接近纯黑
+- `Shadow Color` 当前接近中性灰白
+
+左侧实例预览仍然使用简单平面测试片，说明作者此时是在后处理实例内部精调“轮廓是什么颜色、阴影偏什么颜色”，而不是直接观察冰刺模型节点或 Niagara 栈
+
+这一步的作用是把后处理视觉语言定下来：轮廓线保持较深的黑色，阴影区域则使用较浅的灰色基准，再结合前面已经设置过的 `Stencil Value`、`Outline Size` 和 `Second Outline`，去控制被选中对象在场景中的描边和明暗分层
+这张图已经从后处理实例回到 Niagara 系统 `NS_IceSpikes`，作者开始直接在发射器里写动态材质参数，让冰刺材质随粒子年龄变化控制亮度与高度遮罩
+
+系统结构：
+- 当前系统为 `NS_IceSpikes`
+- 中间 `System Overview` 仍有两个发射器：
+  - `Spikes_Center`
+  - `Spikes_Sides`
+- 右侧 `Details` 当前选中的是 `Spikes_Center`
+
+当前模块：
+- `Dynamic Material Parameters`
+- 顶部显示 `Dynamic Parameter Index 0`
+- `Write Parameter Index 0` 已启用
+
+当前可见参数设置：
+- `Emissive Mult` 使用 `Float from Curve`
+- 曲线来源为 `Curve for Floats`
+- `Curve Indexer = PARTICLES.NormalizedAge`
+- `Scale Curve = 1.0`
+
+曲线形态：
+- 曲线前段维持较高值
+- 在中段快速下跌
+- 后段保持较低平台
+
+同一模块内还可见：
+- `Height Mask Mult` 使用 `Remap Range`
+- `Input Value To Remap = 0.0`
+- `Input Min = 0.0`
+- `Input Max = 1.0`
+- `Output Min = 0.0`
+- `Output Max = 1.0`
+- `Param2-0` 与 `Param3-0` 当前均为 `0.0`
+
+左侧预览里，一排冰刺已经正确显示在系统预览窗口中，说明这组动态参数已与前面材质里的 `Dynamic Parameter` 输入对应起来
+
+这一步的含义是：作者不再只在材质实例里静态调色，而是把 `Emissive Mult` 和 `Height Mask Mult` 交给 Niagara 粒子生命周期来驱动。这样冰刺在生成到消退的过程中，可以自动改变发光强度和遮罩范围，而不是始终维持固定亮度与固定生长状态
+这张图回到关卡视口检查动态参数调整后的最终结果，可以直接看到 `NS_IceSpikes` 已经被推到非常明亮的状态，冰刺顶部和边缘出现强烈的蓝白发光
+
+场景锚点：
+- 当前选中对象是 `NS_IceSpikes`
+- `Outliner` 中还能看到 `Stylized_IceSpikes (Editor)`、`Env`、`NS_IceSpikes`
+- 下方 `Content Browser` 仍选中后处理实例 `PP_MI_Toon_IceSpikes`
+
+右侧 `Details` 可见 `NS_IceSpikes` 的组件状态：
+- `Allow Scalability` 已启用
+- `Auto Activate` 已启用
+- `Niagara Utilities` 下可见 `Debug`、`Reset`、`Capture`
+- 鼠标当前悬浮在 `Reset`，提示为重置所选粒子系统
+
+视口结果：
+- 一整排冰刺从左向右逐级变大
+- 最大那组冰刺已经接近纯白核心 + 强蓝色辉光
+- 地面与效果边缘出现明显蓝色泛光/染色
+- 轮廓外侧仍能看到一条辅助曲线/轨迹线，说明系统生成路径仍在可视化状态
+
+这张图说明前一张 `Spikes_Center` 中的动态材质参数已经明显影响到场景成品：发光倍数和遮罩控制把冰刺推向高亮演出效果。结合本段正文对“颜色过多、数值不宜太大”的提醒，这一帧更像是在验证上限，观察当动态颜色/亮度拉得太高时，效果会不会过曝或失去材质细节
+
+### 00:49:10-00:50:04 关键流程 12
+
+- 本段定位：关键流程 12。
+- 知识点：现在 我认为 基本上 我们 主要的 已经我们有 它们很漂亮地显现了 哦 这里 直接从耳机上 我们调整 在灯光下 我们立刻调整面膜 然后就这样 我们也调整了 它们的样子 我们也调整了 Z。
+
+**关键画面：**
+
+这张图属于本页最后的“关键流程 12”收束画面，作者不再调整材质或曲线，而是在场景里直接选中 `NS_IceSpikes`，准备重置并重新观察系统表现
+
+界面锚点：
+- `Outliner` 当前选中对象为 `NS_IceSpikes`
+- 下方 `Content Browser` 仍选中 `PP_MI_Toon_IceSpikes`
+- 右侧 `Details` 显示的是 `NS_IceSpikes` 的 `NiagaraComponent`
+
+当前可见组件设置：
+- `Niagara System Asset = NS_IceSpikes`
+- `Niagara Tick Behavior = Use Prereqs`
+- `Allow Scalability` 已启用
+- `Auto Activate` 已启用
+
+`Niagara Utilities` 区域可见按钮：
+- `Debug`
+- `Reset`
+- `Capture`
+
+鼠标当前悬浮在 `Reset` 上，提示为“Resets the selected particle systems”
+
+视口中央只有一个很小的角色/物体基点，可见前一轮的冰刺演出结果已经被清空，当前状态更像是准备从初始条件重新播放或重新验证
+
+这一步的作用是把前面所有材质实例、后处理实例和 Niagara 动态参数的改动归回到一个可复测状态。也就是说，作者在最终检查前先重置 `NS_IceSpikes`，确保后续看到的结果来自当前设置，而不是残留的旧模拟状态
+这张图把最终的动态材质参数逻辑补全到了 `Spikes_Sides` 发射器上。与前一页只按年龄驱动发光不同，这里高度遮罩倍数明确改成由粒子缩放的 `Z` 分量来计算
+
+系统结构：
+- 当前系统为 `NS_IceSpikes`
+- 右侧 `Details` 当前选中的是 `Spikes_Sides`
+- `Spikes_Sides` 栈中高亮模块为 `Dynamic Material Parameters`
+
+当前模块可见设置：
+- `Dynamic Parameter Index 0`
+- `Write Parameter Index 0` 已启用
+- `Emissive Mult` 仍使用 `Float from Curve`
+- 曲线索引器为 `PARTICLES.NormalizedAge`
+- 曲线先维持高值，随后快速衰减到低值平台
+
+`Height Mask Mult` 当前配置：
+- 使用 `Remap Range`
+- `Input Value To Remap` 来自 `Make Float from Vector`
+- `Vector = PARTICLES.Scale`
+- `Channel = Z`
+
+`Remapping` 数值可见为：
+- `Input Min = 0.0`
+- `Input Max = 50.0`
+- `Output Min = 0.0`
+- `Output Max = 0.1`
+
+其它可见值：
+- `Param2-0 = 0.0`
+- `Param3-0 = 0.0`
+
+左侧预览中，一排侧向冰刺已经正确显示，说明 `Spikes_Sides` 的动态参数也已接到同一套冰材质输入上
+
+这一步的核心含义是：侧向冰刺不再只按“时间”变化，而是把粒子本身的高度尺度也拿来驱动材质遮罩。具体来说，`Scale.Z` 越大，对应映射出的 `Height Mask Mult` 越高，材质里的生长/覆盖遮罩就能跟冰刺模型的实际高度同步变化，使大冰刺和小冰刺的视觉层次更一致
+这张图是 `p67` 这一页的最终收束状态。`NS_IceSpikes` 仍然处于选中状态，但场景里已经看不到冰刺，说明系统被重置后回到了初始空场状态
+
+界面锚点：
+- `Outliner` 当前选中对象仍为 `NS_IceSpikes`
+- 下方 `Content Browser` 仍选中 `PP_MI_Toon_IceSpikes`
+- 右侧 `Details` 显示：
+  - `Niagara System Asset = NS_IceSpikes`
+  - `Niagara Tick Behavior = Use Prereqs`
+  - `Allow Scalability` 已启用
+  - `Auto Activate` 已启用
+
+`Niagara Utilities` 区域仍可见：
+- `Debug`
+- `Reset`
+- `Capture`
+
+视口结果：
+- 整个场景只剩地面与环境光
+- 没有冰刺、没有角色近景、也没有明显的系统残留轨迹
+
+这张图与 `S12_1` 前后的逻辑一致，说明作者在完成关键参数调试后，把 `NS_IceSpikes` 恢复到一个干净的待播放状态。这样下一次测试系统时，能从空场重新触发完整效果，更容易判断材质、后处理与 Niagara 动态参数的真实组合结果
+
+## 补充视觉证据
+
+### S05 00:22:13
+
+这是 `S05 00:22:13` 的补充近景图，用来更清楚地说明 `M_Ice` 中平滑溶解函数 `MF_SmoothDissolve` 的接入位置。相对正文里的主截图，这张图减少了干扰节点，强调的是函数本体与输入关系
+
+节点定义集：
+- `1-x`
+- `MF_SmoothDissolve`
+- 上方一条未完全展开的 `Divide`
+- 上方一条未完全展开的 `Multiply`
+- 左侧还有一段仅露出输出端的节点链，其中可见绿色通道标记 `(G)`
+
+连线集：
+- 左侧 `1-x` 输出直接连接到 `MF_SmoothDissolve` 的上方输入
+- 从当前可见构图判断，这一路对应的是函数的主要溶解控制输入
+- 上方的 `Divide -> Multiply` 属于同一材质图区的其它链路，但这张补充图里没有显示它们与 `MF_SmoothDissolve` 的完整连接终点，因此不能据此补写额外连线
+
+设置/参数：
+- 左侧 `Details` 面板确认当前选中节点为 `Material Expression Material Function Call`
+- `Material Function = MF_SmoothDissolve`
+
+输出/预览：
+- `MF_SmoothDissolve` 可见两个输出：
+  - `Edge`
+  - `Mask`
+- 左侧预览窗口中，单个冰刺模型显示为亮白色测试状态，说明当前正在预览与溶解/遮罩相关的中间结果，而不是完整成品着色
+
+这张补充图的价值在于确认：作者确实是把一条经过 `1-x` 处理后的遮罩信号送入 `MF_SmoothDissolve`，再利用该函数产出的 `Edge` 与 `Mask` 去做后续冰刺生长和边缘控制。对于复现者，这能帮助定位 `MF_SmoothDissolve` 在材质图中的责任边界，而不必从更杂乱的全图里重新找函数入口
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

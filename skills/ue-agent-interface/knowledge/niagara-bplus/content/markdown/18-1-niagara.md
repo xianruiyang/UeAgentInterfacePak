@@ -1,0 +1,579 @@
+# 18-1-利用-Niagara-矢量场
+
+# 18-1-利用-Niagara-矢量场
+
+## 关键术语
+
+- `Velocity`、`Color`、`Beam`、`UV`、`Normal`、`Houdini`、`PS`、`SD`、`Noise`、`粒子`、`Niagara`、`Normalized Age`、`生命周期`、`速度`、`颜色`、`曲线`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:05-00:04:49 Color、UV、Noise
+
+- 本段定位：Color、UV、Noise。
+- 知识点：这次我们来了解一下向量场,直接自电与自断制作的方法,通过后定一起进行。
+- 知识点：向量场是什么?以什么方式应用和计算?这些部分继续进行观察。
+- 知识点：首先要解释向量场是什么?我带来了图像一起。
+- 知识点：现在我们使用的虚幻中的那里有个Color Noise Force。
+- 知识点：像噪音的话,噪音类型的粒子运动可以实现。
+- 知识点：在这里写的部分,向量场是为了控制粒子的运动,在空间内定义了向量流的场。
+- 知识点：这些指定的向量值与粒子的速度计算一边控制它们。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Color`、`Noise`、`粒子`、`速度`、`曲线`。
+
+**关键画面：**
+
+这是本段内容的标题页，画面中央显示 `Vector Field`，对应后续小节中“用向量场控制粒子运动”的主题切换。
+
+结合本节前后的正文，这一段要说明的是：通过在空间中定义连续的向量流向，让粒子在更新速度时读取这些向量值，从而获得受场引导的运动趋势。后续截图将继续展开向量场在 Niagara 或相关流程中的实际使用方式。
+这张图用三幅示意图解释向量场的基本构成方式：
+
+- 左图：一个规则划分的立方体网格，表示向量场首先是一个三维体积区域，内部被离散成许多小单元格。
+- 中图：在体积框中画出一条弯曲轨迹，表示设计者希望粒子遵循的主运动流线。
+- 右图：沿这条轨迹填充了大量彩色短箭头，表示系统会把流线转换成分布在各个网格单元中的局部向量值，每个单元都记录方向与强度。
+
+结合本节正文，这张图传达的核心意思是：向量场并不是单个方向，而是一个定义在三维空间中的“向量体积”；粒子进入该体积后，会按当前位置采样对应单元中的向量，再把这个向量用于驱动或修正自身速度，因此能沿着预先设计好的流动趋势运动。
+这张图解释表面坐标系中的三个基础方向：`Normal`、`Tangent` 和 `Bitangent / Binormal`。画面上用半球表面展示三组不同颜色的方向向量：
+
+- 左图蓝色向量：`Normal`。向量从表面垂直向外发散，表示表面法线方向，主要用于光照计算以及“沿法线发射/偏移”等效果。
+- 中图黄色向量：`Tangent`。向量沿表面某一主轴环绕分布，表示切线方向；结合字幕说明，它通常对应 UV 坐标系中的 `U` 方向。
+- 右图绿色向量：`Bitangent` 或 `Binormal`。向量沿与切线正交的另一条表面方向分布，通常对应 UV 坐标系中的 `V` 方向。
+
+如果要把这张图转成实际使用上的理解，可以把它视为“给表面建立局部三轴基底”：
+
+- `Normal` 决定离开表面的朝外方向；
+- `Tangent` 决定沿表面第一条切向轴的方向；
+- `Bitangent` 决定沿表面第二条切向轴的方向；
+- 三者组合后，就能把二维纹理信息、切线空间法线或基于表面方向的速度/向量数据，稳定地映射回三维空间。
+
+### 00:04:49-00:09:48 Beam、Normal、Houdini
+
+- 本段定位：Beam、Normal、Houdini。
+- 知识点：而切向量是以表面上一个轴为基符,然后在这里画出了向量,然后网格现在边缘是这样形成的。
+- 知识点：这个向量和这个向量其中一个成为切向量,现在一般来说是指向U这个方向的切向量。
+- 知识点：现在指向一致相反的V方向的这个叫做向量法。
+- 知识点：写着是非切向,可以说几乎是同样的意思。
+- 知识点：法向量和非切向是,因为如果知道法向与U方向相一致的方向,其实就是。
+- 知识点：如果知道这两个向量与这两个向量垂直的,就说是正交。
+- 知识点：我外部计算,这样要找出三个正交的轴,精确为90度,这样可以用于准确的旋转等等。
+- 核对对象：`Houdini`、`曲线`。
+
+**关键画面：**
+
+这张图继续用半球示意 `Normal`、`Tangent`、`Bitangent / Binormal` 三个方向，并把它们和表面局部坐标系的用途对应起来：
+
+- 左图蓝色射线表示 `Normal`，从表面垂直向外，主要代表表面朝向，常用于光照和沿法线方向的位移或发射。
+- 中图黄色环向射线表示 `Tangent`，沿表面的一条切向轴分布，通常对应 UV 坐标中的 `U` 方向。
+- 右图绿色纵向射线表示 `Bitangent / Binormal`，与切线和法线都正交，通常对应 UV 坐标中的 `V` 方向。
+
+这张图在本小节里的作用不是单纯复述定义，而是强调三者共同构成一组局部正交基底。只要已知其中两条互相垂直的方向，就可以推导出完整的三轴关系，用来稳定描述曲面上的方向、旋转和沿表面传播的向量数据。这也是后面把曲线或场方向导出到特效系统中的前置概念。
+这张图开始进入 Houdini 的实际操作界面，说明讲解从概念切换到“先做一个最简单的应用”。
+
+- 软件界面：Houdini，在对象层级下进入 `geo1`
+- 当前网络路径：`/obj/geo1`
+- 中央网络编辑区：空白状态，已弹出 `TAB Menu`
+- `TAB Menu` 中可见的节点分类包括：`Animation`、`Attribute`、`Character FX`、`Deform`、`Dynamics`、`Geometry`、`Group`、`Labs`、`Machine Learning`、`Scene Graph`、`Texturing`、`Utility`、`Volume` 等
+- 左侧视口：默认透视视图，场景中只有基础网格地面，没有已创建的几何体
+- 右侧参数面板：显示 `No Operator Selected`，说明此时还未落下任何节点
+
+按这张图对应的操作顺序，复现时应先新建一个空的 `Geometry` 对象，进入其 SOP 网络，然后在空白网络里按 `Tab` 打开节点创建菜单，准备添加后续用于生成曲线、建立切线/法线方向或构造向量场数据的基础节点。
+这张图显示在 Houdini 的 `geo1` 网络中已经创建出一个 `spiral1` 节点，并通过它先生成一条基础曲线，作为后续方向计算或场流线示例。
+
+- 当前节点：`spiral1`
+- 视口结果：左侧透视视图中可见一条蓝色螺旋/弧形曲线
+- 网络区状态：只有一个 `spiral1` 节点，说明当前仍处在最基础的起始搭建阶段
+
+右侧 `spiral1` 参数面板中当前可见设置如下：
+
+- `Primitive Type`：`Polygon`
+- `Family`：`Archimedean`
+- `Mode`：`Turns`
+
+`Height` 分组：
+
+- `Height`：`1`
+- `Turns`：`0.5`
+
+`Radius` 分组：
+
+- `Radius Mode`：`Change per Turn`
+- `Start Radius`：`0`
+- `Increase per Turn`：`1`
+- `Radius Scale`：`1`
+
+`Construction` 分组：
+
+- `Direction`：`Counterclockwise`
+- `Start Angle`：`0`
+- `Divisions Mode`：`Divisions per Turn`
+- `Divisions per Turn`：`100`
+- `Spiral Count`：`1`
+
+按这张图复现时，可以先直接建立一个只有半圈的阿基米德螺线，让它在平面内形成清晰可观察的连续曲线。这样后续无论是计算沿曲线的切线方向、法线相关信息，还是把曲线转成向量流示例，都有了可控的基础输入。
+
+### 00:09:49-00:14:33 UV、Normal
+
+- 本段定位：UV、Normal。
+- 知识点：如果你知道这一点就好了,而这里需要再做一个面,用四大来做。
+- 知识点：Width只设置为0.1,这里是之前提到的Polyframe这个节点。
+- 知识点：将进行Section UV,这里用Computer UV做标准化,这里将UV放到Attribute里。
+- 知识点：将作为Point Attribute使用不是Primitive,这个Normal和Tangent这里就设置为B Tangent。
+- 知识点：这个名字叫属性,叫切线UV的属性名。
+- 知识点：现在可观察到这个属性值创建了,这样看有发现,有切线U和切线V都是三个图变成了向量。
+- 知识点：存储向量的值是这种方向值,自动生成了这种向量。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+
+**关键画面：**
+
+这张图显示在 `spiral1` 生成的基础曲线后面接入了一个 `sweep1` 节点，用来沿曲线扫掠出面片几何。根据本小节正文，这一步的目的就是“先做一个面”，后面才能继续计算 `UV`、`Normal`、`Tangent` 等属性。
+
+- 当前网络关系：`spiral1 -> sweep1`
+- 左侧视口：仍显示螺旋曲线的基础轮廓，说明扫掠结果正在搭建过程中
+- 当前选中节点：`sweep1`
+
+右侧 `sweep1` 参数面板当前可见设置：
+
+- `Surface Shape`：`Second Input Cross Sections`
+- `Surface Type`：`Quadrilaterals`
+- `Scale Cross Sections`：`1`
+- `Stretch Around Turns`：已启用
+- `Max Stretch`：`10`
+- `End Cap Type`：`None`
+
+下方还能看到旋转相关设置区已展开，说明这个 `Sweep` 节点不仅负责把曲线扩展为带宽度的带状面，也会为之后沿曲线分布的朝向与扭转提供基础控制。按本节语义，后续提到的 `Width 0.1`、`Polyframe` 和 `UV` 计算，都是基于这个扫掠得到的曲面继续处理。
+这张图显示在 `sweep1` 之后继续接入 `polyframe1`，用于在扫掠得到的曲面上生成与纹理坐标对应的切线框架属性。
+
+- 当前节点链：`spiral1 -> sweep1 -> polyframe1`
+- 当前选中节点：`polyframe1`
+- 左侧视口：曲面上已经显示大量蓝色方向线，说明切线/双切线类向量已经被写到几何体上并可视化
+
+右侧 `polyframe1` 参数面板可见设置：
+
+- `Entity`：`Points`
+- `Style`：`Texture UV`
+- `Attribute Name`：`uv`
+- `Normal Name`：空
+- `Tangent Name`：`tangentu`
+- `Bitangent Name`：`tangentv`
+- `Make Frame Orthogonal`：未勾选
+- `Left-Handed Frame`：未勾选
+
+这一步与正文描述完全对应：先让几何体拥有标准化的 `UV`，再通过 `Polyframe` 直接依据 `Texture UV` 在点级别生成两组向量属性。这里生成的不是 Primitive 属性，而是 Point Attribute；其中 `tangentu` 表示沿 UV 的 `U` 方向切线，`tangentv` 表示沿 UV 的 `V` 方向切线，也就是后面要拿去验证和当作向量场来源使用的核心数据。
+这张图是在 `polyframe1` 结果上进一步打开可视化器，直接检查 `tangentv` 这个点属性对应的向量方向是否正确。
+
+- 当前节点仍是：`polyframe1`
+- 视口中：带状曲面表面叠加了大量绿色和黄色向量线，说明系统正在把点属性中的方向值以向量标记的形式绘制出来
+- 中央弹窗：`Edit Visualizer`
+
+`Edit Visualizer` 中当前可见配置：
+
+- `Name`：`tangentv`
+- `Label`：`tangentv`
+- `Type`：`Marker`
+- `Style`：`Vector`
+- `Attribute`：`tangentv`
+- `Class`：`Auto`
+- `Visibility`：`Always Visible`
+- `Length Scale`：`0.358`
+- `Unit Length`：`1`
+- `Normalize Vectors`：未勾选
+- `Show Arrow Tips`：未勾选
+- `Coloring`：`Fixed Color`
+- `Marker Color`：绿色
+
+这张图的意义是做结果核验：`tangentv` 已经不再只是表格里的数值列，而是被成功解释为三维向量，并沿整个曲面连续分布。结合前一张的 `polyframe1` 设置，可以确认通过 `UV` 生成的 `V` 向切线属性已经建立完成，后续就可以把这些向量当作流向参考，用于速度测试、颜色验证或导出成向量场输入。
+
+### 00:14:34-00:19:17 Velocity、Color、UV
+
+- 本段定位：Velocity、Color、UV。
+- 知识点：这次我们测验证效果TANUV向量,把它作为向量场来用一下,向量已经求出来了。
+- 知识点：在添加节点时,先暂时去掉反向量,不使用的向量只带了V向量,勾选Delete Geometry。
+- 知识点：现在在表面状态下只留下那个点,面和线都被清除。
+- 知识点：我们只需要这个点,还有一点小提示,在Point & Bob里如果向量需要稍作修改,Normal的值直接在这里连接就可以。
+- 知识点：现在Binal的属性名是TANV,以向量值获取TANV值,在这里乘以常数,乘数常数式,可以看作把这个Pulse值乘到这个向量上,然后乘以V。
+- 知识点：在通过Bind Node Export去出来。
+- 知识点：现在有什么变化呢?方向已经反转,原本是往这个方向出来的,这个方向出来的东西,向量被反转了。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Velocity`、`Color`、`Noise`、`Add`、`粒子`、`速度`、`颜色`。
+
+**关键画面：**
+
+这张图是在 `polyframe1` 阶段继续验证 `tanv / tangentv` 向量，用更合适的可视化长度观察整个曲面上的流向分布，为后续把该向量当作速度输入做准备。
+
+- 当前节点：`polyframe1`
+- 左侧视口：带状曲面上同时可见绿色、黄色、蓝色三组向量，其中绿色这组是当前重点检查的 `tangentv`
+- 中央弹窗：`Edit Visualizer`
+
+`Edit Visualizer` 当前可见配置：
+
+- `Name`：`tangentv`
+- `Label`：`tangentv`
+- `Type`：`Marker`
+- `Style`：`Vector`
+- `Attribute`：`tangentv`
+- `Visibility`：`Always Visible`
+- `Length Scale`：`0.129`
+- `Unit Length`：`1`
+- `Coloring`：`Fixed Color`
+- `Marker Color`：绿色
+
+相较前一张验证图，这里重点不是重新定义属性，而是把显示比例调到更适合阅读的状态，以便确认 `V` 向切线是否沿整条曲面连续分布、是否存在方向翻转或异常断裂。按本小节目标，这一步完成后就可以把 `tanv` 视作一个可直接参与速度测试的向量来源。
+这张图显示讲解已经进入 `pointvop1`，开始直接处理 `tangentv` 向量值，把它反向后重新输出，作为后续速度测试使用的最终方向数据。
+
+- 当前节点环境：`pointvop1`
+- 左侧视口：只保留了点及其绿色向量线，不再显示完整面片，符合正文“只留下点，清除面和线”的描述
+- 中央网络区：`VEX Builder`
+
+当前可见的 VOP 逻辑链：
+
+- 一个读取 `tangentv` 的 `Bind` 节点
+- 一个 `mulconst1` 常数乘法节点
+- 一个把结果写回 `tangentv` 的 `Bind` 节点
+
+从连线和标注可确认的具体处理是：
+
+- 输入属性名：`tangentv`
+- 中间乘数：`-1`
+- 输出属性名：仍写回 `tangentv`
+
+右侧当前选中的 `bind2` 参数也显示：
+
+- `Name`：`tangentv`
+- `Type`：`Vector (vector)`
+
+这一步的实际含义是把原本沿 `V` 方向生成的切线向量整体反向。结合正文所说“原本往这个方向出来的东西，向量被反转了”，可以把它理解为先在 Houdini 里把用于驱动运动的方向统一校正好，避免后面在 Niagara 中出现粒子朝相反方向流动的问题。
+这张图展示了自定义向量场数据在 Houdini 里的整理链已经基本成形，重点是把曲面生成的切线向量转换为后续可直接输出或驱动的点级速度信息。
+
+- 当前可见节点链：
+  - `sweep1`
+  - `polyframe1`
+  - `add1`
+  - `pointvop1`
+  - `pointvelocity1`
+  - `transform1`
+- 当前选中节点：`transform1`
+- 左侧视口：只剩点和绿色方向线，说明几何体已经被精简为“位置 + 向量”这种更适合导出向量场的数据形态
+
+从这张图能确认的流程含义是：
+
+- `polyframe1` 负责生成 `tangentv` 等方向属性
+- `add1` 负责删除不再需要的面/线，只保留点
+- `pointvop1` 负责对 `tangentv` 做方向修正，例如乘以 `-1`
+- `pointvelocity1` 负责把整理后的向量进一步映射到点速度语义
+- `transform1` 作为链路末端节点，用来在输出前继续做整体坐标或朝向修正
+
+按本小节语境，这一步已经把“从曲面 UV 推导出来的 `V` 向切线”转成了可用于自定义向量场的核心数据。接下来进入下一小节时，就可以把这些点和向量带入 Photoshop、Substance Designer 或后续 Vector Field 相关流程中继续使用。
+
+### 00:19:18-00:23:18 PS、SD、Vector Field
+
+- 本段定位：PS、SD、Vector Field。
+- 知识点：这个根据项目不同,有些功能可以尝验证效果。
+- 知识点：我觉得这个价值还在,我觉得这样想,所以这种控制程度,所以总比完全不知道要好。
+- 知识点：如果会利用这些的话,在某些情况下可能会需要这些,这种失利情况。
+- 知识点：我带来了,向量厂的缺点就是,总是被迫固定在空间,或固定在某个粒子的位置。
+- 知识点：粒子必须一直在那里,才能沿着这个向量走。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`速度`、`颜色`。
+
+**关键画面：**
+
+这张图是自定义向量场准备流程在 Houdini 里的稳定结果视图，用来回顾当前已经完成的数据链和输出形态，再进入后面关于 `PS / SD / Vector Field` 的讨论。
+
+- 当前可见节点链：
+  - `sweep1`
+  - `polyframe1`
+  - `add1`
+  - `pointvop1`
+  - `pointvelocity1`
+  - `transform1`
+- 当前选中节点：`transform1`
+- 左侧视口：只显示点和绿色向量，说明最终保留的是“点位置 + 方向向量”这种可用于向量场或速度驱动的轻量数据
+
+右侧 `transform1` 当前可见参数：
+
+- `Transform Order`：`Scale Rot Trans`
+- 旋转顺序：`Rx Ry Rz`
+- `Translate`：`0, 0, 0`
+- `Rotate`：`0, 0, 0`
+- `Scale`：`1, 1, 1`
+- `Uniform Scale`：`1`
+- `Recompute Point Normals`：已启用
+- `Recompute Affected Normals`：已启用
+- `Preserve Normal Length`：已启用
+- `Invert Transformation`：未启用
+
+这张图说明在进入外部工具或引擎验证前，当前向量数据已经被整理到一个干净、可整体变换的末端节点上。也就是说，后面无论要把它当成自定义向量场去测试，还是讨论其在 Photoshop、Substance Designer 或 Niagara 中的适用性和限制，输入数据都已经准备完成。
+这张图显示 Houdini 已经在数据链末端接入 `Labs Vector Field Export` 节点，开始把整理好的点速度数据转换成可导出的向量场文件。
+
+- 当前可见节点链继续向后扩展为：
+  - `sweep1`
+  - `polyframe1`
+  - `add1`
+  - `pointvop1`
+  - `pointvelocity1`
+  - `transform1`
+  - `vector_field1`
+- 当前选中节点：`vector_field1`
+- 节点类型：`Labs Vector Field Export`
+
+右侧 `Labs Vector Field Export` 参数面板当前可见设置：
+
+- `Output File`：`$HIP/export/${OS}.fga`
+- `Input Type`：`Particles`
+- `Velocity Attribute`：`v`
+- `Sampling Divs`：`10, 10, 10`
+- `Visualise`：已启用
+- `Trail Count`：`1000`
+
+左侧视口中的彩色流线正是该节点的可视化结果，表示系统正在把点上的 `v` 速度属性采样成体积化的向量场分布。按这张图复现时，应确保前面已经把希望导出的方向写入 `v`，再通过 `Sampling Divs` 控制体素采样密度，通过 `Trail Count` 辅助观察流向是否连续、是否符合预期，最后导出为 `.fga` 文件供后续使用。
+这张图把注意力放回 `pointvelocity1`，明确说明导出向量场之前，点速度属性 `v` 是如何建立和替换的。
+
+- 当前关键节点：
+  - `pointvelocity1`
+  - `transform1`
+  - `vector_field1`
+- 当前选中节点：`pointvelocity1`
+- 左侧视口：包围盒内显示密集彩色流线，说明最终用于导出的体积流向已经形成
+
+右侧 `Point Velocity` 参数面板当前可见设置：
+
+- `Initialization`：`From Attribute`
+- `Method`：`Replace`
+- `Attribute Name`：`v`
+- `Scale`：`1`
+
+从这张图可以直接推导出当前流程的关键约束：
+
+- `pointvelocity1` 不再使用程序化噪声或额外速度叠加，而是直接从现有属性读取速度
+- 被读取并写入的目标速度语义就是 `v`
+- `Method = Replace` 表示当前速度会被属性值完整替换，而不是在原速度上叠加偏移
+
+结合上一张 `Labs Vector Field Export` 的设置，可以把这两步连起来理解：先在 `pointvelocity1` 中把整理好的方向数据稳定写成 `v`，再让 `vector_field1` 读取这个 `v` 去采样和导出 `.fga`。这样导出的向量场方向就直接受前面在 `pointvop1` 中修正过的向量控制。
+
+### 00:23:25-00:26:10 关键流程 06
+
+- 本段定位：关键流程 06。
+- 知识点：的矢量缩放也能调节一些。
+- 知识点：这样简单地试试吧。
+- 知识点：而且在虚幻引擎不能调整缩放功能。
+- 知识点：需要更简单地处理这个矢量,可以调整矢量的缩放。
+- 知识点：但无法对区域大小进行采样。
+
+**关键画面：**
+
+这张图显示讲解在 `pointvelocity1` 上尝试进一步调整向量表现，通过 `Curl Noise` 相关参数对当前速度场做更直接的幅度和扰动控制。结合本段正文，这是在说明“向量缩放可以调，但区域采样大小在 Unreal 里不方便直接改”。
+
+- 当前选中节点：`pointvelocity1`
+- 左侧视口：包围盒内的流线已经形成明显的卷曲和分层流动，说明当前速度场正在被噪声类参数调制
+
+右侧 `Point Velocity` 的 `Curl Noise` 标签页当前可见设置：
+
+- `Add Curl Noise`：已启用
+- `Animated`：已启用
+- `Scale`：`0.5`
+- `Pulse Duration`：`1`
+- `Swirl Size`：`1`
+- `Swirl Scale`：`1, 1, 1`
+- `Offset`：`0, 0, 0`
+- `Grain`：`0.5`
+- `Turbulence`：`3`
+- `Location Attribute`：`P`
+
+这一步的用途是先在 Houdini 里快速试验向量场的“强弱、细碎程度和卷曲感”，确认一个更接近目标的流动外观。它改变的是速度场内部的分布和扰动尺度，而不是重新定义导出体积的整体采样区域。
+这张图回到 `Labs Vector Field Export` 节点，重点展示提高采样分辨率后的向量场预览效果，用来说明“可以调采样密度，但导出区域本身的尺度不是这样改的”。
+
+- 当前选中节点：`vector_field1`
+- 节点类型：`Labs Vector Field Export`
+- 左侧视口：流线更加密集，说明体积采样网格比前一版更细
+
+右侧当前可见参数：
+
+- `Output File`：`$HIP/export/${OS}.fga`
+- `Input Type`：`Particles`
+- `Velocity Attribute`：`v`
+- `Sampling Divs`：`20, 20, 20`
+- `Visualise`：已启用
+- `Trail Count`：`1000`
+
+相较前一张 `Sampling Divs = 10,10,10` 的状态，这里把每个方向的采样分段翻倍后，预览流线会更接近最终导出体积内部的真实细节分布。也就是说，这个参数控制的是向量场离散采样的精细程度，而不是把整个向量场盒子的覆盖区域放大或缩小。
+这张图是本小节的导出收尾状态，说明讲解者已经把当前向量场预览确认到可接受程度，并准备输出一个实际测试用的 `.fga` 文件。
+
+- 当前选中节点：`vector_field1`
+- 节点类型：`Labs Vector Field Export`
+- 左侧视口：包围盒中的流线分布已经稳定，展示的是最终准备用于导出的体积流向
+
+右侧当前可见参数：
+
+- `Output File`：`$HIP/OUT/VF_18_Test_01.fga`
+- `Input Type`：`Particles`
+- `Velocity Attribute`：`v`
+- `Sampling Divs`：`20, 20, 20`
+- `Visualise`：已启用
+- `Trail Count`：`1000`
+
+和上一张相比，最关键的变化是输出路径从通用的 `${OS}.fga` 模板变成了具体测试文件名 `VF_18_Test_01.fga`。这说明当前不是停留在参数试验阶段，而是已经准备把经过 `pointvelocity1`、`transform1` 和 `vector_field1` 整理后的体积流向正式导出，用于下一小节在 Unreal / Niagara 里的实际加载和验证。
+
+### 00:26:16-00:30:11 Vector Field、粒子、速度
+
+- 本段定位：Vector Field、粒子、速度。
+- 知识点：拿出来,然后打开那雅加拉。
+- 知识点：还把刚才那个测试出来的向量场带来了。
+- 知识点：应用的方法非常简单。
+- 知识点：还有使用这种向量场的粒子门。
+- 知识点：在中心现在出了30左右这个大小的。
+- 核对对象：`粒子`、`速度`。
+
+**关键画面：**
+
+这张图显示讲解已经回到 Unreal Editor，在关卡中放置一个 Niagara Actor，准备把刚才在 Houdini 中测试并导出的向量场带入 Niagara 系统使用。
+
+- 当前场景：`Ex_01_SpriteExp`
+- 视口中当前选中对象：`NewNiagaraSystem14`
+- Outliner 中可见类型：`NiagaraActor`
+- 右侧 Details 面板显示的是 `NewNiagaraSystem14 (Instance)`
+
+当前实例信息中可确认的内容：
+
+- `Niagara System Asset`：已绑定一个 Niagara System 资源
+- `Location`：`(-270.0, 700.0, 0.0)`
+- `Rotation`：`(0.0, 0.0, 0.0)`
+- `Scale`：`(1.0, 1.0, 1.0)`
+- `Niagara Tick Behavior`：`Use Prerqs`
+
+画面下方内容浏览器里还能看到多个 Niagara System 资源，说明当前是在一个测试目录中快速建立或复制系统来做向量场验证。按这张图对应的流程，第一步是先把一个可编辑的 Niagara System 放进关卡并选中它，后面才会进入系统内部把 Vector Field 相关模块或资源接进去。
+这张图已经进入 `NewNiagaraSystem14` 的系统编辑器，展示当前用于测试向量场的基础 Niagara 发射器结构。此时系统还没有展开到具体 Vector Field 模块参数，而是停留在“先准备一个能正常生成并更新粒子的基础发射器”这一步。
+
+- 当前系统：`NewNiagaraSystem14`
+- 当前发射器名：`Empty`
+- 预览窗口粒子数：约 `1866 Current, 1866 Max (est.)`
+- 预览中可见一个球状散布的 Sprite 粒子团
+
+当前发射器栈中可见模块：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Shape Location Sphere`
+- `Particle Update`
+  - `Particle State`
+  - `Solve Forces and Velocity`
+- `Render`
+  - `Sprite Renderer`
+
+这张图对应的实际意义是：先保留一个最小可工作的 Sprite 粒子系统，让粒子可以稳定生成、初始化并进入更新阶段。后面要接入 Vector Field 时，核心入口通常就在 `Particle Update` 区域，因为向量场最终会以力或速度影响的形式参与到 `Solve Forces and Velocity` 之前或相关更新链中。
+这张图展示了向量场已经实际接入 Niagara 发射器，并开始在预览窗口中改变粒子的整体运动形态。
+
+- 当前系统：`NewNiagaraSystem14`
+- 当前发射器：`Empty`
+- 预览粒子数：约 `3533 Current, 7733 Max (est.)`
+- 预览结果：粒子群不再是单纯球状散开，而是被拉成一条明显受场引导的弯曲流带
+
+当前发射器栈中可见的关键变化：
+
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Shape Location`
+- `Particle Update`
+  - `Particle State`
+  - `Sample Vector Field`
+  - `Apply Vector Field`
+  - `Solve Forces and Velocity`
+
+右侧当前展开的是 `Shape Location` 参数，可见设置包括：
+
+- `Shape Primitive`：`Sphere`
+- `Sphere Radius`：`30.0`
+- `Sphere Distribution`：`Random`
+- `Hemisphere Distribution`：`1.0, 1.0`
+- `Rotation Coordinate Space`：`Local`
+- `Shape Origin`：`STACKCONTEXT.Position`
+
+这张图说明实际应用方法很直接：先用一个半径约 `30` 的球形区域发射粒子，再在 `Particle Update` 中通过 `Sample Vector Field` 读取导入的向量场数据，再用 `Apply Vector Field` 把它施加到粒子上，最后交给 `Solve Forces and Velocity` 统一结算运动。预览窗口里那条弯曲流带就是向量场已经开始主导粒子速度方向的直接证据。
+
+### 00:30:16-00:30:21 关键流程 08
+
+- 本段定位：关键流程 08。
+- 知识点：提供字幕还有广告。
+
+**关键画面：**
+
+这张图是 `关键流程 08` 的第一帧，主要是在 Niagara 系统里再次确认粒子发射区域的尺寸设置，而不是展示新的模块结构。
+
+- 当前系统：`NewNiagaraSystem14`
+- 当前发射器：`Empty`
+- 当前展开模块：`Shape Location`
+- 预览粒子数：`0 Current, 7733 Max (est.)`
+
+右侧 `Shape Location` 当前可见设置：
+
+- `Shape Primitive`：`Sphere`
+- `Sphere Radius`：`30.0`
+- `Sphere Distribution`：`Random`
+- `Hemisphere Distribution`：`1.0, 1.0`
+- `Rotation Coordinate Space`：`Local`
+- `Shape Origin`：`STACKCONTEXT.Position`
+
+结合上一小节上下文，这一帧的作用更像是对“中心大约 30 的发射范围”做最后确认。此时讲解者停在半径数值输入框上，说明这里的关键判断是：粒子初始生成区域先控制在一个较小、明确的球形体积里，再让向量场去塑造后续的运动形态。
+这张图继续停留在同一个 `Shape Location` 模块，但把发射半径进一步缩小到了 `10.0`，用于快速比较向量场作用下粒子带的起始宽度变化。
+
+- 当前系统：`NewNiagaraSystem14`
+- 当前发射器：`Empty`
+- 预览粒子数：约 `1333 Current, 7733 Max (est.)`
+- 预览结果：粒子流带明显更窄、更集中，起点区域收拢到更小的局部范围
+
+右侧当前可见的关键变化：
+
+- `Sphere Radius`：`10.0`
+- 其他可见项仍保持：
+  - `Shape Primitive = Sphere`
+  - `Sphere Distribution = Random`
+  - `Hemisphere Distribution = 1.0, 1.0`
+  - `Rotation Coordinate Space = Local`
+  - `Shape Origin = STACKCONTEXT.Position`
+
+这张图说明在已经接入向量场之后，粒子最终呈现出的“流带粗细”和“初始展开宽度”仍然会强烈受 `Shape Location` 发射体积大小影响。把半径从 `30` 缩到 `10` 后，向量场虽然继续沿相同方向牵引粒子，但整体形态会更紧、更像一束集中喷出的流线。
+这张图仍然停留在 `Shape Location` 半径为 `10.0` 的状态，但此时预览中的粒子已经重新积累到更稳定的数量，能更清楚地看到缩小发射域后向量场塑形的最终效果。
+
+- 当前系统：`NewNiagaraSystem14`
+- 当前发射器：`Empty`
+- 预览粒子数：约 `2833 Current, 7733 Max (est.)`
+- 预览结果：粒子被组织成一条细长、连续的弯曲流带，整体宽度明显小于半径为 `30` 时的版本
+
+右侧 `Shape Location` 仍保持：
+
+- `Shape Primitive`：`Sphere`
+- `Sphere Radius`：`10.0`
+- `Sphere Distribution`：`Random`
+- `Hemisphere Distribution`：`1.0, 1.0`
+- `Rotation Coordinate Space`：`Local`
+- `Shape Origin`：`STACKCONTEXT.Position`
+
+这张图可以看作前两张调整的结果确认：当发射半径缩小后，粒子虽然仍被同一个 Vector Field 拉成相同的大体弧线，但起始截面更小，所以最后形成的是更细、更密、更像“束状”的运动轨迹。对于需要控制流体宽度、喷流集中度或局部能量感的效果，这个发射半径就是比向量场本身更直接、也更稳定的第一层形态控制手段。
+
+## 补充视觉证据
+
+### S01 00:02:08
+
+这是对 `Vector Field` 基础概念的补充说明截图，用三幅并列示意图把“网格体积、目标流线、离散向量分布”之间的关系放在一张图里讲清楚。
+
+- 左图：一个规则划分的立方体体积网格，表示向量场首先是定义在三维空间中的离散网格区域。
+- 中图：在长方体体积内画出一条白色弯曲轨迹，表示希望粒子遵循的主流向或运动路径。
+- 右图：沿该路径填充了大量彩色短箭头，表示系统会把这条连续流线转换成分布在网格单元中的局部向量值，每个单元都记录自己的方向和强度。
+
+这张补图比正文主序列更清楚地强调了一个关键点：向量场不是“给粒子一条单独的曲线”，而是“在一个体积网格里预先存好很多局部方向”；粒子进入这个体积后，会根据自己所在位置读取附近网格单元的向量，从而沿预设流向移动。
+
+如果按这张图来理解后续流程，可以把完整链路概括为：
+
+- 先确定粒子想要跟随的整体流动趋势；
+- 再把这条趋势离散成三维网格中的向量数据；
+- 最后在 Niagara 或其他系统中把这些向量作为外部场输入，让粒子按场内局部方向持续受力或修正速度。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

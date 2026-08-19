@@ -1,0 +1,163 @@
+# 22-3 制作爆炸Niagara粒子特效
+
+# 22-3 制作爆炸Niagara粒子特效
+
+## 关键术语
+
+- `Lifetime`、`Color`、`Alpha`、`GPU`、`Actor`、`材质`、`粒子`、`精灵`、`速度`、`Niagara`、`Normalized Age`、`系统`、`蓝图`、`生命周期`、`颜色`、`曲线`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:00-00:02:55 速度
+
+- 本段定位：速度。
+- 知识点：清的最好吧 这样轻轻浮浓的泡沫淡止 这样扩散的感觉填充起来就会就很好 数量增加到大约8个 固定种子值来使用 需要先打开看看 然后随机调到1到1.2。
+- 知识点：大小也适当随机400吧 400和350 适当把相机偏移一下 大约30向前偏移是用添加速度 这也用添加速度适当调整方向。
+- 知识点：大约3.5 通过形状位置进行布置 根据种子值来做会很好 用圆形来带来 50位于这里 随机种子值固定为0 然后再创建一个添加速度。
+- 知识点：点大约10 这样感觉像放射桩扩散的 有时感觉像波浪一样 这个是现在位置和大小就差不多调整好的 接下来这里下面部分会再加点东西 先看一下缩放精明大小。
+- 核对对象：`速度`。
+
+**关键画面：**
+
+打开 `M_Mesh_v01_Ins_04` 材质实例，预览区显示更密集的竖向白色水沫/泡沫斑点。`Global Scalar Parameter Values` 可读为：`Color_Tile_U = 1.0`、`Color_Tile_V = 0.5`、`ColorBias = 0.5`、`Desaturation = 0.5`、`Diff_Tile_U = 1.0`、`Diff_Tile_V = 0.75`、`Edge_Pow = 0.5`、`Fade_Dist = 100.0`、`Normal_Tile_U = 1.5`、`Normal_Tile_V = 2.0`、`Opacity_Pow = 1.2`、`Opacity_Str = 100.0`、`RGB_Offset = 0.0`、`Tension = 1.0`。`Use_Refraction` 未开启。
+
+纹理槽为 `Color_Tex = D_OceanTex008_Emis`、`Diff_Tex = 13_V`、`Normal_Tex = T_Voronoi_Cells_02_NRM`、`Opacity_Tex = dust_thick_001`。`BottomColor` 为白色，RGB 通道值均为 `1.0`。
+在 Niagara System `Exp_01` 中选中新增的 `Glow_05` 发射器。系统概览中 `Smoke_02`、`Debris_01`、`Glow_05` 并列，`Glow_05` 模块栈包含 `Emitter State`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Camera Offset`、`Add Velocity`、`Particle State`、`Scale Sprite Size`、`Scale Color`、`Solve Forces and Velocity`、`Dynamic Material Parameters`、`Sprite Renderer`。左侧预览显示白色泡沫柱状喷起。
+
+右侧 Details 正在编辑 `Add Velocity`：`Velocity Mode = Linear`，Velocity 为 `(0.0, 0.0, 50.0)`，`Velocity Speed Scale = 1.0`。Rotation 中 `Rotation Mode = Default`，`Rotation Coordinate = Local`。Particle Counts 显示 `Glow_05` 约 `8 Particles`。
+继续选中 `Glow_05`，当前模块为 `Add Velocity 001`。右侧 Details 显示：`Velocity Mode = From Point`，`Velocity Speed = 10.0`，`Constrain To Radius` 未启用且值为 `0.0`。Offset 中 `Velocity Origin = Engine / Emitter SimulationPosition`，`Origin Offset = (0.0, 0.0, 0.0)`，`Origin Offset Coordinate = Local`。
+
+系统概览中 `Glow_05` 的 `Shape Location` 使用 `Ring / Disc`，`Add Velocity 001` 位于 `Particle Spawn` 阶段；预览中泡沫呈上方弧形扩散，画面左侧有较淡水雾残留。
+
+### 00:03:00-00:05:49 Alpha、颜色、动态参数
+
+- 本段定位：Alpha、颜色、动态参数。
+- 知识点：感觉现在有点变长了 时机定位一秒看看 从0.5秒开始显现 这种感觉 刚才感觉增长的太快 颜色值。
+- 知识点：会改成蓝色感 然后亮一点 好像更好 快速消失的感觉 Alpha值保持不变比较好 最重要的动态参数。
+- 知识点：整体的平移感觉之类的 从负2开始到0.4左右 这样快速摇摆的感觉 深海越深 分散的感觉会有吧 就是在泡沫中分散的感觉 这样调整大小和外国的感觉是可以的。
+- 知识点：利用材料的效果是最简单的方法 边缘开始实强烈 变成白色 逐渐缩小效果会好 就这样进行吧。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`Alpha`、`颜色`、`动态参数`。
+
+**关键画面：**
+
+选中 `Glow_05.Scale Sprite Size`。左侧预览显示强白水爆中心，外侧有淡蓝水花和烟雾包裹，粒子刚开始放大。右侧 Details 中 `Scale Sprite Size Mode = Non-Uniform Curve`，使用 `Curve for Vector2D's`，曲线索引为 `Particles.NormalizedAge`。曲线面板中 X 轴红色曲线基本保持在低值，Y 轴绿色曲线从起始低值快速上升到约 `3.0`，在中后段略回落；下方 Non-Uniform Curve 的 X/Y 缩放输入均显示 `1.0`。
+选中 `Glow_05.Dynamic Material Parameters`。`Panning_Opacity` 使用 `Float from Curve`，曲线在 `Particles.NormalizedAge` 上从约 `-0.2` 逐步上升到接近 `0.4`，Scale Curve 为 `1.0`。`Distortion` 也使用 `Float from Curve`，曲线从 `0.0` 附近平滑上升到约 `0.2`，Scale Curve 为 `1.0`。下方可见 `EdgeAdd = 0.0`、`ColorPower = 1.0`。预览中白色水爆中央很亮，外圈仍保留柔和灰白水雾。
+继续查看 `Glow_05.Dynamic Material Parameters`，此时预览几乎进入淡出阶段，只剩暗灰背景中的少量水沫痕迹。`Panning_Opacity` 曲线保持从约 `-0.2` 上升到约 `0.4`；`Distortion` 曲线从低值上升到约 `0.3`，用于增强后段泡沫扰动。`EdgeAdd = 0.0`、`ColorPower = 1.0` 仍保持不变。系统概览中 `Glow_05` 仍包含 `Scale Color`，说明颜色和 Alpha 衰减由后续颜色模块继续控制。
+
+### 00:06:00-00:09:01 GPU、材质、液体
+
+- 本段定位：GPU、材质、液体。
+- 知识点：中间的空白感觉可能 能和余韵甜冲在一起吧 和那些下落的元素融合的也不错 从这个视角看并不是那么大 感觉很好 几乎所有加入的元素都很多。
+- 知识点：现在剩下的是后期效果和摇动的感觉 我们这次想要表达的是 其实重点是水的变化 水和液体适当那种变化的感觉 泡沫和液态透明的材质感。
+- 知识点：这是变化的过程 在海里某个物体潜水落下时 液体的感觉比起泡沫的感觉更占主导 所以这种双重的 有机的感觉可以作为重点来理解 两边都需要表达那种感觉。
+- 知识点：水一样的那种感觉也不错 再多一点就可以完成了 现在SPA 先尝试添加一次 做一次 然后再Cast以上 代入数字表补偿并手动化 关掉门 把机的Auto-real关掉。
+- 知识点：多个窗口打开时 这样确认时可能会卡对 用GPU继续写 果然需要改为Burst 而且不是kill而是complete 改为1秒。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`GPU`、`材质`。
+
+**关键画面：**
+
+继续选中 `Glow_05.Dynamic Material Parameters`。左侧 Preview 中水爆已经进入余韵阶段：外圈有灰白烟雾和淡青水片，中心存在深色液体空隙，水沫和透明液体感混合在一起。右侧 Details 仍显示 `Distortion`、`EdgeAdd` 与 `ColorPower` 等动态参数。
+
+`Distortion` 使用 `Float from Curve`，曲线在 `Particles.NormalizedAge` 上从约 `0.0` 上升到约 `0.3`，Scale Curve 为 `1.0`。`EdgeAdd` 使用 `Float from Curve`，曲线从约 `5.0` 随生命周期衰减到 `0.0`，Scale Curve 为 `1.0`。`ColorPower = 1.0`。系统概览中 `Glow_05` 模块顺序仍包含 `Scale Sprite Size`、`Scale Color`、`Solve Forces and Velocity` 和 `Dynamic Material Parameters`。
+关卡预览显示水爆组合效果：角色位于中心半透明球形水盾中，周围有两层环状液体水纹，外圈铺开淡蓝灰水雾，多个白色小颗粒散布在水纹周围。左侧 Content Browser 位于 `Material/06`，选中一个 `M_Mesh_v01_...` 材质实例，周围可见 `M_AdditiveDe...`、`M_Ribbon...`、`M_SpiralUV...`、`M_Waterball...` 等相关材质。底部 Niagara 编辑器仍打开 `Exp_01` 和多个材质实例标签。
+在 `Exp_01` 中新增或选中 GPU 发射器 `Empty`。左侧 Preview 显示大量细小白色粒子集中成竖向点云。系统概览中 `Empty` 的 `Properties` 标记为 `GPU`；模块栈包括 `Emitter State`、`Spawn Rate`、`Initialize Particle`、`Shape Location Sphere`、`Particle State`、`Scale Sprite Size`、`Curl Noise Force`、`Vortex Force`、`Drag`、`Acceleration Force`、`Solve Forces and Velocity`、`Scale Color`、`Sprite Renderer`。旁边 `Refraction_01` 为灰色禁用状态，模块栈中可见 `Emitter State`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Initial Mesh Orientation`、`Particle State`、`Dynamic Material Parameters`、`Mesh Renderer`。
+
+### 00:09:09-00:11:58 Actor、精灵、速度
+
+- 本段定位：Actor、精灵、速度。
+- 知识点：Burst大概只开500个 不使用的Vertex会关掉 用常用的方式扩散开来 爆炸后扩散的感觉 想想 直播时间大约2到3秒 大小适当调大一点吧。
+- 知识点：先调大一点看看感觉 再来调整一下 阴影位置保持在150左右 设为0.5 地面部分不出现也没关系 然后设为0 接着需要给速度。
+- 知识点：速度设为50保持不变 再做一个700的 然后还需要给顺势张力 精灵大小就直接使用相同的 从缩烫速度开始。
+- 知识点：现在这个移动会更好 比起向上太过扩散的感觉 这样扩散 激流出水不向上 升得太高 会采用这种感觉 通过Mix Factor 先用Magnet。
+- 知识点：Blaster Blur Fun 首先管理最后的整体张力部 在这个程度的张力下 必须积极降低 因为太强了 所以按一下移动。
+- 核对对象：`速度`。
+
+**关键画面：**
+
+选中 GPU 发射器 `Empty` 的 `Vortex Force`。系统概览中 `Empty` 仍包含 `Spawn Burst Instantaneous`、`Shape Location Sphere`、`Curl Noise Force`、`Vortex Force`、`Drag`、`Acceleration Force`、`Solve Forces and Velocity` 等模块。右侧 Details 中 `Vortex Force Amount = 1000.0`，`Vortex Axis = (0.0, 0.0, 1.0)`，`Vortex Axis Coordinate = Simulation`。
+
+Origin 设置为 `Vortex Origin = Engine / Emitter SimulationPosition`，`Origin Pull Amount = 1000.0`，`Origin Pull Only On Vortex Axis` 已勾选，`Vortex Origin Offset = (0.0, 0.0, 0.0)`，`Use Influence Falloff` 未启用。当前窗口顶部显示 Preparing Shaders/Preparing Simulation，说明 GPU 粒子仍在准备或编译中。
+选中 `Empty.Add Velocity 001`。Preview 中白色小粒子已经向画面周围散开，形成稀疏的星点状扩散；Particle Counts 显示 `Empty` 约 `393 Particles`。右侧 Details 中 `Velocity Mode = From Point`，`Velocity Speed = 700.0`，`Constrain To Radius` 未启用且值为 `0.0`。Offset 中 `Velocity Origin = Engine / Emitter SimulationPosition`，`Origin Offset = (0.0, 0.0, 0.0)`，`Origin Offset Coordinate = Local`。
+选中 `Empty.Scale Velocity`。Preview 中白色粒子在四周大范围分布，中间保留灰白雾状区域，整体更像爆炸后向外扩散的细小水点。右侧 Details 中 `Coordinate Space = Local`，`Velocity Scale = Multiply Vector by Float`；Vector 由 `Make Vector` 给出，`X = 1.0`、`Y = 1.0`、`Z = 1.0`。Float 使用 `Float from Curve`，曲线沿 `Particles.NormalizedAge` 从约 `1.0` 线性衰减到 `0.0`，Scale Curve 为 `1.0`。
+
+### 00:12:07-00:14:58 曲线
+
+- 本段定位：曲线。
+- 知识点：只需破坏到这个程度 在C轴上也要做曲线 这里反而是少量开始 然后要去更多的量 大概12 改为8 如果拿原张力的话 感觉适当放松会好一些 有点强烈上升的感觉。
+- 知识点：拖拽值并没有太强 刚才的竖直似乎太高了 因为加速的影响似乎严重 开始值似乎要再降低一些 我有什么明确点。
+- 核对对象：`曲线`。
+
+**关键画面：**
+
+选中 GPU 发射器 `Empty.Scale Velocity`。右侧 Details 中 `Coordinate Space = Local`，`Velocity Scale = Multiply Vector by Float`。Vector 由 `Make Vector` 组成，其中 `X = 1.0`、`Y = 1.0`，`Z` 使用 `Float from Curve`；Z 曲线沿 `Particles.NormalizedAge` 从约 `2.0` 衰减到 `0.05`，Scale Curve 为 `1.0`。下方另一个 FloatCurve 也显示从约 `2.0` 降到接近 `0` 的衰减。Preview 中中心灰雾很淡，粒子扩散后不再明显向上冲。
+仍在 `Empty.Scale Velocity`。Details 中 `Coordinate Space = Local`，`Velocity Scale = Multiply Vector by Float`，Vector 的 `X = 1.0`、`Y = 1.0`，`Z` 为 `Float from Curve`。曲线面板显示一条从低值逐步上升到约 `12` 的曲线；下方另一个 FloatCurve 仍从约 `2.0` 衰减到 `0.05`。左下曲线面板同步展开 `Smoke_01 Emitter / Scale Color / Scale RGB`，可见一条从约 `1` 上升到 `12` 的曲线，用于增加后段量感。
+继续查看 `Empty.Scale Velocity` 调整后的预览。左侧 Preview 中白色细点围绕中心形成宽环状分布，中央灰白雾团降低，粒子不再集中向上堆叠。右侧 Details 中 `Scale Velocity` 仍为 Local 空间，Vector 通过 `Make Vector` 给出 `X = 1.0`、`Y = 1.0`，`Z` 由曲线控制；上方曲线为缓慢上升形态，下方曲线从约 `2.0` 衰减到 `0.05`。
+
+### 00:15:35-00:18:33 Lifetime、Color、颜色
+
+- 本段定位：Lifetime、Color、颜色。
+- 知识点：比起高高上手 感觉应该差不多 就是这样 接下来需要在Colorize中重新调整竖直 给意义300左右 颜色好像不需要修改。
+- 知识点：因为是与这种感觉相同的颜色 几乎所有元素都包含在内 只需快速添加主机部分并完成 是为了作为光源制作的 以这个简单快速地复制过来更好 在任务中制作的光源。
+- 知识点：颜色值也似乎有相似的东西 可以适当提高Ralius 然后修改Lifetime等Color就可以使用 我们来看看吧 会有这种效果吗 感觉瞬间没有感觉出来的感觉。
+- 知识点：有点 虽然出来了 但感觉不是很强 本来现在的元素就比较明亮 所以光源的影响可能会感觉弱一点。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Lifetime`、`Color`、`颜色`。
+
+**关键画面：**
+
+关卡 `06_Water_Explosion` 中查看 `Cast_01`、`Cast_02`、`Exp_01` Niagara System 资源。视口中央角色附近有少量白色亮点，地面上散布几处很弱的白色闪光，整体光照影响较轻。左侧 Content Browser 选中 `Cast_01`，旁边可见 `Cast_02` 与 `Exp_01`。右侧 Outliner 中 `06_Water_Explosion` 下包含 `Cast 01`、`Cast 02`、`Cine Camera Actor`、`Floor`、`PlayerStart`、`PostProcessVolume` 等对象。
+打开 Niagara System `Cast_01`。左侧 Preview 显示一个向下的水柱/水体效果，下方有环状水纹和散布白色点光。系统概览中可见多个 Emitter：上方有 `Cast_01`、`Waterfall`、`Waterfall001`；中部有 `Black_01`、`Spiral_01`、`Spiral_01001`；下方可见 `Light_01` 与 `Empty`。底部时间线中 `Light_01` 轨道存在并处于当前播放范围内。字幕提示可以提高 radius，并修改 lifetime 后使用。
+回到关卡预览并选中底部 Niagara 窗口中的 `Light_01`。视口中角色站在地面中心，角色周围没有明显大范围爆闪，只在角色头部和附近区域有轻微亮度，说明复制的光源层在当前整体高亮水爆环境中影响较弱。底部 Details 面板露出 `Light_01` 标题和 `0 Particles` 状态，但具体 Radius、Lifetime 或 Color 字段未完整显示。
+
+### 00:18:44-00:21:28 关键流程 07
+
+- 本段定位：关键流程 07。
+- 知识点：这程度就这样写吧 没有的话好像可以 反射曲折 有落霞那种感觉的曲折 也试着添加一下制作的元素 只调整尺寸就可以 调整到大约12 然后12的大小。
+- 知识点：调整到0.35 然后0.4左右应该可以 而且那时候可能会感觉适当弱一点 这个大小 去掉相机再增加一个 谢谢 出来了呢 有点凹下去的感觉的表现。
+- 知识点：底部不必太 增大半径比较好 也一起添加镜像模糊 像锯子一样 现在就是添加这种拍摄感觉的 锯子 镜像模糊 只把生命时间大小适当增大一下 偏移调整到大约100。
+
+**关键画面：**
+
+在 `Exp_01` 系统中查看后处理/辅助发射器区域。左侧 Preview 显示宽环状灰白水雾和大量白色小颗粒，中心较暗。系统概览中可见 `Light_01`、`Refraction_01`、`RadialBlur_01` 三个 Emitter：`Light_01` 启用，包含 `Emitter State`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Set: PARTICLES LightRadius`、`Particle State`、`Scale Color`、`Light Renderer`；`Refraction_01` 与 `RadialBlur_01` 显示为灰色弱化状态。
+
+左下曲线面板中可见一条曲线在后段上升到约 `7` 并保持，字幕说明正在添加反射/屈折类元素。
+选中 `Refraction_01.Camera Offset`。系统概览中 `Light_01`、`Refraction_01`、`RadialBlur_01` 并列，`Refraction_01` 启用；其模块栈包含 `Emitter State`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Initial Mesh Orientation`、`Particle State`、`Dynamic Material Parameters`、`Camera Offset`、`Mesh Renderer`。右侧 Details 显示 `Camera Offset Amount = 0.0`。
+
+左侧 Preview 仍显示宽环状水雾和白色小颗粒；`RadialBlur_01` 在此时为灰色弱化状态。
+选中 `RadialBlur_01.Initialize Particle`。系统概览中 `RadialBlur_01` 启用，模块栈包含 `Emitter State`、`Spawn Burst Instantaneous`、`Initialize Particle`、`Initial Mesh Orientation`、`Camera Offset`、`Particle State`、`Scale Sprite Size`、`Dynamic Material Parameters`、`Scale Color`、`Sprite Renderer`。右侧 Details 中 `Point Attributes` 显示 `Lifetime Mode = Direct Set`，`Lifetime = 0.5`，`Color Mode = Unset`，`Position Mode = Simulation Position`，`Position Offset = (0.0, 0.0, 10.0)`，`Mass Mode = Unset / (Mass of 1)`。
+
+`Sprite Attributes` 中 `Sprite Size Mode = Uniform`，`Uniform Sprite Size = 750.0`，`Sprite Rotation Mode = Unset`，`Sprite UV Mode = Unset`。左侧 Preview 中仍可见环状水雾和粒子点，用于叠加径向模糊感。
+
+### 00:22:02-00:24:57 材质
+
+- 本段定位：材质。
+- 知识点：尺寸适当大一些也没关系 而且123正在完成中 这样现在已完成到帖子了 只需添加散机抖动结束 抖动几乎是掉落的时机 先调整到这里 需要调试三针的密。
+- 知识点：我们也将使用0.3 感觉还不错 虽然有点强烈的感觉 但这个区域本身较大 所以感觉还可以 适当缩小使用也没关系 这次时间里完成了第六个例子。
+- 知识点：我们制作这个随竖形的感觉 虽然不是在现实生活中 看到的质量 但我认为在这个游戏中 可以轻松使用的材质感程度。
+- 知识点：可以拿走 形态感或奇幻的感觉 半写实的感觉 在这里在更细致的 增加自己独特的感觉 也非常好 继续思考 可以产生好的成果 此次这个例子在这里结束并完结 现在跟随您辛苦了。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`。
+
+**关键画面：**
+
+继续选中 `RadialBlur_01.Initialize Particle`。`Point Attributes` 仍为 `Lifetime Mode = Direct Set`、`Lifetime = 0.5`、`Color Mode = Unset`、`Position Mode = Simulation Position`、`Position Offset = (0.0, 0.0, 10.0)`、`Mass Mode = Unset / (Mass of 1)`。`Sprite Attributes` 中 `Sprite Size Mode = Uniform`，`Uniform Sprite Size` 已调整为 `1500.0`，`Sprite Rotation Mode = Unset`，`Sprite UV Mode = Unset`。
+
+系统概览中 `Light_01`、`Refraction_01`、`RadialBlur_01` 都处于启用状态，`RadialBlur_01` 的 `Sprite Renderer` 在 Render 组中启用。
+在 Sequencer 中选中 `Cine Camera Actor > CameraComponent`，并打开 `+ Track` 菜单。菜单中可见 `Attach`、`Event`、`Path`、`Transform`、`Camera Shake`、`Activate`，以及 `Current Aperture`、`Current Focal Length`、`Focus Settings`、`Post Process Blend Weight`、`Post Process Settings`、`Hidden in Game`、`Relative Scale 3D` 等可添加轨道。左侧 CameraComponent 已有 `Current Aperture = 2.8`、`Current Focal Length = 35.0`、`Manual Focus Distance = 100000.0` 和 `Spawned` 轨道。
+
+时间线上可见角色动画片段 `Q_Ability_Hover_Loop`、`Q_Ability_Land`，右侧预览轨道中在约 `0183` 附近显示水爆画面；字幕说明将使用 `0.3` 的抖动强度。
+关卡最终预览中，`Cast_01`、`Cast_02`、`Exp_01` Niagara System 资源仍在左侧 Content Browser，视口中央角色站在灰色棋盘地面上，当前时间点没有明显水爆主体，只保留角色和场景基准。右侧 Outliner 中 `06_Water_Explosion` 下可见 `Lighting`、`01_Swing_Trail`、`Cine Camera Actor`、`Floor`、`PlayerStart`、`PostProcessVolume` 等对象。底部 Sequencer 停在较早时间段，字幕说明本例结束并可继续思考扩展效果。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

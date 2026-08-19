@@ -1,0 +1,1428 @@
+# 13-3-Unreal导弹爆炸特效制作
+
+# 13-3-Unreal导弹爆炸特效制作
+
+## 关键术语
+
+- `Lifetime`、`Color`、`Alpha`、`Material`、`UV`、`材质`、`粒子`、`发射器`、`渲染器`、`精灵`、`网格`、`Niagara`、`Emitter`、`Spawn Rate`、`Spawn`、`Normalized Age`、`Niagara System`、`Particle`
+
+## 分段知识
+
+### 00:00:00-00:04:59 Lifetime、Alpha、UV
+
+- 本段定位：Lifetime、Alpha、UV。
+- 知识点：Lifetime随机在2到3秒左右 下一节随机在10到20左右 随机X让随机线和旋转有点不同 给旋转 摄像机偏移植可以没有 为了在纯位置上随机爆炸。
+- 知识点：做成半球形 随机X 随机X 随机X 随机X 随机X 位置上还需要平衡性 平衡力首先需要一个从中心向四周扩散的 力量速度。
+- 知识点：以前端点为基准随机范围 500到300左右的平衡力 接受随机平衡力 现在向上弹起 速度也再增加一个。
+- 知识点：至少从100到300往上跳 重力场中再加个重力值 然后现在用碰撞 这部分弹跳别太猛 适当减点 摩擦里别太滑 然后定个最大碰撞次数 弹到一定程度就再。
+- 知识点：给它停止效果就行 然后尺寸的话 石头都死了 需要表现出来 按比例尺寸 这一点去掉 大概从0.8开始 尺寸会缩小 用这个来调整 删除一个尺寸 现在不是用Alpha去掉。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Lifetime`、`Alpha`、`速度`、`碰撞`。
+
+**关键画面：**
+
+本图延续上一页末尾的碎片发射器设置，当前重点仍是：
+
+`Fire01007 > Initialize Particle`
+
+但与上一页的静态参数预览不同，这一帧已经在左侧预览窗中直接看到片状碎块从爆炸中心被抛出的样子，因此既能核对初始化参数，也能核对这些参数在实际播放时的效果。
+
+当前选中发射器：
+- `Fire01007`
+
+左侧粒子计数当前显示：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Active]`
+- `[Fire01006] [Disabled]`
+- `[Fire01003] [Active]`
+- `[Fire01004] [Active]`
+- `[Fire01005] [Active]`
+- `[Fire01007] [Active]`
+
+中间 `System Overview` 中 `Fire01007` 的可见结构为：
+- `Emitter State`
+  - `Self / Once`
+- `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Sprite Facing and Alignment`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sub UV Animation`
+  - `Dynamic Material Parameters`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前显示的 `Initialize Particle` 关键参数可直接确认：
+- `Lifetime Mode = Random`
+- `Lifetime Min = 2.0`
+- `Lifetime Max = 3.0`
+- `Color Mode = Direct Set`
+- `Color` 为接近白色
+- `Position Mode = Simulation Position`
+- `Position Offset = (0.0, 0.0, 0.0)` 当前关闭
+- `Sprite Size Mode = Uniform`
+- `Uniform Sprite Size = 850.0`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Custom`
+- `Sprite UV Scale = (-1.0, 1.0)`
+
+输出/预览：
+- 左侧预览中心仍保留强烈的红白爆心
+- 一块偏红、边缘不规则的大型片状碎块从爆心上方抛出
+- 说明这组 `Masked`/片状粒子当前确实以“从中心飞出”的方式参与爆炸，而不是静止贴在原地
+
+结合本段正文“以前端点为基准随机范围”“从中心向四周扩散”“向上弹起”，这张图说明 `Fire01007` 的初始化参数已经服务于一类更接近石片/碎片的二次抛射层。对复现而言，这一步的关键不是只看数值，而是确认这些数值能在预览中形成明显的中心抛射效果：片状粒子要从爆心脱离，并与主烟雾同时存在。
+本图继续处理碎片发射器 `Fire01007`，当前焦点转到：
+
+`Fire01007 > Particle Update > Scale Color`
+
+这张图的价值有两部分：一是确认碎片发射器已经具备重力与碰撞等更新模块；二是确认碎片本身的亮色会随着生命周期快速衰减，而不是一直保持发光。
+
+左侧粒子计数当前显示：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Active]`
+- `[Fire01006] [Disabled]`
+- `[Fire01003] [Active]`
+- `[Fire01004] [Active]`
+- `[Fire01005] [Active]`
+- `[Fire01007] [Active]`
+
+中间 `System Overview` 中 `Fire01007` 当前可见结构为：
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Sprite Facing and Alignment`
+  - `Shape Location Sphere`
+  - `Add Velocity From Point`
+  - `Add Velocity 001`
+    - `Linear`
+- `Particle Update`
+  - `Gravity Force`
+  - `Collision`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sub UVAnimation`
+  - `Dynamic Material Parameters`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前显示 `Scale Color`，可直接确认：
+- `Scale Mode = RGB and Alpha Separately`
+
+`Scale RGB`
+- 模式为 `Multiply Vector by Float`
+- `Vector = (10.0, 1.0, 0.5)`
+- `Float = Float from Curve`
+- `FloatCurve = Curve for Floats`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 5.0`
+
+当前 RGB 曲线形状：
+- 开头接近 `0.9`
+- 随生命周期整体持续下降
+- 末端接近 `0`
+
+`Scale Alpha`
+- 模式为 `Float from Curve`
+- `FloatCurve = Curve for Floats`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 1.0`
+
+当前 Alpha 曲线形状：
+- 开头接近 `0`
+- 很快抬升到高值
+- 中段维持在接近 `0.9`
+- 后段快速回落到接近 `0`
+
+输出/预览：
+- 左侧预览可见一团浅红/灰色碎片云
+- 说明碎片不是单独存在，而是嵌在爆炸烟雾团里一起表现
+
+结合正文“向上弹起”“再加个重力值”“现在用碰撞”“弹到一定程度就停止效果就行”，这张图说明碎片层已经具备完整的运动更新链，而颜色层面则沿用“前亮后灭”的寿命曲线。对复现而言，关键不是只补 `Collision`，而是同时具备 `Gravity Force + Collision + Solve Forces and Velocity`，再用 `Scale Color` 让碎片亮部迅速退去，避免石片长期发光。
+本图继续处理碎片发射器 `Fire01007`，当前重点从寿命和颜色转到“碰撞后如何停止旋转”。右侧 `Details` 面板展示的是一个根据碰撞静止状态切换转速的逻辑，目的就是让碎片飞行时保持随机旋转，但落地静止后不要继续原地打转。
+
+当前选中发射器：
+- `Fire01007`
+
+左侧粒子计数当前显示：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Active]`
+- `[Fire01006] [Disabled]`
+- `[Fire01003] [Active]`
+- `[Fire01004] [Active]`
+- `[Fire01005] [Active]`
+- `[Fire01007] [Active]`
+
+输出/预览：
+- 左侧预览是一团爆炸烟雾和若干飞散的小碎片点
+- 能看到碎片从主体下方向外散落，说明这组粒子确实进入了飞散阶段
+
+右侧 `Details` 面板当前显示的是：
+
+`Sprite Rotation Rate`
+
+可直接确认的逻辑为：
+- 外层模式为 `Make Custom Float from Bool`
+- `Bool = TRANSIENT CollisionIsResting`
+- `True Float = 0.0`
+- `False Float = Random Range Float`
+  - `Minimum = 0.0`
+  - `Maximum = 1.0`
+  - `Evaluation Type = Spawn Only`
+- `Delta Time = ENGINE DeltaTime`
+
+这组设置可以直接解释为：
+- 当 `CollisionIsResting = true` 时
+  - 碎片转速强制为 `0`
+- 当 `CollisionIsResting = false` 时
+  - 生成时从 `0~1` 之间随机给一个旋转速率
+  - 且这个随机值只在 `Spawn` 时评估一次
+
+结合正文“碰撞次数到一定程度就给它停止效果就行”以及“随机 X 的随机性”，这张图说明作者没有简单粗暴地把所有碎片转速固定死，而是做成了“飞的时候随机转、停的时候归零”的两态逻辑。对复现而言，这一步的关键是把 `CollisionIsResting` 作为布尔开关引入旋转速率控制，否则碎片即使已经落地，也会继续不自然地旋转。
+
+### 00:04:59-00:09:47 Alpha、精灵、颜色
+
+- 本段定位：Alpha、精灵、颜色。
+- 知识点：最后 我先删掉动态参数 用不着 还有最重要的SABAC动画 我们不会让它动起来 会随机播放 随情改成随机 这个在初始部分有赞助也没关系。
+- 知识点：我们不会换成每一帧 只会用赞助部分 这样考虑就行 结束帧的话会是15帧吧 总共46帧 这样构成就行 颜色。
+- 知识点：Alpha保持原样也没关系 这部分在初期让光芒爆发的这个颜色 为了给人某种程度受影响的感觉 并且快点 这个颜色应该消失。
+- 知识点：一闪而过 时机一到渐渐变回原来的石头颜色 请想让它回来就好 现在这种石头的颜色是现在背景上的。
+- 知识点：石头颜色适当搭配一下就好 碎片也完成了 我们来看看吧 看起来有点过了 光再快一点 碎片的光再快点消失也没关系 这部分强度可以稍弱一些 稍后通过播放看看。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`Alpha`、`颜色`、`动态参数`。
+
+**关键画面：**
+
+本图继续在碎片发射器 `Fire01007` 上调整翻页动画，当前模块是：
+
+`Fire01007 > Particle Update > Sub UVAnimation`
+
+本段正文提到“删掉动态参数”“不会让它动起来太复杂”“随机播放”“总共 16 帧一类的构成”，而这张图能直接证明当前作者先处理的是 SubUV 的推进曲线和起始帧策略，而不是继续依赖动态参数驱动。
+
+中间 `System Overview` 中，当前 `Fire01007` 可见结构为：
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Sprite Facing and Alignment`
+  - `Shape Location Sphere`
+  - `Add Velocity From Point`
+  - `Add Velocity 001`
+    - `Linear`
+- `Particle Update`
+  - `Gravity Force`
+  - `Collision`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Sprite Rotation Rate`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sub UVAnimation`
+    - `Curve`
+  - `Dynamic Material Parameters`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板可直接确认：
+- `Setup`
+  - `SubUV Animation Mode = Curve`
+  - `Renderer Type = Sprite`
+- `Sprite Renderer`
+  - `Sprite Renderer Info`
+  - `Sprite Renderer = Sprite Renderer`
+- `Animation`
+  - `Random Start Frame` 关闭
+  - `Start Frame Offset = 0`
+- `SubUV Curve`
+  - 曲线资源类型为 `Curve for Floats`
+  - `SubUV Curve Index = PARTICLES.NormalizedAge`
+
+当前可见曲线形状：
+- 起点在 `NormalizedAge = 0` 附近，值接近 `0`
+- 中段在 `0.3` 附近抬升到大约 `0.6`
+- 后段继续平滑上升，末端接近 `1.0`
+- 整体是一条单调上升的翻页推进曲线
+
+输出/预览：
+- 左侧预览窗当前处于 `Compiling...`
+- 因此这一帧不能依靠左侧视觉去判断翻页外观，只能以右侧参数为准
+
+结合正文“不会换成每一帧，只会用一部分”“随机播放先不用”，这张图说明当前碎片层的 SubUV 仍采用固定起始帧、随生命周期推进的基础做法，而不是从任意帧随机开始。对复现而言，关键是先让 `SubUV Curve Index` 绑定 `PARTICLES.NormalizedAge`，再用一条平滑上升曲线控制推进；`Random Start Frame` 此时保持关闭。
+本图继续微调碎片发射器 `Fire01007` 的颜色衰减，当前仍在：
+
+`Fire01007 > Particle Update > Scale Color`
+
+这张图比前一张更关键，因为它不仅展示了 `Scale Color` 的双曲线，还显示了碎片层已经把 `Sub UVAnimation` 调成 `Random`，并且左侧预览里能明显看到亮白石片夹在主爆炸烟雾之间。
+
+中间 `System Overview` 中 `Fire01007` 当前可见结构为：
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Sprite Facing and Alignment`
+  - `Shape Location Sphere`
+  - `Add Velocity From Point`
+  - `Add Velocity 001`
+    - `Linear`
+  - `Sub UVAnimation`
+    - `Random`
+- `Particle Update`
+  - `Gravity Force`
+  - `Collision`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Sprite Rotation Rate`
+  - `Scale Sprite Size`
+  - `Scale Color`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板可直接确认：
+- `Scale Mode = RGB and Alpha Separately`
+
+`Scale RGB`
+- 模式为 `Multiply Vector by Float`
+- `Vector = (10.0, 0.5, 0.2)`
+- `Float = Float from Curve`
+- `FloatCurve = Curve for Floats`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 1000.0`
+
+当前 RGB 曲线形状：
+- 起点维持在较高值
+- 中段明显下落
+- 后段压到较低值并趋于稳定
+- 作用是让碎片刚炸开时带强亮感，随后迅速退去
+
+`Scale Alpha`
+- 模式为 `Float from Curve`
+- `FloatCurve = Curve for Floats`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 1.0`
+
+当前 Alpha 曲线形状：
+- 开头接近 `0`
+- 快速抬升到接近 `0.9`
+- 中段保持稳定
+- 后段快速回落到 `0`
+
+输出/预览：
+- 左侧预览是一团红白烟雾中夹杂多块高亮白色碎片
+- 说明碎片层确实会在爆炸初期短暂发亮，然后再回归更接近石头的外观
+
+结合正文“光再快一点消失也没关系”“颜色应该消失”“一闪而过，渐渐变回原来的石头颜色”，这张图说明作者在刻意加快碎片亮部的消退速度。对复现而言，关键不是让碎片一直保持发光，而是用更强的 RGB 缩放和快速下落的颜色曲线，让石片只有在爆炸初期闪一下，随后尽快回归材质本色。
+本图回到关卡主视口，重点不再是单个模块参数，而是检查碎片/火花层在真实场景中的最终观感。当前画面已经没有大体积爆炸烟雾，只剩地面上分散的红色亮点，说明这是爆炸后期或残留阶段的验收视角。
+
+当前主视口环境：
+- 海岸岩石测试场景未切换
+- 爆炸发生点仍在画面中央偏下
+- 右侧 `Outliner` 继续保留 `light` 搜索过滤
+
+当前可见效果结果：
+- 地面上散布大量细小红色亮点
+- 亮点主要集中在爆心附近，并向周围稍作扩散
+- 大体积烟雾主体已经基本退去
+- 说明当前被观察的是更接近碎片余辉/火花残留的层，而不是主爆炸云
+
+下方叠加显示的 Niagara 面板当前可确认：
+- 系统仍是 `Ex_03_Explosion`
+- 左侧可见发射器卡片：
+  - `Fire01007`
+  - `Fire01006`
+- 右下 `Details` 当前选中发射器为：
+  - `Fire01006`
+- 其粒子数量显示为：
+  - `200 Particles`
+- 模块位置显示在：
+  - `Scale Color`
+
+这意味着当前镜头虽然整体在看关卡效果，但实际正在联动检查另一个粒子层 `Fire01006` 的颜色衰减结果，而不是只看 `Fire01007` 自己。
+
+结合正文“碎片也完成了，我们来看看吧”“看起来有点过了，光再快一点，碎片的光再快点消失也没关系”“稍后通过播放看看”，这张图说明作者已经把注意力转到整套爆炸的综合验收：如果地面残留亮点太多、持续太久，就需要继续加快碎片/火花层的消退。对复现而言，这一步的关键不是新增模块，而是在真实场景播放后观察残留亮点是否抢戏；如果抢戏，就应继续收紧 `Scale Color` 的亮度或 Alpha 衰减节奏。
+
+### 00:09:48-00:14:19 Color、发射器、生命周期
+
+- 本段定位：Color、发射器、生命周期。
+- 知识点：现在用比例平衡 关于张力 需要调整一下 向量穿以原形 曲线值 先增加到5倍左右 即使比零小也留一点平衡 慢慢感受余地 控制一下会更好 Color。
+- 知识点：with force 再加强一些 就按这种感觉来 那么到现在为止 这种感觉的爆炸效果已经完成了 再复制一个碎片发射器。
+- 知识点：我们给这些碎片加上像手指托盘一样的托盘 掉波的碎片 数量再减少点 大概20个左右就可以 还有生命周期也再短点。
+- 知识点：会尽量缩短 尺寸也缩短也行 这个应该关掉 没能检查到 像shadow location这种 voices 先左右扩散的感觉 力量可以保持不变。
+- 知识点：高度值适当减小 扩张部分或重力部分也保持原样就行 因为这个要用来做人 名字改成人吧 然后接下来复制这个发射器。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Color`、`发射器`、`生命周期`、`曲线`。
+
+**关键画面：**
+
+本图切到另一组发射器：
+
+`Fire01006 > Particle Update > Scale Color`
+
+当前目标已经不再是前面的大块石片 `Fire01007`，而是处理一层数量更多、粒子更细碎的次级效果。左侧粒子计数里 `Fire01006` 显示为 `0 Current, 200 Max (est.)`，说明这层是高数量的小粒子组，用来补足爆炸中的细碎火花/碎屑感。
+
+左侧粒子计数可直接确认：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Complete]`
+- `[Fire01006] [Complete]`，估算上限为 `200`
+- `[Fire01003] [Complete]`
+- `[Fire01004] [Complete]`
+- `[Fire01005] [Complete]`
+- `[Fire01007] [Inactive]`，当前为 `41 Current, 50 Max (est.)`
+
+中间 `System Overview` 当前可见的发射器包括：
+- `Fire01007`
+- `Fire01006`
+
+当前对 `Fire01006` 打开的模块是 `Scale Color`。右侧 `Details` 面板可直接确认：
+- `Scale Mode = RGB and Alpha Separately`
+
+`Scale RGB`
+- 模式为 `Multiply Vector by Float`
+- `Vector = (10.0, 1.0, 0.5)`
+- `Float = Float from Curve`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = Random Range Float`
+  - `Minimum = 500.0`
+  - `Maximum = 300.0`
+  - `Evaluation Type = Spawn Only`
+
+当前 RGB 曲线形状：
+- 前段接近高值
+- 中后段持续下降
+- 末端接近 `0`
+
+`Scale Alpha`
+- 模式为 `Float from Curve`
+- `FloatCurve = Curve for Floats`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 1.0`
+
+当前 Alpha 曲线形状：
+- 开头接近 `1`
+- 中段开始下降
+- 后段进一步衰减到较低值
+
+中间还可见一个“Add a new Module to this group”搜索面板：
+- 搜索词为 `sc`
+- 建议项中可见：
+  - `Scale Color`
+  - `Shape Location`
+  - `Scale Color by Speed`
+
+这说明作者当下正在围绕这个高密度发射器继续筛选要加的模块，但当前这一帧最清楚的证据仍然是 `Scale Color` 的设置。
+
+结合正文“向量乘以原形曲线值，先增加到 5 倍左右”“即使比零小也留一点平衡”“控制一下会更好”，这张图说明 `Fire01006` 的亮度不是固定倍率，而是按寿命曲线衰减，同时在生成时再叠一个很大的随机强度区间，让每颗细碎粒子一开始的亮度不完全一样。对复现而言，这一步的关键是让高密度小粒子层具备“生成即随机、随后一起衰减”的颜色节奏。
+本图继续调整高密度次级粒子发射器 `Fire01006`，当前重点从颜色转到运动扰动。作者在这里使用 `Curl Noise Force` 给这批粒子增加更复杂的飘散和扰动轨迹，而不是只靠单一线性速度飞出去。
+
+当前选中发射器：
+- `Fire01006`
+
+左侧粒子计数可直接确认：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Complete]`
+- `[Fire01006] [Inactive]`，当前为 `91 Current, 200 Max (est.)`
+- `[Fire01003] [Inactive]`
+- `[Fire01004] [Inactive]`
+- `[Fire01005] [Inactive]`
+- `[Fire01007] [Inactive]`，当前为 `50 Current, 50 Max (est.)`
+
+中间 `System Overview` 中 `Fire01006` 当前可见结构为：
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Shape Location Sphere`
+  - `Add Velocity From Point`
+- `Particle Update`
+  - `Acceleration Force`
+  - `Scale Velocity`
+  - `Curl Noise Force`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sub UVAnimation`
+    - `Curve`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前显示：
+
+`Curl Noise Force`
+
+可直接确认的参数为：
+- `Noise Strength = Random Range Float`
+  - `Minimum = 2000.0`
+  - `Maximum = 2500.0`
+  - `Evaluation Type = Spawn Only`
+- `Noise Frequency = 20.0`
+- `Noise Quality / Cost = Baked (Medium)`
+- `Pan Noise Field = (0.0, 0.0, 1.0)`
+- `Bias Noise Field = (0.0, 0.0, 0.0)`
+- `Mask Curl Noise` 关闭
+
+左下曲线面板当前显示的是：
+- `Scale Velocity` 的一条衰减曲线
+- 起点大约在 `5`
+- 随生命周期快速下降
+- 末端接近 `0`
+
+输出/预览：
+- 左侧预览能看到烟雾团周围散布许多小黑点/小碎屑
+- 说明这层粒子不是贴主爆心不动，而是在背景中向四周漂散
+
+结合正文“with force 再加强一些”“按这种感觉来”“慢慢感受余地”，这张图说明 `Fire01006` 的运动层不是单纯加速度，而是通过 `Scale Velocity` 先给一段强速度，再用 `Curl Noise Force` 让粒子在飞行中产生更自然的乱流感。对复现而言，这一步的关键是让噪声强度在生成时就随机化，并配合速度衰减曲线一起使用，否则碎屑运动会过于直线和单调。
+本图显示作者开始把现有碎片发射器进一步复制成新的发射器组，用来承载另一层数量更少、生命周期更短的辅助粒子。当前画面的核心不是单个参数，而是“复制已有结构，再做减法”的工作方式。
+
+左侧粒子计数可直接确认：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Complete]`
+- `[Fire01006] [Inactive]`，当前为 `65 Current, 200 Max (est.)`
+- `[Fire01003] [Inactive]`
+- `[Fire01004] [Inactive]`
+- `[Fire01005] [Inactive]`
+- `[Fire01007] [Inactive]`，当前为 `50 Current, 50 Max (est.)`
+- `[Source] [Inactive]`，当前为 `20 Current, 20 Max (est.)`
+- `[Source001] [Inactive]`，当前为 `20 Current, 20 Max (est.)`
+
+中间 `System Overview` 当前选中的是：
+- `Source001`
+
+`Source001` 当前可见结构与前面碎片发射器高度一致：
+- `Emitter State`
+  - `Self / Once`
+- `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Sprite Facing and Alignment`
+  - `Shape Location Sphere`
+  - `Add Velocity From Point`
+  - `Add Velocity 001`
+    - `Linear`
+  - `Sub UVAnimation`
+    - `Random`
+- `Particle Update`
+  - `Gravity Force`
+  - `Collision`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Sprite Rotation Rate`
+  - `Scale Sprite Size`
+  - `Scale Color`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前为空，没有显示具体参数，因此这张图不能可靠写出 `Source001` 已改过哪些数值；但它足以证明复制结果已经存在，并且复制后的结构被完整保留下来。
+
+左下曲线窗口仍显示一条衰减曲线：
+- 起点约在 `5`
+- 中段快速下降
+- 末端接近 `0`
+- 与前一张看到的 `Scale Velocity` 曲线风格一致
+
+结合正文“再复制一个碎片发射器”“数量再减少点，大概 20 个左右就可以”“生命周期也再短点”，这张图说明作者采取的是先复制已有碎片发射器，再基于复制体去压低数量和寿命，而不是从头新建一个完全不同的系统。对复现而言，这一步的关键是保留原有的运动、碰撞和颜色链路，只在复制体上逐步删减和缩短。
+
+### 00:14:21-00:17:22 Lifetime、Material、UV
+
+- 本段定位：Lifetime、Material、UV。
+- 知识点：现在大概20个就够了 现在大概20个就够了 20个左右应该就够了 为了分别挂在拖车上 需要ID 应用ID 还有关于距离的部分 得创建attributes。
+- 知识点：剩下的现在都可以删除了 都可以删除了 这部分仅改为on-seat Lifetime设为0.7秒 因为要使用4代 因为要使用4代 20 UVBREAK。
+- 知识点：UVBREAK UVBREAK UVBREAK UVBREAK 某种程度上 使用这种感觉来调整的话 应该也可以 应该也可以 这部分删掉 只需要颜色。
+- 知识点：旋转好像也不需要 对这样就会出轨迹 可以用4代 会用4代渲染器 在这里 把设置改成按距离 使用范围要非常窄 使用范围要非常窄 重复很多次 可以用一下。
+- 知识点：还有材质 用透明材质 这里之前用过的 把一个material复制 instant material。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Lifetime`、`Material`、`材质`、`纹理`、`渲染器`、`颜色`。
+
+**关键画面：**
+
+本图显示作者把复制出来的发射器 `Source001` 改造成一个“从其他发射器取样再生成”的结构，而不是继续让它独立 Burst。当前核心模块是：
+
+`Source001 > Emitter Update > Spawn Particles from Other Emitter`
+
+这一步直接对应正文里“为了分别挂在拖车上，需要 ID / attributes”“大概 20 个就够了”，说明作者在为后续关联式生成做准备，而不是简单再多放一层独立碎片。
+
+左侧粒子计数可直接确认：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Complete]`
+- `[Fire01006] [Complete]`，当前为 `0 Current, 200 Max (est.)`
+- `[Fire01003] [Complete]`
+- `[Fire01004] [Complete]`
+- `[Fire01005] [Complete]`
+- `[Fire01007] [Inactive]`，当前为 `50 Current, 50 Max (est.)`
+- `[Source] [Complete]`，当前为 `0 Current, 20 Max (est.)`
+- `[Source001] [Inactive]`，当前为 `170 Current, 180 Max (est.)`
+
+中间 `System Overview` 中，当前选中的 `Source001` 可见结构为：
+- `Emitter State`
+  - `Self / Once`
+- `Emitter Update`
+  - `Spawn Particles from Other Emitter`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Sample Particles from Other Emitter`
+  - `Camera Offset`
+  - `Sprite Facing and Alignment`
+  - `Shape Location Sphere`
+  - `Add Velocity From Point`
+  - `Add Velocity 001`
+    - `Linear`
+  - `Sub UVAnimation`
+    - `Random`
+- `Particle Update`
+  - `Gravity Force`
+  - `Collision`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Sprite Rotation Rate`
+  - `Scale Sprite Size`
+  - `Scale Color`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前对 `Spawn Particles from Other Emitter` 可直接确认：
+- `Attribute Reader`
+  - `Emitter Binding = Other / Source`
+- `Spawn Rate = 10.0`
+- `Calculate Spawn Rate Per Particle` 启用
+- `Spawn Rate Per Particle Ce... = 100.0`
+- `Spawning Enabled` 启用
+- `Minimum Age Spawn = 0.3333`
+- `Maximum Age Spawn` 当前关闭，显示值为 `1.0`
+
+左下曲线窗口仍保留一条衰减曲线：
+- 起点约在 `5`
+- 中段快速下降
+- 末端接近 `0`
+
+结合正文“现在大概 20 个就够了”“关于距离的部分得创建 attributes”，这张图说明 `Source001` 已经从“直接发射粒子”转成“依赖 `Source` 的属性读写来决定生成”的模式。对复现而言，这一步的关键不是再加一个普通 `Spawn Rate`，而是引入 `Particle Attribute Reader`，并通过 `Emitter Binding = Source` 让 `Source001` 读取并跟随另一个发射器的数据来生成粒子。
+本图继续精简 `Source001`，当前重点是把它改成更短命、更窄用途的一层辅助轨迹/拖尾粒子，而不是保留前面碎片发射器的完整精灵表现。
+
+当前选中发射器：
+- `Source001`
+
+左侧粒子计数可直接确认：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Active]`
+- `[Fire01006] [Active]`，当前为 `128 Current, 200 Max (est.)`
+- `[Fire01003] [Active]`
+- `[Fire01004] [Active]`
+- `[Fire01005] [Active]`
+- `[Fire01007] [Active]`，当前为 `50 Current, 50 Max (est.)`
+- `[Source] [Active]`，当前为 `20 Current, 20 Max (est.)`
+- `[Source001] [Active]`，当前为 `280 Current, 319 Max (est.)`
+
+中间 `System Overview` 中，`Source001` 当前可见结构为：
+- `Emitter Update`
+  - `Spawn Particles from Other Emitter`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Sample Particles from Other Emitter`
+- `Particle Update`
+  - `Gravity Force`
+  - `Collision`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Sprite Rotation Rate`
+  - `Scale Sprite Size`
+  - `Scale Color`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前显示：
+
+`Source001 > Initialize Particle`
+
+可直接确认的参数为：
+- `Point Attributes`
+  - `Lifetime Mode = Random`
+  - `Lifetime Min = 0.7`
+  - `Lifetime Max = 0.7`
+  - 实际等同固定寿命 `0.7s`
+  - `Color Mode = Direct Set`
+  - `Color` 为接近白色
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)` 当前关闭
+  - `Mass Mode = Unset / (Mass of 1)`
+- `Sprite Attributes`
+  - `Sprite Size Mode = Unset`
+  - `Sprite Rotation Mode = Unset`
+  - `Sprite UV Mode = Unset`
+- `Mesh Attributes`
+  - `Mesh Scale Mode = Unset`
+  - `Mesh Renderer Array Visible = Unset`
+- `Ribbon Attributes`
+  - `Ribbon Width Mode = Direct Set`
+  - `Ribbon Width = 20.0`
+  - `Ribbon Facing Mode = Unset`
+  - `Ribbon Twist Mode = Unset`
+
+左下曲线窗口仍显示一条快速衰减曲线：
+- 起点约 `5`
+- 中段快速下降
+- 末端接近 `0`
+
+结合正文“Lifetime 设为 0.7 秒”“这部分删掉，只需要颜色”“旋转好像也不需要”“会用 4 代渲染器”，这张图说明 `Source001` 正在被改造成一层非常短命、参数极简的附属粒子。对复现而言，关键是把不需要的精灵尺寸、旋转、UV 设置都清掉，并把寿命压到 `0.7s`，只保留最核心的显示语义。
+本图从 Niagara 切回到材质实例页，开始为这一层辅助粒子挑选透明材质。当前页签显示的是一个 `M_Translucent_01` 的实例，说明作者准备让新层使用透明材质而不是继续沿用前面碎片用的 `Masked` 石片材质。
+
+当前页签可确认：
+
+`M_Translucent_01_Ins...`
+
+左上统计信息可读到：
+- `Base pass shader without light map: 166 instructions`
+- `Samplers Used: 1`
+- `Sampler Limit: 32`
+
+右侧 `Details` 面板可直接确认：
+
+`Global Scalar Parameter Values`
+- `Desaturation = 0.0`
+- `Opacity_Pow = 2.0`
+- `Opacity_Str = 1.0`
+- `Pow = 1.0`
+- `Str = 1.0`
+
+`Global Static Switch Parameter Values`
+- `Use_Alpha` 启用
+- `Use_Fade` 关闭
+
+`Global Texture Parameter Values`
+- `Diff = CampFire_01_Smoke`
+
+`General`
+- `Parent = M_Translucent_01`
+
+输出/预览：
+- 左侧预览区域是非常暗的烟雾翻页序列
+- 只有少量浅灰亮点能看出来
+- 说明当前材质实例更接近一层轻量透明烟纹，而不是高亮主爆炸层
+
+结合正文“还有材质，用透明材质”“这里之前用过的，把一个 material 复制 instant material”，这张图说明作者正在用已有的透明母材质快速做一份实例，再把 `CampFire_01_Smoke` 这样的现成烟雾贴图挂进去。对复现而言，这一步的关键不是新写一套材质图，而是基于 `M_Translucent_01` 做实例，并开启 `Use_Alpha`、绑定 `CampFire_01_Smoke`，让新层先具备最基本的透明烟纹显示能力。
+
+### 00:17:25-00:20:24 颜色
+
+- 本段定位：颜色。
+- 知识点：用α 不用α 这样用也行 或者只调一点功率 扩大领域 使用也没问题 使用也没问题 把这部分加进去 把这部分加进去 这样 这里是痕迹产生的 这里是痕迹产生的。
+- 知识点：比起门门绽放的那种烟雾 那种感觉 比门门绽放的感觉 比起烟雾弥漫的感觉 线条形状的适当 线条形状的 适当有点儿 线条形状的适当那种感觉 就是昨天也是。
+- 知识点：那种感觉昨天也好像能保留下来 好像能保留下来 只有颜色部分适当 只有颜色部分适当看它里面 因为线条被调色有点变化 用线条被调色有点变化。
+- 知识点：调整一下应该没问题 调整一下应该没问题 0.3左右 把颜色变化的时机完全提前 这样看就行 这部分也以0.2的时机 只在前部 为了见知现在火焰残留的感觉亮度。
+- 知识点：可以多一点就行 颜色要快点 退去 这个现在换成工作 其实 α的程度是 0.2的时机 再静静地看着 颜色感觉有点强。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`、`烟雾`、`火焰`。
+
+**关键画面：**
+
+本图继续调整透明材质实例 `M_Translucent_01_Ins...`，但与上一批里使用 `CampFire_01_Smoke` 不同，这一帧已经切换成更细长、更适合做烟痕/冲击波条带的纹理。当前重点是把材质调成一条线性、可衰减的透明精灵，用于后续“从中心向四周扩散”的冲击波烟迹层。
+
+当前页签可确认：
+
+`M_Translucent_01_Ins...`
+
+左上统计信息可读到：
+- `Base pass shader without light map: 162 instructions`
+- `Samplers Used: 1`
+- `Sampler Limit: 32`
+
+右侧 `Details` 面板可直接确认：
+
+`Global Scalar Parameter Values`
+- `Desaturation = 0.0`
+- `Pow = 1.0`
+- `Str = 1.0`
+
+`Global Static Switch Parameter Values`
+- `Use_Alpha` 启用
+- `Use_Fade` 启用
+
+`Global Texture Parameter Values`
+- `Diff = SmokeyTrail_01`
+
+`General`
+- `Parent = M_Translucent_01`
+
+输出/预览：
+- 左侧预览是一条横向展开、中央偏亮、两端逐渐衰减的白灰色烟痕
+- 这张预览明显比前面的团状烟图更线性，适合做沿地面铺开的痕迹或冲击波拖痕
+
+结合正文“用 α、不用 α 都行”“线条形状”“颜色变化的时机完全提前”“这个带来的纹理这样用也行”，这张图说明作者正在把透明材质实例从“团状烟”调整为“线性烟痕”，并通过 `Use_Alpha + Use_Fade` 让它天然带两端渐隐效果。对复现而言，关键是把贴图换成 `SmokeyTrail_01` 这类线性纹理，并打开 `Use_Fade`，否则很难做出从中心向外扩开的冲击波烟线。
+本图回到 Niagara 系统，当前正在细调：
+
+`Source001 > Particle Update > Scale Color`
+
+这层粒子已经不再是前面的大块碎片，而更像围绕爆心分布的细长亮条/烟痕。作者在这里重点控制的是颜色变化“只发生在前段”，让这些亮条很快失去高亮感，只留下更中性的痕迹。
+
+左侧粒子计数可直接确认：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Active]`
+- `[Fire01006] [Active]`，当前为 `200 Current, 200 Max (est.)`
+- `[Fire01003] [Active]`
+- `[Fire01004] [Active]`
+- `[Fire01005] [Active]`
+- `[Fire01007] [Active]`，当前为 `50 Current, 50 Max (est.)`
+- `[Source] [Active]`，当前为 `20 Current, 20 Max (est.)`
+- `[Source001] [Active]`，当前为 `180 Current, 314 Max (est.)`
+
+中间 `System Overview` 当前可见：
+- `Source`
+- `Source001`
+
+`Source001` 当前结构里可直接确认：
+- `Emitter Update`
+  - `Spawn Particles from Other Emitter`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Sample Particles from Other Emitter`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Color`
+  - `Solve Forces and Velocity`
+- `Render`
+  - `Ribbon Renderer`
+
+右侧 `Details` 面板当前显示 `Scale Color`，可直接确认：
+- `Scale Mode = RGB and Alpha Separately`
+
+`Scale RGB`
+- 模式为 `Multiply Vector by Float`
+- `Vector = Vector from Curve`
+- `VectorCurve = Curve for Vector3's`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- 三个通道的 `Scale Curve` 当前都是 `1.0`
+
+当前 RGB 向量曲线形状：
+- 在生命周期非常前段保持较高值
+- 到 `NormalizedAge ≈ 0.2` 左右迅速压低
+- 之后长时间接近 `0`
+- 说明颜色变化几乎都集中在前 20% 生命周期内
+
+`Float`
+- 模式为 `Float from Curve`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 1000.0`
+- 浮点曲线从高值一路快速衰减到接近 `0`
+
+左下 `Scale Velocity` 曲线窗口仍显示：
+- 起点约 `5`
+- 中段快速下降
+- 末端接近 `0`
+
+输出/预览：
+- 左侧预览里能看到主爆炸烟雾中穿插许多细长白亮条/白色片段
+- 这些亮条明显比主烟雾更短、更碎、更像前段残焰痕迹
+
+结合正文“0.3 左右，把颜色变化的时机完全提前”“这部分也以 0.2 的时机，只在前部”“颜色要快点退去”，这张图说明 `Source001` 的颜色变化被压得非常靠前。对复现而言，关键不是简单降低整体亮度，而是让颜色曲线在生命周期前段迅速塌下去，这样才能留下“一闪而过”的火焰残留感，而不会长时间挂在烟里。
+本图是这一层辅助粒子从“普通精灵/点状效果”切到“真正的冲击波线条”最关键的一帧。当前发射器仍是 `Source001`，但渲染器已经明确改成了 `Ribbon Renderer`，并挂上了刚才做好的透明材质实例。
+
+当前选中发射器：
+- `Source001`
+
+左侧粒子计数可直接确认：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Complete]`
+- `[Fire01006] [Inactive]`，当前为 `104 Current, 200 Max (est.)`
+- `[Fire01003] [Inactive]`
+- `[Fire01004] [Inactive]`
+- `[Fire01005] [Inactive]`
+- `[Fire01007] [Inactive]`，当前为 `50 Current, 50 Max (est.)`
+- `[Source] [Inactive]`，当前为 `20 Current, 20 Max (est.)`
+- `[Source001] [Inactive]`，当前为 `240 Current, 314 Max (est.)`
+
+中间 `System Overview` 可见当前相关发射器包括：
+- `Fire01007`
+- `Fire01006`
+- `Source`
+- `Source001`
+
+`Source001` 当前可见结构中，底部渲染模块已经变成：
+- `Ribbon Renderer`
+
+右侧 `Details` 面板当前显示：
+
+`Source001 > Ribbon Renderer`
+
+可直接确认的设置为：
+- `Material = M_Translucent_01_Ins_02`
+- `Material User Param Binding = None`
+- `Facing Mode = Screen`
+
+`UV0 Settings`
+- `UV Mode = Tiled By Distance (By Particles.RibbonUVDistance)`
+- `Enable Per Particle U...` 关闭
+- `Enable Per Particle V...` 关闭
+- `Tiling Length = 20.0`
+- `Offset = (0.0, 0.0)`
+- `Scale = (1.0, 1.0)`
+
+`UV1 Settings`
+- `Max Num Ribbons = 0`
+- `Use GPUInit` 关闭
+
+`Ribbon Shape`
+- `Shape = Plane`
+- `Use Material Backface C...` 关闭
+- `Use Geometry Normals` 启用
+- `Width Segmentation Count = 1`
+
+`Ribbon Tessellation`
+- `Mode = Automatic`
+- `Curve Tension = 0.0`
+
+`Sorting`
+- `Draw Direction = Front to Back`
+
+输出/预览：
+- 左侧预览还能看到主爆炸烟雾，但真正关键的是右侧渲染器设置已经把这一层定义成“平面 ribbon”
+- 这意味着接下来它会更像沿路径拉开的冲击波痕迹，而不是一堆散点或小精灵
+
+结合正文“精灵形态”“冲击波的感觉，向四周扩散”“这样来利用”，这张图说明作者最终选择的可见形态并不是继续堆更多 sprite，而是把 `Source001` 改成 ribbon，用线性透明纹理去表达冲击波扫过地面的痕迹。对复现而言，这一步的核心是切换到 `Ribbon Renderer`，并把 UV 设成按距离平铺，否则线性纹理会被错误拉伸，无法形成稳定的冲击波条带。
+
+### 00:20:27-00:23:36 材质、精灵、纹理
+
+- 本段定位：材质、精灵、纹理。
+- 知识点：使用刚才带来的水材质 最后的纹理 需要用这个纹理 放在这个纹理 所有的发射通道都会关闭来使用 我只需在烟熏部分适当调整 中间色调就能用 就这样用吧。
+- 知识点：主色是这样这部分就这样 这部分这样复制来用吧 太好了 这些烟尘从中心开始 以冲击波的感觉 向四周扩散 可以更好地抓住路面 这样来利用 数量就这样。
+- 知识点：不需要太多 大概15个左右 撒一下 寿命适当长一点也没关系 尺寸也多 用随机纸 利用随机x外 旋转也完全随机应该没问题 然后 这部分可以这样。
+- 知识点：这样用冲击波的那种感觉 散入值可能有点弱 先适当50左右看看吧 不是要特别浓浓的元素 所以就直接用了精灵形态 做了纹理。
+- 知识点：这样给就行 为了这个也向四周扩散 然后就得这样做 需要制作平衡 就做50左右的大小吧 放入平衡换成70点 大概就是100吧 这里给点随机值应该也没问题吧。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`冲击波`。
+
+**关键画面：**
+
+本图回到 Unreal 主编辑器，在 `Texture` 目录里为新一层精灵/冲击波粒子挑选贴图资源。当前重点不在 Niagara 参数，而是明确“到底用哪张纹理来做这层向四周散开的精灵”。
+
+当前主视口环境：
+- 海岸测试场景未切换
+- 地面中心保留红色编辑 gizmo
+- 右侧 `Outliner` 继续保留 `light` 过滤
+
+下方 `Content Browser` 当前路径：
+
+`Content / Signature / Course_05 / Texture`
+
+当前可见纹理资源包括：
+- `Arial_Exp_Smoke_01`
+- `CampFire_01`
+- `CampFire_02`
+- `CampFire_01_Smoke`
+- `Circle_01`
+- `Exp_01`
+- `Normal_Rock_01`
+- `Smoke_01_FC`
+- `Smoke_01_MVN`
+- `Smoke_02_FC`
+
+当前明确选中的资源：
+- `Arial_Exp_Smoke_01`
+
+从缩略图可直接确认：
+- `Arial_Exp_Smoke_01` 是一张多帧爆炸/烟尘序列图
+- 其缩略图上半部分为偏蓝白的帧，下半部分为偏紫色/亮色帧
+- 明显比单张团状烟图更适合做多帧精灵动画
+
+结合正文“使用刚才带来的水材质”“最后的纹理需要用这个纹理”“这些烟尘从中心开始，以冲击波的感觉向四周扩散”，这张图说明作者为新层选择的并不是前面那些线性烟痕或碎片纹理，而是一张更适合做中心爆开、向外散开的多帧烟尘图。对复现而言，这一步的关键是先在纹理目录里锁定一张真正适合做冲击波烟尘的序列贴图，例如 `Arial_Exp_Smoke_01`，后面再把它接入材质和精灵渲染器。
+本图切回 Niagara，当前开始搭建一个新的发射器：
+
+`Fire01008`
+
+这层显然是承接上一张选好的冲击波/烟尘纹理，用较少数量的精灵从中心向四周撒开，因此第一步先把 `Spawn Burst Instantaneous` 的数量压低。
+
+当前左侧粒子计数可直接确认：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Active]`
+- `[Fire01006] [Active]`，当前为 `200 Current, 200 Max (est.)`
+- `[Fire01003] [Active]`
+- `[Fire01004] [Active]`
+- `[Fire01005] [Active]`
+- `[Fire01007] [Active]`，当前为 `50 Current, 50 Max (est.)`
+- `[Source] [Active]`，当前为 `20 Current, 20 Max (est.)`
+- `[Source001] [Active]`，当前为 `180 Current, 303 Max (est.)`
+- `[Fire01008] [Active]`，当前为 `15 Current, 15 Max (est.)`
+
+中间 `System Overview` 当前选中发射器为：
+- `Fire01008`
+
+`Fire01008` 当前可见结构为：
+- `Emitter State`
+  - `Self / Once`
+- `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Sprite Facing and Alignment`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Color`
+  - `Sub UVAnimation`
+    - `Curve`
+  - `Dynamic Material Parameters`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前显示：
+
+`Spawn Burst Instantaneous`
+
+可直接确认的参数为：
+- `Spawn Count = 15`
+- `Spawn Time = 0.0`
+- `Spawn Probability = 1.0`
+- `Loop Count Limit = 1`
+
+输出/预览：
+- 左侧预览里能看到主爆炸烟雾外围夹着一些向外散开的细长亮条/小片
+- 与 `15 Current, 15 Max` 一致，说明这层确实控制在较少数量
+
+结合正文“数量就这样”“不需要太多，大概 15 个左右撒一下就可以”，这张图说明作者在新冲击波/烟尘层上刻意压低了粒子数量。对复现而言，这一步的关键是先把 `Spawn Count` 压到 `15` 左右，而不是延续前面高密度碎片层的思路，否则这层会过浓、过乱，抢走主爆炸和主烟雾的视觉重心。
+本图继续设置新发射器 `Fire01008`，当前关键从“数量控制”转到“如何向四周扩散”。作者在这里使用环/盘状出生位置加“从点施加速度”，让这层粒子从中心向外形成冲击波式散开，而不是沿单一方向喷出。
+
+当前选中发射器：
+- `Fire01008`
+
+左侧粒子计数可直接确认：
+- `[Fire01] [Disabled]`
+- `[Fire01001] [Disabled]`
+- `[Fire01002] [Complete]`
+- `[Fire01006] [Complete]`
+- `[Fire01003] [Complete]`
+- `[Fire01004] [Complete]`
+- `[Fire01005] [Complete]`
+- `[Fire01007] [Inactive]`，当前为 `50 Current, 50 Max (est.)`
+- `[Source] [Complete]`
+- `[Source001] [Complete]`，当前为 `30 Current, 30 Max (est.)`
+- `[Fire01008] [Inactive]`，当前为 `15 Current, 15 Max (est.)`
+
+中间 `System Overview` 中 `Fire01008` 当前可见结构为：
+- `Emitter State`
+  - `Self / Once`
+- `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Camera Offset`
+  - `Sprite Facing and Alignment`
+  - `Shape Location Ring / Disc`
+  - `Add Velocity From Point`
+- `Particle Update`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Scale Color`
+  - `Sub UVAnimation`
+    - `Curve`
+  - `Dynamic Material Parameters`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板当前显示：
+
+`Add Velocity`
+
+可直接确认的参数为：
+- `Velocity Mode = From Point`
+- `Velocity Speed = 100.0`
+- `Constrain To Radius = 0.0`
+
+`Offset`
+- `Velocity Origin = ENGINE / EMITTER / SimulationPosition`
+- `Origin Offset = (0.0, 0.0, 0.0)`
+- `Origin Offset Coordinate Space = Local`
+
+输出/预览：
+- 左侧预览当前只剩一些小黑点和少量碎屑残影
+- 这与发射器当前 `Inactive` 状态一致，说明这一帧重点在搭建发射逻辑而不是看最终高亮播放
+
+结合正文“这些烟尘从中心开始，以冲击波的感觉向四周扩散”“散入值可能有点弱，先适当 50 左右看看吧”“位置稍微偏移了一点”，这张图说明 `Fire01008` 的扩散核心不是靠复杂力场，而是先用 `Ring/Disc + From Point Velocity` 建立一个以中心为基准向外喷散的基本结构。对复现而言，这一步的关键是把粒子出生在环/盘状分布上，再用 `Velocity Speed ≈ 100` 的径向速度推出去；如果没有这组组合，冲击波就不会有“平面向外摊开”的感觉。
+
+### 00:23:45-00:26:46 粒子、精灵、速度
+
+- 本段定位：粒子、精灵、速度。
+- 知识点：就这样出来了 加点技能平衡让紧张感更突出 因为要化成精灵形态的部分 然后 速度要快10倍左右扩散。
+- 知识点：在1.7左右时间点 然后速度慢慢停下来 然后 这样 这样是 按这样构成就行 动画进展用线性就行 反正然后 不是特别重要的因素 然后 就把前面针适当剪掉。
+- 知识点：对 使用的话应该可以 现在这样 现在就是以中心为基准 实地换后 可以看作是使用的粒子 整体的感觉 闭上 反应就交给你了 能展示的部分 做一下就行。
+- 知识点：挺好的 颜色就有点 反正这里现在 不会吃的 然后我们现在 已经 然后immersion它要输在里面 在这里 不是不在里面 而是我们现在降低了这个数值。
+- 知识点：其实有更深的部分 应该没关系 这种演技不要太浓 不要太有体积感 然后 进去应该是最好的 嗯 这部分也稍后再说吧 有让人不爽的地方 再调整一下也没问题。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`粒子`、`速度`、`颜色`。
+
+**关键画面：**
+
+本图在新发射器 `Fire01008` 的 `Particle Update` 阶段继续补速度控制。当前已经有：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Shape Location Ring / Disc`
+  - `Add Velocity From Point`
+- `Particle Update`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sub UVAnimation Curve`
+  - `Dynamic Material Parameters`
+
+这一步正在 `Particle Update` 里打开 `Add new Module` 搜索窗口，并筛选关键字 `scale vel`，高亮候选模块为：
+
+- `Velocity > Scale Velocity`
+
+右侧当前仍可确认 `Add Velocity From Point` 的核心参数：
+
+- `Velocity Mode = From Point`
+- 速度值 `100.0`
+- 原点使用 `ENGINE / EMITTER / SimulationPosition`
+- 其中一个偏移值可见为 `5.0`
+- `Coordinate Space = Local`
+
+下方曲线编辑器同时显示一个快速衰减的 `FloatCurve`：起点约为 `5`，随后迅速下降并在末端接近 `0`。结合本段正文“速度要快 10 倍左右扩散”“到 1.7 左右再慢慢停下来”，可以确认作者此时准备添加 `Scale Velocity`，用曲线在更新阶段把粒子速度从前期高速逐步衰减到接近静止，而不是只靠初始 `Add Velocity From Point` 一次性给速。
+本图仍是 `Fire01008`，但焦点已经从“速度衰减”切到精灵序列帧播放。当前发射器结构可直接确认：
+
+- `Particle Update`
+  - `Scale Velocity`
+  - `Solve Forces and Velocity`
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Scale Color`
+  - `Sub UVAnimation`
+  - `Dynamic Material Parameters`
+- `Render`
+  - `Sprite Renderer`
+
+右侧 `Details` 面板完整显示的是：
+
+`Sub UVAnimation`
+
+`Setup`
+- `SubUV Animation Mode = Linear`
+- `Renderer Type = Sprite`
+- `Sprite Renderer = Sprite Renderer`
+
+`Animation`
+- `Random Start Frame` 未启用
+- `Start Frame Offset = 0`
+- `SubUV Lookup Index = PARTICLES.NormalizedAge`
+- `SubUV Lookup Index Scale = 1.0`
+
+`Output`
+- `Start Frame Range Override` 已启用，值为 `10`
+- `End Frame Range Override` 已启用但当前值看不清，能确认是两位数且明显大于起始帧
+
+左侧预览里，15 个粒子已经形成一圈稀疏的灰白烟团，说明这层不是 ribbon，而是少量 sprite 粒子围绕中心外扩。结合前文“要化成精灵形态的部分”“动画进展用线性就行”，这一帧的作用是把烟雾贴图按 `NormalizedAge` 线性推进播放，并且通过起始帧覆盖把播放区间截到序列图后半段，让烟团一生成就直接进入较成熟、较松散的烟雾状态，而不是从最早的浓密帧开始播放。
+本图把 `Ex_03_Explosion` 整个 Niagara 系统拉远查看，用来确认前面新增的烟尘冲击波层已经接入完整系统。画面里能辨认出多个并列发射器，包括：
+
+- `Fire01003`
+- `Fire01008`
+- `Fire01007`
+- `Fire01006`
+- `Source`
+
+左侧 `Particle Counts` 可直接确认当前统计：
+
+- `Fire01`：`0 Current, 3 Max (est.)`，`Disabled`
+- `Fire01001`：`0 Current, 3 Max (est.)`，`Disabled`
+- `Fire01002`：`0 Current, 1 Max (est.)`，`Complete`
+- `Fire01006`：`0 Current, 200 Max (est.)`，`Complete`
+- `Fire01003`：`0 Current, 1 Max (est.)`，`Complete`
+- `Fire01004`：`0 Current, 1 Max (est.)`，`Complete`
+- `Fire01005`：`0 Current, 1 Max (est.)`，`Complete`
+- `Fire01007`：`40 Current, 50 Max (est.)`，`Inactive`
+- `Source`：`20 Current, 20 Max (est.)`，`Complete`
+- `Source001`：`0 Current, 311 Max (est.)`，`Complete`
+- `Fire01008`：`10 Current, 15 Max (est.)`，`Inactive`
+
+虽然远景下各模块文字已经无法逐项辨认，但能明确看到 `Fire01008` 处在系统下排，与上排原有火焰/源粒子层分开摆放，说明这是一层后加的辅助烟尘层。结合上一张图里已经确认的 `Scale Velocity + Sub UVAnimation + Sprite Renderer`，这张总览图的关键信息是：`Fire01008` 已经作为独立的“少量精灵烟团外扩层”接入最终爆炸系统，并在当前时间点保留 `10 / 15` 个存活粒子，用于给中心爆炸补一圈稀疏的扩散烟感。
+
+### 00:26:49-00:29:24 关键流程 08
+
+- 本段定位：关键流程 08。
+- 知识点：好 好然后 好然后 然后旅行进入 它就是错败进入 然后 到达进入 不支持反而更好 一笔本 周叠后给了值 色彩部分用了随机值 这是为了表现火焰的摇印。
+- 知识点：才这么用的 其实没必要这样 只要有点剧情值就行 现在大拜二百万左右 数值会是什么感觉 喂 二百万再加三个球 规模值有点大 喂 喂 喂 喂 喂 喂 喂 现在和周围的光源和效果一起。
+- 知识点：现在多少能表达出来了 嗯 感觉品牌在背景那边更让人信服 嗯 喂 喂 喂 喂 喂 喂 喂 喂 十米在负值下 加点爆炸的折射空间 扭曲感就会更好。
+- 核对对象：`火焰`。
+
+**关键画面：**
+
+本图进入 `### 00:26:49-00:29:24 关键流程 08` 段，当前把视图切回旧发射器 `Fire01001`，开始调整火焰主体层的持续生成方式，而不是继续修改 `Fire01008` 的冲击波烟团。
+
+画面中同时可见两个发射器：
+
+- 左侧：`Fire01008`
+- 右侧：`Fire01007`
+
+但右侧 `Details` 面板当前选中的实际对象是：
+
+- `Fire01001`
+- 状态提示：`No running preview`
+
+右侧唯一完全可读的模块是：
+
+`Spawn Rate`
+- `SpawnRate = 2.0`
+- `Spawn Probability = 1.0`
+
+左侧 `Particle Counts` 也能确认这一时刻的系统状态：
+
+- `Fire01001`：`2 Current, 3 Max (est.)`，`Active`
+- `Fire01007`：`0 Current, 50 Max (est.)`，`Complete`
+- `Fire01008`：`0 Current, 15 Max (est.)`，`Complete`
+- `Source001`：`0 Current, 307 Max (est.)`，`Complete`
+
+这说明“关键流程 08”开始时，作者把注意力转回持续火焰层，通过把 `Fire01001` 保持在低频率连续生成的状态，让中心火焰不要完全停掉。结合正文里“色彩部分用了随机值”“有点体积感但不要太浓”的描述，可以把这一步理解成：先用一个较低的 `SpawnRate = 2.0` 保住火焰主体的存在感，再在后续帧里继续补颜色、尺寸和扭曲层。
+本图继续编辑 `Fire01001`，当前展开的是：
+
+- `Particle Update`
+  - `Particle State`
+  - `Scale Color`
+- `Render`
+  - `Sprite Renderer`
+  - `Light Renderer`
+
+右侧 `Scale Color` 的可读参数如下：
+
+`Scale Mode`
+- `RGB and Alpha Separately`
+
+`Scale RGB`
+- 运算方式：`Multiply Vector by Float`
+- `Vector = (5.0, 1.0, 0.5)`
+- `Float = 2000000.0`
+
+`Scale Alpha`
+- 类型：`Float from Curve`
+- 曲线资源：`Curve for Floats`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 1.0`
+
+Alpha 曲线形状可直接看出：
+- 开始阶段接近 `1.0`
+- 前半段保持较高不透明度
+- 中后段持续下降
+- 末尾衰减到接近 `0`
+
+这一步的核心不是重新定色相，而是把火焰主色 `(5.0, 1.0, 0.5)` 用极高的浮点倍数整体放亮，同时用单独的 Alpha 曲线控制可见时间。结合正文里“数值大概二百万左右”“现在和周围的光源和效果一起”，可复现为：`Fire01001` 这层火焰需要以非常高的发光强度参与整体爆炸中心的照明和泛光，但透明度仍按生命周期平滑衰减，这样中心会亮得够强，又不会因为 alpha 持续不降而留下过重的实心火块。
+本图继续查看 `Fire01001`，右侧已切到 `Emitter State`，可以把这层火焰的生命周期策略确认下来。当前系统视图里同时还能看到：
+
+- 左侧 `Fire01008`：带 `Scale Velocity`、`Sub UVAnimation Linear`、`Sprite Renderer`
+- 右侧 `Fire01001`：带 `Particle State`、`Scale Color`、`Sprite Renderer`、`Light Renderer`
+
+右侧 `Emitter State` 面板可直接读取：
+
+`Life Cycle`
+- `Life Cycle Mode = Self`
+- `Inactive Response = Complete (Let Particles Finish then Kill Emitter)`
+- `Loop Behavior = Once`
+- `Loop Duration Mode = Fixed`
+- `Loop Duration = 1.0`
+- `Loop Delay` 未启用，值显示为 `0.0`
+
+`Scalability`
+- `Scalability Mode` 区域可见，但未展开到更多可读参数
+
+左侧 `Particle Counts` 此时显示：
+
+- `Fire01001`：`0 Current, 1 Max (est.)`，`Complete`
+- `Fire01006`：`56 Current, 200 Max (est.)`，`Inactive`
+- `Fire01007`：`50 Current, 50 Max (est.)`，`Inactive`
+- `Source001`：`160 Current, 316 Max (est.)`，`Inactive`
+- `Fire01008`：`15 Current, 15 Max (est.)`，`Inactive`
+
+这说明 `Fire01001` 并不是无限循环的常驻火焰，而是一段 `1.0` 秒的单次生命周期发射器，结束时允许现有粒子自然播完再销毁发射器。结合前一张图的高亮度 `Scale Color` 和这里的 `Light Renderer`，可把这一层理解为“短时强亮的中心火焰闪段”：它在爆炸关键瞬间给中心区提供一次高亮火焰和灯光贡献，但不会长期停留，从而避免火焰体积感过浓、拖尾过长。
+
+### 00:29:29-00:30:32 网格
+
+- 本段定位：网格。
+- 知识点：时间控制在五秒左右 需要用uniform把尺寸放大 然后用mash orientation 需要用制服来放大尺寸 按X轴对齐 因为要用到网格垫 把我们刚才拿来的网格资源放这里就行 覆盖掉 提供字幕及字幕及广告。
+
+**关键画面：**
+
+本图进入 `### 00:29:29-00:30:32 网格` 段，当前新建并选中了一个网格相关发射器：
+
+- `Fire01009`
+
+中间 `System Overview` 里可直接辨认的结构为：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+  - `Spawn Rate`
+- `Particle Spawn`
+  - `Initialize Particle`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Color`
+- `Render`
+  - `Sprite Renderer`
+  - `Light Renderer`
+
+右侧当前显示的是 `Spawn Burst Instantaneous` 参数：
+
+- `Spawn Count = 1`
+- `Spawn Time = 0.0`
+- `Spawn Probability = 1.0`
+- `Loop Count Limit = 1`
+
+左侧 `Particle Counts` 也能确认：
+
+- `Fire01009`：`0 Current, 1 Max (est.)`，`Complete`
+
+结合本段正文“时间控制在五秒左右”“把刚才拿来的网格资源放这里”，这张图说明作者先用一个只生成 `1` 个粒子的独立发射器承载网格层。也就是说，网格效果不是靠大量 sprite 堆出来，而是先建立一个“一次性生成单个主体对象”的发射器，再在后续步骤里给这个单个粒子指定网格、尺寸和朝向。
+本图继续编辑 `Fire01009` 的 `Initialize Particle`，把网格粒子的基础属性直接写进初始化模块。右侧面板当前可确认的参数如下：
+
+`Point Attributes`
+- `Lifetime Mode = Direct Set`
+- `Lifetime = 0.5`
+- `Color Mode = Direct Set`
+- `Position Mode = Simulation Position`
+- `Position Offset = (0.0, 0.0, 200.0)`
+- `Mass Mode = Unset / (Mass of 1)`
+
+`Sprite Attributes`
+- `Sprite Size Mode = Unset`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Unset`
+
+`Mesh Attributes`
+- `Mesh Scale Mode = Non-Uniform`
+- `Mesh Scale = (1.0, 5.0, 5.0)`
+- `Mesh Renderer Array Visibility Mode = Unset`
+
+`Ribbon Attributes`
+- `Ribbon Width Mode = Unset`
+- `Ribbon Facing Mode = Unset`
+- `Ribbon Twist Mode = Unset`
+
+中间发射器结构同时保持为：
+
+- `Emitter Update`
+  - `Emitter State`
+  - `Spawn Burst Instantaneous`
+- `Particle Spawn`
+  - `Initialize Particle`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Color`
+- `Render`
+  - `Sprite Renderer`
+  - `Light Renderer`
+
+这一步的重点是把单个网格粒子抬高到爆心上方 `Z = 200`，并把它做成明显的非均匀比例 `1 : 5 : 5`。结合正文“按 X 轴对齐”“用 uniform 把尺寸放大”的说法，可以理解为作者先在初始化阶段把网格拉成长宽更大的扁平形态，再在后面补朝向或渲染器设置，让它作为爆炸中的片状/面状网格元素出现。
+本图继续完成 `Fire01009` 的网格接入。与上一张相比，发射器结构已经进一步变化为：
+
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Initial Mesh Orientation`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Color`
+- `Render`
+  - `Sprite Renderer`
+  - `Light Renderer`
+  - `Mesh Renderer`
+
+右侧当前展开的是 `Mesh Renderer`，可直接确认：
+
+`Mesh Rendering`
+- `Meshes = 1 Array Element`
+- `Enable Material Overrides` 未启用
+- `Override Materials = 0 Array element`
+- `Source Mode = Particles`
+- `Locked Axis Enable` 未启用
+- `Enable Mesh Flipbook` 未启用
+- `Facing Mode = Default`
+
+`Sorting`
+- `Sort Mode = None`
+
+`Visibility`
+- `Enable Frustum Culling` 未启用
+- `Enable Camera Distance...` 未启用
+- `Renderer Visibility = 0`
+
+字幕和正文都明确提到“把刚才拿来的网格资源放这里就行”，而当前 `Meshes` 已经变成 `1 Array Element`，说明作者此时已经把具体网格资源塞进 `Mesh Renderer` 的数组槽位。与此同时，`Initial Mesh Orientation` 也已加入 `Particle Spawn`，对应正文里“按 X 轴对齐”的要求。对复现而言，这一步的关键不是继续调 sprite，而是把单粒子发射器正式切换为网格渲染：指定一个网格资源、给它初始朝向，再保留前面设好的位置和非均匀缩放，让该网格在爆炸中作为一块受控的主体元素出现。
+
+## 补充视觉证据
+
+### S05 00:18:34
+
+本图是 `## 补充视觉证据` 中对前文 `S05` 段参数的放大补拍，当前选中对象为：
+
+- `Source001`
+- `Particle Update > Scale Color`
+
+右侧能比前面的普通截图更清楚地确认 `Scale Color` 的设置：
+
+`Scale Mode`
+- `RGB and Alpha Separately`
+
+`Scale RGB`
+- 运算方式：`Multiply Vector by Float`
+- 上层 `Vector` 来源：`Vector from Curve`
+- `VectorCurve = Curve for Vector3's`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- 三个 `Scale Curve` 值均为 `1.0`
+
+从可见的向量曲线形状可判断：
+- `X / Y / Z` 三通道在生命周期前段接近高值
+- 随 `NormalizedAge` 增长整体下滑
+- 末端接近 `0`
+- 其中蓝色曲线在前段有一个小尖峰，说明三通道不是完全等比直线衰减
+
+`Float`
+- 类型：`Float from Curve`
+- 曲线资源：`Curve for Floats`
+- `CurveIndex = PARTICLES.NormalizedAge`
+- `Scale Curve = 1000.0`
+
+这条 `Float` 曲线也可直接看出：
+- 初期接近 `1.0`
+- 到约 `0.2` 左右已明显跌落
+- 后段迅速接近 `0`
+
+`Scale Alpha`
+- 可见为 `Float from Curve`
+- 下方曲线区域被截断，无法在本图中完整读出具体关键点
+
+中间系统结构也再次确认 `Source001` 这一层为：
+
+- `Emitter Update`
+  - `Spawn Particles from Other Emitter`
+- `Particle Spawn`
+  - `Initialize Particle`
+  - `Sample Particles from Other Emitter`
+- `Particle Update`
+  - `Particle State`
+  - `Scale Color`
+  - `Solve Forces and Velocity`
+- `Render`
+  - `Sprite Renderer`
+  - `Ribbon Renderer`
+
+这张补图的价值在于把前面 `S05_2` 中“颜色变化几乎全压在生命周期前段”的判断坐实：`Source001` 的颜色亮度不是均匀衰减，而是通过 `Vector from Curve` 加一个 `Scale Curve = 1000.0` 的浮点曲线，在粒子早期快速完成亮度和色调变化，后面只保留很弱的残余。这样从视觉上就会形成爆炸刚出现时更亮、更有色偏，随后迅速退成低亮度烟痕的过渡。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

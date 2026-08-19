@@ -1,0 +1,562 @@
+# 13-2创建Houdini资源
+
+# 13-2创建Houdini资源
+
+## 关键术语
+
+- `Material`、`UV`、`Houdini`、`Mesh`、`材质`、`粒子`、`网格`、`碰撞`、`速度`、`Niagara`、`纹理`、`贴图`、`颜色`、`Niagara System`、`Emitter`、`Particle`、`Spawn Rate`、`Spawn`
+
+## 分段知识
+
+### 00:00:00-00:02:49 碰撞、速度
+
+- 本段定位：碰撞、速度。
+- 知识点：请设定为约1.75,中心值请设定为约负0.1,这里有碰撞类型,比如说如果使用静止的任何物体,可以使用静态物体。
+- 知识点：后续会使用动画物体,所以建议改为变形。
+- 知识点：在这里需要设置关键值,设置关键值是按住O2在左击即可。
+- 知识点：这样关键就设置好了,8帧左右的大小变了。
+- 知识点：这里把这个中心位置直动到1左右,然后呢我来验证效果给个关键帧,这种话就会这样出来,然后。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`速度`、`碰撞`。
+
+**关键画面：**
+
+这张图对应 `00:00:00-00:02:49 碰撞、速度` 段开头，直接给出当前碰撞球 `sphere2` 的关键尺寸与位置参数，用来匹配角色落地时的撞击范围。
+
+已确认信息：
+- 当前网络中 `sphere2` 仍作为碰撞体分支存在，并与 `rbdbulletsolver1` 关联。
+- 当前选中节点为 `Sphere sphere2`。
+- 右侧参数面板可确认：
+  - `Primitive Type = Polygon Mesh`
+  - `Connectivity = Quadrilaterals`
+  - `Radius = (1.75, 1.75, 1.75)`
+  - `Center = (0, -0.1, 0)`
+  - `Rotate = (0, 0, 0)`
+  - `Uniform Scale = 1`
+  - `Orientation = Y Axis`
+  - `Rows = 13`
+  - `Columns = 24`
+  - `Unique Points per Pole` 已勾选
+  - `Accurate Bounds` 已勾选
+  - `Triangular Poles` 已勾选
+- 左侧视口中蓝色球体覆盖在平板地面上，尺寸明显比上一课末尾更大，说明本段已经开始按实际技能落点去调碰撞体积。
+
+画面用途：
+- 这一步把碰撞球的半径和中心偏移量明确下来，为后续设置关键帧、调整速度和验证撞击时机提供固定基础。
+这张图展示了同一段 `碰撞、速度` 中关键帧推进后的状态：碰撞球 `sphere2` 已经沿 Y 轴上移，并在视口中把碎片明显顶起，说明作者正在用关键帧驱动碰撞体时序。
+
+已确认信息：
+- 当前仍选中 `Sphere sphere2`。
+- 右侧参数面板当前可确认：
+  - `Radius = (1.75, 1.75, 1.75)` 保持不变
+  - `Center = (0, 1, 0)`
+  - 其余基础参数如 `Rotate = (0, 0, 0)`、`Uniform Scale = 1`、`Rows = 13`、`Columns = 24` 仍保持
+- 左侧视口中，蓝色球体已经进入碎片区域中心，周围碎片被抬起并向外散开，说明碰撞球位置的关键帧变化已经开始影响 RBD 结果。
+- 底部时间轴当前停在较后帧位（可见帧标记在 `15` 一带），符合“前几帧内尺寸/位置变化后再看结果”的讲解节奏。
+
+画面用途：
+- 通过把碰撞球中心位置从地面下方推进到碎片区域内部，快速验证撞击时间点和碰撞触发范围是否合适。
+这张图继续记录同一段 `碰撞、速度` 中 `sphere2` 的位置调整结果：在保持半径不变的前提下，把球体继续沿 Y 轴下移，用来检查主要撞击结束后的回落与离场时序。
+
+已确认信息：
+- 当前仍选中 `Sphere sphere2`。
+- 右侧参数面板当前可确认：
+  - `Radius = (1.75, 1.75, 1.75)` 保持不变
+  - `Center = (0, -1, 0)`
+  - 其余基础参数如 `Rotate = (0, 0, 0)`、`Uniform Scale = 1`、`Rows = 13`、`Columns = 24` 仍保持
+- 左侧视口中，蓝色球体已经离开平板中心的主要撞击区域，碎片整体抬升程度减弱，画面更接近碰撞影响逐步结束后的状态。
+- 底部时间轴当前停在更后帧位（约 `27` 帧），说明这里是在验证撞击后段的表现而不是初始触发瞬间。
+
+画面用途：
+- 通过把碰撞球继续下移到作用区外侧，确认碰撞结束后的粒子回落节奏、作用持续时间和最终停留状态是否合理。
+
+### 00:02:53-00:05:17 Niagara、碰撞
+
+- 本段定位：Niagara、碰撞。
+- 知识点：把课程改到大约20会比较好,然后试试看一下拖拽。
+- 知识点：拖拽现在虽然弱,但有一点点的还是会更好,就是力量似乎没有什么特别需要解释的选项。
+- 知识点：因为眼睛可以确认到的程度,其他地方也总是用的这个选项,那种拖拽啊,或重力之类的。
+- 知识点：碰撞选项中,这里也有弹跳和摩擦,这说碰撞物体的弹跳和摩擦我们这里的属性。
+- 知识点：在这个选项中,像弹跳值设为0.1,而且弹跳值是说反弹的力。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Niagara`、`碰撞`。
+
+**关键画面：**
+
+这张图对应 `00:00:00-00:02:49 碰撞、速度` 小节后半段，作者开始直接在 `rbdbulletsolver1` 上调碰撞求解的力学参数，用来控制碎片被撞开后的下落速度。
+
+已确认信息：
+- 当前网络仍是 `voronoifracture1 -> assemble1 -> rbdbulletsolver1`，`sphere2` 作为碰撞体输入到求解器。
+- 当前选中节点为 `RBD Bullet Solver rbdbulletsolver1`。
+- 右侧参数面板位于 `Forces` 页签。
+- `Gravity` 分组中可见 `Force = -20`，其余轴向值显示为 `0`，说明此处把重力主要施加在单一方向上，并把数值调得比默认更强。
+- `Drag`、`Drag Spin` 分组处于折叠或未启用状态，当前画面没有显示额外空气阻力参数。
+- 左侧视口中碎片已经被抬起后开始向外散落，底部时间轴播放头约在第 `28` 帧，属于碰撞后段结果预览。
+
+画面用途：
+- 这一步通过提高求解器的重力强度，测试碎片在碰撞后的回落速度是否更利落，避免破碎块漂浮过久。
+这张图继续在 `rbdbulletsolver1` 上调整碰撞解算参数，重点是碎片与碰撞体、地面接触时的弹跳与摩擦表现。
+
+已确认信息：
+- 当前选中节点仍为 `RBD Bullet Solver rbdbulletsolver1`。
+- 右侧参数面板当前显示求解器的碰撞参数页。
+- `Collision Geometry` 分组中可见：
+  - `Collision Type = Deforming`
+  - `Collision Shape = Convex Hull`
+  - `Collision Padding = 0.02`
+- 上方 `Physical` 分组中可见：
+  - `Bounce = 0.5`
+  - `Friction = 1`
+- `Ground Collision` 分组中可见：
+  - `Ground Type = Ground Plane`
+  - `Position = (0, 0, 0)`
+  - `Rotation = (0, 0, 0)`
+- 下方地面物理参数中可见：
+  - `Bounce = 0.5`
+  - `Friction = 1`
+  - `Dynamic Friction Scale = 1`
+- 左侧视口显示蓝色碰撞球静置在平板上，底部时间轴停在起始附近，说明这里是在静态检查碰撞参数，而不是观察后段运动结果。
+
+画面用途：
+- 这一步把碎片与碰撞体、地面的弹性和摩擦系数定下来，保证撞击后既能有一定回弹，又不会出现不受控的滑动。
+这张图继续细调 `rbdbulletsolver1` 中碎片刚体本身的物理属性，核心动作是把碎片摩擦力降为 `0`，观察碎块被撞开后是否能更顺畅地滑移和散开。
+
+已确认信息：
+- 当前选中节点仍为 `RBD Bullet Solver rbdbulletsolver1`。
+- 右侧参数面板当前显示 `Pieces` 相关参数。
+- `Pieces` 分组中可见：
+  - `Collision Padding = 0.02`
+- `Physical` 分组中可见：
+  - `Density = 1000`
+  - `Rotational Stiffness = 1`
+  - `Bounce = 0.1`
+  - `Friction = 0`
+- `Override Attributes` 已启用，属性字段中可见 `active`、`animated`、`deforming` 等求解相关标记名称。
+- `Sleeping` 分组中可见：
+  - `Linear Threshold = 0.8`
+  - `Angular Threshold = 1`
+- 左侧视口中碎片处于碰撞后的散落状态，底部时间轴播放头约在第 `26` 帧；字幕也明确提示“把摩擦设置为 0”，与参数面板一致。
+
+画面用途：
+- 这一步通过把碎片摩擦降到 `0`，让破碎片在受力后更容易分离和滑开，从而避免粘连感过重、运动停滞过早。
+
+### 00:05:29-00:08:47 碰撞
+
+- 本段定位：碰撞。
+- 知识点：反过来这就是地面碰撞,可以看作是地面碰撞的物理值。
+- 知识点：这里碰撞的力量会变成0.1,这个反弹值也会增大,可观察到非常远,抛出去的东西。
+- 知识点：现在的东西,现在小小选项都分开了,不如反弹和摩擦的选项,这样控制一下也可以。
+- 知识点：如果能得到自己想要的动画形式,应该也不错吧。
+- 知识点：这太强的话,非常大地,弹出屏幕外,而且在拿到资源时还没确认好尺度感。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`碰撞`。
+
+**关键画面：**
+
+这张图位于 `00:05:29-00:08:47 碰撞` 小节，作者继续细调 `rbdbulletsolver1` 的地面碰撞物理值，用来控制碎片落回平面后的滑动与反弹状态。
+
+已确认信息：
+- 当前选中节点为 `RBD Bullet Solver rbdbulletsolver1`。
+- 右侧参数面板显示地面碰撞相关参数。
+- `Collision Geometry` 分组中可见：
+  - `Collision Type = Deforming`
+  - `Collision Shape = Convex Hull`
+  - `Collision Padding = 0.02`
+- `Ground Collision` 中仍使用：
+  - `Ground Type = Ground Plane`
+  - `Position = (0, 0, 0)`
+  - `Rotation = (0, 0, 0)`
+- 地面 `Physical` 分组当前可见：
+  - `Bounce = 0.5`
+  - `Friction = 0`
+  - `Dynamic Friction Scale = 1`
+- 左侧视口中碎片已经散落在平面上，底部时间轴播放头约在第 `34` 帧；字幕也说明这里是在看“地面碰撞的物理值”。
+
+画面用途：
+- 这一步把地面摩擦降到 `0`，让碎片落地后更容易滑开，以便判断当前弹跳和滑移量是否符合想要的夸张效果。
+这张图继续对 `rbdbulletsolver1` 的碰撞响应做微调，重点是把碰撞体这一组物理值中的反弹系数降到较小值，以压住碎片被弹飞过远的问题。
+
+已确认信息：
+- 当前选中节点仍为 `RBD Bullet Solver rbdbulletsolver1`。
+- 右侧参数面板上方 `Collision Geometry` 相关的 `Physical` 分组当前可见：
+  - `Bounce = 0.1`
+  - `Friction = 1`
+- 同一页中其余碰撞设置仍保持：
+  - `Collision Type = Deforming`
+  - `Collision Shape = Convex Hull`
+  - `Collision Padding = 0.02`
+- `Ground Collision` 仍为：
+  - `Ground Type = Ground Plane`
+  - `Position = (0, 0, 0)`
+  - `Rotation = (0, 0, 0)`
+- 下方地面 `Physical` 分组此时仍显示：
+  - `Bounce = 0.5`
+  - `Friction = 1`
+  - `Dynamic Friction Scale = 1`
+- 左侧视口中碎片在空中和地面之间分散开，底部时间轴播放头约在第 `19` 帧，说明作者一边回看中段运动，一边调节碰撞体反弹强度。
+
+画面用途：
+- 这一步通过把碰撞体反弹值降到 `0.1`，限制碎片被撞击后弹射过高、飞出画面的情况，让运动尺度更可控。
+这张图是本段结尾的导出准备画面：作者把 RBD 结果接到 `transform1` 和 `rop_fbx1`，准备按碎片层级导出为 FBX。
+
+已确认信息：
+- 当前网络主干已经变为 `assemble1 -> rbdbulletsolver1 -> transform1 -> rop_fbx1`。
+- 当前选中节点为 `ROP FBX Output rop_fbx1`。
+- 右侧参数面板可见：
+  - `Valid Frame Range = Render Frame Range`
+  - `Start/End/Inc = 1 / 120 / 1`
+  - `Output File = $HIP/out/.fbx`
+  - `Create Intermediate Directories` 已勾选
+  - `Build Hierarchy from Path Attribute` 已勾选
+  - `Path Attribute = path`
+- `FBX` 页签中还可见：
+  - `Export in ASCII Format` 已勾选
+  - `FBX SDK Version = FBX 202000`
+  - `Vertex Cache Format = Maya Compatible (MC)`
+  - `Axis System = Y Up (RightHanded)`
+  - `Export End Effectors` 已勾选
+- 左下角表格显示 `assemble1` 的 `path` 属性，条目形如 `op:/obj/geo1/assemble1/piece0`、`piece1`、`piece2`，说明导出层级将按碎片路径生成。
+- 字幕明确提到“将会生成层次结构”，与 `Build Hierarchy from Path Attribute` 设置一致。
+
+画面用途：
+- 这一步确认导出节点会按 `path` 属性给碎片建立层级，便于把破碎结果作为分层 FBX 送到后续 DCC 或引擎流程中使用。
+
+### 00:08:49-00:11:58 Mesh、粒子、网格
+
+- 本段定位：Mesh、粒子、网格。
+- 知识点：可以使用你想要的路径,可以导出,比如说一定要导出为FDX。
+- 知识点：一定要导出为FDX,我已经保存了。
+- 知识点：导出的东西,需要带到虚幻引擎,我已经打开虚幻引擎。
+- 知识点：我在这里新建了一个文件夹,创建了一个叫Mesh的文件夹,也做了FDX。
+- 知识点：现在可以导入刚导出的文件,这种话这里的谷歌网格和动画剪辑,你的骨架这样都会进来。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+这张图位于 `00:08:49-00:11:58 Mesh、粒子、网格` 小节开头，作者说明 FBX 导出路径可以按项目需要自行指定，同时继续保留碎片层级导出设置。
+
+已确认信息：
+- 当前网络主干为 `assemble1 -> rbdbulletsolver1 -> transform1 -> rop_fbx1`。
+- 当前选中节点为 `ROP FBX Output rop_fbx1`。
+- 右侧参数面板可见：
+  - `Valid Frame Range = Render Frame Range`
+  - `Start/End/Inc = 1 / 120 / 1`
+  - `Output File = $HIP/out/.fbx`
+  - `Create Intermediate Directories` 已勾选
+  - `Build Hierarchy from Path Attribute` 已勾选
+  - `Path Attribute = path`
+- `FBX` 页签中仍可见：
+  - `Export in ASCII Format` 已勾选
+  - `FBX SDK Version = FBX 202000`
+  - `Vertex Cache Format = Maya Compatible (MC)`
+  - `Axis System = Y Up (RightHanded)`
+- 左下角表格继续显示 `assemble1` 的 `path` 属性列表，条目命名为 `piece0`、`piece1`、`piece2` 等，说明导出结果会按碎片路径组织。
+- 字幕明确说明“这里可以使用您想要的路径”，与 `Output File` 输入框的讲解一致。
+
+画面用途：
+- 这一步强调 FBX 的输出目录和文件名可以按工程结构调整，但仍要保持基于 `path` 的层级导出，方便后续导入 Unreal。
+这张图展示把刚导出的 FBX 导入 Unreal Engine 后的结果，作者在课程目录下单独建立 `Mesh` 文件夹，并确认导入生成的网格、骨骼和动画资源都已经出现。
+
+已确认信息：
+- 当前软件已切换到 Unreal Editor，关卡窗口中打开的是 `Signature_Course` 工程。
+- Content Browser 当前路径为：
+  - `Content / Signature / Course_03 / Mesh`
+- 该文件夹中当前可见 4 个导入资源：
+  - `SK_Ex_02_...` 骨架网格资源
+  - `SK_Ex_02_...` 物理资源（`Physics A...`）
+  - `SK_Ex_02_...` 动画资源（`Animation...`）
+  - `SK_Ex_02_...` 骨骼资源（`Skeleton`）
+- 左侧目录树显示 `Course_03` 下已经建立 `Level`、`Material`、`Mesh`、`Particles`、`Sequencer`、`Texture` 等子目录，其中当前选中的是 `Mesh`。
+- 右侧 Outliner 中当前选中对象为 `Ex_01_SpriteExp`，Details 面板下方可见 Level Sequence 相关属性，但本张图的重点仍是内容浏览器内的导入结果。
+- 字幕提示如果导入设置不对，“动画可能不会正常出来”，与当前检查动画资源是否成功生成的目的吻合。
+
+画面用途：
+- 这一步用于确认从 Houdini 导出的 FBX 已经在 Unreal 中正确拆分出骨架网格、Skeleton、动画和物理资源，后续才能继续做粒子或网格驱动。
+这张图展示把导入后的网格和动画放入 Unreal Sequencer 的结果，作者开始在镜头时间线上检查碎裂网格与已有角色、相机动画能否对齐播放。
+
+已确认信息：
+- 当前界面为 Unreal 的 `Sequencer`，右上角时间基准显示 `30 fps`。
+- 当前序列名为 `Ex_02_DecalExp`。
+- 时间线上已经存在多条轨道，至少包括：
+  - `Cine Camera Actor`，其下有 `CameraComponent`
+  - `Khaimera`
+  - `Ex 02 Decal Exp`
+  - `SK Ex 02 Crack 01`
+- `CameraComponent` 下可见镜头参数：
+  - `Current Aperture = 2.8`
+  - `Current Focal Length = 25.0`
+  - `Manual Focus Distance (Focus) = 100000.0`
+- `Khaimera` 轨道中可见动画片段 `RMB_60fps`。
+- `Khaimera` 的 `Transform -> Location` 下已有关键帧，当前能看到：
+  - `X = 0.0`
+  - `Y = 500.0`
+  - `Z = 0.0`
+- 底部轨道中已加入 `SK Ex 02 Crack 01`，说明导入的裂块网格已经被放入序列，准备与角色动作同步。
+- 左侧内容浏览器仍停留在 `Content / Signature / Course_03 / Mesh`，底部状态显示当前 4 个资源中已有 1 个被选中。
+
+画面用途：
+- 这一步用于把导入的碎裂网格接入 Sequencer，与镜头和角色动画对齐时间，从而验证 FBX 导入后的动画资源能否在实际镜头中正常使用。
+
+### 00:12:03-00:14:49 材质、粒子、贴图
+
+- 本段定位：材质、粒子、贴图。
+- 知识点：现在因为只有一个对应裂缝的剪辑,所以只显示这个一个,还有这个位置值也要匹配到500左右。
+- 知识点：这样显示出来,可以确认动画运行得很好,感觉不错。
+- 知识点：原本是现在从后低纽到材质,这样放着。
+- 知识点：你的设置来说,虚幻的材质也会自动增加插槽,这样就可以带过来。
+- 知识点：那部分在我们第四个粒子中也会一起使用。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`贴图`、`粒子`。
+
+**关键画面：**
+
+这张图位于 `00:12:03-00:14:49 材质、粒子、贴图` 小节开头，作者先在 Unreal Sequencer 中确认裂缝网格动画已经正常挂到时间线上，并把对象位置对齐到场景里预期的 `Y=500` 附近。
+
+已确认信息：
+- 当前界面仍为 Unreal 的 `Sequencer`，序列名为 `Ex_02_DecalExp`，时间基准为 `30 fps`。
+- 轨道中已经存在：
+  - `Cine Camera Actor`
+  - `Khaimera`
+  - `Ex 02 Decal Exp`
+  - `SK Ex 02 Crack 01`
+- 当前选中轨道为 `SK Ex 02 Crack 01`，其下已挂有动画片段：
+  - `SK_Ex_02_Crack_01_Anim`
+- `Khaimera -> Transform -> Location` 当前仍可见关键值：
+  - `X = 0.0`
+  - `Y = 500.0`
+  - `Z = 0.0`
+- 时间轴播放头当前位于约第 `23` 帧，`Khaimera` 的动画片段 `RMB_60fps` 仍在同时段内。
+- 左下角内容浏览器仍停在 `Content / Signature / Course_03 / Mesh`，底部状态显示 `4 items (1 selected)`。
+- 画面对应讲解提到“现在因为只有一个对应裂缝的剪辑，所以只显示这个一个，位置值也要匹配到 500 左右”，与当前轨道和位移数值一致。
+
+画面用途：
+- 这一步用于确认裂缝网格动画已正确进入 Sequencer，并且实例位置与角色/镜头布局对齐，后续才适合继续接材质和粒子表现。
+这张图从 Sequencer 切回关卡视口，直接检查裂缝网格实例在场景中的显示效果，并确认导入时材质槽已经自动附着到网格上。
+
+已确认信息：
+- 当前视口中选中的对象为 `SK Ex 02 Crack 01`，裂缝平面和抬起的碎块整体都被黄色描边高亮。
+- Outliner 中当前选中项同样是 `SK Ex 02 Crack 01`。
+- 场景里可见裂缝网格已经摆放在地面中央，碎块上翻形成破裂开口，中心位置能看到蓝色角色/特效参考对象。
+- 右侧 `Details` 面板当前显示 `SK Ex 02 Crack 01 (Instance)` 的属性。
+- 在 `Materials` 分组中可见：
+  - `Element 0` 已存在一个材质槽位
+  - 当前槽位右侧显示材质引用栏，说明导入后网格已自动生成可指派的材质入口
+- 在 `Physics` 分组中可见基础参数：
+  - `Simulate Physics` 复选框可用
+  - `Linear Damping = 0.01`
+  - `Angular Damping = 0.0`
+- 底部 Content Browser 路径仍位于 `Content / Signature` 目录体系内。
+- 讲解字幕提到“和这些部分混合一下”，与当前把裂缝网格作为后续材质/粒子承载体去组合的用途一致。
+
+画面用途：
+- 这一步确认导入后的裂缝网格在关卡里能正常显示，并且已经带有材质槽，后续可以直接继续给它叠加材质、贴图或粒子相关效果。
+这张图回到 Houdini，作者继续整理裂缝网格的导出资源路径，并保留上游的 UV 与颜色处理节点，准备把后续会给粒子使用的网格资源重新输出到指定工程目录。
+
+已确认信息：
+- 当前网络主干仍为：
+  - `uvedit1 -> attribadjustcolor1 -> attribremap1 -> scatter1`
+  - `voronoifracture1 -> assemble1 -> rbdbulletsolver1 -> transform1 -> rop_fbx1`
+- 当前选中节点为 `ROP FBX Output rop_fbx1`。
+- 右侧参数面板中可见：
+  - `Valid Frame Range = Render Frame Range`
+  - `Start/End/Inc = 1 / 120 / 1`
+  - `Build Hierarchy from Path Attribute` 已勾选
+  - `Path Attribute = path`
+- `Output File` 已不再是默认的 `$HIP/out/.fbx`，而是改成了工程资源目录下的自定义路径，当前可见前缀为：
+  - `F:/Resource/SK_Mesh/SK_Ex_02_Crack...`
+- `FBX` 页签中仍可见：
+  - `Export in ASCII Format` 已勾选
+  - `FBX SDK Version = FBX 202000`
+  - `Vertex Cache Format = Maya Compatible (MC)`
+  - `Axis System = Y Up (RightHanded)`
+- 左下角表格依旧显示 `assemble1` 的 `path` 属性列表，如 `piece0`、`piece1`、`piece2` 等，说明分层导出仍然保留。
+- 这张图的节点上下文与本段“材质、粒子、贴图”一致，说明作者是在为后续材质和粒子复用同一套裂缝资源做导出整理。
+
+画面用途：
+- 这一步把裂缝网格的导出路径切换到实际资源目录，便于后续在 Unreal 中统一引用该网格并继续做材质、贴图和粒子组合。
+
+### 00:14:52-00:17:35 Material、材质、颜色
+
+- 本段定位：Material、材质、颜色。
+- 知识点：U-Win展开就是简单地展开U-Win。
+- 知识点：在这里除了其他的分组,就选择内部组。
+- 知识点：内部组我们看看删除一下,只保留内部的看一下。
+- 知识点：U-Win现在这样乱七八糟地散开着,没必要这样散开。
+- 知识点：其实像内部的情况,就比适当有点不规则,虽然有点断断续续的感觉。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Material`、`材质`、`纹理`、`颜色`。
+
+**关键画面：**
+
+这张图位于 `00:14:52-00:17:35 Material、材质、颜色` 小节开头，作者开始单独处理裂缝内部面的 UV，先把 `inside` 组拿出来做独立展开。
+
+已确认信息：
+- 当前网络中新增并选中了 `uvunwrap1`，它插在 `voronoifracture1` 下游、`assemble1` 上游。
+- 当前节点链路可见：
+  - `voronoifracture1 -> uvunwrap1 -> assemble1 -> rbdbulletsolver1`
+  - 上方仍有 `scatter1`
+  - 左侧保留 `explodedview1 -> delete1`
+  - 右侧仍有 `dopnet1` 与 `sphere2`
+- `UV Unwrap uvunwrap1` 的右侧参数面板可确认：
+  - `UV Attribute = uv`
+  - `Group = inside`
+  - `Planes = 6`
+  - `Layout = Square`
+  - `Scale = Uniform`
+  - `Spacing = 2`
+  - `Rotate Order = Rx Ry Rz`
+  - `Rotate = (0, 0, 0)`
+- 左下角表格显示分组字段，能看到 `group_inside` 与 `group_outside` 两列，说明当前确实在按内外部分组区分面片。
+- 视口中当前没有展开后的造型展示，重点在节点与参数设置本身。
+
+画面用途：
+- 这一步先只对裂缝内部面做 UV 展开，为后续单独赋予内部材质、颜色或贴图提供干净的 UV 基础。
+这张图继续处理裂缝的材质准备工作：左侧检查 UV 展开结果，右侧切到 Houdini 的 `/mat` 上下文，准备分别为内外两部分建立两个 `Principled Shader`。
+
+已确认信息：
+- 左侧视口当前显示的是 UV 视图而不是三维模型视图，可见大量平铺排布的线框岛，说明前一步的 `inside` 组 UV 已经被展开并排到二维空间中。
+- 左下角表格仍显示 `group_inside` 与 `group_outside` 两列，表明材质分配仍建立在内外部分组基础上。
+- 中间网络编辑器当前位于 `/mat` 上下文，画面中央显示空网络提示：
+  - `Empty Network`
+  - `Press Tab to Add Nodes`
+- 右侧工具面板当前为材质库浏览界面，顶部高亮项可见：
+  - `Principled Shader`
+- 右侧库中还能看到按类别排列的预设材质列表，例如 `Character`、`Cloth`、`Glass`、`Industrial`、`Liquids`、`Metallic`、`Natural` 等。
+- 讲解字幕明确说明“这里做两个 Principle Shader”，与内外两个材质的拆分思路一致。
+
+画面用途：
+- 这一步确认 UV 已可用于贴图，并开始在 `/mat` 中分别建立两个基础着色器，用来区分裂缝内部和外部的材质外观。
+这张图把材质分配节点正式接回到裂缝几何流程中，并开始按分组把外层和内层分别绑定到不同材质。
+
+已确认信息：
+- 当前几何网络已变为：
+  - `voronoifracture1 -> uvunwrap1 -> material1 -> material2 -> assemble1 -> rbdbulletsolver1`
+  - 左侧仍保留 `explodedview1 -> delete1`
+  - 右侧仍保留 `dopnet1` 与 `sphere2`
+- 画面中央可见两个连续的材质分配节点：
+  - `material1`
+  - `material2`
+- 当前选中的是 `Material material1`。
+- `material1` 的右侧参数面板当前可确认：
+  - `Number of Materials = 1`
+  - `Group = outside`
+  - 下方 `Material` 槽正在指定对应的外层材质路径
+- 左侧 UV 视图仍显示展开后的线框岛，说明材质分配是在已经完成 UV 的基础上进行。
+- 左下角表格中依旧保留 `group_inside`、`group_outside` 字段，支持按分组分别套不同材质。
+- 字幕明确提到“在 Outside 使用 Out 节点”，与当前把 `outside` 组交给 `material1` 的操作一致。
+
+画面用途：
+- 这一步先把外层裂缝面单独绑定到外部材质，随后再由后一个 `material2` 继续处理内部材质，从而形成内外两套不同的材质表现。
+
+### 00:17:41-00:18:51 Material、UV、材质
+
+- 本段定位：Material、UV、材质。
+- 知识点：现在放了绿色材质,这样可以区分设置。
+- 知识点：我们可观察到这个是在Material的位置。
+- 知识点：如果这样带FBX在虚幻中材质插槽,会显示为两个分开的状态。
+- 知识点：因此可以分开管理材质。
+- 知识点：因为我把UV弄平了嘛。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Material`、`材质`、`纹理`。
+
+**关键画面：**
+
+这张图继续验证材质分组能否正确跟随几何一起导出：作者回到 `assemble1` 检查打包碎片后的显示状态，并用明显的颜色材质区分当前设置。
+
+已确认信息：
+- 当前网络主干为：
+  - `voronoifracture1 -> uvunwrap1 -> material1 -> material2 -> assemble1 -> rbdbulletsolver1`
+  - 左侧保留 `delete1`
+  - 下方保留 `explodedview1`
+- 当前选中节点为 `Assemble assemble1`。
+- 左侧视口显示的是散开的裂块整体，所有碎片都以统一的亮粉色材质显示，方便快速确认材质分配是否生效。
+- `assemble1` 的右侧参数面板可确认：
+  - `Inside Group = inside`
+  - `Output Prefix = piece`
+  - `Create Groups` 已勾选
+  - `Create Name Attribute` 已勾选
+  - `Connect Inside Edges` 已勾选
+  - `Cusp Edges` 已勾选
+  - `Create Packed Primitives` 已勾选
+  - `Path Attribute` 已启用，字段内容为基于 `op:` 的路径表达式
+  - `Create Packed Fragments` 已勾选
+  - `Pivot Location = Centroid`
+  - `Display As = Full Geometry`
+- 左下角表格中可见打包后的路径属性列表，均以 `op:/obj/geo...` 开头。
+- 字幕提到“如果这样带 FBX”，与当前检查导出前材质和分组状态的目的吻合。
+
+画面用途：
+- 这一步确认在 `assemble1` 阶段，内外分组和材质结果已经整合到最终碎片几何里，为导出后在 Unreal 中生成分离材质槽做准备。
+这张图回到 Unreal 场景中检查导入后的裂缝模型与地面材质搭配效果，重点是只保留当前需要显示的外层观感，便于观察材质拆分是否合理。
+
+已确认信息：
+- 当前 Unreal 视口中，裂缝碎块围绕中心角色散开，外圈碎片竖起，地面裂口与破片已经形成完整的地裂效果。
+- 当前选中对象为 `Floor`，Outliner 中高亮项同样是 `Floor`。
+- `Floor` 的 `Details` 面板可见：
+  - `Static Mesh = SM_Template_M...`
+  - `Materials -> Element 0 = MI_ProcGrid`
+- 悬停提示显示该材质实例路径为：
+  - `/Engine/OpenWorldTemplate/LandscapeMaterial/MI_ProcGrid`
+- 场景中地面与裂缝模型的接触区域已经出现较深的黑色内部区域，而外围碎片表面保持较亮灰色，说明导入后的内外材质或颜色差异已经开始可见。
+- 右下方 `Physics` 分组仍可见基础物理字段，说明当前是在关卡实例层直接检查显示结果。
+- 字幕提示“现在只放外表就可以了”，与当前优先观察外层可见面材质的讲解目的吻合。
+
+画面用途：
+- 这一步是在 Unreal 中验证外层可见面材质效果是否成立，并检查它与地面默认材质的对比关系，确保导入后的裂缝层次清楚可读。
+这张图继续在 Unreal 中检查裂缝模型与材质资源的最终落地状态，并同时打开内容浏览器到材质目录，便于后续单独管理导入后的材质或实例。
+
+已确认信息：
+- 视口中裂缝模型仍位于地面中央，中心区域为较深的内部材质色块，外围碎片为较亮的灰色外层表面，内外材质差异保持清晰。
+- 当前选中对象仍是 `Floor`，右侧 `Details` 面板继续显示：
+  - `Static Mesh = SM_Template_M...`
+  - `Materials -> Element 0 = MI_ProcGrid`
+- Bottom `Content Browser` 已展开，当前路径为：
+  - `Engine / Content / OpenWorldTemplate / LandscapeMaterial`
+- 路径栏下方可见多枚球形材质预览缩略图，说明作者正在浏览或对比可用材质资源，而不只是看场景实例。
+- Outliner 中当前场景仍包含：
+  - `Floor`
+  - `Khaimera`
+  - `Ex_02 Decal Exp`
+  - `Ex_01_SpriteExp`
+  - `Lighting` 等对象
+- 字幕提到“这次我们进行了材质资源的制作”，与当前同时检查场景效果和材质资源浏览器的操作一致。
+
+画面用途：
+- 这一步确认裂缝效果在场景里已经能依靠分离材质正常显示，同时把材质资源放到可直接浏览和替换的位置，方便后续继续细化材质表现。
+
+## 补充视觉证据
+
+### S01 00:01:12
+
+这张补充图是 `S01 00:01:12` 的参数特写，用来更清楚地确认碰撞球 `sphere2` 在关键帧中的准确尺寸和中心位置。
+
+已确认信息：
+- 当前选中节点为 `Sphere sphere2`，仍作为 `rbdbulletsolver1` 的碰撞体输入。
+- 右侧参数面板可明确读到：
+  - `Primitive Type = Polygon Mesh`
+  - `Connectivity = Quadrilaterals`
+  - `Radius = (1.75, 1.75, 1.75)`
+  - `Center = (0, 1, 0)`
+  - `Rotate = (0, 0, 0)`
+  - `Uniform Scale = 1`
+  - `Orientation = Y Axis`
+  - `Rows = 13`
+  - `Columns = 24`
+  - `Unique Points per Pole` 未勾选
+  - `Accurate Bounds` 已勾选
+  - `Triangular Poles` 已勾选
+- 左侧视口中蓝色球体已抬升到裂缝平台上方，覆盖中心撞击区域。
+- 底部时间轴播放头位于约第 `29` 帧，说明这是碰撞后段的参数核对画面。
+
+画面用途：
+- 这张补充图专门用于校准 `sphere2` 的精确参数，避免正文截图里球体遮挡过大时遗漏 `Center` 和半径设置。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

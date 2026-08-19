@@ -1,6 +1,6 @@
 interface:
   display_name: "UE Agent Interface"
-  short_description: "用 UAI JSON 工作流自动化 UE 编辑器"
+  short_description: "用 UAI 和结构化 HJSON 自动化 UE 编辑器"
   icon_small: "./assets/ue-agent-interface-small.svg"
   icon_large: "./assets/ue-agent-interface-small.svg"
-  default_prompt: "使用 $ue-agent-interface 通过 UeAgentInterfaceCMD/uai_core 编辑 Unreal 资产，优先直接编辑结构化 JSON，并用 report、编译、readback 或 smoke 验证结果。"
+  default_prompt: "使用 $ue-agent-interface 通过 UeAgentInterfaceCMD/uai_core 编辑 Unreal 资产；按三态路由命令，优先结构化 HJSON authoring，并用编译、readback、probe 或 smoke 验证结果。"

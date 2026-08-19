@@ -1,0 +1,386 @@
+# 19-1-Unreal车材质制作
+
+# 19-1-Unreal车材质制作
+
+## 关键术语
+
+- `GPU`、`UV`、`Fire`、`蓝图`、`材质`、`粒子`、`系统`、`生命周期`、`速度`、`Niagara`、`Normalized Age`、`Material`、`纹理`、`序列`、`颜色`、`曲线`、`Niagara System`、`Emitter`
+
+## 分段知识
+
+### 00:00:05-00:02:59 Fire、纹理、火焰
+
+- 本段定位：Fire、纹理、火焰。
+- 知识点：EVBR 序列枪文件 又拿了两张 一张是继续制作的火焰枪 现在第二张 因为没有ARPHA 所以就这样出来了 这样出来了 还有另一种纹理是轮腹纹理。
+- 知识点：我们做了两张 然后呢 那部分和这样这是火焰纹理 还有现在拿进来的 CANFIRE三纹理呢 这个角色 技能时用过的纹理。
+- 知识点：现在为了在这里也活用它 可能会混合使用 全部解除虚拟纹理流 设下了平铺 两张纹理是造成平铺 就是我们为了给燃烧的车表面 适当加上一些放射纹理。
+- 知识点：使火焰有移动感 然后 只是为了营造一点氛围而带来的纹理 所以我们总共提供了 六张纹理 那我们来拿煤锡汽车 我们设置背景时 用P下载过一次 感觉两辆车有点合在一起了。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`序列`、`火焰`。
+
+**关键画面：**
+
+这一帧是 Unreal 编辑器里的起始环境镜头，先交代本页车体火焰效果要放进什么场景。主视口显示一个海滩/礁石环境，左下角已经摆着一处正在燃烧的火焰，用来作为本节后续材质与粒子效果的参考氛围。右侧 `Outliner` 当前定位在 `Main (Editor) / Beach / Beach_Assemblies` 层级，下方能看到多个 `StaticMeshActor` 和 `BP_ASY_BeachGround_01_` 蓝图实例，说明当前场景本身是由大量海滩地表与岩石组件搭出来的。底部 `Content Browser` 当前路径是 `Content / Signature / Course_05 / Particles`，窗口里可见三个 Niagara 资源缩略图：`Ex_01_...`、`Ex_0...`、`Ex_03_...`。这张图的意义是先把本课素材入口和场景背景交代清楚：火焰效果不是在空白地图里单独制作，而是要接入已有环境，并配合 `Course_05/Particles` 目录下的 Niagara 资源继续扩展。
+这一帧把关注点从场景切到纹理素材本身。底部 `Content Browser` 当前路径已切到 `Content / Signature / Course_05 / Texture`，并高亮选择了一张名为 `FireSmoke_01` 的纹理。悬浮信息面板能确认这张纹理的关键属性：路径是 `/Game/Signature/Course_05/Texture`；格式 `DXT5`；`Texture Group = World`；`Never Stream = False`；源格式 `TSF BGRA8`；`sRGB = True`；分辨率 `4096 x 4096`；`Has Alpha Channel = True`；`X-axis Tiling Method = Wrap`、`Y-axis Tiling Method = Wrap`；`Virtual Texture Streaming = True`。底部缩略图列表中还能看到多张相关素材，例如 `CampFir...`、`Circle_01`、`Exp_01`、`Fire_14`、`Noise_Til...`、多张 `Smoke_0...` 等，说明本节会从一个完整的火焰/烟雾贴图库里挑选资源，而不是只靠单一序列。结合本段正文，这张图的作用是确认至少有一张带 Alpha 的大尺寸 `FireSmoke_01` 纹理可用于车体火焰或表面燃烧材质，并且平铺方式已经适合继续做 UV 平铺和混合。
+这一帧回到海滩场景总览，但底部 `Texture` 目录中的素材筛选已经完成，开始为后续车体火焰材质准备一组可混用的贴图。`Content Browser` 仍位于 `Content / Signature / Course_05 / Texture`，当前一共选中了 `6` 张纹理，底部状态栏明确显示 `20 items (6 selected)`。从高亮缩略图可辨认出的候选素材包括至少两张 `CampFir...` 序列纹理、`Fire_14`、两张 `FireSmok...` 纹理以及一张 `Noise_Til...` 噪声纹理；附近还能看到 `Circle_01`、`Exp_01`、`Norm...`、多张 `Smoke_0...` 作为同目录里的其他可选资源。主视口仍显示左下角的篝火参考效果和周围海滩环境，说明这些纹理最终要服务于场景里的火焰氛围，而不是孤立测试。结合正文“总共提供六张纹理”，这张图的重点是确认：本节不是只挑一张火焰贴图直接用，而是先整理出一组火焰序列、烟纹理和噪声图，后面会把它们混合到燃烧汽车的材质或粒子系统里。
+
+### 00:03:03-00:07:37 蓝图、材质、粒子
+
+- 本段定位：蓝图、材质、粒子。
+- 知识点：煤锡没分开 可能是用P下载的缘故 我现在可以直接在那个网站上 下载FBX文件 就是 所以下载后就可观察到 有FBX文件单独进来 然后因此需要提供FBX文件给你。
+- 知识点：这样设置 然后后文件就会进来 这种形式下确实有一台是分开的 还有这车上用到的纹理 我们也会做好 大概这样拿来 现在材质也一起进来了。
+- 知识点：但这个材质本身 我做的材质并没有活起来 我这样节点 有点活的那种感觉 材质安德25 现在套在卡上的70材质里。
+- 知识点：包含的就是 被看作是材质 然后需要把这部分擦掉 然后需要先在这里进行 构图这节课 需要擦掉这个坐标面上的火花 还有这朵花 附着时产生的粒子。
+- 知识点：我们也会 一起处理 那就试试看吧 先安排好车再开始比较好 我们就把梅西做成蓝图眼缘 把骑士材料包含在一个蓝图里进行管理。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`材质`、`纹理`、`粒子`、`蓝图`、`火焰`。
+
+**关键画面：**
+
+这一帧开始为“燃烧汽车”准备承载对象。主视口仍在海滩场景中，但左下原先的篝火参考已经不再是画面焦点，镜头对准的是一块相对开阔的岩石地面，显然是在清出后续放置车辆与火焰的位置。右侧 `Outliner` 仍停留在 `Main (Editor) / Beach / Beach_Assemblies` 层级。底部 `Content Browser` 已从上一段的纹理目录切换到 `Content / Signature / Course_05 / Mesh`，当前目录里只看到两个资源缩略图：一个名为 `Fbx_...` 的 `Material` 资源，以及一个 `SM_FX_...` 的 `Static Mesh`。这张图对应正文里“直接下载 FBX 文件、把单独的车导进来”的说明，重点是确认本节已经切到网格资源准备阶段，下一步会围绕导入的车体模型和其材质来搭建蓝图与粒子。
+这一帧显示导入整理后的车体资源已经放进同一个目录，并开始按“一个蓝图统管车和附着效果”的思路组织。`Content Browser` 仍位于 `Content / Signature / Course_05 / Mesh`，但现在目录内容已经扩充到 `9 items (1 selected)`。可见资源包括一张 `burnedca...` 的 `Static Mesh`、多张同名前缀的贴图资源、`Fbx_...` 材质、一个 `Material...` 资源，以及当前高亮的蓝图资产 `eprint...`，其类型显示为 `Blueprint Cla...`；右侧还保留一个 `SM_FX_...` 静态网格。主视口仍是海滩环境，说明这些资源还在准备阶段，尚未完全摆入场景。结合本段正文“把起始材料包含在一个蓝图里进行管理”，这张图的重点是确认：车模型、相关纹理和后续控制逻辑不会分散管理，而是准备通过一个蓝图资产把车体本身、其材质实例和附着火花/火焰粒子统一组织起来。
+这一帧显示烧毁汽车已经被实际摆入海滩场景中，开始进入“在车体上附着火焰与粒子”的阶段。主视口中央是一辆黑色烧毁车壳，位置放在靠近礁石的地面上，左侧仍能看到之前的篝火参考，便于对比火焰尺度和场景氛围。底部 `Content Browser` 依旧停在 `Content / Signature / Course_05 / Mesh`，当前高亮的是一个 `BP_Burn...` 蓝图资源，类型为 `Blueprint Cl...`；同目录里还能看到 `burnedca...` 静态网格、多张同名前缀贴图、`Fbx_...` 材质、`Material...` 资源和 `SM_FX_...` 网格。右侧 `Outliner` 没有切到车本身的细节项，但场景总 Actor 数从前面的 `9,084` 变为 `9,085`，也侧面说明新增了一个对象实例。结合正文“稍微加入一些烟尘或火焰”，这张图的作用是确认：承载燃烧效果的车体蓝图已经成功落到场景里，后续不再只是整理素材，而是可以直接围绕这辆车布置材质动画、附着粒子和蓝图管理逻辑。
+
+### 00:07:37-00:12:21 材质、粒子、颜色
+
+- 本段定位：材质、粒子、颜色。
+- 知识点：一点点一点点随机地在地上点燃 我现在布置一下这里整个表面 表面上现在也适当有点 随机地 加上火焰燃烧的感觉应该会不错 那我就先从光线调起。
+- 知识点：把刚色调按到0.5 然后现在看这里 在布置主要粒子之前我们先这样 从材质开始准备一下 先拖这四张车相关的纹理。
+- 知识点：到材质里 这二张噪点平铺也一起拖进来 这二张噪点平铺是为了 有点发光效果拖进来的 还有这慢反射 这是扩散 这两张是一样 这是慢反射 这是扩散。
+- 知识点：标着地的是扩散 然后这里标着按的是粗糙度 还有发现 这个就是金属纹理了 是的 简单地说这辆车的纹理。
+- 知识点：只需简单地连接 这个可以通过 按照基础颜色上加一个成数 来控制这个车颜色 把这里的纹理。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`粒子`、`颜色`、`火焰`。
+
+**关键画面：**
+
+这一帧是在正式布置火焰粒子之前，先回到场景里确认烧毁车当前的基础外观。主视口中央是已经放置好的黑色烧毁车体，停在海滩礁石旁，表面整体偏暗，尚未出现明显的燃烧贴图、自发光条纹或附着火焰。底部 `Content Browser` 仍在 `Content / Signature / Course_05 / Mesh`，当前高亮的是 `BP_Burn...` 蓝图资源；同目录里还能看到 `burnedca...` 静态网格、多张同名前缀贴图、`Fbx_...` 材质、`Material...` 资源和 `SM_FX_...` 网格。右侧 `Outliner` 没有切到车体细节，而是停留在大量 `MASS_NC_SeaWeed_XS_01_` 植被对象列表。结合本段正文“在布置主要粒子之前先从材质开始准备”，这张图的作用是明确当前车只是承载体，下一步需要先把车用到的纹理和颜色逻辑接进材质，再往上叠加火焰与随机地表燃烧效果。
+这一帧进入 Unreal 的 `Material_25` 材质图，开始把车体本身的基础贴图接起来。材质编辑器顶部标签可见当前同时打开了 `CampFire_03`、`FireSmoke_02`、`FireSmoke_01`、`Fire_14`、`burnedcars_default001`、`Material_25` 和 `BP_Burned_Car_01`，说明教程正在一边对照火焰贴图，一边修改车辆材质。当前图中可确认的材质连接有三组：
+
+节点定义集：
+- 一个灰度/颜色贴图 `Texture Sample` 连接到 `Material_25.Base Color`
+- 一个浅灰贴图 `Texture Sample` 连接到 `Material_25.Roughness`
+- 一个蓝紫色法线贴图 `Texture Sample` 连接到 `Material_25.Normal`
+
+连线集：
+- 上方纹理采样 `RGB -> Base Color`
+- 中间纹理采样 `RGB -> Roughness`
+- 下方法线纹理采样 `RGB -> Normal`
+
+设置/参数：
+- 当前选中的是下方法线 `Texture Sample`
+- 详情面板中 `Sampler Source = From texture asset`
+- `Const Coordinate = 0`
+- `Texture` 字段为 `burnedcrossover_norma...`
+- `Sampler Type = Normal`
+
+输出/预览：
+- 左侧材质球预览仍是低饱和、偏灰的车体材质效果，尚未出现额外自发光
+- 右侧 `Material_25` 输出节点当前可见 `Specular = 0.5`、`Ambient Occlusion = 1.0`
+
+这张图的重点是说明：车体基础材质先按常规 PBR 方式把底色、粗糙度和法线贴图接好，后续再在这个底子上叠加噪声、自发光和燃烧纹理，而不是直接把火焰纹理硬塞进一个空材质里。
+这一帧继续在 `Material_25` 里搭建“燃烧痕迹/发光分布”会用到的噪声链。当前可见的是一条独立的小型节点链：
+
+节点定义集：
+- `TexCoord[0]`
+- `Texture Sample`，当前贴图为 `Noise_Tile_02`
+- `Power(X,3)`
+- `Multiply(500)`
+
+连线集：
+- `TexCoord[0] -> Texture Sample.UVs`
+- `Texture Sample.RGB -> Power.Base`
+- `Power -> Multiply.A`
+- `Multiply.B = 500.0`
+
+设置/参数：
+- 选中的 `Texture Sample` 详情面板中 `Texture = Noise_Tile_02`
+- `Sampler Type = Color`
+- `Sampler Source = From texture asset`
+- `Const Coordinate = 0`
+- `Power` 节点指数 `Exp = 3.0`
+- `Multiply` 节点常量输入 `B = 500.0`
+
+输出/预览：
+- 左侧预览窗口当前直接查看车辆表面上的高对比黑白分布，可见噪声已经把车壳切成零散斑点状区域
+- 这条链在当前画面里还没有显示最终接到哪个材质输出端口
+
+这张图的核心信息是：教程先用 `Noise_Tile_02` 经过 `Power` 强化对比，再用大倍数 `Multiply` 放大强弱差异，以便得到更尖锐、更局部的燃烧遮罩基础。当前图只证明噪声强化链已经搭好，不应提前推断它后面一定连到哪一个具体输出。
+
+### 00:12:21-00:16:57 颜色、自发光、纹理
+
+- 本段定位：颜色、自发光、纹理。
+- 知识点：进行惩罚运算吧 这样计算一下 变成了非常小的区域 逐渐靠近的图案 最后把自发光颜色调好连接上。
+- 知识点：直到1.5 0.5 红色调要保持 最后进自发光的颜色里 REDX要固定 现在可观察到橘色部分 有些渗透出来了 现在可观察到橘色部分 有些渗透出来了。
+- 知识点：我们不想在白色油漆的部分 而是在有黑色区域的这部分 主要做纹理 所以加上反转节点 只提取儿童道 然后再做一次惩罚 再戴一层口罩 这样就能看到纹理了。
+- 知识点：从表面检查一下 然后这个纹理就这样完成了 这样做就能看到这种纹理效果了 然后看到这些燃烧的物体时 感觉像是被熏黑了一样 可以看作是添加了这种感觉。
+- 知识点：可以看作是添加了这种感觉 不用太在意细节质量 现在只看这车的模型 质量也不是那么好的模型 因为我们用的是免费下载的模型 质量好当然更好。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`颜色`。
+
+**关键画面：**
+
+这一帧继续在 `Material_25` 中扩展燃烧遮罩用的第二条噪声链，和上一段的静态噪声不同，这一条前面多了一个 `Panner`，说明开始为后续流动感或移动感做准备。当前图中能确认的节点链如下：
+
+节点定义集：
+- `Panner`
+- `Texture Sample`
+- `Power(X,2)`
+- `Multiply(500)`
+
+连线集：
+- `Panner -> Texture Sample.UVs`
+- `Texture Sample.RGB -> Power.Base`
+- `Power -> Multiply.A`
+- `Multiply.B = 500.0`
+
+设置/参数：
+- `Panner` 节点当前 `Speed X = 0.0`、`Speed Y = 0.0`
+- `Power` 节点指数 `Exp = 2.0`
+- 当前选中的是 `Multiply(500)` 节点
+- 左侧详情面板里 `Const B = 500.0`
+
+输出/预览：
+- 左上预览窗口仍直接显示车体表面的黑白遮罩分布，说明这条链也是在构造局部燃烧区域
+- 当前画面里尚未显示这条链最终接入哪个材质输出
+
+这张图的重点是：教程并不是只做一层固定噪声，而是在原有高对比遮罩之外，再搭一条带 `Panner` 的噪声链，为之后叠加动态纹理、扩大或扰动燃烧分布做准备。就当前图能确认的信息来看，这一层先被强化到很高的对比度，再等待后续混合。
+这一帧切到静态网格资源 `burnedcars_default001` 的预览窗口，用来直接检查车体材质修改后的表面结果。主视口中可以看到车辆外壳大面积保持灰白烧损漆面，而门缝、轮拱、车窗边缘和内部结构附近已经出现橙红色的灼烧发光区域，说明前面构建的噪声遮罩与自发光逻辑已经开始在模型表面生效。右侧 `Details` 面板能确认几个当前状态：
+
+节点/对象定义集：
+- 当前资源页签：`burnedcars_default001`
+- `Material Slots` 只有 `1 Material Slots`
+- `Element 0 -> Material_25`
+
+设置/参数：
+- `Nanite Settings` 开启 `Enable Nanite Support`
+- `Lerp UVs` 已勾选
+- `Position Precision = Auto`
+- `Normal Precision = Auto (8 bits)`
+- `Keep Triangle Percent = 100.0`
+- 左上统计信息可见 `UV Channels = 2`
+
+输出/预览：
+- 模型预览里可直接看到“白色焦化漆面 + 局部橙红发光裂缝”的车体外观
+- 当前画面没有显示新的材质节点连接，而是在验证 `Material_25` 应用到真实车网格后的表现
+
+这张图的核心是验证结果而不是继续搭图：说明教程想要的不是整车均匀发亮，而是只在局部黑化/破损区域出现透出的橙红热痕，从而让车看起来像被火焰长时间熏烤过。
+这一帧是 `Material_25` 当前修改结果写回场景前的应用画面。中央弹窗明确显示：`Apply changes to original material and its use in the world. 100%`，说明材质编译和应用已经完成，当前改动正被推送到场景和使用该材质的对象上。弹窗后方仍能辨认出 `Material_25` 图中至少包含多张基础纹理采样节点，以及下方多级 `Multiply` 混合链，说明本段前面搭建的底色、粗糙度、法线与噪声/遮罩运算已经进入统一应用阶段。左侧预览窗口此时恢复成默认棋盘材质球背景，没有单独显示最终车体结果，这也说明本帧关注点不是继续微调节点，而是确认应用过程完成。结合本段正文“从表面检查一下，这个纹理就这样完成了”，这张图的作用是为本段收尾：材质层面的烧灼纹理、自发光区域和遮罩混合已经达到当前可接受状态，并正式写回到实际使用该材质的车模型和场景对象中。
+
+### 00:16:57-00:21:52 UV、粒子、速度
+
+- 本段定位：UV、粒子、速度。
+- 知识点：这样 做的化区会小一点 其实我搞错了就是为了在亮部 更好地保有火花 现在用这个反转纹理 是对的 我也有点搞混了这个 现在这个暗部 已经存在这里了。
+- 知识点：这样安排也可以 反正现在火焰粒子就会一起放在外面 看起来没那么显眼 适当调整一下也可以 这种感觉也不错 为了多撒点线连一下 然后我们没在平移上。
+- 知识点：用速度 这个速度 这样再来一次 给你一种慌乱的感觉 原本我们很少会准备到这种程度的模型 而且质量也会好很多 如果能加入这个项目 做这种工作。
+- 知识点：那时候就能做出更高质量的作品了 所以现在可以做得更有品质 现在就是尽最大努力去配合 现在只是这样存在 感觉有点单调 所以多加一层这个混合。
+- 知识点：为了多加一层混合 比想象中更是调整得更好 我们把影片做一次 我们再把飞线做一次 亲子们需要做到的 这个感觉上 多加了一层看起来更明显 对现在这样。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`粒子`、`速度`、`火焰`。
+
+**关键画面：**
+
+这一帧继续在 `Material_25` 中调整燃烧遮罩的分布逻辑，当前新增的关键节点是一个 `1-x` 反转节点，用来把上方车体贴图中的某一路信息反相后再参与混合。当前可见结构如下：
+
+节点定义集：
+- 上方车体 `Texture Sample`
+- `1-x`
+- 左下方已有的 `Multiply(500)` 与后续多个 `Multiply`
+- 右侧一个 `Divide`
+
+连线集：
+- 上方 `Texture Sample` 至少有两路输出分别向下分叉
+- 其中一路接入 `1-x`
+- `1-x` 的输出继续接入下方 `Multiply` 混合链
+- 左侧已有的 `Multiply(500)` 也继续并入同一组混合链
+- 右侧混合结果再接向一个 `Divide` 节点
+
+设置/参数：
+- 当前选中的节点是 `1-x`
+- 左侧详情面板没有显示额外可调参数
+- 画面左下仍能看到前一段保留下来的 `Multiply(500)` 常量链
+
+输出/预览：
+- 左侧预览窗口直接显示车体 UV 展开后的高对比黑白分布，说明这里仍是在调遮罩，而不是最终颜色
+- 右下区域还能看到一组常量参数文字 `10,1.5,0.5`，但当前画面不足以证明它具体接到哪个输入端口
+
+这张图的关键信息是：教程开始把车体原始贴图中的明暗信息反转后参与遮罩计算，以避免把效果平均刷到所有白色漆面上，而是更多地保留在需要被烧黑或发光的区域。就当前图能确认的范围，只能确定 `1-x` 已被纳入主混合链，不能提前推断后续每个乘除节点的完整用途。
+这一帧回到关卡场景中检查材质改动后的实际表现。主视口里的烧毁车辆已经不再只是零散发光点，而是沿着车门、车窗边缘、轮拱和前脸等多处破损区域出现更连续的橙红色热痕，说明上一张里新增的反转遮罩和额外混合层已经明显加强了燃烧纹理的可见度。右侧 `Outliner` 当前通过搜索词 `light` 过滤对象，并选中了 `GlobalLighting` 目录下的 `SkyLight`。下方 `Details` 面板可确认：
+
+节点/对象定义集：
+- 选中对象：`SkyLight`
+- 组件：`SkyLightComponent (SkyLightComponent0)`
+
+设置/参数：
+- `Source Type = SLS Captured Scene`
+- `Cubemap Resolution = 128`
+- `Sky Distance Threshold = 150000.0`
+- `Intensity Scale = 0.5`
+
+输出/预览：
+- 车体表面大面积仍保持灰白焦化底色
+- 橙红发光区域比前一阶段更密集、更连续，尤其集中在黑化缝隙和破损处
+
+这张图的作用是把材质混合层的结果放回真实关卡光照里验收：当前不是靠外部火焰照亮整车，而是单靠材质本身的局部自发光和烧灼纹理，就已经让车看起来更像正在持续受热。结合正文“感觉有点单调，所以多加一层混合”，可以确认这次叠加确实提升了可读性。
+这一帧是同一套材质在场景中的更强烈版本验证。主视口里整辆烧毁车已经被大面积橙红色自发光覆盖，不再只是边缘裂缝和破损点发亮，而是车顶、侧门、前盖和前脸周围都出现明显的大块热区，说明当前混合层或发光强度已经被推到一个非常显眼的状态。右侧仍然保持 `light` 过滤，并选中 `SkyLight`；下方 `Details` 面板中仍可确认 `Source Type = SLS Captured Scene`、`Cubemap Resolution = 128`、`Sky Distance Threshold = 150000.0`、`Intensity Scale = 0.5`，也就是说这张图的巨大变化并不是来自环境光被调高，而是来自车材质本身的发光/遮罩结果。底部 `Content Browser` 仍停在 `Content / Signature / Course_05 / Texture`，可见当前还在围绕火焰、烟雾和噪声纹理做表面调试。结合正文里“这样安排也可以”“多加一层混合看起来更明显”，这张图的意义是作为过量版本的对照：它证明额外混合层确实能快速把燃烧感拉出来，但也提醒后续需要继续平衡，让火焰/热痕不要把整车都洗成同一种高亮红色。
+
+### 00:21:52-00:26:44 Niagara、GPU、UV
+
+- 本段定位：Niagara、GPU、UV。
+- 知识点：现在看起来是最尴尬的时刻 因为灯还没亮 只有简单的表面材质 所以火也没点燃 感觉很不协调 所以看这个应该可以 按照这个色调安排这个粒子。
+- 知识点：慢慢设计感觉就行 车广告就这样完成 我们现在来安排粒子吧 我们来试试粒子放置 这样复制一个火焰来用 改个名字 名字叫火焰煮 名字叫火焰煮。
+- 知识点：名字叫火煮 名字改了 这里得一个个加 加个尼亚加拉粒子系统 名字叫煮 现在做好了 选了就做好了这个路径 就自动设置好了 现在灯光在这里做了粒子系统。
+- 知识点：包含了所以看起来非常白 大概这样进去就布置好了 我现在适当点着了 所以周围存在色调和亮色调 所以氛围比较搭 看起来更像 那么回事了。
+- 知识点：在这里现在交代加上粒子 这里现在再放两粒子 下次再继续完成粒子 现在煮长经历 给车表面加个火焰效果 这样打开粒子拿来的东西。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 核对对象：`Niagara`、`GPU`、`材质`、`纹理`、`粒子`、`系统`、`火焰`。
+
+**关键画面：**
+
+这一帧是从“只做好材质”过渡到“开始补 Niagara 粒子”的说明图。画面上半部分直接显示关卡里的烧毁车辆：整车已经有大面积红热发光材质，但周围还没有真正的火焰粒子，因此视觉上像是“车壳发烫了，但还没燃起来”。右侧 `Outliner` 仍通过 `light` 过滤，并选中 `SkyLight`；这说明当前场景光照并未切换到别的调试模式。画面下半部分则露出 `Material_25` 材质图窗口的一部分，说明教程此时刚从材质调整阶段退出，准备切换到 Niagara 系统布置阶段。结合正文“现在看起来是最尴尬的时刻，因为灯还没亮，只有简单的表面材质，所以火也没点燃”，这张图的重点是确认当前问题：车体表面效果已经有基础热感，但还缺真正的粒子系统来补足火焰、明灭和空间氛围，因此接下来要复制并改造一个火焰 Niagara 资源挂到车上。
+这一帧进入 `BP_Burned_Car_01` 蓝图编辑器，开始把真正的火焰 Niagara 系统挂到车体上。当前组件层级显示为：`BP_Burned_Car_01 (Self) -> DefaultSceneRoot -> Car -> Car_Main`，并且选中的是 `Car_Main` 这个 Niagara 组件。中间视口里可以直接看到一簇火焰已经出现在车顶偏前的位置，说明该组件正在预览实际火焰系统。右侧 `Details` 面板里能确认的关键信息包括：
+
+节点/对象定义集：
+- 组件名：`Car_Main`
+- 变量名：`Car_Main`
+- 父对象：`Car`
+
+设置/参数：
+- `Transform` 当前 `Location = (0,0,0)`、`Rotation = (0,0,0)`、`Scale = (1,1,1)`
+- `Parent Socket = None`
+- `Niagara System Asset = Ex_05_CarFireMi...`
+- `Niagara Tick Behavior = Use Prereqs`
+- `Allow Scalability` 已勾选
+- `Auto Activate` 已勾选
+
+输出/预览：
+- 蓝图视口中，火焰已经附着在车体表面某个局部位置
+- 底部编译结果显示：`Compile of BP_Burned_Car_01 successful`
+
+这张图的重点是确认“复制一个火焰来用、改名并挂到蓝图里”已经完成到可运行状态：不是在关卡里随意摆一个独立 Niagara Actor，而是把火焰系统作为 `BP_Burned_Car_01` 内部组件 `Car_Main` 管理，这样后续才能继续复制、定位和统一控制多处附着火焰。
+这一帧打开 Niagara System `Ex_05_CarFireMain_01`，开始调整车体火焰发射器的运行模式。当前选中的发射器是 `Fire01`，左侧预览窗口里可以看到一小簇火焰精灵，粒子统计显示当前系统里还有多个备用 emitter，其中 `Fire01001`、`Fire01002`、`Fire01006` 处于禁用状态。中间 `System Overview` 面板中，`Fire01` 的堆栈可见：
+
+节点定义集：
+- `Emitter Properties`
+- `Emitter Summary`
+- `Emitter Spawn`
+- `Emitter Update`
+- `Particle Spawn`
+- `Particle Update`
+- `Render -> Sprite Renderer`
+
+右侧设置/参数：
+- `Sim Target = GPUCompute Sim`
+- `Calculate Bounds = Fixed`
+- `Local Space` 未勾选
+- `Determinism` 未勾选
+- `Interpolated Spawn` 已勾选
+- `Requires Persistent IDs` 未勾选
+
+输出/预览：
+- 左侧预览里的 `Fire01` 仍是标准火焰 sprite 发射器
+- 当前画面重点不在具体火焰形状，而在发射器执行模式
+
+这张图的核心是本段标题里的 `Niagara / GPU / UV` 三者开始真正落到设置上：教程把火焰发射器切到 `GPUCompute Sim`，并使用 `Fixed` Bounds，目的是让附着在车体上的火焰在数量增多后仍能保持性能和可见性可控。就当前图能确认的事实来看，这一步是系统级配置调整，而不是再去改材质或蓝图挂点。
+
+### 00:26:50-00:30:23 UV、材质、粒子
+
+- 本段定位：UV、材质、粒子。
+- 知识点：把生命周期调到1秒到1.2秒左右。
+- 知识点：被同意尺寸是10,就是40和40,就是30左右吧。
+- 知识点：非常小的地现在要发生的火花门多个CGD现在要生成。
+- 知识点：这样就会随着车的布置形态随机地粘上火焰吧。
+- 知识点：虽然生成了1000个,但实际火下来的火花大概就100个左右。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`粒子`、`生命周期`、`火焰`。
+
+**关键画面：**
+
+这一帧继续编辑 Niagara System `Ex_05_CarFireMain_01` 的 `Fire01` 发射器，当前右侧面板停在 `Initialize Particle` 模块，用来直接调单个火焰贴片的生命周期和基础尺寸。中间 `System Overview` 中仍能看到 `Fire01` 的主堆栈，左侧预览里是一簇竖直拉伸的火焰 sprite。当前可确认的参数如下：
+
+节点定义集：
+- `Fire01 -> Particle Spawn -> Initialize Particle`
+
+设置/参数：
+- `Lifetime Mode = Random`
+- `Lifetime Min = 1.5`
+- `Lifetime Max = 1.2`
+- `Color Mode = Direct Set`
+- `Position Mode = Simulation Position`
+- `Sprite Size Mode = Random Non-Uniform`
+- `Sprite Size Min = (100.0, 120.0)`
+- `Sprite Size Max = (150.0, 150.0)`
+- `Sprite Rotation Mode = Unset`
+- `Sprite UV Mode = Random X`
+
+输出/预览：
+- 左侧粒子统计显示 `Fire01` 当前约有 `1,476` 个粒子
+- 预览中的火焰是细长上升形态，尚未扩展到整车多处位置
+
+这张图的重点是把本段口述里的“生命周期调到 1 秒到 1.2 秒左右”“尺寸大约 10、40、40、30 左右”的设置落实到当前 UI：教程确实在 `Initialize Particle` 里直接改生命周期和随机非均匀 sprite 尺寸，而不是在别的更新模块里间接控制。
+这一帧继续在 `Fire01` 发射器里配置粒子要如何贴附到车体表面，当前右侧面板显示的是 `Static Mesh Location` 模块。中间堆栈中可以看到该模块被放在 `Particle Spawn` 段，位置在 `Sprite Facing and Alignment` 之后。当前可确认的设置如下：
+
+节点定义集：
+- `Fire01 -> Particle Spawn -> Static Mesh Location`
+
+设置/参数：
+- `Default Mesh = burnedcars_default001`
+- `Source Actor = None`
+- `Mesh Sampling Type = Triangles`
+- `Triangle Sampling = Random (All Triangles)`
+- `Position Sampling = Apply (Rigid)`
+- `Offset Position = 1.0`
+- `Write To Particle` 已勾选
+- `Velocity Sampling = Output`
+- `Sampled Velocity = World`
+- `Orientation Sampling = Apply`
+- `Vertex Color Sampler = Output`
+
+输出/预览：
+- 左侧预览窗口里火焰已经不再是单独一簇，而是大面积分布在网格表面上
+- 粒子统计显示 `Fire01` 当前约有 `1,147` 个粒子
+
+这张图的核心是把“火焰随机粘在车表面上”具体化：教程不是用手动坐标摆每一处火焰，而是让发射器在 `burnedcars_default001` 的三角面上随机采样位置，再把采样结果直接写入粒子位置。这样后续即使粒子数很多，也能自然地沿车体表面随机分布。
+这一帧继续在同一个 `Fire01` 发射器里补“按纹理/UV 控制分布”的步骤，当前选中的模块是 `Sample Texture`。它位于 `Particle Spawn` 段里，紧接在 `Static Mesh Location` 之后，说明教程是在已经把粒子撒到车体表面以后，再进一步用贴图采样去筛选或调制这些粒子。当前可确认的参数如下：
+
+节点定义集：
+- `Fire01 -> Particle Spawn -> Sample Texture`
+
+设置/参数：
+- `Sample Texture` 已勾选启用
+- `Texture = Noise_Tile_01`
+- `Texture User Parameter = None`
+- `Mip Level = 0.0`
+- `Apply Sampled RGBA` 已勾选
+- `Sampled RGBA Mask = (1.0, 1.0, 1.0, 0.0)`
+- `Texture UV = (0.0, 0.0)`
+- `Generate UV Using Im...` 未勾选
+- `Enable Sample Reject...` 未勾选
+
+输出/预览：
+- 左侧预览窗口当前处于 `Preparing simulation...` 状态，没有给出稳定火焰结果
+- 中间堆栈清楚表明 `Sample Texture` 已被插入到 `Static Mesh Location` 之后
+
+这张图的重点是把本段标题里的 `UV` 真正落实到 Niagara 模块上：教程不只是让粒子随机落在车网格表面，而是继续用 `Noise_Tile_01` 做一次纹理采样控制，并把采样到的 `RGB` 三通道应用到粒子数据里。就当前图能确认的事实来看，这一步还没有显示最终可视结果，但已经建立了“网格表面随机撒点 + 纹理采样再筛一层”的生成逻辑。
+
+## 补充视觉证据
+
+### S01 00:01:36
+
+这是 `S01 00:01:36` 的补充截图，用来把“本节要用到的一整组火焰/烟雾纹理”补得更完整。主视口仍然是海滩场景和左下角的篝火参考，说明当前还处在素材筛选阶段，没有进入车体或 Niagara 的具体编辑。底部 `Content Browser` 位于 `Content / Signature / Course_05 / Texture`，当前高亮的是 `Fire_14` 纹理；同一排还能直接看到多张相关素材并排放置，包括两张 `CampFir...` 序列纹理、两张 `FireSmok...` 纹理、`Noise_Til...` 噪声纹理、`Norm...` 法线纹理，以及多张 `Smoke_0...` 纹理。底部状态栏显示当前目录共有 `20 items`，且只选中了 `1` 张。右侧 `Outliner` 仍停留在 `Main (Editor) / Beach / Beach_Assemblies` 层级，没有切到车体或粒子对象。这个补充图的作用是确认：教程在正式做材质和火焰系统之前，已经把将要混合使用的关键纹理类别放在同一目录中统一挑选，其中至少包括火焰序列、烟雾纹理、噪声纹理和法线纹理，而 `Fire_14` 是当前被拿出来重点查看的一张火焰素材。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及蓝图、Sequencer 或 Montage 时，确认触发位置、触发时机、生命周期和销毁逻辑。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

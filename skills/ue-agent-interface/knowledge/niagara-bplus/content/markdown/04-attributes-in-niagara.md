@@ -1,0 +1,606 @@
+# 04 Attributes in Niagara
+
+# 04 Attributes in Niagara
+
+## 关键术语
+
+- `Module`、`Color`、`Scale Color`、`Scale Sprite Size`、`粒子`、`速度`、`NS_TestNiagara`、`Niagara`、`颜色`、`Niagara System`、`Emitter`、`Particle`、`Spawn Rate`、`Spawn`、`Initialize Particle`、`Lifetime`、`Alpha`、`Opacity`
+
+## 分段知识
+
+### 00:00:05-00:04:51 Module、Scale Sprite Size、速度
+
+- 本段定位：Module、Scale Sprite Size、速度。
+- 知识点：大家好,后续会谈论如何在一体体的生命中改变特征 我准备了准备制作的特征,像在最后一课的那些人一样 特征飞起来,它们很快就会显现,它们不看起来很好,它们显现了,它们就消失了。
+- 知识点：首先我们先把颜色选择选择 我们已经有特征更新了,您已经看到了它们在速度上的一部分 它们会做什么? 当它更新,它会改变了体体的特征 改变大小,颜色。
+- 知识点：需要用混测 以此为助,可以改变不同的特征 这怎么做? 我们先从大小开始 我们有一个 module 叫做 scale sprite size。
+- 知识点：我们把这个大小加倍 这种东西就立刻在这里了 有什么好奇的? 后续会自行制造形状 这是什么形状? 这是时间上重要的动作和调节管理工具 它们在时间上改变了这个调节管理工具。
+- 知识点：我们看到的,让我改变一下 开始时,颜色小了,在时间上变得更大 这里我们有0.0的开始值 最后,我们有1.1的价值 它从0到1,慢慢地在体体的生命中增长。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：Renderer 决定最终可见形态；Sprite、Mesh、Ribbon 的材质、朝向、排序和尺寸语义不同。
+- 核对对象：`Scale Sprite Size`、`速度`、`颜色`。
+
+**关键画面：**
+
+这是 `p30` 开头的基础系统状态图，表示教程先沿用上一课已经做好的现成粒子系统，再在其上讲新的尺寸变化模块。
+
+模块结构：
+
+- 发射器名称为 `Empty`
+- `Particle Spawn` 下当前可见：
+  - `Initialize Particle`
+  - `Shape Location`，标签为 `Sphere`
+  - `Add Velocity`，标签为 `Linear`
+- `Particle Update` 下当前可见：
+  - `Particle State`
+  - `Drag`
+  - `Curl Noise Force`
+  - `Solve Forces and Velocity`
+- `Render` 下使用 `Sprite Renderer`
+
+右侧当前展开模块：
+
+- `Particle State`
+- 可见选项：`Kill Particles When Lifetime Has Elapsed` 已启用
+
+输出/预览：
+
+- 左侧预览中的白色精灵粒子仍然是上一课延续下来的基础喷发效果，呈一小束向上漂浮的粒子流。
+- 这张图的作用是建立本页起点：并不是从空系统重新搭建，而是在已有 `Initialize Particle / Add Velocity / Drag / Curl Noise Force` 的基础上，继续讲 `Scale Sprite Size` 这类随粒子生命改变特征的模块。
+这张图已经把 `Scale Sprite Size` 加到 `Particle Update` 中，用粒子归一化寿命驱动精灵尺寸沿生命逐渐变大。
+
+模块结构变化：
+
+- `Particle Update` 下现在可见：
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Drag`
+  - `Curl Noise Force`
+  - `Solve Forces and Velocity`
+- 当前右侧展开模块：`Scale Sprite Size`
+
+`Scale Sprite Size` 可见设置：
+
+- `Scale Sprite Size Mode`：`Uniform Curve`
+- 使用的是 `Curve for Floats`
+- 曲线起点位于生命周期开始附近的较小值，终点接近 `1.0`，呈从左下到右上的线性上升趋势
+- `Uniform Curve Index`：`PARTICLES NormalizedAge`
+- `Uniform Curve Scale`：`1.0`
+
+输出/用途：
+
+- 左侧预览里，同一粒子流中可以看到有些粒子更小，有些粒子明显更大，说明尺寸已经随生命进程变化。
+- 这与正文“开始时小了，在时间上变得更大”“从 0 到 1，慢慢地在体体生命中增长”一致：粒子出生时尺寸较小，随着 `NormalizedAge` 接近 1，尺寸会逐步放大。
+这张图继续细化 `Scale Sprite Size` 的生命曲线，把生命周期末端的尺寸终值显著放大。
+
+`Scale Sprite Size` 可见设置：
+
+- `Scale Sprite Size Mode`：`Uniform Curve`
+- 使用 `Curve for Floats`
+- `Uniform Curve Index`：`PARTICLES NormalizedAge`
+- `Uniform Curve Scale`：`1.0`
+- 当前选中的曲线终点键值为：
+  - `Key Data X = 1.0`
+  - `Key Data Y = 5.0`
+- 曲线从起始接近 `0` 的较小值，线性增长到生命周期末端的 `5.0`
+
+模块上下文：
+
+- `Particle Update` 下仍保留 `Particle State`、`Scale Sprite Size`、`Drag`、`Curl Noise Force`、`Solve Forces and Velocity`
+
+输出/预览：
+
+- 左侧预览中，生命周期后段的粒子已经变成非常大的圆形发光精灵，和刚生成时的小粒子形成明显对比。
+- 这张图说明：只要把 `NormalizedAge=1` 时的曲线值提高，粒子就会在生命末端放大得更多。
+- 对应正文里“把这个大小加倍”“最后我们有 1.1 的价值，它从 0 到 1 慢慢增长”的讲法，这里展示的是同一机制的更强版本：尺寸沿生命曲线持续增长，且终点值可以被进一步放大。
+
+### 00:04:51-00:09:48 粒子
+
+- 本段定位：粒子。
+- 知识点：它们可以被编辑在这里 这样,价值就更大了 想象一下,这是全数学 价值从0到1 可以从2上升,然后价值从0到2 这个游戏的价值会增长2次。
+- 知识点：例如,如果从2上升 再加上0.5或0.1 这个游戏的价值会很小 这次,它们的价值是正常的 我们可观察到这里有一个描述 它们的生命是从0到1。
+- 知识点：是物体的生命 是生命 生命是物体的生命 它们的生命是从1到3 它们的年龄是多少 它们是生命,它们是生命 它们是生命,它们是生命 例如,它们会生命3秒。
+- 知识点：慢慢地,这个价值开始降低 从0到1 现在,我们谈谈正常的价值 为什么它们会这样 为什么需要用正常的价值 为什么它们会这样 因为它们很方便。
+- 知识点：我现在解释 它们可以在0到1时 把价值带到架子上 我可以抓紧拉和拉 但这会很不方便 因为我们不知这个流程 所以,正常的价值 一定是从0到1。
+- 知识点：需要比较容易去调整这一圈 我会展示 正常的结局 让它们更清楚 这些价值是25314 这是逐渐选择的 我们的粒子会怎么长?。
+- 知识点：通常粒子从0秒钟到这个数字中 有一个通常数学的方法 X 这是她怎么长的粒子 这是她的年龄 例如 她是生的 2秒钟过去 然后3秒钟过去 时间就慢慢地降下来。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+这张图继续围绕 `Scale Sprite Size` 解释为什么粒子模块常用 `NormalizedAge` 这个 `0-1` 区间来驱动曲线。
+
+模块上下文：
+
+- 当前展开模块：`Particle Update > Scale Sprite Size`
+- `Particle Update` 下仍可见：
+  - `Particle State`
+  - `Scale Sprite Size`
+  - `Drag`
+  - `Curl Noise Force`
+  - `Solve Forces and Velocity`
+
+`Scale Sprite Size` 可见设置：
+
+- `Scale Sprite Size Mode`：`Uniform Curve`
+- 使用 `Curve for Floats`
+- `Uniform Curve Index`：`PARTICLES NormalizedAge`
+- `Uniform Curve Scale`：`1.0`
+- 当前选中的起点键值仍位于：
+  - `Key Data X = 0.0`
+  - `Key Data Y = 0.0`
+- 曲线横轴固定用 `0` 到 `1` 的归一化区间表示粒子从出生到死亡的完整生命过程
+
+输出/用途：
+
+- 左侧预览中的粒子仍呈“出生较小、后段变大”的效果，但这张图的重点不在外观，而在曲线坐标的意义。
+- 结合正文“生命是从 0 到 1”“正常的价值一定是从 0 到 1，因为很方便”，这里说明：即使粒子真实寿命可能是 `1` 秒、`2` 秒或 `3` 秒，曲线控制时仍统一映射到 `NormalizedAge=0..1`，这样同一条曲线就能在不同寿命设置下复用。
+这张图不是 Niagara 编辑器截图，而是一张归一化原理示意图，用来解释为什么教程里反复强调把粒子生命映射到 `0-1` 区间。
+
+图中明确可见的信息：
+
+- 标题区写出一个示例数列：`[2, 5, 3, 1, 4]`
+- 步骤说明：
+  - 最小值 `min = 0`
+  - 最大值 `max = 10`
+- 归一化公式：
+  - `x_normalized = (x - min) / (max - min)`
+- 示例计算结果：
+  - `2 -> 0.2`
+  - `5 -> 0.5`
+  - `3 -> 0.3`
+  - `1 -> 0.1`
+  - `4 -> 0.4`
+- 底部给出的归一化结果列表：
+  - `[0.2, 0.5, 0.3, 0.1, 0.4]`
+
+与本段教程的对应关系：
+
+- 字幕明确强调“最小值总是 0”，这和教程里把粒子生命统一看作从 `0` 到 `1` 的 `NormalizedAge` 是同一类思路。
+- 这张图的作用不是提供 Niagara 模块参数，而是补充说明：无论真实寿命是 `1` 秒、`2` 秒还是 `3` 秒，都可以先做归一化，再用同一条 `0-1` 曲线去驱动尺寸、颜色或其他随生命变化的属性。
+这张图同样不是 Niagara 界面，而是一个 Desmos 图表页，用来把“真实寿命值”除以“总寿命值”后得到 `0-1` 归一化结果的过程可视化。
+
+图中明确可见的信息：
+
+- 页面标题：`Value Normalize | Desmos`
+- 左侧变量：
+  - `l = 2.87`
+  - `a = 0.001`
+  - 公式：`n = a / l`
+- 计算结果框：
+  - `n = 0.000348432055749`
+- 图中点位标注：
+  - `(0, 0)`
+  - `(0.001, 0)`
+  - `(2.87, 0)`
+
+与本段教程的对应关系：
+
+- 这张图是在用一个更接近“当前年龄 / 总寿命”的数学写法，说明真实秒数如何被压缩到 `0-1` 附近的归一化结果。
+- 结合正文“粒子的生命是从 1 到 3 秒”“正常的价值一定是从 0 到 1”，可将这里的变量理解为：
+  - `a`：某一时刻的实际年龄或当前取样值
+  - `l`：总寿命
+  - `n`：归一化后的比例值
+- 因此，这张图的用途是补充说明为什么 Niagara 里的 `PARTICLES NormalizedAge` 能稳定作为曲线横轴：它本质上就是把真实寿命进度换算成一个标准化比例。
+
+### 00:10:40-00:15:33 粒子
+
+- 本段定位：粒子。
+- 知识点：意思是对的 例如0.6和0.4是在中间 如果半生命的数字已经过了 我们怎么改变数字到1 例如 当数字会降至0 现在看看会发生什么 现在需要把它拿走。
+- 知识点：这样它会更好看 现在它可观察到 生命中的数字已经被生成 然后它会增长和减少 她的生命半段时间已经过了 不管她在那里生命多久 从1到5时 她会慢慢地减少。
+- 知识点：这就是有趣的形态 其他什么都可以做 它们是线的 如果我跳过这个键 它叫键 它可以用测试器 可以加多少 编辑 动 可以按右边的键盘 按Alt 它开始把它们滑出来。
+- 知识点：它会滑出来 很轻松的转移 可观察到这些线条 和这些线条的编辑 可以按这里 这里可以按这里 这里可以按这里 可以按这里改变 例如 按这里 这是键盘。
+- 知识点：这是可以改变的方式 例如 这个快速增长 然后它会慢慢地减少 如果我们想把它们分开 这里可以按按断 现在它们会分开 不仅仅是它们 看到它们是组成的组成。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+这是在 `Particle Update > Scale Sprite Size` 中继续编辑 `Uniform Curve` 的中间键值，目标是让粒子尺寸先增长、再进入后半段收缩。
+
+- 当前模块与索引：
+  - `Scale Sprite Size Mode = Uniform Curve`
+  - `Uniform Curve Index = PARTICLES NormalizedAge`
+  - `Uniform Curve Scale = 1.0`
+- 曲线状态：
+  - 曲线使用 `Curve for Floats`
+  - 当前选中的是中间键，`Key Data X = 0.5`
+  - 当前选中键的 `Key Data Y = 0.875`
+  - 曲线从左下起点上升到中段，再继续连向右端键，说明粒子在半生命附近已经接近最大尺寸
+- 当前发射器堆栈可见项：
+  - `Emitter Update`: `Emitter State`, `Spawn Rate`
+  - `Particle Spawn`: `Initialize Particle`, `Shape Location (Sphere)`, `Add Velocity (Linear)`
+  - `Particle Update`: `Particle State`, `Scale Sprite Size`, `Drag`, `Curl Noise Force`, `Solve Forces and Velocity`
+  - `Render`: `Sprite Renderer`
+- 预览结果：
+  - 左侧预览中粒子呈零散白色光点
+  - 这一步强调通过中段键控制“增长到何时接近峰值”，而不是只用起点和终点做线性变化
+这一帧展示的是 `Scale Sprite Size` 曲线被改成“先快速增大，在半生命后逐步减小”的完整形状，配合 `NormalizedAge` 后，任意寿命长度的粒子都会按同一节奏完成放大与收缩。
+
+- 当前模块：
+  - `Particle Update > Scale Sprite Size`
+  - `Scale Sprite Size Mode = Uniform Curve`
+  - `Uniform Curve Index = PARTICLES NormalizedAge`
+  - `Uniform Curve Scale = 1.0`
+- 曲线编辑结果：
+  - 曲线名显示为 `Uniform Curve Sprite Scale`
+  - 可见 3 个关键键位：
+    - 起点位于左下，接近 `(0, 0)`
+    - 中段峰值位于 `X = 0.5` 附近，`Y` 接近 `1`
+    - 终点位于右侧，`Y` 回落到接近 `0`
+  - 曲线切线是平滑样条，不是折线，因此尺寸变化表现为平缓过渡
+- 语义效果：
+  - 粒子刚生成时尺寸接近 0
+  - 生命周期前半段迅速变大，到中段附近达到最大
+  - 生命周期后半段逐渐缩小并接近消失
+- 预览与编辑界面：
+  - 下方 `Curves` 面板已展开，树中选中 `Scale Sprite Size > Uniform Curve Sprite Scale > Curve for Floats`
+  - 左侧预览仍是少量白色粒子，图中主要强调的是曲线形状本身
+这一帧把 `Scale Sprite Size` 的曲线进一步调成“前段长时间保持很小，中后段快速放大，之后平滑衰减”的 S 形上升加缓降结构，用来制造更明显的先聚后散节奏。
+
+- 当前模块：
+  - `Particle Update > Scale Sprite Size`
+  - `Scale Sprite Size Mode = Uniform Curve`
+  - `Uniform Curve Index = PARTICLES NormalizedAge`
+  - `Uniform Curve Scale = 1.0`
+- 曲线形状：
+  - 起点仍在左下角，尺寸从接近 `0` 开始
+  - 中段关键点仍位于 `X = 0.5` 附近，峰值接近 `1`
+  - 上升段不再是均匀斜线，而是先平缓、后陡升，形成明显的 S 形过渡
+  - 下降段从峰值处向右侧平滑回落，到末端接近 `0`
+  - 光标提示可见曲线采样点约为 `Time = 0.6`、`Value = 0.936`
+- 可见发射器状态：
+  - `Emitter Update` 中可见 `Spawn Burst Instantaneous`
+  - `Particle Update` 仍包含 `Particle State`、`Scale Sprite Size`、`Drag`、`Solve Forces and Velocity`
+  - `Sprite Renderer` 仍保留在 `Render` 段
+- 预览结果：
+  - 左侧预览出现单个较大的亮色精灵，说明此时示例粒子已进入放大阶段
+  - 这一版曲线更适合做“先积蓄、后显现、再衰减”的粒子尺寸节奏
+
+### 00:15:33-00:20:18 Color、Scale Color、粒子
+
+- 本段定位：Color、Scale Color、粒子。
+- 知识点：它可以伸展成这样 你也可以删除这些键 例如 需要要一块粒子被删掉 然后它在这点上 快速地增长 然后慢慢地减少到0 如果我适当提升这个数字 它不会达到0。
+- 知识点：我们已经删除了数字 例如 除了数字 我们还想改变色彩 但我还是想要展示粒子 可以把它设定好 我们加了一个强度 或者设定到15 记得 这就是一个这种东西。
+- 知识点：不粒子 粒子会同时改变 不粒子是x和y 改变分别 一块粒子出现了 这使它能够分开 分开分开删除 每个删除只有y 纯是x 绿是y 例如 需要它伸展 看看结果。
+- 知识点：可以加更多块粒子 然后删掉 把它们滑溜 现在它增加上去 然后下去 然后它再下降 可以分开编辑 已经制作的图片 全部删除了 这里增加了 主要是把这个编辑。
+- 知识点：正确认 让这个半生 从Y线增长到最高 而X线会慢慢增长 因此 可以分开编辑 或者可以分开编辑 可以在这里改变色彩 这里没有色彩 如果这个编辑是低的。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Color`、`Scale Color`、`粒子`。
+
+**关键画面：**
+
+这一帧仍在 `Particle Update > Scale Sprite Size` 中演示另一种尺寸曲线：粒子生成后只短暂放大一点，随后逐步缩小，用来说明曲线可以控制“出现一下就收掉”的节奏。
+
+- 当前模块：
+  - `Scale Sprite Size Mode = Uniform Curve`
+  - `Uniform Curve Index = PARTICLES NormalizedAge`
+  - `Uniform Curve Scale = 1.0`
+- 可见发射器堆栈：
+  - `Emitter Update`: `Emitter State`, `Spawn Burst Instantaneous`
+  - `Particle Spawn`: `Initialize Particle`, `Shape Location (Sphere)`, `Add Velocity (Linear)`
+  - `Particle Update`: `Particle State`, `Scale Sprite Size`, `Drag`, `Curl Noise Force`, `Solve Forces and Velocity`
+  - `Render`: `Sprite Renderer`
+- 曲线形状：
+  - 曲线名仍为 `Uniform Curve Sprite Scale`
+  - 起点位于左下角附近，表示粒子生成时尺寸接近 0
+  - 中段只有一个较低的小幅峰值，说明不会放大得很明显
+  - 右端键继续回落，末端接近 0
+  - 下方曲线图还能看到末段已被拖到横轴下方，说明演示者在尝试让衰减更明显
+- 预览结果：
+  - 左侧只显示单个小型亮点粒子
+  - 这一版更偏向“粒子刚出生时略有存在感，然后很快缩回去”的尺寸变化
+这一帧把 `Scale Sprite Size` 从统一缩放改成了 `Non-Uniform Curve`，开始分别控制精灵的 `X` 与 `Y` 尺寸，让粒子在生命周期内可以沿单一方向被拉长。
+
+- 当前模块：
+  - `Particle Update > Scale Sprite Size`
+  - `Scale Sprite Size Mode = Non-Uniform Curve`
+  - 曲线类型显示为 `Curve for Vector2D's`
+  - `Non-Uniform Curve Index = PARTICLES NormalizedAge`
+  - `Non-Uniform Curve Scale = X 1.0, Y 1.0`
+- 节点/曲线通道：
+  - 红色通道是 `X`
+  - 绿色通道是 `Y`
+  - 当前选中并编辑的是绿色 `Y` 通道
+- 可见关键值：
+  - 光标提示显示当前点为 `Name: Y`
+  - `Time = 0.5`
+  - `Value = 0.45`
+  - `Key Data` 一栏可见 `0.5` 与 `0.225`
+- 曲线语义：
+  - `Y` 通道从 0 附近上升后保持在较高平台
+  - `X` 通道基本贴近 0 轴，没有明显增幅
+  - 这表示粒子会主要沿 `Y` 方向变大，而不是等比放大成圆形
+- 编辑界面：
+  - 下方 `Curves` 面板树中显示 `Scale Sprite Size > Non-Uniform Curve Sprite Scale > Curve for V...`
+  - 左侧预览未显示明显粒子形态，当前画面重点是二维尺寸曲线的独立控制方式
+这一帧引入 `Particle Update > Scale Color`，把颜色缩放与透明度缩放拆开控制：`RGB` 保持常量，`Alpha` 用一条从 1 下降到接近 0 的曲线，让粒子在生命周期内逐渐淡出。
+
+- 当前模块：
+  - `Particle Update` 中已新增 `Scale Color`
+  - `Scale Mode = RGB and Alpha Separately`
+  - `Scale RGB = 1.0, 1.0, 1.0`
+  - `Scale Alpha = Float from Curve`
+- Alpha 曲线设置：
+  - 曲线类型为 `Curve for Floats`
+  - `CurveIndex = PARTICLES NormalizedAge`
+  - `Scale Curve = 1.0`
+  - 曲线从左上起点开始，`Key Data` 可见起点为 `0.0, 1.0`
+  - 曲线沿生命周期向右逐步下降，末端接近 `0.2` 左右，表示透明度持续衰减但并未完全归零
+- 可见堆栈状态：
+  - `Emitter Update`: `Emitter State`, `Spawn Burst Instantaneous`
+  - `Particle Update`: `Particle State`, `Scale Sprite Size`, `Scale Color`, `Drag`, `Curl Noise Force`, `Solve Forces and Velocity`
+  - `Render`: `Sprite Renderer`
+- 预览结果：
+  - 左侧可见单个浅蓝偏白的粒子精灵
+  - 这一步的核心不是改色相，而是让粒子随着年龄增长逐渐变透明
+
+### 00:20:18-00:24:57 关键流程 05
+
+- 本段定位：关键流程 05。
+- 知识点：减少 从 但是可以调整色彩 例如它慢慢变色 这里有准备制作的编辑 慢慢变色 同样地消失 它开始变色 达到最高 慢慢变色 这就是可以 调整色彩的方式。
+- 知识点：我会展示 需要有什么分别 需要把所有色彩都调掉 需要把刷子和刷出刷子的分开 变色彩变色 我们把软色的变色 全部都调了 exported。
+- 知识点：那是变色的分开 它们都变色的 我们也会调整色彩 所以现在需要把 方向笔的分开 从此把分开 把色彩都调过 还可以弄一把 这可以使得 变色彩更加光亮。
+- 知识点：在这种形态 如果我把15分开 15倍亮面,或是0.1倍亮面 我们想象一下,需要从这个流程中 从时间线上到时间线上 这样它们会亮面,而不亮面。
+- 知识点：在时间上 例如,我不想它们变成线性 试图避免线性 让它们亮面在开始 然后在时间上消失 可以在这里打开来看看 15倍亮面,这样资格不从1到0。
+
+**关键画面：**
+
+这一帧切到 Niagara 时间线与 `Emitter State` 详情面板，演示如何把发射器设置成只播放一次，并用固定循环时长决定这一轮粒子何时结束。
+
+- 当前关注模块：
+  - `Emitter Update > Emitter State`
+  - 时间线面板已展开，用于查看当前发射器片段时长
+- `Emitter State` 可见设置：
+  - `Life Cycle Mode = Self`
+  - `Inactive Response = Complete (Let Particles Finish then Kill)`
+  - `Loop Behavior = Once`
+  - `Loop Duration Mode = Fixed`
+  - `Loop Duration = 1.0`
+  - `Loop Delay = 0.0`
+- 时间线信息：
+  - 当前播放头位于约 `0.11`
+  - 发射器轨道名为 `Empty`
+  - 提示框可见该片段范围为 `0 - 240 (240 frames)`
+- 可见堆栈上下文：
+  - `Emitter Update`: `Emitter State`, `Spawn Burst Instantaneous`
+  - `Particle Update`: `Particle State`, `Scale Sprite Size`, `Scale Color`, `Drag`, `Solve Forces and Velocity`
+- 结果语义：
+  - 发射器只执行一轮，不会无限重复
+  - 停止发射后，已有粒子会自然播放完再被清理，而不是立刻硬切掉
+这一帧回到关卡视口检查实际显示效果，用来对比调亮后的粒子在场景中的观感。可见结果是粒子团呈明显的高亮绿色发光点，亮度远高于此前的淡色单粒子示例。
+
+- 场景与对象：
+  - 关卡为 `Level_Stylized`
+  - Outliner 中选中的是 `NS_TestNiagara2`
+  - 选中对象类型显示为 `NiagaraActor`
+  - 右侧 `Details` 中可见实例为 `NS_TestNiagara2 (Instance)`
+- 可见组件与属性：
+  - 挂载组件：`NiagaraComponent (NiagaraComponent0)`
+  - `Niagara System Asset` 显示为 `NS_TestNi...`
+  - `Niagara Tick Behavior = Use Prereqs`
+  - `Allow Scalability` 已勾选
+  - `Auto Activate` 已勾选
+- 位姿信息：
+  - `Location ≈ (34.976, 592.61, 193.61)`
+  - `Rotation = (0, 0, 0)`
+  - `Scale = (1.0, 1.0, 1.0)`
+- 画面结果：
+  - 视口中央出现一团绿色和青白色混合的亮点粒子
+  - 与字幕信息一致，这一步是在观察“提高亮度后”的最终场景表现，而不是继续编辑曲线
+这一帧回到 `Particle Spawn > Initialize Particle`，打开 `Color Mode` 下拉菜单，比较不同颜色初始化方式。画面语义是：当前使用的随机颜色并没有得到理想结果，因此需要改用别的颜色分配模式。
+
+- 当前模块：
+  - `Particle Spawn > Initialize Particle`
+  - `Lifetime Mode = Direct Set`
+  - `Lifetime = Random Range Float`
+  - `Minimum = 1.0`
+  - `Maximum = 1.0`
+- 颜色相关设置：
+  - `Color Mode = Random Range`
+  - `Color Minimum`、`Color Maximum` 字段可见，但当前未展开具体颜色值
+  - `Color Mode` 下拉菜单已打开，可选项包括：
+    - `Unset`
+    - `Direct Set`
+    - `Random Range`
+    - `Random Hue/Saturation/Value`
+- 同屏可见的其他初始化属性：
+  - `Position Mode` 下带有 `Position Offset = (0.0, 0.0, 0.0)`
+  - `Sprite Size Mode = Random Uniform`
+  - `Uniform Sprite Size Min = 5.0`
+  - `Uniform Sprite Size Max = 5.0`
+- 预览结果：
+  - 左侧预览里粒子呈浅绿到亮绿的随机分布
+  - 结合字幕“does not give us what we need”，这一帧表达的是：当前 `Random Range` 随机颜色方案不满足目标效果，需要继续调整颜色模式或颜色控制流程
+
+### 00:24:57-00:29:33 关键流程 06
+
+- 本段定位：关键流程 06。
+- 知识点：我们看到它们慢慢从青到红 我们还可以加一些色彩 有时候它们会掉落 我真的不喜欢这个模式 这个阻值 这是一个动画的游戏 它只是转换了 但我真的不喜欢。
+- 知识点：好 上面有色彩 下面有亮面 亮面是从1到0 可以加在这里 所以它们变成1 然后突然消失了 这些阻值 如果你们只想改变色彩 那可能还可以 我通常试着。
+- 知识点：调整线索 而不是线条 可观察到它们更好 尤其是当你用色彩 所以试着用它们 我们明白了 你不仅可以改变色彩和尺寸 可以用时间去编辑任何东西。
+- 知识点：比如说,有重力 或者是拉键 我们想要变化 我们还想要什么 我做了一张写像 这里可以数数 可以选择这个数字 但需要再次数数 当它选择了 如果它是1。
+- 知识点：那它基本上是一样的 如果我把这个数字 从5到10来做一个线 这些是非常大的数字 这个线 它是数数的 如果我数到0 那所有数字都会是0 但我例如。
+
+**关键画面：**
+
+这一帧把 `Particle Update > Scale Color` 切换为线性颜色曲线模式，不再只单独控制透明度，而是让粒子在生命周期中同时发生颜色渐变。
+
+- 当前模块：
+  - `Particle Update > Scale Color`
+  - `Scale Mode = RGBA Linear Color Curve`
+  - 曲线资源类型显示为 `Curve for Colors`
+  - `Curve Index = PARTICLES NormalizedAge`
+- 颜色条状态：
+  - 顶部颜色条左端是青蓝色键
+  - 中间有一段洋红/粉色过渡区域
+  - 右端逐渐过渡到接近白色
+  - 说明粒子会按生命周期从冷色调过渡到偏暖/偏亮的颜色
+- 可见堆栈上下文：
+  - `Emitter Update`: `Emitter State`, `Spawn Rate`
+  - `Particle Spawn`: `Initialize Particle`, `Shape Location (Sphere)`, `Add Velocity (Linear)`
+  - `Particle Update`: `Particle State`, `Scale Sprite Size`, `Scale Color`, `Drag`, `Solve Forces and Velocity`
+  - `Render`: `Sprite Renderer`
+- 预览结果：
+  - 左侧预览里粒子同时出现白色、浅黄、粉色等多种颜色
+  - 这一帧强调“粒子年龄可以驱动整条颜色渐变”，而不只是做亮度或透明度衰减
+这一帧切换到 `Particle Update > Drag`，演示把阻力值做成“随机基础值，再乘一个随年龄变化的曲线”，从而让粒子运动阻尼也能随时间发生变化。
+
+- 当前模块：
+  - `Particle Update > Drag`
+  - `Drag = Multiply Float`
+- 输入结构：
+  - `A = Random(0.25, 1)`
+  - `B = Float from Curve`
+  - 说明最终拖拽值由随机数与时间曲线相乘得到
+- `B` 的曲线设置：
+  - 曲线类型为 `Curve for Floats`
+  - `CurveIndex = PARTICLES NormalizedAge`
+  - `Scale Curve = 1.0`
+  - 可见曲线从左侧高值开始，沿生命周期线性下降到右侧接近 `0`
+  - 这表示粒子刚生成时阻力较大，随着年龄增加阻力逐渐减弱
+- 其他可见参数：
+  - `Rotational Drag = 1.0`
+- 可见堆栈上下文：
+  - `Particle Update`: `Particle State`, `Scale Sprite Size`, `Scale Color`, `Drag`, `Curl Noise Force`, `Solve Forces and Velocity`
+- 预览结果：
+  - 左侧预览里粒子恢复为白色点状显示
+  - 当前画面重点不是颜色，而是把数值模块参数接到年龄曲线上的做法
+这一帧切到 `Particle Update > Curl Noise Force`，演示噪声力强度也可以做成随机范围，而不是固定常量。这样每个粒子的受力幅度可以在生成时就产生差异。
+
+- 当前模块：
+  - `Particle Update > Curl Noise Force`
+- 可见设置：
+  - `Noise Strength = Random Range Float`
+  - `Minimum = 50.0`
+  - `Maximum = 100.0`
+  - `Evaluation Type = Spawn Only`
+  - `Noise Frequency = 100.0`
+  - `Noise Quality / Cost = Baked (Medium)`
+  - `Pan Noise Field = (0.0, 0.0, 1.0)`
+  - `Mask Curl Noise` 未勾选
+- 设置语义：
+  - `Spawn Only` 表示随机噪声强度只在粒子生成时取样一次
+  - 每个粒子的卷曲噪声力会落在 `50` 到 `100` 之间
+  - 这会让同一批粒子在轨迹摆动与漂移幅度上出现个体差异
+- 可见堆栈上下文：
+  - `Particle Update`: `Particle State`, `Scale Sprite Size`, `Scale Color`, `Drag`, `Curl Noise Force`, `Solve Forces and Velocity`
+- 预览结果：
+  - 左侧白色粒子分布更松散，部分粒子已被抬升到更高位置
+  - 这一帧强调的是“力也能被参数化并随机化”，不是单纯继续调颜色或尺寸
+
+### 00:29:33-00:30:26 粒子
+
+- 本段定位：粒子。
+- 知识点：例如可以把线数数到200 我们想它们从0到200提升 可以做一个这种线 或者例如500 粒子出现了。
+- 知识点：没有任何的影响 你能把它做成 没有任何的影响 力量开始从上方深层影响 这是你能够编辑不同的额值 不同的专项和模具 这是动画线的方法 这就是 感谢观看 PackPack。
+- 核对对象：`粒子`。
+
+**关键画面：**
+
+这一帧继续在 `Particle Update > Curl Noise Force` 中把 `Noise Strength` 改成年龄曲线控制，并打开关键帧的切线类型菜单，说明噪声力不必线性变化，可以用不同插值方式塑形。
+
+- 当前模块：
+  - `Particle Update > Curl Noise Force`
+  - `Noise Strength = Float from Curve`
+  - 曲线类型：`Curve for Floats`
+- 可见参数：
+  - `CurveIndex` 字段可见但当前值被菜单部分遮挡
+  - `Scale Curve`、`Noise Frequency`、`Noise Quality / Cost` 位于曲线区域下方
+  - `Pan Noise Field` 已启用
+  - `Mask Curl Noise` 未勾选
+- 曲线编辑状态：
+  - 当前选中了曲线上的一个红色键点
+  - 已打开键点右键菜单，可见切线/插值相关选项：
+    - `Auto`
+    - `User`
+    - `Break`
+    - `Linear`
+    - `Constant`
+  - 这表示当前在调整噪声强度随生命周期变化时，还可以进一步控制曲线切线和平滑方式
+- 预览结果：
+  - 左侧预览中白色粒子分散悬浮
+  - 画面重点是编辑曲线的形状控制方式，而不是观察最终颜色或尺寸
+这一帧展示 `Curl Noise Force` 年龄曲线调整后的结果：噪声强度在粒子前期保持较低，接近生命周期末端时快速升高，用来让后半程运动更明显。
+
+- 当前模块：
+  - `Particle Update > Curl Noise Force`
+  - `Noise Strength = Float from Curve`
+  - 曲线类型：`Curve for Floats`
+- 可见参数：
+  - `CurveIndex = PARTICLES NormalizedAge`
+  - `Scale Curve = 500.0`
+  - `Noise Frequency = 100.0`
+  - `Noise Quality / Cost = Baked (Medium)`
+  - `Pan Noise Field = (0.0, 0.0, 1.0)`
+  - `Mask Curl Noise` 未勾选
+- 曲线形状：
+  - 起点位于左侧低值区域
+  - 中段大部分时间曲线接近水平，说明前半程噪声变化不大
+  - 末端明显上扬，并在右端达到较高点
+  - `Key Data` 可见末端选中键为 `1.0, 1.0`
+  - 结合 `Scale Curve = 500.0`，表示归一化曲线末端会被放大到很高的实际噪声强度
+- 预览结果：
+  - 左侧粒子仍以白色点状显示，分布较散
+  - 这一版更强调“后半程受力增强”，用于在生命周期末段制造更强扰动
+这一帧再次回到 `Particle Update > Drag`，用另一条年龄曲线说明同样的“按时间塑形”方法可以应用到阻力等任意数值参数，而不局限于颜色、尺寸或噪声。
+
+- 当前模块：
+  - `Particle Update > Drag`
+  - `Drag = Float from Curve`
+  - 曲线类型：`Curve for Floats`
+- 可见参数：
+  - `CurveIndex = PARTICLES NormalizedAge`
+  - `Scale Curve = 10.0`
+  - `Rotational Drag = 1.0`
+- 曲线形状：
+  - 起始键位于 `X = 0.1`、`Y = 1.15`
+  - 曲线先快速抬升到前段高值平台
+  - 中后段逐步下降
+  - 末端回落到接近起始低值
+  - 这表示粒子在生成后不久会进入较高阻力阶段，随后阻力逐渐减弱
+- 可见堆栈上下文：
+  - `Particle Update`: `Particle State`, `Scale Sprite Size`, `Scale Color`, `Drag`, `Curl Noise Force`, `Solve Forces and Velocity`
+- 预览结果：
+  - 左侧白色粒子持续向上散开
+  - 这一帧的核心结论是：Niagara 中几乎所有数值型属性都可以挂接 `NormalizedAge` 曲线，按生命周期进行非线性控制
+
+## 补充视觉证据
+
+### S01 00:01:26
+
+这是 `S01 00:01:26` 的补充参数截图，用来补证教程开头系统的初始粒子参数，以及在模块搜索框中准备添加 `Scale Sprite Size` 的操作。
+
+- 当前发射器堆栈：
+  - `Emitter Update`: `Emitter State`, `Spawn Rate`
+  - `Particle Spawn`: `Initialize Particle`, `Shape Location (Sphere)`, `Add Velocity (Linear)`
+  - `Particle Update` 此时尚未展开新尺寸模块
+- `Initialize Particle` 可见参数：
+  - `Lifetime Mode = Direct Set`
+  - `Lifetime = Random Range Float`
+  - `Minimum = 1.0`
+  - `Maximum = 3.0`
+  - `Color Mode = Random Range`
+  - `Color Minimum` 为青蓝色范围
+  - `Color Maximum` 为黄绿色范围
+  - `Color Channel Mode = Link RGB / Link A`
+  - `Position Mode = Simulation Position`
+  - `Position Offset = (0.0, 0.0, 0.0)`
+  - `Sprite Size Mode = Random Uniform`
+  - `Uniform Sprite Size Min = 1.0`
+  - `Uniform Sprite Size Max = 5.0`
+- 添加模块操作：
+  - 已打开 `Add new Module` 搜索面板
+  - 搜索词为 `scale sprite s`
+  - 结果列表中高亮的是 `Scale Sprite Size`
+  - 说明这一步是在为后续 `Particle Update` 添加尺寸控制模块
+- 预览结果：
+  - 左侧预览里是青白色小粒子团
+  - 该截图的主要价值是参数留档与模块添加入口，而不是展示最终效果
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

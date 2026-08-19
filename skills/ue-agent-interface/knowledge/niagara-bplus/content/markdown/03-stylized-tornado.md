@@ -1,0 +1,1433 @@
+# 03 Stylized Tornado
+
+# 03 Stylized Tornado
+
+## 关键术语
+
+- `Emitter`、`System`、`Spawn`、`Lifetime`、`Color`、`Alpha`、`Collision`、`Material`、`Material Instance`、`Niagara`、`Normalized Age`、`Curve`、`Fresnel`、`Multiply`、`Add`、`生命周期`、`Niagara System`、`Particle`
+
+## 分段知识
+
+### 00:00:05-00:02:49 Color、Material、Material Instance
+
+- 本段定位：Color、Material、Material Instance。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：从基础材质创建 Material Instance 后，用实例参数控制颜色、透明度和纹理变体。；材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Color`、`Alpha`、`Opacity`、`Material`、`Add`、`Panner`、`Emissive`、`材质`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 新场景切换起始图
+> - 组成部分: 关卡主视口 + 内容浏览器 `Maps` 目录 + Outliner/Actor Details
+> - 所属: `Level_Stylized` 与 `NS_Tornado`
+> - 目的: 进入新教程页面时切换到目标关卡/地图，为后续新的颜色、材质和 Niagara 调整准备独立场景
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 关卡环境图 | 当前关卡 | 画面是黑色天空与蓝紫色地面中心亮斑，当前未突出显示具体特效主体 | 作为后续新效果调试的基础环境 |
+> | 下方 | 内容浏览器 | `VFX_Library/Maps` | 可见 `Level_Realistic`、`Level_Stylized`、`Stylized_WaterSplash`、`Stylized_Wisps` 以及一个当前高亮的关卡资源卡片 | 说明作者正在从多个关卡里选择或切换当前工作场景 |
+> | 右上 | Outliner | 当前关卡 | 当前选中 `NS_Tornado` 这一 `NiagaraActor` | 表明旧龙卷系统仍在场景中，后续可能继续复用 |
+> | 右侧 | Actor Details | `NS_Tornado (Instance)` | 可见 `Transform` 保持 `Location/Rotation/Scale` 默认值，`Niagara System=NS_Tornado`，`Auto Activate` 已启用 | 说明场景切换时仍保留这个 Niagara Actor 作为演示对象 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Selected Folder` | `VFX_Library/Maps` | 内容浏览器 | 在地图资源之间切换 |
+> | `Selected Actor` | `NS_Tornado` | Outliner / 详情 | 当前场景中联调对象 |
+> | `Niagara System` | `NS_Tornado` | Actor Details | 指定实际播放的 Niagara 系统 |
+> | `Auto Activate` | Enabled | Actor Details | 进入场景即自动运行 |
+>
+> 输出/观察:
+> - 字幕说“命名它。我们去这里。我们还将改变场景”，而这张图就是切换/选择场景的直接证据
+> - 这说明 `p54` 开篇先不是立刻改节点，而是先整理工作关卡，再在该环境里继续演示材质和颜色
+> 图表转写（UE-GTXT v4）
+> - 类型: 场景地面材质整理图
+> - 组成部分: 关卡主视口 + 内容浏览器 `Levels` 目录 + Outliner/Actor Details
+> - 所属: `Stylized_Tornado` 关卡中的 `Floor`
+> - 目的: 继续整理新场景的环境材质，特别是地面和后处理相关资源，为后续颜色/材质演示提供合适的背景和承托面
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 关卡环境图 | `Stylized_Tornado` | 视口中央只有一个蓝紫色地面高光区，当前没有明显特效主体；地面 `Floor` 被黄色选框框住 | 说明当前在先调整环境而不是特效主体 |
+> | 下方 | 内容浏览器 | `VFX_Library/Misc/Levels` | 可见一组地面与后处理资源，如 `M_BasicMapGround`、`MI_BasicMapGround_*`、`MI_PP_Stylized_*`、`PP_MI_Toon`、`PPM_DepthFog_*` 等 | 这些资源共同决定新场景的地面外观与氛围 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 选中对象为 `Floor`，同层还可见 `DirectionalLight`、`ExponentialHeightFog`、`PostProcessVolume`、`SkyAtmosphere`、`NS_Tornado` 等 | 表示环境光、雾和后处理也会参与后续成片 |
+> | 右侧 | Actor Details | `Floor (Instance)` | `Transform.Scale X/Y/Z=5000.0`；`Static Mesh=Plane`；材质元素使用 `MI_BasicMapGround_Styl...` | 说明这是一个大面积平面地面，通过材质实例决定底色和反衬效果 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Selected Actor` | `Floor` | Outliner / 详情 | 当前被调的环境对象 |
+> | `Transform.Scale` | `5000 / 5000 / 5000` | Actor Details | 扩成大面积地面承托场景 |
+> | `Static Mesh` | `Plane` | Actor Details | 使用简单平面作为地面 |
+> | `Material Element 0` | `MI_BasicMapGround_Styl...` | Actor Details | 决定地面颜色和明暗氛围 |
+>
+> 输出/观察:
+> - 这张图说明“改变场景”不仅是换地图名，还包括重新挑选并绑定地面/后处理材质资源
+> - 当前关卡把 `Floor` 单独拿出来调，意味着后续特效颜色会明显依赖这个地面背景的对比度
+> 图表转写（UE-GTXT v4）
+> - 类型: 场景雾效氛围调节图
+> - 组成部分: 关卡主视口 + 内容浏览器 `Levels` 目录 + Outliner/Actor Details
+> - 所属: `Stylized_Tornado` 关卡中的 `ExponentialHeightFog`
+> - 目的: 在新场景里继续调环境雾效，让地面和远处背景形成更柔和的蓝紫色氛围，为后续颜色特效提供合适的衬托
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 关卡环境图 | `Stylized_Tornado` | 画面里只保留蓝紫色地面和中心偏亮区域，整体对比比上一张更柔，空气感更明显 | 用来判断雾效是否把场景压到合适的氛围 |
+> | 下方 | 内容浏览器 | `VFX_Library/Misc/Levels` | 仍能看到 `MI_BasicMapGround_*`、`MI_PP_Stylized_*`、`PPM_DepthFog_*` 等环境材质 | 表明雾效调整与后处理/地面材质是同一组环境资源的一部分 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 当前高亮 `ExponentialHeightFog`；同层仍有 `Floor`、`PostProcessVolume`、`SkyAtmosphere`、`NS_Tornado` | 说明作者正在直接调雾对象，而不是材质实例 |
+> | 右侧 | Actor Details | `ExponentialHeightFog (Instance)` | `Transform.Location ≈ (520, 7720, 1240)`；`Scale=1.0`；`Fog Density=0.3`；`Fog Height Falloff=0.001`；`Second Fog Density=0.0`；`Second Fog Height Falloff=0.2`；底部可见 `Sky Atmosphere` 颜色条 | 这些参数共同控制场景空气雾的厚度与垂直衰减 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Selected Actor` | `ExponentialHeightFog` | Outliner / 详情 | 当前被调的环境体积对象 |
+> | `Transform.Location` | `520 / 7720 / 1240` | Actor Details | 决定雾体在关卡中的放置位置 |
+> | `Fog Density` | `0.3` | Actor Details | 调整整体雾浓度 |
+> | `Fog Height Falloff` | `0.001` | Actor Details | 让雾在高度方向衰减得非常缓慢 |
+> | `Second Fog Density` | `0.0` | Actor Details | 当前不叠加第二层雾 |
+> | `Second Fog Height Falloff` | `0.2` | Actor Details | 保留第二层雾的预设衰减值但未启用 |
+>
+> 输出/观察:
+> - 这张图说明 `p54` 开头的“改变场景”还包括 Atmosphere/Fog 层面的处理，而不只是换地面材质
+> - 通过把 `Fog Density` 拉到 `0.3` 且 `Fog Height Falloff` 降到很小，场景获得了均匀的蓝紫色雾幕，这会明显影响后续材质颜色的观感
+
+### 00:02:49-00:05:43 Color、Add
+
+- 本段定位：Color、Add。
+- 知识点：角色或镜头演示需要导入 FBX/骨骼/动画，并用 Sequencer 校准触发时机。
+- 知识点：素材下载或导入后应整理到明确文件夹，避免 Niagara、材质和贴图引用混乱。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Niagara`、`Color`、`Drag`、`Sequencer`、`Add`、`材质`、`贴图`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 场景天空颜色调节图
+> - 组成部分: 关卡主视口 + 内容浏览器 `Levels` 目录 + `SkyAtmosphere` 详情面板 + 颜色选择器
+> - 所属: `Stylized_Tornado` 关卡中的 `SkyAtmosphere`
+> - 目的: 在新场景里先把天空/环境整体色相压到偏暗冷色，再作为后续 `Add` 与材质颜色叠加的背景基线
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景环境图 | `Stylized_Tornado` | 画面整体是暗蓝紫色地面与更暗的天空，上方对比明显降低 | 用于观察天空颜色调整后的全局氛围 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 当前选中 `SkyAtmosphere`；同层仍有 `ExponentialHeightFog`、`Floor`、`PostProcessVolume`、`NS_Tornado` | 说明作者正在调环境天光对象 |
+> | 右侧 | Actor Details | `SkyAtmosphere (Instance)` | `Transform.Location ≈ (1180, 6830, 300)`；`Planet Transform Mode = Planet Top at Absolute World Origin`；`Ground Radius=1.0`；`Atmosphere Height=200.0`；`MultiScattering=1.0` | 这些值定义天空大气的基础模型 |
+> | 中央下方 | 颜色选择器 | Color Picker | 当前颜色为近黑灰色；`R=G=B=0.078125`；`Hex Linear=141414FF`；`Hex sRGB=4F4F4FFF`；启用 `sRGB Preview` | 说明作者正把某个大气相关颜色压到低亮度中性灰 |
+> | 下方 | 内容浏览器 | `VFX_Library/Misc/Levels` | 仍显示一组地面与后处理材质实例资源 | 表明环境色调整与关卡资源整理是同步进行的 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Color Picker.R/G/B` | `0.078125 / 0.078125 / 0.078125` | 颜色选择器 | 将目标颜色压到近黑灰 |
+> | `Hex Linear` | `141414FF` | 颜色选择器 | 线性空间颜色值 |
+> | `Hex sRGB` | `4F4F4FFF` | 颜色选择器 | sRGB 预览值 |
+> | `Atmosphere Height` | `200.0` | Actor Details | 控制大气层高度 |
+> | `MultiScattering` | `1.0` | Actor Details | 保持散射基础强度 |
+>
+> 输出/观察:
+> - 这张图说明 `p54` 的 `Color` 不只是材质内部颜色，也包括场景级环境颜色基底
+> - 先把天空压暗后，后续再通过 `Add` 或材质发光色把主体提亮，会更容易得到清晰的对比效果
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 绑定与镜头准备图
+> - 组成部分: 关卡主视口 + Outliner + `LS_StylizedTornado` 细节面板 + Sequencer 时间轴
+> - 所属: `Stylized_Tornado` 关卡中的 `LS_StylizedTornado`
+> - 目的: 在开始做颜色和 `Add` 效果前，先把关卡序列打开并绑定镜头，方便后续按镜头时间线调节特效表现
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 画面仍是暗色平面场景，左上显示当前项目与视口工具栏 | 用于预览序列镜头会拍到的场景范围 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 选中 `LS_StylizedTornado`；同层可见 `SkyAtmo`、`SkyLight`、`WorldDat`、`NS_Tornado` | 说明当前在处理场景序列 Actor，而不是 Niagara 本体 |
+> | 右侧 | Actor Details | `LS_StylizedTornado` | `Level Sequence = LS_StylizedTornado`；`Transform.Location ≈ (1523, -1037, 275)`；`Rotation ≈ (0, 0, 0)`；`Scale ≈ (1, 1, 1)` | 确认该 Actor 已指向实际的 Level Sequence 资源 |
+> | 下方 | Sequencer | `LS_StylizedTornado` | 已有 `Camera Cuts` 轨道；存在 `CameraActor` 及其 `CameraComponent`；可见 `Field Of View = 90.0` 与 `Transform` 子轨道 | 表明教程正在为后续镜头驱动的演示准备摄像机 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `LS_StylizedTornado.Level Sequence` | `LS_StylizedTornado` | Actor Details | 把场景中的序列 Actor 绑定到正确的序列资产 |
+> | `LS_StylizedTornado.Transform.Location` | `≈ (1523, -1037, 275)` | Actor Details | 定义序列 Actor 在场景中的放置位置 |
+> | `CameraComponent.Field Of View` | `90.0` | Sequencer | 提供较宽的镜头视角，便于后续观察整体特效 |
+>
+> 输出/观察:
+> - 这一步的核心不是调 Niagara 参数，而是先把 `Level Sequence` 和 `CameraActor` 架好
+> - 后续如果教程提到“加个摄像头”或按时间线演示特效变化，应以这个 Sequencer 绑定为前提继续复建
+> 图表转写（UE-GTXT v4）
+> - 类型: 点光源补光与镜头时间线联调图
+> - 组成部分: 关卡主视口 + Outliner + `PointLight` 详情面板 + Sequencer 时间轴
+> - 所属: `Stylized_Tornado` 关卡中的 `PointLight`
+> - 目的: 在序列镜头已经建立后，再补一个点光源抬高场景中心亮度，为后续 `Color` 与 `Add` 效果提供局部补光
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 中央可见深色场景与一点较亮的地面反光区域；左上显示 `Pilot Actor: CameraActor` | 说明当前正从序列摄像机视角检查补光效果 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 当前选中 `PointLight`；同层仍可见 `PostProc`、`SkyAtmo`、`SkyLight`、`LS_Stylizec`、`NS_Tornad...` | 说明作者正在给镜头场景补一个独立灯光 |
+> | 右侧 | Actor Details | `PointLight (Instance)` | `Transform.Location = (0.0, 0.0, 767.0)`；`Rotation = (0.0, 0.0, 0.0)`；`Scale = (1.0, 1.0, 1.0)`；`Intensity = 5.0`；`Light Color` 为白色；`Attenuation Radius = 2000.0`；`Source Radius/Soft Source Radius/Source Length = 0.0` | 定义补光灯的位置、强度和影响范围 |
+> | 下方 | Sequencer | `LS_StylizedTornado` | 仍在 `CameraActor` 轨道下工作；时间线约在 `5.0s`；可见镜头缩略图序列 | 说明点光源调整是配合已有镜头预览实时进行的 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `PointLight.Transform.Location` | `(0.0, 0.0, 767.0)` | Actor Details | 把点光源抬到场景中心上方 |
+> | `PointLight.Intensity` | `5.0` | Actor Details | 提供较弱但可见的中心补光 |
+> | `PointLight.Light Color` | `White` | Actor Details | 保持中性补光，不额外染色 |
+> | `PointLight.Attenuation Radius` | `2000.0` | Actor Details | 让亮度影响覆盖主视口中间较大区域 |
+>
+> 输出/观察:
+> - 这一帧把 `CameraActor` 预览、场景环境色和 `PointLight` 补光放到同一界面里，说明作者在先定镜头再定局部光照
+> - 复建时可先保留白色点光源与 `5.0 / 2000.0` 的基础强度和范围，再根据后续 Niagara 发光结果微调
+
+### 00:05:43-00:08:41 Niagara、System、Color
+
+- 本段定位：Niagara、System、Color。
+- 知识点：本段围绕 `Niagara`、`Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：蓝图 Actor 用于封装 Niagara 生成、位置、参数传入和生命周期控制。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：从基础材质创建 Material Instance 后，用实例参数控制颜色、透明度和纹理变体。；材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Niagara`、`Particle`、`Color`、`Alpha`、`Opacity`、`Material`、`Add`、`Panner`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara System 挂接到 Sequencer 的时间线管理图
+> - 组成部分: 关卡主视口 + Outliner + `NS_Tornado` 详情面板 + Sequencer 轨道区
+> - 所属: `Stylized_Tornado` 关卡中的 `NS_Tornado`
+> - 目的: 把龙卷风 Niagara System 放进 Sequencer，通过时间线管理其生命周期与播放时机
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 中央可见已选中的龙卷风体积，外轮廓高亮；左上显示 `Pilot Actor: CameraActor` | 说明当前从镜头视角直接预览特效主体 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 当前选中 `NS_Tornado`；同层可见 `CameraAct`、`LS_Stylizec`、`PointLight`、`SkyAtmo` 等 | 表明作者开始从关卡对象层面处理 Niagara System |
+> | 右侧 | Actor Details | `NS_Tornado (Instance)` | `Transform.Location = (0.0, 0.0, 0.0)`；`Rotation = (0.0, 0.0, 0.0)`；`Scale = (1.0, 1.0, 1.0)`；`Niagara System = NS_Tornado`；`Allow Scalability` 未勾选；`Auto Activate` 已勾选 | 确认关卡里的 NiagaraComponent 已绑定正确系统资产 |
+> | 下方 | Sequencer | `LS_StylizedTornado` | 除 `Camera Cuts` 外，已新增 `NS_Tornado` 轨道与 `NiagaraComponent0` 子轨道；可见 `System Life Cycle` 与 `Tick Delta Time` | 说明该 Niagara 已被加入序列，可按时间线控制播放区间 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `NS_Tornado.Niagara System` | `NS_Tornado` | Actor Details | 把关卡实例绑定到龙卷风 Niagara 系统 |
+> | `NS_Tornado.Transform.Location` | `(0.0, 0.0, 0.0)` | Actor Details | 让系统位于世界原点附近作为主特效 |
+> | `NS_Tornado.Auto Activate` | `Enabled` | Actor Details | 默认允许系统激活 |
+> | `Sequencer.Track` | `System Life Cycle` | Sequencer | 用时间线显式控制 Niagara 的启停区间 |
+>
+> 输出/观察:
+> - 这一步把 `NS_Tornado` 从单纯场景对象推进到可被 Sequencer 驱动的特效对象
+> - 后续如果教程继续调 `Color`、`Particle` 或 `Add`，都应建立在这个可被时间线管理的 System 之上
+> 图表转写（UE-GTXT v4）
+> - 类型: 时间线预览下的天空颜色微调图
+> - 组成部分: 关卡主视口 + Outliner + `SkyAtmosphere` 详情面板 + 颜色选择器 + Sequencer
+> - 所属: `Stylized_Tornado` 关卡中的 `SkyAtmosphere`
+> - 目的: 在龙卷风已挂到 Sequencer 后，边播放时间线边微调场景天空颜色，使特效主体与背景亮度更协调
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 画面中央是青色龙卷风，背景仍为暗灰蓝环境；左上显示 `Pilot Actor: CameraActor` | 说明作者正从镜头视角直接看环境色对特效的衬托 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 当前选中 `SkyAtmo` / `SkyAtmosphere`；同层可见 `NS_Tornado`、`PointLight`、`LS_Stylizec` | 表明正在调整环境天空对象而非 Niagara 节点本身 |
+> | 右侧 | Actor Details | `SkyAtmosphere (Instance)` | 可见 `Ground Radius = 1.0`、`Ground Albedo` 颜色块、`Atmosphere Height = 200.0`、`MultiScattering = 1.0` 等字段 | 说明仍围绕大气底色与散射参数做场景级调色 |
+> | 右下浮窗 | 颜色选择器 | Color Picker | `R=0.09003`、`G=0.09003`、`B=0.09003`；`H=195.030396`；`S=0.0`；`V=0.09003`；`Hex Linear=171717FF`；`Hex sRGB=555555FF`；启用 `sRGB Preview` | 说明目标颜色是比前一张更亮一点的中性深灰 |
+> | 下方 | Sequencer | `LS_StylizedTornado` | 时间线游标约在 `1.20s`；仍保留 `NS_Tornado > NiagaraComponent0 > System Life Cycle`；下拉模式显示 `Desired Age` | 表明作者在具体时间点观察特效并同步调环境色 |
+>
+> 设置/参数:
+> | Owner.Property | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Color Picker.R/G/B` | `0.09003 / 0.09003 / 0.09003` | 颜色选择器 | 把天空相关颜色调到略亮于纯暗灰的中性值 |
+> | `Color Picker.Hex Linear` | `171717FF` | 颜色选择器 | 线性空间中的目标颜色 |
+> | `Color Picker.Hex sRGB` | `555555FF` | 颜色选择器 | sRGB 预览颜色 |
+> | `Sequencer.Time` | `≈ 1.20s` | Sequencer | 在中段时间点检查环境色与龙卷风表现是否匹配 |
+>
+> 输出/观察:
+> - 这一帧说明教程没有把环境颜色一次定死，而是在 Niagara 播放过程中继续细调
+> - 如果复建时发现龙卷风与背景反差过弱，可先从这组 `0.09003` 的中性灰环境值开始对齐
+> 图表转写（UE-GTXT v4）
+> - 类型: 龙卷风材质实例复制准备图
+> - 组成部分: 关卡主视口 + Outliner + `NS_Tornado` 详情面板 + Content Browser 材质实例目录
+> - 所属: `Stylized_Tornado` 关卡中的 `NS_Tornado`，以及 `VFX_Library/Materials/Instances/Tornado` 目录
+> - 目的: 保持龙卷风 Niagara 预览可见的同时，进入材质实例目录复制现有龙卷风材质，准备做第二个材质变体
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 中央可见高亮选中的龙卷风体积；左上显示 `Pilot Actor: CameraActor` | 说明复制材质前仍在以镜头视角观察当前龙卷风效果 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 当前选中 `NS_Tornado`；同层可见 `CameraAct`、`LS_Stylizec`、`SkyAtmo` 等 | 表明材质复制动作服务于当前 Niagara 实例 |
+> | 右侧 | Actor Details | `NS_Tornado (Instance)` | `Transform.Location = (0.0, 0.0, 0.0)`；`Rotation = (0.0, 0.0, 0.0)`；`Scale = (1.0, 1.0, 1.0)`；`Niagara System = NS_Tornado` | 确认当前预览对象仍是龙卷风 Niagara System |
+> | 下方 | Content Browser | `VFX_Library/Materials/Instances/Tornado` | 目录中可见两个材质实例缩略图：`MI_Tornado Stylized_01` 与 `MI_Tornado Stylized_02`；搜索词为 `Tornado` | 说明作者正在以现有龙卷风材质实例为模板准备复制新变体 |
+> | 底部字幕 | 教程说明 | 视频字幕 | `Copy it, it will be tornado2.` | 直接说明下一步是复制当前材质并命名为第二份龙卷风变体 |
+>
+> 设置/参数:
+> | 对象 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Content Browser.Path` | `VFX_Library/Materials/Instances/Tornado` | 面包屑路径 | 进入龙卷风材质实例所在目录 |
+> | `Material Instance Candidates` | `MI_Tornado Stylized_01`, `MI_Tornado Stylized_02` | 缩略图标签 | 作为复制/派生新材质实例的现有基础资源 |
+> | `Tutorial Action` | `Copy -> tornado2` | 字幕 | 指示创建第二个龙卷风材质变体 |
+>
+> 输出/观察:
+> - 这一步把流程从场景级调光与 Sequencer 管理，推进到龙卷风材质实例的分支制作
+> - 复建时应先在该目录复制现有 `MI_Tornado` 风格实例，再把复制品作为后续颜色或透明度变体的承载体
+
+### 00:08:41-00:13:37 Spawn、Color、Alpha
+
+- 本段定位：Spawn、Color、Alpha。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Noise` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Alpha` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Spawn`、`Color`、`Alpha`、`Opacity`、`Material`、`Texture`、`Noise`、`Multiply`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 龙卷风高亮材质实例调参图
+> - 组成部分: 关卡主视口 + `NS_Tornado` 详情面板 + Content Browser + 材质实例编辑器 `MI_TornadoStylized_02`
+> - 所属: `NS_Tornado` 预览场景，以及 `MI_TornadoStylized_02`
+> - 目的: 给龙卷风复制出的第二份材质实例设置高亮版本，用于后续 `Add` / 高亮叠加效果
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 中央仍显示高亮选中的龙卷风体积 | 用于实时观察材质实例变化对龙卷风外观的影响 |
+> | 下方左侧 | Content Browser | `VFX_Library/Materials/Instances/Tornado` | 当前选中 `MI_Tornado Stylized_02`；同目录还有 `MI_Tornado Stylized_01` | 说明正在编辑刚复制出的第二个龙卷风材质实例 |
+> | 中央浮窗 | 材质实例编辑器 | `MI_TornadoStylized_02` | 窗口标题为 `MI_TornadoStylized_02*`；左侧预览球体，右侧为 `Layer Parameters` | 这是当前进行高亮版材质调参的主工作区 |
+> | 右侧参数区 | Layer Parameters | `MI_TornadoStylized_02` | `T_Main` 已勾选，贴图名显示为 `T_Inky_Smoke_Til...`；`Colormap` 已勾选，资源名显示为 `VFX_T_ColorMap...` 且颜色为青色；`Mask Multiply = 5.0`；`T_Mask` 已勾选，资源名显示为 `T_Gradient20...` | 说明该高亮版材质由主烟雾贴图、颜色映射和遮罩强度共同控制 |
+> | 底部字幕 | 教程说明 | 视频字幕 | `Since it will be a highlight, let's set the additive mode.` | 明确给出这一材质实例将用于高亮/Additive 效果 |
+>
+> 设置/参数:
+> | 对象/属性 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `MI_TornadoStylized_02.T_Main` | `T_Inky_Smoke_Til...` | Layer Parameters | 作为龙卷风主体烟雾纹理 |
+> | `MI_TornadoStylized_02.Colormap` | `VFX_T_ColorMap...` + 青色颜色块 | Layer Parameters | 给高亮层提供青色调映射 |
+> | `MI_TornadoStylized_02.Mask Multiply` | `5.0` | Layer Parameters | 提高遮罩强度，强化高亮层的显示 |
+> | `MI_TornadoStylized_02.T_Mask` | `T_Gradient20...` | Layer Parameters | 控制高亮/透明分布 |
+>
+> 输出/观察:
+> - 这张图明确第二个 `MI_Tornado` 不是普通复制备份，而是要做成高亮层
+> - 字幕要求把它用于 `additive mode`，但当前截图未直接显示 Blend Mode 字段，能确认的是作者正在给高亮材质实例调颜色与遮罩参数
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara 高亮发射器动态材质参数图
+> - 图类型: Niagara System / Emitter Stack
+> - 所属: `NS_Tornado` 系统中的 `TornadoGlow` 发射器
+> - 目的: 给高亮层发射器写入动态材质参数，用一条随粒子年龄变化的曲线驱动材质中的 `Dissolve`
+>
+> 节点/模块定义集:
+> | 序号 | 节点/模块 | 类型 | 位置/层级 | 关键可读信息 |
+> |---|---|---|---|---|
+> | 1 | `TornadoGlow` | Emitter | System Overview 当前选中项 | 右侧标题显示 `TornadoGlow`，顶部标注 `1 Particles` |
+> | 2 | `Emitter State` | Emitter 模块 | `Emitter Update` 下 | 标签含 `Self`、`Once`，说明发射器按单次生命周期运行 |
+> | 3 | `Spawn Burst Instantaneous` | Spawn 模块 | `Emitter Update` 下 | 用突发式生成开启该高亮层 |
+> | 4 | `Initialize Particle` | Particle Spawn 模块 | `Particle Spawn` 下 | 负责高亮粒子的基础属性初始化 |
+> | 5 | `Particle State` | Particle Update 模块 | `Particle Update` 下 | 管理粒子生命周期 |
+> | 6 | `Update Mesh Orientation` | Particle Update 模块 | `Particle Update` 下 | 子标签可见 `Rotation Rate` |
+> | 7 | `Scale Mesh Size` | Particle Update 模块 | `Particle Update` 下 | 控制高亮网格尺寸变化 |
+> | 8 | `Dynamic Material Parameters` | Particle Update 模块 | `Particle Update` 下，当前展开 | 用于把 Niagara 曲线值写到材质动态参数 |
+> | 9 | `Mesh Renderer` | Renderer | Render 段 | 负责输出高亮网格 |
+>
+> 连线/作用关系:
+> | 来源 | 目标 | 关系类型 | 可确认含义 |
+> |---|---|---|---|
+> | `Particle.NormalizedAge` | `FloatCurve` | 驱动输入 | 曲线索引字段显示 `[PARTICLES] NormalizedAge`，说明材质参数随粒子归一化年龄变化 |
+> | `FloatCurve` | `Dissolve` | 写入 | `Dissolve` 使用 `Float from Curve`，把曲线值写入动态材质参数 |
+> | `Dynamic Material Parameters.Index 0` | 材质动态参数槽 | 参数输出 | `Write Parameter Index 0` 已启用，其他 Index 1-3 未使用 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Dynamic Material Parameters.Index` | `0` | 右侧 Details | 当前只写第 0 号动态材质参数 |
+> | `Index0.Dissolve.Mode` | `Float from Curve` | 右侧 Details | 以曲线方式控制材质溶解值 |
+> | `Index0.Dissolve.CurveFor` | `Floats` | 右侧 Details | 使用浮点曲线 |
+> | `Index0.Dissolve.CurveIndexer` | `[PARTICLES] NormalizedAge` | 右侧 Details | 让溶解值随粒子年龄推进 |
+> | `Index0.Dissolve.Scale Curve` | `1.0` | 右侧 Details | 保持曲线输出原始倍率 |
+> | `Index0.Param1/2/3` | `0.0` / 未使用 | 右侧 Details | 该模块当前只实用 `Dissolve` 主参数 |
+>
+> 曲线观察:
+> - 曲线起点接近高值，随后快速降到中间较低平台，末段再抬回高值
+> - 可确认这是“先亮/先显现，随后收缩，尾段再抬起”的溶解控制思路
+> - 截图没有清晰给出全部关键帧精确数值，因此只应按“高 -> 低平台 -> 再升高”的形状复建
+>
+> 输出/观察:
+> - 这一步把前一张图的高亮材质实例，真正接到 Niagara 发射器的动态参数驱动链上
+> - 复建时应先在高亮发射器里加 `Dynamic Material Parameters`，再把 `Dissolve` 绑到 `NormalizedAge` 曲线，而不是只静态改材质实例
+> 已确认信息:
+> - 主视口中显示龙卷风高亮层已经变得更亮，中心区域出现更强的青白色发光条带
+> - 右上 Outliner 仍选中 `NS_Tornado`
+> - 右侧 Details 仅能确认当前对象是 `NS_Tornado (Instance)`，可见 `Niagara System = NS_Tornado`
+> - 下方 Sequencer 仍使用 `NS_Tornado > NiagaraComponent0 > System Life Cycle`，下拉模式是 `Desired Age`
+> - 时间线游标约在 `2.1667s`
+> - 字幕明确说明当前问题与调整方向是：`It moves too much, I want the vertices to move less, 50 will be enough.`
+>
+> 画面边界:
+> - 截图中没有显示“vertices move less, 50”对应的具体参数面板，因此无法可靠确认它属于材质实例参数、Niagara 动态材质参数、网格位移参数还是其他顶点动画控制项
+> - 也无法从当前画面可靠确认该参数的精确字段名、Owner、默认值与修改入口
+>
+> 与前后帧对应的结论:
+> - 教程在本步明确要求把某个“控制顶点位移幅度”的值下调到 `50`
+> - 结合前后帧应回到高亮材质或其驱动参数中，查找与顶点位移、World Position Offset、顶点振幅或类似语义相关的参数，再核对是否应设置为 `50`
+
+### 00:13:37-00:17:21 Alpha、Add
+
+- 本段定位：Alpha、Add。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Alpha` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`Add`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 高亮龙卷风材质实例的 Alpha / Add 参数图
+> - 组成部分: 材质实例编辑器 `MI_TornadoStylized_02` 的预览窗格与 `Layer Parameters`
+> - 所属: `MI_TornadoStylized_02`
+> - 目的: 继续细化高亮版龙卷风材质的透明、边缘和顶点偏移参数，使其更适合叠加高亮效果
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左侧 | 预览视口 | `MI_TornadoStylized_02` | 预览球体处于强模糊/高亮状态，背景是户外默认测试场景 | 用于直接观察透明度和高亮边缘变化 |
+> | 右侧上部 | 全局参数 | `MI_TornadoStylized_02` | 颜色分量 `R=1.0`、`G=1.0`、`B=1.0`、`A=2.0`，`Smoothness=1.0` | 定义整体颜色和强度基线 |
+> | 右侧中部 | `Global Scalar Parameter Values` | `MI_TornadoStylized_02` | `Depth Fade=100.0`，`Use Texture Opacity?=1.0` | 控制与场景深度混合及贴图透明的使用方式 |
+> | 右侧中部 | `Main Color` / `Mask` | `MI_TornadoStylized_02` | `T_Main=T_Inky_Smoke_Tile`；`Colormap=VFX.T_ColorMap_Turquoise_08`；`Mask Multiply=5.0`；`T_Mask=T_Gradient20` | 维持高亮烟雾贴图、颜色映射和遮罩强度 |
+> | 右侧下部 | `Soft Edge` | `MI_TornadoStylized_02` | `Fresnel Influence=0.5`；`Fresnel Opacity Exp=1.0`；`Fresnel Opacity Power=10.0` | 说明边缘透明衰减由 Fresnel 控制 |
+> | 右侧下部 | `Vertex offset` | `MI_TornadoStylized_02` | `T_VertexOffset=LowResBlurredNoise`；`Vertex Height=50.0`；`Vertex Offset (Scale|Scroll)` 的 `R=1.0`、`G=0.5`、`B=0.25`、`A=1.0` | 这正是前一批字幕提到的“顶点移动量减到 50”对应入口 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `BaseColor.R/G/B` | `1.0 / 1.0 / 1.0` | Layer Parameters | 保持中性白底色，由 Colormap 负责染色 |
+> | `BaseColor.A` | `2.0` | Layer Parameters | 增强整体强度，适配高亮叠加 |
+> | `Smoothness` | `1.0` | Layer Parameters | 保持平滑过渡 |
+> | `Depth Fade` | `100.0` | Layer Parameters | 拉长与场景几何交界处的淡出距离 |
+> | `Use Texture Opacity?` | `1.0` | Layer Parameters | 使用纹理自身透明信息 |
+> | `Mask Multiply` | `5.0` | Layer Parameters | 放大遮罩对可见区域的控制 |
+> | `Fresnel Influence` | `0.5` | Layer Parameters | 给边缘叠加适中的 Fresnel 影响 |
+> | `Fresnel Opacity Exp` | `1.0` | Layer Parameters | 控制 Fresnel 透明指数基线 |
+> | `Fresnel Opacity Power` | `10.0` | Layer Parameters | 强化边缘透明度衰减力度 |
+> | `T_VertexOffset` | `LowResBlurredNoise` | Layer Parameters | 以低分辨率模糊噪声驱动顶点位移 |
+> | `Vertex Height` | `50.0` | Layer Parameters | 将顶点位移幅度控制到较小范围 |
+> | `Vertex Offset.R/G/B/A` | `1.0 / 0.5 / 0.25 / 1.0` | Layer Parameters | 控制顶点偏移贴图的缩放/滚动通道参数 |
+>
+> 输出/观察:
+> - 这一帧把上一帧字幕提到的“50 就够了”落到了可确认字段 `Vertex Height=50.0`
+> - `Alpha` 与 `Add` 相关的可见控制主要集中在 `A=2.0`、`Depth Fade=100.0`、`Use Texture Opacity?=1.0` 和 `Fresnel Opacity Power=10.0`
+> 图表转写（UE-GTXT v4）
+> - 类型: 第二份龙卷风材质实例的 Alpha / Add / Dissolve 参数图
+> - 组成部分: 材质实例编辑器 `MI_TornadoStylized_03` 的预览视口与 `Layer Parameters`
+> - 所属: `MI_TornadoStylized_03`
+> - 目的: 基于上一份高亮材质再做一份新变体，重点增加 `Dissolve` 控制并重新调整透明、Fresnel 与顶点位移
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左侧 | 预览视口 | `MI_TornadoStylized_03` | 画面中可见一段更轻更透的龙卷风片段 | 用于观察新材质实例的透明与溶解效果 |
+> | 右侧上部 | `Dissolve` | `MI_TornadoStylized_03` | `T_Dissolve=T_Voronnoise005`；`Dissolve (Scale|Scroll)` 的 `R=2.0`、`G=2.0`、`B=0.25`、`A=1.0`；`Smoothness=1.0` | 新增溶解噪声和缩放滚动控制，区别于上一张 |
+> | 右侧中部 | `Global Scalar Parameter Values` | `MI_TornadoStylized_03` | `Depth Fade=100.0`；`Use Texture Opacity?=0.0` | 说明这份材质不再直接使用贴图透明通道 |
+> | 右侧中部 | `Main Color` / `Mask` | `MI_TornadoStylized_03` | `T_Main=T_Inky_Smoke_Tile`；`Colormap=VFX.T_ColorMap_Turquoise_08`；`Mask Multiply=5.0`；`T_Mask=T_Gradient20` | 颜色与遮罩仍延续高亮龙卷风的基础纹理结构 |
+> | 右侧下部 | `Soft Edge` | `MI_TornadoStylized_03` | `Fresnel Influence=0.5`；`Fresnel Opacity Exp=1.5`；`Fresnel Opacity Power=10.0` | 比上一张提高了 Fresnel 透明指数 |
+> | 右侧下部 | `Vertex offset` | `MI_TornadoStylized_03` | `T_VertexOffset=LowResBlurredNoise`；`Vertex Height=150.0`；`Vertex Offset (Scale|Scroll)` 的 `R=1.0`、`G=0.5`、`B=0.25`、`A=1.0` | 这份材质把顶点位移幅度重新提高到更大的值 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `T_Dissolve` | `T_Voronnoise005` | Layer Parameters | 用 Voronoi 风格噪声控制溶解形状 |
+> | `Dissolve.R/G/B/A` | `2.0 / 2.0 / 0.25 / 1.0` | Layer Parameters | 控制溶解贴图的缩放与滚动 |
+> | `Depth Fade` | `100.0` | Layer Parameters | 保持与场景交界处的淡出距离 |
+> | `Use Texture Opacity?` | `0.0` | Layer Parameters | 关闭直接使用贴图透明度，改由别的透明控制主导 |
+> | `Fresnel Influence` | `0.5` | Layer Parameters | 保持边缘影响强度 |
+> | `Fresnel Opacity Exp` | `1.5` | Layer Parameters | 提高边缘透明衰减的指数 |
+> | `Fresnel Opacity Power` | `10.0` | Layer Parameters | 保持边缘透明控制力度 |
+> | `Vertex Height` | `150.0` | Layer Parameters | 将顶点位移幅度显著提高 |
+> | `Vertex Offset.R/G/B/A` | `1.0 / 0.5 / 0.25 / 1.0` | Layer Parameters | 保持顶点偏移贴图的缩放/滚动设置 |
+>
+> 输出/观察:
+> - 和上一张 `MI_TornadoStylized_02` 相比，这一份更像是“溶解版”或“更轻薄的 alpha 版”材质
+> - 关键差异是加入 `T_Dissolve`、把 `Use Texture Opacity?` 关成 `0.0`、把 `Fresnel Opacity Exp` 改到 `1.5`，并把 `Vertex Height` 提高到 `150.0`
+> 图表转写（UE-GTXT v4）
+> - 类型: 将 Alpha / Add 调参思路复用到另一份龙卷风材质实例
+> - 组成部分: 材质实例编辑器 `MI_TornadoStylized_01` 的预览视口与 `Layer Parameters`
+> - 所属: `MI_TornadoStylized_01`
+> - 目的: 把前面对高亮/透明龙卷风材质的处理继续应用到另一份材质实例上
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左侧 | 预览视口 | `MI_TornadoStylized_01` | 预览里是一根更细更轻的青色龙卷风柱体 | 用于观察当前材质实例应用后的体积和透明效果 |
+> | 顶部标签 | 打开资产 | 编辑器标签 | 同时打开了 `MI_TornadoStylized_02`、`MI_TornadoStylized_03`、`NS_Tornado`，当前活动标签是 `MI_TornadoStylized_01*` | 说明作者在多个龙卷风材质实例间来回复制参数 |
+> | 右侧中部 | `Global Scalar Parameter Values` | `MI_TornadoStylized_01` | `Depth Fade=100.0`；`Use Texture Opacity?=0.0` | 与上一张保持相同的透明控制基线 |
+> | 右侧中部 | `Main Color` / `Mask` | `MI_TornadoStylized_01` | `T_Main=T_Inky_Smoke_Tile`；`Colormap=VFX.T_ColorMap_Turquoise_08`；`Mask Multiply=5.0`；`T_Mask=T_Gradient20` | 保持同一套青色烟雾贴图与遮罩资源 |
+> | 右侧下部 | `Soft Edge` | `MI_TornadoStylized_01` | `Fresnel Influence=1.0`；`Fresnel Opacity Exp=1.0`；`Fresnel Opacity Power=5.0` | 这份材质的边缘效果比上一张更直接、更弱一些 |
+> | 右侧下部 | `Vertex offset` | `MI_TornadoStylized_01` | `T_VertexOffset=LowResBlurredNoise`；`Vertex Height=150.0`；`Vertex Offset (Scale|Scroll)` 的 `R=1.0`、`G=0.5`、`B=0.25`、`A=1.0` | 保持较大的顶点位移幅度 |
+> | 底部字幕 | 教程说明 | 视频字幕 | `And let for this also.` | 明确表示这一步是在把同样处理“也应用到这个材质上” |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Depth Fade` | `100.0` | Layer Parameters | 保持交界淡出范围 |
+> | `Use Texture Opacity?` | `0.0` | Layer Parameters | 不直接使用贴图透明度 |
+> | `Mask Multiply` | `5.0` | Layer Parameters | 保持遮罩强度 |
+> | `Fresnel Influence` | `1.0` | Layer Parameters | 提高边缘 Fresnel 影响强度 |
+> | `Fresnel Opacity Exp` | `1.0` | Layer Parameters | 使用较基础的边缘透明指数 |
+> | `Fresnel Opacity Power` | `5.0` | Layer Parameters | 比上一张更低的边缘衰减力度 |
+> | `Vertex Height` | `150.0` | Layer Parameters | 保持较高顶点位移幅度 |
+> | `Vertex Offset.R/G/B/A` | `1.0 / 0.5 / 0.25 / 1.0` | Layer Parameters | 保持顶点偏移贴图滚动/缩放设置 |
+>
+> 输出/观察:
+> - 这一帧的核心不是引入新资源，而是把已经验证过的材质处理方法同步到另一份 `MI_Tornado` 变体
+> - 与上一张相比，可确认的主要差异是 `Fresnel Influence` 提到 `1.0`，`Fresnel Opacity Power` 降到 `5.0`
+
+### 00:17:21-00:20:48 Color、Fresnel
+
+- 本段定位：Color、Fresnel。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Fresnel` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Color`、`Fresnel`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 龙卷风材质实例颜色深浅对比图
+> - 组成部分: 材质实例编辑器预览视口 + `Layer Parameters` + 多个 `MI_TornadoStylized_*` 标签页
+> - 所属: 当前活动的 `MI_TornadoStylized_01`
+> - 目的: 在多个龙卷风材质实例之间对比，继续把当前这一份调得比参照实例更暗
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左侧 | 预览视口 | `MI_TornadoStylized_01` | 当前预览球体呈较亮的模糊青白效果，背景是测试场景 | 用于对比当前材质与其他实例的明暗差异 |
+> | 顶部标签 | 打开资产 | 编辑器标签 | 同时打开 `MI_TornadoStylized_02`、`MI_TornadoStylized_03`、`NS_Tornado` 和当前 `MI_TornadoStylized_01*` | 说明作者正在多实例之间横向比对颜色与 Fresnel 效果 |
+> | 右侧中部 | `Global Scalar Parameter Values` | `MI_TornadoStylized_01` | `Depth Fade=100.0`；`Use Texture Opacity?=1.0` | 维持贴图透明参与和交界淡出 |
+> | 右侧中部 | `Main Color` / `Mask` | `MI_TornadoStylized_01` | `T_Main=T_Inky_Smoke_Tile`；`Colormap=VFX.T_ColorMap_Turquoise_08`；`Mask Multiply=5.0`；`T_Mask=T_Gradient20` | 说明当前仍沿用同一套主烟雾贴图与颜色贴图 |
+> | 右侧下部 | `Soft Edge` | `MI_TornadoStylized_01` | `Fresnel Influence=1.0`；`Fresnel Opacity Exp=1.0`；`Fresnel Opacity Power=5.0` | 控制当前实例边缘亮边强度 |
+> | 右侧下部 | `Vertex offset` | `MI_TornadoStylized_01` | `T_VertexOffset=LowResBlurredNoise`；`Vertex Height=50.0`；`Vertex Offset (Scale|Scroll)` 的 `R=1.0`、`G=0.5`、`B=0.25`、`A=1.0` | 保持较小顶点位移幅度 |
+> | 底部字幕 | 教程说明 | 视频字幕 | `It will be even darker than this one.` | 明确当前目标是把另一份或当前实例调得更暗 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Depth Fade` | `100.0` | Layer Parameters | 保持与场景交界处的淡出范围 |
+> | `Use Texture Opacity?` | `1.0` | Layer Parameters | 使用贴图透明度 |
+> | `Mask Multiply` | `5.0` | Layer Parameters | 维持遮罩对可见范围的控制强度 |
+> | `Fresnel Influence` | `1.0` | Layer Parameters | 保持较强边缘影响 |
+> | `Fresnel Opacity Exp` | `1.0` | Layer Parameters | 使用基础边缘指数 |
+> | `Fresnel Opacity Power` | `5.0` | Layer Parameters | 维持较柔和的边缘衰减 |
+> | `Vertex Height` | `50.0` | Layer Parameters | 保持较低的顶点位移幅度 |
+>
+> 输出/观察:
+> - 当前截图的重点不是新增参数，而是拿已有实例作为参照，继续向“更暗”的配色方向细调
+> - 复建时应先保留这套可见参数，再通过颜色贴图或颜色强度把目标实例压暗，而不是先改动 Fresnel 或位移结构
+> 图表转写（UE-GTXT v4）
+> - 类型: 场景实时预览联动材质实例微调图
+> - 组成部分: 关卡主视口 + Outliner + `NS_Tornado` 详情面板 + Sequencer + 浮动材质实例窗口
+> - 所属: 关卡中的 `NS_Tornado`，以及一个 `MI_TornadoStylized_*` 材质实例
+> - 目的: 在 Sequencer 时间线预览龙卷风真实效果的同时，联动检查材质实例的颜色、Fresnel 边缘和顶点位移是否合适
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 中央是青色高亮龙卷风，亮部集中在上半段和底部环带 | 用于直接观察材质参数对实际 Niagara 表现的影响 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 当前选中 `NS_Tornado`；同层可见 `LS_Stylizec`、`CameraAct`、`PointLight` 等 | 说明当前仍以关卡中的龙卷风实例为观察对象 |
+> | 右侧 | Actor Details | `NS_Tornado (Instance)` | `Transform.Location=(0,0,0)`、`Rotation=(0,0,0)`、`Scale=(1,1,1)`；`Niagara System=NS_Tornado` | 确认场景里预览的是主龙卷风 Niagara System |
+> | 下方 | Sequencer | `LS_StylizedTornado` | 轨道仍是 `NS_Tornado > NiagaraComponent0 > System Life Cycle`；模式为 `Desired Age`；游标约在 `3.55s` | 表明材质调节是在特定时间点的真实镜头状态下进行 |
+> | 中央浮窗 | 材质实例编辑器 | `MI_TornadoStylized_*` | 同时打开 `MI_TornadoStylized_01`、`02`、`03` 标签；当前窗口右侧只显示局部参数区 | 说明作者在多个材质变体之间来回校准 |
+> | 浮窗参数区 | `Soft Edge` / `Vertex offset` | `MI_TornadoStylized_*` | 可见 `T_Mask=T_Gradient20`；`Fresnel Influence=1.0`；`Fresnel Opacity Exp=1.0`；`Fresnel Opacity Power=10.0`；`T_VertexOffset=LowResBlurredNoise`；`Vertex Height=50.0` | 显示当前重点在边缘高亮与顶点位移强度 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `T_Mask` | `T_Gradient20` | 浮窗参数区 | 控制透明/高亮分布遮罩 |
+> | `Fresnel Influence` | `1.0` | 浮窗参数区 | 保持较强边缘影响 |
+> | `Fresnel Opacity Exp` | `1.0` | 浮窗参数区 | 使用基础边缘指数 |
+> | `Fresnel Opacity Power` | `10.0` | 浮窗参数区 | 让边缘亮部衰减更明显 |
+> | `T_VertexOffset` | `LowResBlurredNoise` | 浮窗参数区 | 用噪声驱动顶点偏移 |
+> | `Vertex Height` | `50.0` | 浮窗参数区 | 把顶点位移控制在较小范围，避免龙卷风变形过大 |
+> | `Sequencer.Time` | `≈ 3.55s` | Sequencer | 在中后段时刻校验最终效果 |
+>
+> 输出/观察:
+> - 这一步的关键是把材质实例参数放回关卡真实预览中验证，而不是只看材质球预览
+> - 画面表明 `Vertex Height=50.0` 搭配更强的 `Fresnel Opacity Power=10.0` 时，龙卷风亮边更集中、整体形变更稳定
+> 图表转写（UE-GTXT v4）
+> - 类型: 后段时间点的龙卷风亮带/Fresnel 复核图
+> - 组成部分: 关卡主视口 + Sequencer + 浮动材质实例窗口 + `NS_Tornado` 详情面板
+> - 所属: 关卡中的 `NS_Tornado`，以及当前查看的 `MI_TornadoStylized_*` 材质实例
+> - 目的: 在时间线末段再次确认亮带、颜色和边缘参数是否在最终镜头里成立
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 龙卷风上半部与底部外环出现明显青白色亮带，整体比前一张更接近最终成片状态 | 用于确认材质高亮分布在时间线后段仍然成立 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 当前仍选中 `NS_Tornado` | 说明仍在对同一个 Niagara 系统做最终视觉复核 |
+> | 右侧 | Actor Details | `NS_Tornado (Instance)` | `Transform.Location=(0,0,0)`；`Rotation=(0,0,0)`；`Scale=(1,1,1)`；`Niagara System=NS_Tornado` | 确认场景主体对象未改变 |
+> | 下方 | Sequencer | `LS_StylizedTornado` | 游标移动到约 `5.00s`；仍是 `System Life Cycle` 的 `Desired Age` 预览 | 说明这一步是在序列靠后时间点做最终检查 |
+> | 中央浮窗 | 材质实例编辑器 | `MI_TornadoStylized_*` | 顶部可见 `MI_TornadoStylized_01`、`02`、`03` 标签；当前窗口显示参数局部区 | 说明作者继续在多变体间比对 |
+> | 浮窗参数区 | `Mask` / `Soft Edge` | `MI_TornadoStylized_*` | `Mask Multiply=5.0`；`T_Mask=T_Gradient20`；`Fresnel Influence=1.0`；`Fresnel Opacity Exp=1.0`；`Fresnel Opacity Power=5.0` | 当前关注的是遮罩强度与边缘亮带控制，而不是新增贴图资源 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Mask Multiply` | `5.0` | 浮窗参数区 | 保持亮带/透明分布的遮罩强度 |
+> | `T_Mask` | `T_Gradient20` | 浮窗参数区 | 控制纵向或边缘渐变分布 |
+> | `Fresnel Influence` | `1.0` | 浮窗参数区 | 保持较强的边缘影响 |
+> | `Fresnel Opacity Exp` | `1.0` | 浮窗参数区 | 采用基础边缘指数 |
+> | `Fresnel Opacity Power` | `5.0` | 浮窗参数区 | 用较柔和的方式控制边缘亮度收束 |
+> | `Sequencer.Time` | `≈ 5.00s` | Sequencer | 在片段末段确认最终高亮条带是否合理 |
+>
+> 输出/观察:
+> - 这一步表明教程不只在单个时间点看材质，而是把同一套 `Mask + Fresnel` 参数放到序列后段再检查一次
+> - 结果上可以确认：`Mask Multiply=5.0` 配合 `Fresnel Influence=1.0 / Power=5.0` 时，亮带会稳定集中在龙卷风的螺旋外缘与底部环带
+
+### 00:20:48-00:24:14 Material、UV、Multiply
+
+- 本段定位：Material、UV、Multiply。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Blender` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`Opacity`、`Material`、`Multiply`、`Add`、`Panner`、`Emissive`、`Blender`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 龙卷风材质实例 `Soft Edge` / `Vertex offset` 终调图
+> - 组成部分: 关卡主视口 + Sequencer + 浮动材质实例窗口 + `NS_Tornado` 详情面板
+> - 所属: 关卡中的 `NS_Tornado`，以及当前查看的 `MI_TornadoStylized_03`
+> - 目的: 在最终镜头预览中，继续核对材质实例的边缘亮带与顶点偏移是否达到合适的高亮层效果
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 龙卷风的底部环带和中部螺旋亮带都很明显，整体呈高亮青白色 | 用于直接观察高亮材质在真实场景中的表现 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 当前仍选中 `NS_Tornado` | 表明关卡中正在复核主 Niagara 系统 |
+> | 右侧 | Actor Details | `NS_Tornado (Instance)` | `Transform.Location=(0,0,0)`；`Rotation=(0,0,0)`；`Scale=(1,1,1)`；`Niagara System=NS_Tornado` | 说明关卡对象未变化，关注点在材质结果 |
+> | 下方 | Sequencer | `LS_StylizedTornado` | 仍是 `NS_Tornado > NiagaraComponent0 > System Life Cycle`；模式为 `Desired Age`；时间约在 `5.00s` | 在序列后段做材质最终检查 |
+> | 中央浮窗 | 材质实例编辑器 | `MI_TornadoStylized_03` | 顶部标签显示 `MI_TornadoStylized_01`、`02`、`03`，当前活动是 `03*` | 表明正在比较第三份材质实例 |
+> | 浮窗参数区 | `Soft Edge` / `Vertex offset` | `MI_TornadoStylized_03` | `Fresnel Influence=0.5`；`Fresnel Opacity Exp=1.0`；`Fresnel Opacity Power=10.0`；`T_VertexOffset=LowResBlurredNoi...`；`Vertex Height=50.0`；`Vertex Offset (Scale|Scroll)` 的 `R=1.0` 可见 | 说明当前关注边缘高亮和较低位移幅度的组合效果 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Fresnel Influence` | `0.5` | 浮窗参数区 | 维持中等边缘影响强度 |
+> | `Fresnel Opacity Exp` | `1.0` | 浮窗参数区 | 使用基础边缘指数 |
+> | `Fresnel Opacity Power` | `10.0` | 浮窗参数区 | 让亮边更集中、更尖锐 |
+> | `T_VertexOffset` | `LowResBlurredNoise` | 浮窗参数区 | 继续用模糊噪声驱动位移 |
+> | `Vertex Height` | `50.0` | 浮窗参数区 | 把顶点位移幅度压低，避免主体形态过度摆动 |
+> | `Vertex Offset.R` | `1.0` | 浮窗参数区 | 顶点偏移缩放/滚动参数的一部分 |
+> | `Sequencer.Time` | `≈ 5.00s` | Sequencer | 在片段末段确认高亮材质的最终观感 |
+>
+> 输出/观察:
+> - 这一帧说明第三份材质实例最终倾向于“低位移、强亮边”的高亮龙卷风表现
+> - 复建时可先用 `Vertex Height=50.0` 限制形变，再用 `Fresnel Opacity Power=10.0` 把亮带集中到螺旋边缘
+> 图表转写（UE-GTXT v4）
+> - 类型: Blender 中建立基础圆柱平面/辅助网格图
+> - 图类型: Blender 视口与对象属性
+> - 所属: Blender 场景中的 `Cylinder`
+> - 目的: 从外部 DCC 中准备一个被压扁的圆柱体，作为后续导入 UE 的材质承载面或辅助网格
+>
+> 节点/对象定义集:
+> | 序号 | 对象/区域 | 类型 | 位置/层级 | 关键可读信息 |
+> |---|---|---|---|---|
+> | 1 | `Collection` | Collection | Outliner 根层级 | 场景集合中仅有一个对象 |
+> | 2 | `Cylinder` | Mesh Object | `Collection > Cylinder` | 当前被选中 |
+> | 3 | 3D Viewport | Blender 视口 | 主区域 | 原点十字与世界坐标轴可见；顶部提示 `Scale: [0] = 0 along global Z` |
+> | 4 | Transform 面板 | Object Properties | 右侧属性栏 | 显示该对象的位置、旋转与缩放 |
+>
+> 对象状态/关系:
+> | 对象 | 属性 | 值 | 含义 |
+> |---|---|---|---|
+> | `Cylinder` | `Location X/Y/Z` | `0 / 0 / 0 m` | 对象位于世界原点 |
+> | `Cylinder` | `Rotation X/Y/Z` | `0° / 0° / 0°` | 未旋转 |
+> | `Cylinder` | `Scale X/Y/Z` | `3.000 / 3.000 / 0.000` | 在 XY 放大 3 倍，同时把 Z 压到 0，变成扁平圆盘/平面 |
+> | `Viewport Hint` | `Scale [0] along global Z` | 视口左上提示 | 表明作者正在沿全局 Z 方向把厚度缩到 0 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Cylinder.Location` | `(0, 0, 0)` | Transform 面板 | 把辅助网格放在场景原点 |
+> | `Cylinder.Rotation` | `(0°, 0°, 0°)` | Transform 面板 | 保持默认方向，方便后续导出 |
+> | `Cylinder.Scale.X` | `3.000` | Transform 面板 | 扩大平面的水平尺寸 |
+> | `Cylinder.Scale.Y` | `3.000` | Transform 面板 | 扩大平面的纵深尺寸 |
+> | `Cylinder.Scale.Z` | `0.000` | Transform 面板 | 将圆柱压扁成无厚度平面状几何 |
+>
+> 输出/观察:
+> - 这张图说明教程暂时离开 UE，是为了在 Blender 里快速准备一个非常扁平的基础网格
+> - 复建时至少应保证 `Cylinder` 位于原点，且 `Scale=(3,3,0)` 的“压扁圆柱”状态成立
+> 图表转写（UE-GTXT v4）
+> - 类型: UE 静态网格导入后准备创建材质图
+> - 组成部分: 静态网格编辑器 `SM_Ring_01` 预览窗口 + Details 面板
+> - 所属: `SM_Ring_01`
+> - 目的: 把在 Blender 中准备的环形/圆盘网格导回 UE，并以此为基础开始创建专用材质
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主预览区 | Static Mesh Preview | `SM_Ring_01` | 可见一个较厚的环形/圆盘状网格，当前使用默认棋盘/网格材质显示 | 说明导入后的几何体已可在 UE 内正常预览 |
+> | 顶部标签 | 打开资产 | 编辑器标签 | 当前活动标签是 `SM_Ring_01*`；旁边仍有 `NS_Tornado` | 表明教程正从 Niagara 跳转到网格资源本身处理 |
+> | 右侧上部 | `Material Slots` | `SM_Ring_01` | 只有 `1 Material Slots`；`Element 0` 当前材质是 `WorldGridMaterial` | 说明该网格还没有正式的专用材质 |
+> | 右侧中部 | `Nanite Settings` | `SM_Ring_01` | `Enable Nanite Support` 未启用；其余 Nanite 选项保持默认/灰态 | 该网格当前按普通静态网格使用 |
+> | 右侧下部 | `LOD Picker / LOD 0` | `SM_Ring_01` | `LOD Auto`；`Triangles=512`；`Vertices=325`；`Screen Size=2.0` | 给出当前导入网格的基础几何规模 |
+> | 左上信息框 | 预览统计 | `SM_Ring_01` | 读取到 `Triangles: 512`、`Vertices: 325`、`UV Channels: 02` 等 | 说明该网格已带有 UV，可继续做材质 |
+> | 底部字幕 | 教程说明 | 视频字幕 | `And now let's create material for it.` | 明确下一步是为这个网格创建材质 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `MaterialSlots.Count` | `1` | Details > Material Slots | 当前网格只有一个材质槽位 |
+> | `MaterialSlots.Element0` | `WorldGridMaterial` | Details > Material Slots | 暂时使用默认占位材质 |
+> | `LOD Picker` | `LOD Auto` | Details | 自动预览 LOD |
+> | `LOD0.Triangles` | `512` | Details / 左上统计 | 当前网格三角面数量 |
+> | `LOD0.Vertices` | `325` | Details / 左上统计 | 当前网格顶点数量 |
+> | `UV Channels` | `02` | 左上统计 | 表明已具备至少两套 UV 信息用于后续材质 |
+>
+> 输出/观察:
+> - 这一步把 Blender 中准备的扁平几何正式转成了 UE 里的静态网格资产 `SM_Ring_01`
+> - 关键信号是 `Element 0` 还在用 `WorldGridMaterial`，因此下一步的重点应是为该网格新建并指定专用材质
+
+### 00:24:14-00:29:00 Emitter、Spawn、Material
+
+- 本段定位：Emitter、Spawn、Material。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：烟雾效果通常依赖较长 Lifetime、透明度衰减、噪声扰动和柔和的材质混合。
+- 知识点：本段围绕 `Particle`、`Spawn`、`Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Emitter` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Emitter`、`Particle`、`Spawn`、`Lifetime`、`Alpha`、`Opacity`、`Material`、`Texture`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 环形静态网格放回关卡并准备赋材质图
+> - 组成部分: 关卡主视口 + Outliner + `SM_Ring_01` 详情面板 + Content Browser
+> - 所属: 关卡中的 `SM_Ring_01`
+> - 目的: 把刚导入的环形静态网格摆到龙卷风底部附近，并准备给它分配新的专用材质
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 龙卷风左侧仍在播放，右侧选中了一个悬浮的白色环形网格，底部可见对应阴影 | 说明该环形网格将与龙卷风特效配合使用 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 当前选中 `SM_Ring_01`；同层仍有 `NS_Tornado`、`LS_Stylizec`、`CameraAct` 等 | 表明本步从 Niagara 转到环形静态网格实例 |
+> | 右侧 | Actor Details | `SM_Ring_01 (Instance)` | `Transform.Location=(376.0, -535.0, 272.0)`；`Rotation=(0.0, 0.0, 0.0)`；`Scale=(1.0, 1.0, 1.0)`；`Static Mesh=SM_Ring_01`；`Element 0=WorldGridMaterial` | 确认该环形网格已经放到场景中但仍未替换正式材质 |
+> | 下方 | Content Browser | `VFX_Library/Materials/MM` | 可见 `Special` 文件夹、`M_UberMaterial` 和 `TornadoM`；当前选中 `TornadoM`，类型为 `Material Instance` | 说明教程已在为这个环形网格准备一个名为 `TornadoM` 的材质实例 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `SM_Ring_01.Transform.Location` | `(376.0, -535.0, 272.0)` | Actor Details | 把环形网格放到龙卷风附近的目标位置 |
+> | `SM_Ring_01.Transform.Rotation` | `(0.0, 0.0, 0.0)` | Actor Details | 保持默认方向 |
+> | `SM_Ring_01.Transform.Scale` | `(1.0, 1.0, 1.0)` | Actor Details | 使用导入网格的原始缩放 |
+> | `SM_Ring_01.Static Mesh` | `SM_Ring_01` | Actor Details | 指定当前实例引用的静态网格 |
+> | `SM_Ring_01.Materials.Element0` | `WorldGridMaterial` | Actor Details | 当前仍是默认材质，占位等待替换 |
+> | `ContentBrowser.Selection` | `TornadoM (Material Instance)` | Content Browser | 作为即将赋给环形网格的候选材质资源 |
+>
+> 输出/观察:
+> - 这一步把静态网格真正放进了龙卷风场景，而不是只停留在网格编辑器里
+> - 关键动作是先在内容浏览器里准备 `TornadoM`，再把 `SM_Ring_01` 从 `WorldGridMaterial` 切换到正式材质
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara 新发射器材质参数写入图
+> - 图类型: Niagara System / Emitter Stack
+> - 所属: `NS_Tornado` 系统中的 `Empty` 发射器
+> - 目的: 为新加入的环形/网格特效建立一个独立发射器，并通过动态材质参数直接向材质写入 `Dissolve` 值
+>
+> 节点/模块定义集:
+> | 序号 | 节点/模块 | 类型 | 位置/层级 | 关键可读信息 |
+> |---|---|---|---|---|
+> | 1 | `Empty` | Emitter | System Overview 当前选中项 | 标题显示 `Empty`，顶部标注 `1 Particles` |
+> | 2 | `Emitter State` | Emitter 模块 | `Emitter Update` 下 | 标签含 `Self`、`Infinite`，说明发射器持续运行 |
+> | 3 | `Spawn Burst Instantaneous` | Spawn 模块 | `Emitter Update` 下 | 使用瞬时 Burst 生成 |
+> | 4 | `Initialize Particle` | Particle Spawn 模块 | `Particle Spawn` 下 | 初始化粒子基础属性 |
+> | 5 | `Particle State` | Particle Update 模块 | `Particle Update` 下 | 管理生命周期 |
+> | 6 | `Dynamic Material Parameters` | Particle Update 模块 | `Particle Update` 下，当前展开 | 用于给网格材质写动态参数 |
+> | 7 | `Mesh Renderer` | Renderer | Render 段 | 说明该发射器最终渲染的是网格而非 Sprite |
+>
+> 连线/作用关系:
+> | 来源 | 目标 | 关系类型 | 可确认含义 |
+> |---|---|---|---|
+> | `Dynamic Material Parameters.Index 0` | 材质动态参数槽 | 参数写入 | 当前仅写第 0 号动态材质参数 |
+> | `Index0.Dissolve` | 材质中的 `Dissolve` | 常量传值 | 当前不是曲线，而是直接写一个固定值 |
+> | `Empty` 发射器 | `Mesh Renderer` | 渲染关系 | 该材质参数将作用到网格渲染结果 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Emitter State.Mode` | `Self / Infinite` | Emitter Stack | 让发射器持续存在 |
+> | `Dynamic Material Parameters.Index` | `0` | 右侧 Details | 当前只使用第 0 号动态材质参数 |
+> | `Index0.Dissolve` | `0.507429` | 右侧 Details | 直接把溶解值写到材质，控制可见区域 |
+> | `Index0.Param1/2/3` | `0.0 / 0.0 / 0.0` | 右侧 Details | 其他动态参数槽未使用 |
+> | `Sequencer/Timeline Time` | `≈ 0.1705s` | 下方时间线 | 在发射器开头时间点调整基础材质值 |
+>
+> 输出/观察:
+> - 这一步说明环形/网格特效不是简单换材质就结束，而是额外用一个 `Empty` 网格发射器来驱动材质参数
+> - 复建时应先建立 `Mesh Renderer` 发射器，再在 `Dynamic Material Parameters` 里把 `Dissolve` 先设到约 `0.507429`
+> 图表转写（UE-GTXT v4）
+> - 类型: 环形网格材质问题定位图
+> - 组成部分: 关卡主视口 + Content Browser
+> - 所属: 龙卷风场景中的环形网格效果，以及 `MI_TornadoMeshWind_01`
+> - 目的: 在实际画面里检查刚做出的环形网格材质效果，并识别当前出现的主要视觉问题
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 龙卷风中段外侧出现一圈非常亮的白色刷痕状环带，边缘有多条细长拖尾 | 说明网格材质已经生效，但当前视觉结果过于突兀 |
+> | 场景主体 | Niagara + Ring Mesh | `NS_Tornado` 与环形网格 | 青白色龙卷风主体仍存在，问题主要集中在新增的白色环形带 | 表明问题来自附加网格层，而不是龙卷风主体材质本身 |
+> | 下方 | Content Browser | `VFX_Library/Materials/Instances/Tornado` | 目录里可见 `MI_TornadoMeshWind_01`、`MI_TornadoStylized_01`、`02`、`03`；当前选中 `MI_TornadoMeshWind_01` | 说明正在排查的就是环形网格专用材质实例 |
+> | 底部字幕 | 教程说明 | 视频字幕 | `And this is the big problem, so we need to solve it.` | 明确指出当前环形材质效果存在严重问题，接下来要修正 |
+>
+> 设置/参数:
+> | 对象/资源 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `ContentBrowser.Selection` | `MI_TornadoMeshWind_01` | Content Browser | 当前问题定位到环形网格材质实例 |
+> | `Scene Issue` | 过亮白色环带 + 明显拖尾刷痕 | 主视口 | 当前视觉问题本体 |
+> | `Comparison Set` | `MI_TornadoStylized_01/02/03` 同目录可见 | Content Browser | 表明作者可与龙卷风主体材质实例做对照修正 |
+>
+> 输出/观察:
+> - 这一步不是展示正确结果，而是在确认 `MI_TornadoMeshWind_01` 当前做出的环形效果“太明显、太白、太像刷痕”
+> - 后续修正应优先围绕这个环形网格材质实例的透明度、颜色强度、溶解或 UV 拖尾展开，而不是回头改龙卷风主体材质
+
+### 00:29:00-00:32:44 Collision、Material、Normal
+
+- 本段定位：Collision、Material、Normal。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Blender` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：User Parameter 要保持命名和类型稳定，便于蓝图、材质或系统级控制复用。
+- 知识点：碰撞效果可用不可见碰撞体或场景几何验证，重点检查碰撞响应和粒子消亡逻辑。
+- 知识点：角色或镜头演示需要导入 FBX/骨骼/动画，并用 Sequencer 校准触发时机。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 复现要点：碰撞、GPU/CPU Sim、Bounds 和 Local Space 会影响可见性、性能和触发精度，复现时要单独检查。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Alpha`、`Opacity`、`Material`、`User Parameter`、`Collision`、`Sequencer`、`Panner`、`Emissive`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 静态网格背面朝向问题定位图
+> - 组成部分: 静态网格编辑器 `SM_Ring_01` 预览窗口 + Details 面板
+> - 所属: `SM_Ring_01`
+> - 目的: 检查环形网格的背面/法线朝向问题，并确认需要把面反转后再继续材质制作
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主预览区 | Static Mesh Preview | `SM_Ring_01` | 视角贴近环形网格边缘，可见网格表面当前显示状态不符合预期 | 用于观察背面显示是否正常 |
+> | 顶部标签 | 打开资产 | 编辑器标签 | 当前活动是 `SM_Ring_01*`；旁边仍有 `MI_TornadoMeshWind...`、`NS_Tornado`、`VFX_T_Trail_1` | 说明问题定位发生在网格与材质联调之后 |
+> | 右侧上部 | `Material Slots` | `SM_Ring_01` | `1 Material Slots`；`Element 0=WorldGridMaterial` | 当前仍用默认材质检查几何朝向问题 |
+> | 右侧下部 | `LOD Picker / LOD 0` | `SM_Ring_01` | `LOD Auto`；`Triangles=512`；`Vertices=325` | 与前面导入统计一致，说明问题不在网格规模 |
+> | 左上统计框 | 预览统计 | `SM_Ring_01` | 可见 `Triangles: 512`、`Vertices: 325`、`UV Channels: 02` 等 | 再次确认是同一份网格资产 |
+> | 底部字幕 | 教程说明 | 视频字幕 | `We need to invert them so that the back side is displayed according to the standard.` | 明确给出修正方向是反转朝向/法线 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `MaterialSlots.Element0` | `WorldGridMaterial` | Details > Material Slots | 保持默认材质以便纯看几何朝向 |
+> | `LOD0.Triangles` | `512` | Details / 左上统计 | 当前网格三角面数量 |
+> | `LOD0.Vertices` | `325` | Details / 左上统计 | 当前网格顶点数量 |
+> | `UV Channels` | `02` | 左上统计 | 说明 UV 数据存在，当前问题主要是朝向而非 UV 缺失 |
+>
+> 输出/观察:
+> - 这一步确认环形网格当前存在背面显示不符合预期的问题
+> - 后续修正重点应是反转网格面/法线朝向，使背面显示符合标准，而不是继续先调材质强度
+> 图表转写（UE-GTXT v4）
+> - 类型: Blender 中回源修正环形网格图
+> - 图类型: Blender Edit Mode / Mesh 编辑
+> - 所属: `SM_Ring_01`
+> - 目的: 回到源网格而不是在 UE 里硬补丁，直接从几何/面朝向层面修正环形网格问题
+>
+> 节点/对象定义集:
+> | 序号 | 对象/区域 | 类型 | 位置/层级 | 关键可读信息 |
+> |---|---|---|---|---|
+> | 1 | `SM_Ring_01` | Mesh Object | `Collection > SM_Ring_01` | 当前在 Blender 中被选中 |
+> | 2 | 3D Viewport | Blender 视口 | 主区域 | 左上显示 `Edit Mode`；可见整圈网格顶点与边线，说明正在编辑实际几何 |
+> | 3 | Outliner | 场景层级 | 右上 | 集合中仅有 `SM_Ring_01` |
+> | 4 | Transform 面板 | Object Properties | 右侧属性栏 | 显示位置、旋转与缩放 |
+>
+> 对象状态/关系:
+> | 对象 | 属性 | 值 | 含义 |
+> |---|---|---|---|
+> | `SM_Ring_01` | `Location X/Y/Z` | `0 / 0 / 0 m` | 网格位于原点 |
+> | `SM_Ring_01` | `Rotation X/Y/Z` | `0° / 0° / 0°` | 保持默认方向 |
+> | `SM_Ring_01` | `Scale X/Y/Z` | `0.010 / 0.010 / 0.010` | 当前源网格以非常小的统一缩放存在，符合常见 DCC 到 UE 的导出比例处理 |
+> | `Viewport Mode` | `Edit Mode` | 顶部模式栏 | 说明当前正在做网格级别修改，而非对象级摆放 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `SM_Ring_01.Location` | `(0, 0, 0)` | Transform 面板 | 保持导出原点稳定 |
+> | `SM_Ring_01.Rotation` | `(0°, 0°, 0°)` | Transform 面板 | 保持标准朝向，方便回导 UE |
+> | `SM_Ring_01.Scale` | `(0.010, 0.010, 0.010)` | Transform 面板 | 保持导出比例一致 |
+> | `Edit Mode` | `Enabled` | 顶部模式栏 | 允许直接修改顶点、边、面与法线 |
+>
+> 输出/观察:
+> - 这一步的关键判断是：背面/法线问题要回源网格解决，而不是继续在 UE 材质侧打补丁
+> - 复建时应在 Blender 的 `Edit Mode` 下对 `SM_Ring_01` 做面朝向或法线修正，再重新导回 UE
+> 图表转写（UE-GTXT v4）
+> - 类型: 反转网格回导并复用材质图
+> - 组成部分: 关卡主视口 + Outliner + `SM_Ring_01` 详情面板 + Content Browser
+> - 所属: 关卡中的 `SM_Ring_01`，以及内容浏览器里的 `SM_Ring_01_Inverted`
+> - 目的: 把修正过朝向的反转网格重新导回 UE，并让它复用与原环形相同的材质方案
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 龙卷风中段可见白色刷痕环带；右侧另有一个被选中的环形网格实例 | 说明作者正在对比当前效果与新导入网格 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 当前选中 `SM_Ring_01`；同层仍有 `NS_Tornado` 等对象 | 关卡中仍在使用环形静态网格配合 Niagara |
+> | 右侧 | Actor Details | `SM_Ring_01 (Instance)` | `Transform.Location=(-1185.0, -1307.0, 0.0)`；`Rotation=(0.0,0.0,0.0)`；`Scale=(1.0,1.0,1.0)`；`Static Mesh=SM_Ring_01`；`Element 0=WorldGridMaterial` | 当前场景实例仍显示原始网格/默认材质状态，用于对照 |
+> | 下方 | Content Browser | `VFX_Library/Meshes` | 当前选中 `SM_Ring_01`；旁边可见 `SM_Ring_01_Inverted` 和其他环/圆柱类网格 | 说明反转版本网格已经作为新资源导回内容浏览器 |
+> | 底部字幕 | 教程说明 | 视频字幕 | `and assign one the same material.` | 明确要求给反转后的网格分配与原来相同的材质 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `SM_Ring_01.Transform.Location` | `(-1185.0, -1307.0, 0.0)` | Actor Details | 场景中当前对照实例的位置 |
+> | `SM_Ring_01.Transform.Rotation` | `(0.0, 0.0, 0.0)` | Actor Details | 保持默认朝向 |
+> | `SM_Ring_01.Transform.Scale` | `(1.0, 1.0, 1.0)` | Actor Details | 保持原始缩放 |
+> | `SM_Ring_01.Static Mesh` | `SM_Ring_01` | Actor Details | 当前实例仍引用原始环形网格 |
+> | `ContentBrowser.Asset` | `SM_Ring_01_Inverted` | Content Browser | 表示已生成反转朝向的新静态网格资源 |
+> | `Material Action` | 复用相同材质 | 字幕 | 把原网格使用的材质设置也赋给反转版网格 |
+>
+> 输出/观察:
+> - 这一步给出了朝向问题的根本解决路径：不是只调材质，而是新增一个 `SM_Ring_01_Inverted` 版本
+> - 修正后的工作流应是：导入反转版网格，然后给它分配与原环形相同的材质，再继续检查视觉结果
+
+### 00:32:44-00:36:05 System、Lifetime、Color
+
+- 本段定位：System、Lifetime、Color。
+- 知识点：角色或镜头演示需要导入 FBX/骨骼/动画，并用 Sequencer 校准触发时机。
+- 知识点：Lifetime 决定粒子存活时间，需要和 Spawn 数量、速度以及透明度曲线一起调。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：蓝图、Sequencer 或 Montage 触发 Niagara 时，要确认生成位置、生命周期和销毁时机。
+- 核对对象：`Spawn`、`Lifetime`、`Color`、`Sequencer`、`粒子`、`速度`、`透明度`、`曲线`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 环形网格材质实例正反面与失真设置图
+> - 组成部分: 材质实例预览视口 + `Layer Parameters` / 材质属性覆盖
+> - 所属: `MI_TornadoMeshWind_*`
+> - 目的: 直接检查这个环形网格材质在正反两面的显示差异，并确认材质侧当前使用的双面、半透明和失真相关设置
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 左侧 | 材质预览 | `MI_TornadoMeshWind_*` | 预览球体上半部出现不均匀深色遮挡，整体仍是高亮白色主体 | 用于直接对比材质正反面或不同区域的显示差异 |
+> | 右侧上部 | `Distortion` | `MI_TornadoMeshWind_*` | `Distortion (Scale|Scroll)` 的 `R=1.0`、`G=1.0`、`B=0.0`、`A=0.0`；`Distortion Influence=0.0`；`T_Distortion=T_Voronnoise002` | 说明材质已接入失真噪声，但当前失真影响被关到 0 |
+> | 右侧中部 | `Global Scalar Parameter Values` | `MI_TornadoMeshWind_*` | `Depth Fade=100.0` | 保持与场景接触区域的淡出控制 |
+> | 右侧中部 | `General` | `MI_TornadoMeshWind_*` | `Parent=M_UberMaterial` | 说明该环形材质实例仍基于通用母材质 |
+> | 右侧下部 | `Material Property Overrides` | `MI_TornadoMeshWind_*` | `Opacity Mask Clip Value≈0.3333`；`Blend Mode=Translucent`；`Shading Model=Unlit`；`Two Sided` 已勾选 | 给出当前正反面显示问题对应的关键材质开关 |
+> | 底部字幕 | 教程说明 | 视频字幕 | `But this object's front side is this, and this one is this one.` | 明确作者正在对比这个对象前后两面的不同表现 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Distortion.R/G/B/A` | `1.0 / 1.0 / 0.0 / 0.0` | Layer Parameters | 控制失真贴图的缩放/滚动参数 |
+> | `Distortion Influence` | `0.0` | Layer Parameters | 当前暂时不让失真影响最终效果 |
+> | `T_Distortion` | `T_Voronnoise002` | Layer Parameters | 作为失真噪声纹理输入 |
+> | `Depth Fade` | `100.0` | Layer Parameters | 控制边缘与场景的融合淡出 |
+> | `Parent` | `M_UberMaterial` | General | 基于通用母材质派生 |
+> | `Opacity Mask Clip Value` | `≈0.3333` | Material Property Overrides | 当前遮罩裁切阈值 |
+> | `Blend Mode` | `Translucent` | Material Property Overrides | 使用半透明混合 |
+> | `Shading Model` | `Unlit` | Material Property Overrides | 不受场景光照影响 |
+> | `Two Sided` | `Enabled` | Material Property Overrides | 允许双面显示 |
+>
+> 输出/观察:
+> - 这一步把问题收敛到材质实例层面：即使开启了 `Two Sided`，正反面的实际显示仍然存在明显差异
+> - 复建时应优先同时检查网格朝向和材质双面设置，不要只依赖 `Two Sided` 试图掩盖几何法线问题
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara 环形网格正面渲染器配置图
+> - 图类型: Niagara System / Mesh Renderer
+> - 所属: `NS_Tornado` 系统中的 `Empty` 发射器
+> - 目的: 把环形网格的正面作为一个独立渲染层配置出来，并显式指定所用静态网格和材质实例
+>
+> 节点/模块定义集:
+> | 序号 | 节点/模块 | 类型 | 位置/层级 | 关键可读信息 |
+> |---|---|---|---|---|
+> | 1 | `Empty` | Emitter | System Overview 当前选中项 | 顶部显示 `4 Particles` |
+> | 2 | `Emitter State` | Emitter 模块 | `Emitter Update` 下 | 标签含 `Self`、`Infinite` |
+> | 3 | `Spawn Burst Instantaneous` | Spawn 模块 | `Emitter Update` 下 | 负责瞬时生成 |
+> | 4 | `Dynamic Material Parameters` | Particle Update 模块 | `Particle Update` 下 | 继续负责材质传值 |
+> | 5 | `Front Face` | Mesh Renderer | Render 段，当前选中 | 明确这是正面渲染层 |
+> | 6 | `Back Face` | Mesh Renderer | Render 段，当前未选中 | 说明系统里已经准备了背面对应渲染层 |
+>
+> 连线/作用关系:
+> | 来源 | 目标 | 关系类型 | 可确认含义 |
+> |---|---|---|---|
+> | `Empty` 发射器 | `Front Face` | 渲染关系 | 当前配置的正面环形层由 `Empty` 发射器输出 |
+> | `Front Face.Mesh` | `SM_Ring_01` | 网格引用 | 正面层使用原始环形网格 |
+> | `Front Face.Override Material[0]` | `MI_TornadoMeshWind_01` | 材质覆写 | 发射器直接指定专用环形材质实例 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Meshes[Index0]` | `SM_Ring_01` | 右侧 Details | 为正面渲染层指定基础静态网格 |
+> | `Enable Material Overrides` | `Enabled` | 右侧 Details | 允许 Mesh Renderer 覆写网格默认材质 |
+> | `Override Materials[Index0].Explicit Mat` | `MI_TornadoMeshWind_01` | 右侧 Details | 给正面环形层指定专用材质实例 |
+> | `Source Mode` | `Particles` | 右侧 Details | 由粒子数据驱动网格渲染 |
+> | `Facing Mode` | `Default` | 右侧 Details | 使用默认朝向模式 |
+> | `Renderer Visibility` | `0` | 右侧 Details | 当前可见性参数值 |
+> | `Sort Order Hint` | `4` | 右侧 Details | 控制该渲染层在多个渲染器间的排序优先级 |
+> | `Timeline Time` | `≈ 3.9192s` | 下方时间线 | 在中后段时间点检查渲染结果 |
+>
+> 输出/观察:
+> - 这一步表明教程没有只靠双面材质，而是把正反面拆成了独立的 Mesh Renderer 处理
+> - 复建时应至少建立 `Front Face` 渲染器，并让它使用 `SM_Ring_01 + MI_TornadoMeshWind_01` 的组合
+> 图表转写（UE-GTXT v4）
+> - 类型: Sequencer 预览下的颜色参数创建准备图
+> - 组成部分: 关卡主视口 + Outliner + Sequencer + 颜色选择器
+> - 所属: `NS_Tornado` 预览场景中的环形层/颜色控制
+> - 目的: 在实际镜头预览里先选定目标颜色，再把这个颜色抽成一个可复用参数
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 龙卷风主体居中，环形层在中段左右出现较暗的细线轮廓 | 用于观察颜色调整后环形层与主体的融合效果 |
+> | 右上 | Outliner | `Stylized_Tornado (Editor)` | 当前仍选中 `NS_Tornado` | 说明颜色参数最终将服务于当前 Niagara 系统 |
+> | 下方 | Sequencer | `LS_StylizedTornado` | 仍是 `NS_Tornado > NiagaraComponent0 > System Life Cycle`；模式为 `Desired Age`；游标约在 `1.5833s` | 在特定时间点检查颜色变化对画面结果的影响 |
+> | 右下浮窗 | 颜色选择器 | Color Picker | 当前选中的是低亮度青绿色；`R=0.00038`、`G=0.006697`、`B=0.004371`、`A=1.0`；`H=159.042526`；`S=0.994351`；`V=0.006697`；`Hex Linear=00020F1F`；`Hex sRGB=00130EFF`；启用 `sRGB Preview` | 说明作者在把环形层颜色压到非常暗的青绿色 |
+> | 底部字幕 | 教程说明 | 视频字幕 | `How do we do it? We need to create a parameter.` | 明确下一步不是继续手填常量，而是把颜色做成参数 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `ColorPicker.R/G/B/A` | `0.00038 / 0.006697 / 0.004371 / 1.0` | 颜色选择器 | 当前目标颜色的线性通道值 |
+> | `ColorPicker.H/S/V` | `159.042526 / 0.994351 / 0.006697` | 颜色选择器 | 表明这是高饱和但极低亮度的青绿色 |
+> | `Hex Linear` | `00020F1F` | 颜色选择器 | 线性空间颜色编码 |
+> | `Hex sRGB` | `00130EFF` | 颜色选择器 | sRGB 预览颜色编码 |
+> | `Sequencer.Time` | `≈ 1.5833s` | Sequencer | 在前段时间点检查颜色层是否过亮 |
+>
+> 输出/观察:
+> - 这一步把环形层的颜色方向明确成“极暗的青绿色”，避免继续出现过白的刷痕感
+> - 更重要的是，字幕明确要求把这个颜色抽象成参数，后续应通过材质参数、Niagara 用户参数或动态材质参数来驱动，而不是继续写死常量
+
+### 00:36:05-00:41:04 Emitter、Spawn、Color
+
+- 本段定位：Emitter、Spawn、Color。
+- 知识点：本段围绕 `Color`、`Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle`、`Color`、`Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：User Parameter 要保持命名和类型稳定，便于蓝图、材质或系统级控制复用。
+- 知识点：本段围绕 `Color` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Emitter`、`Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Spawn` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 复现要点：User Parameter 与 Dynamic Material Parameter 负责跨 Niagara、蓝图和材质传值，命名和类型必须稳定。
+- 核对对象：`Emitter`、`Particle`、`Spawn`、`Color`、`Alpha`、`User Parameter`、`Lerp`、`Multiply`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: Niagara 背面颜色参数乘法输入图
+> - 图类型: Niagara System / Particle Spawn
+> - 所属: `NS_Tornado` 系统中的 `Empty` 发射器
+> - 目的: 把上一批确定的颜色方向真正接入 Niagara 粒子属性，通过乘法输入生成背面颜色参数
+>
+> 节点/模块定义集:
+> | 序号 | 节点/模块 | 类型 | 位置/层级 | 关键可读信息 |
+> |---|---|---|---|---|
+> | 1 | `Empty` | Emitter | System Overview 当前选中项 | 仍是环形层专用发射器 |
+> | 2 | `Initialize Particle` | Particle Spawn 模块 | `Particle Spawn` 下 | 基础粒子初始化仍保留 |
+> | 3 | `Set (PARTICLES) Backface Color` | Particle Spawn 模块 | `Particle Spawn` 下，当前选中 | 新增一个粒子属性写入模块 |
+> | 4 | `Front Face` | Mesh Renderer | Render 段 | 正面渲染层 |
+> | 5 | `Back Face` | Mesh Renderer | Render 段 | 背面渲染层 |
+> | 6 | `Multiply Linear Color` | Dynamic Input | 右侧搜索结果 | 用于给 `Particles.Backface Color` 生成乘法颜色输入 |
+>
+> 连线/作用关系:
+> | 来源 | 目标 | 关系类型 | 可确认含义 |
+> |---|---|---|---|
+> | `Multiply Linear Color` | `Particles.Backface Color` | 动态输入 | 用乘法方式计算背面颜色 |
+> | `Set (PARTICLES) Backface Color` | `Back Face` 渲染结果 | 属性传递 | 背面渲染层将读取这个颜色属性 |
+> | `Particle Spawn` | `Render` | 生命周期关系 | 颜色在生成阶段写入，后续渲染直接使用 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Particle Attribute` | `Particles.Backface Color` | 右侧模块标题 / 左下属性列表 | 新增背面颜色粒子属性 |
+> | `Dynamic Input Candidate` | `Multiply Linear Color` | 右侧搜索结果 | 用于按标准对现有颜色做乘法修正 |
+> | `Timeline Time` | `≈ 2.1447s` | 下方时间线 | 在中段时间点调试颜色行为 |
+>
+> 输出/观察:
+> - 这一步把“创建颜色参数”的口头说明落实成了 `Particles.Backface Color` 这个明确的粒子属性
+> - 复建时应在 `Particle Spawn` 阶段写入 `Backface Color`，并优先使用 `Multiply Linear Color` 这类线性颜色乘法输入来修正背面颜色
+> 图表转写（UE-GTXT v4）
+> - 类型: `Empty` 发射器一次性生成与背面颜色写入图
+> - 图类型: Niagara System / Emitter Stack
+> - 所属: `NS_Tornado` 系统中的 `Empty` 发射器
+> - 目的: 把环形层的发射方式改为一次性短促生成，并在同一发射器里继续写入背面颜色属性
+>
+> 节点/模块定义集:
+> | 序号 | 节点/模块 | 类型 | 位置/层级 | 关键可读信息 |
+> |---|---|---|---|---|
+> | 1 | `Empty` | Emitter | System Overview 当前选中项 | 当前仍是环形层专用发射器 |
+> | 2 | `Emitter State` | Emitter 模块 | `Emitter Update` 下 | 标签显示 `Self`、`Once` |
+> | 3 | `Spawn Burst Instantaneous` | Spawn 模块 | `Emitter Update` 下，当前选中 | 右侧显示具体 Burst 参数 |
+> | 4 | `Initialize Particle` | Particle Spawn 模块 | `Particle Spawn` 下 | 粒子初始化 |
+> | 5 | `Set (PARTICLES) Backface Color` | Particle Spawn 模块 | `Particle Spawn` 下 | 背面颜色仍在生成阶段写入 |
+> | 6 | `Shape Location Box / Plane` | Particle Spawn 模块 | `Particle Spawn` 下 | 指定网格/粒子生成形状位置 |
+> | 7 | `Front Face` / `Back Face` | Mesh Renderer | Render 段 | 正反面双渲染器仍同时存在 |
+>
+> 连线/作用关系:
+> | 来源 | 目标 | 关系类型 | 可确认含义 |
+> |---|---|---|---|
+> | `Spawn Burst Instantaneous` | `Initialize Particle` | 生命周期顺序 | 先生成固定数量粒子，再初始化 |
+> | `Set Backface Color` | `Back Face` | 属性传递 | 背面层读取这一颜色属性 |
+> | `Shape Location Box / Plane` | 网格粒子位置 | 位置初始化 | 让环形层在平面/盒体位置上正确出现 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Emitter State.Mode` | `Self / Once` | Emitter Stack | 发射器只触发一次而非无限持续 |
+> | `Spawn Burst Instantaneous.Spawn Count` | `3` | 右侧 Details | 一次性生成 3 个粒子/网格实例 |
+> | `Spawn Burst Instantaneous.Spawn Time` | `0.0` | 右侧 Details | 在发射器起始时立刻生成 |
+> | `Spawn Probability` | `1.0` | 右侧 Details | 保证这次 Burst 必然发生 |
+> | `Loop Count Limit` | `1` | 右侧 Details | 只运行一轮 |
+> | `Timeline Time` | `≈ 2.525s` | 下方时间线 | 在中段时间点检查一次性生成层的结果 |
+>
+> 输出/观察:
+> - 这一步明确说明环形层不是持续刷新的条带，而是更接近“一次性 Burst 出来的少量网格实例”
+> - 复建时应让 `Empty` 发射器使用 `Once + Spawn Count 3 + Spawn Time 0.0` 的组合，再叠加前一张建立的 `Backface Color` 参数
+> 图表转写（UE-GTXT v4）
+> - 类型: `Initialize Particle` 中按执行序号分层布置网格图
+> - 图类型: Niagara System / Particle Spawn
+> - 所属: `NS_Tornado` 系统中的 `Empty` 发射器
+> - 目的: 利用归一化执行序号把一次 Burst 出来的多个网格实例沿 Z 方向错层分布，而不是重叠在同一高度
+>
+> 节点/模块定义集:
+> | 序号 | 节点/模块 | 类型 | 位置/层级 | 关键可读信息 |
+> |---|---|---|---|---|
+> | 1 | `Initialize Particle` | Particle Spawn 模块 | `Particle Spawn` 下，当前选中 | 当前展开的是粒子初始化细节 |
+> | 2 | `Position Offset` | Initialize 子项 | `Particle Attributes` 中 | 位置偏移使用 `Make Vector` |
+> | 3 | `Lerp Float` | Dynamic Input | `Position Offset.Z` 下 | 用于在两个高度值之间插值 |
+> | 4 | `Return Normalized Exec Index` | Dynamic Input | `Lerp Float.Alpha` 下 | 作为 0 到 1 的归一化插值因子 |
+> | 5 | `Set (PARTICLES) Backface Color` | Particle Spawn 模块 | `Initialize Particle` 下方 | 保持背面颜色写入 |
+> | 6 | `Front Face` / `Back Face` | Mesh Renderer | Render 段 | 说明这些分层粒子最终会驱动双面网格渲染 |
+>
+> 连线/作用关系:
+> | 来源 | 目标 | 关系类型 | 可确认含义 |
+> |---|---|---|---|
+> | `Return Normalized Exec Index` | `Lerp Float.Alpha` | 驱动输入 | 根据粒子序号返回 0 到 1 的归一化值 |
+> | `Lerp Float` | `Position Offset.Z` | 数值插值 | 把粒子沿 Z 方向分布在两个高度值之间 |
+> | `Make Vector(X/Y/Z)` | `Position Offset` | 向量组装 | 最终形成粒子的三维偏移 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Lifetime Mode` | `Direct Set` | 右侧 Details | 直接指定粒子存活时间 |
+> | `Lifetime` | `10.0` | 右侧 Details | 让这一层网格存在较长时间 |
+> | `Color Mode` | `Direct Set` | 右侧 Details | 颜色直接设定 |
+> | `Position Mode` | `Simulation Position` | 右侧 Details | 粒子位置基于模拟空间 |
+> | `Position Offset.X` | `0.0` | 右侧 Details | 不在 X 方向额外偏移 |
+> | `Position Offset.Y` | `0.0` | 右侧 Details | 不在 Y 方向额外偏移 |
+> | `Position Offset.Z.A` | `400.0` | 右侧 Details | Z 插值起点 |
+> | `Position Offset.Z.B` | `1100.0` | 右侧 Details | Z 插值终点 |
+> | `Lerp Float.Alpha` | `Return Normalized Exec Index` | 右侧 Details | 依据粒子编号返回 0 到 1 的值 |
+> | `Normalized Index Scale` | `1.0` | 右侧 Details | 保持归一化值原始比例 |
+> | `Normalized Index Include...` | `Enabled` | 右侧 Details | 保持当前归一化索引选项启用 |
+> | `Position Offset Coordinate Space` | `Simulation` | 右侧 Details | 在模拟空间应用偏移 |
+> | `Mesh Uniform Scale` | `2.0` | 右侧 Details | 让这一层网格整体放大到 2 倍 |
+>
+> 输出/观察:
+> - 这一步把“3 个一次性粒子”进一步变成了沿 Z 轴分层排布的 3 个环形网格
+> - 复建时应使用 `Return Normalized Exec Index` 作为 `Lerp Float` 的 Alpha，把 `Z` 从 `400` 插值到 `1100`，从而得到上中下错层的网格分布
+
+### 00:41:04-00:45:48 Lifetime、Alpha、Multiply
+
+- 本段定位：Lifetime、Alpha、Multiply。
+- 知识点：本段围绕 `Curve` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：Lifetime 决定粒子存活时间，需要和 Spawn 数量、速度以及透明度曲线一起调。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Multiply` 进行设置，需结合关键画面核对真实节点和参数。
+- 知识点：本段围绕 `Alpha` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Particle`、`Spawn`、`Lifetime`、`Alpha`、`Curve`、`Multiply`、`粒子`、`速度`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 网格粒子改为非均匀缩放图
+> - 图类型: Niagara System / Initialize Particle
+> - 所属: `NS_Tornado` 系统中的 `Empty` 发射器
+> - 目的: 让环形网格粒子不再只用统一缩放，而是改成可分别控制各轴比例的非均匀缩放，为后续拉伸形态做准备
+>
+> 节点/模块定义集:
+> | 序号 | 节点/模块 | 类型 | 位置/层级 | 关键可读信息 |
+> |---|---|---|---|---|
+> | 1 | `Initialize Particle` | Particle Spawn 模块 | `Particle Spawn` 下，当前选中 | 继续在初始化阶段配置网格粒子属性 |
+> | 2 | `Position Offset` | Particle Attributes | `Initialize Particle` 中 | 仍保留上批的 Z 方向分层逻辑 |
+> | 3 | `Mesh Attributes` | Initialize 子项 | 右侧下部 | 当前展开的是网格缩放模式 |
+> | 4 | `Mesh Scale Mode` | Mesh Attributes 选项 | 下拉菜单已展开 | 可选 `Unset`、`Uniform`、`Random Uniform`、`Non-Uniform`、`Random Non-Uniform` |
+> | 5 | `Front Face` / `Back Face` | Mesh Renderer | Render 段 | 这些网格缩放结果将作用到正反面环形渲染层 |
+>
+> 连线/作用关系:
+> | 来源 | 目标 | 关系类型 | 可确认含义 |
+> |---|---|---|---|
+> | `Initialize Particle.Mesh Scale Mode` | 网格实例缩放方式 | 初始化设置 | 决定后续是否能单独控制 XYZ 缩放 |
+> | `Non-Uniform` 模式 | `Mesh Attributes` | 模式切换 | 允许网格沿不同轴使用不同尺寸 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Lifetime` | `10.0` | 右侧 Details | 维持较长存活时间 |
+> | `Position Mode` | `Simulation Position` | 右侧 Details | 仍在模拟空间布置粒子 |
+> | `Position Offset.Z.A/B` | `400.0 / 1100.0` | 右侧 Details | 保持沿 Z 分层 |
+> | `Mesh Scale Mode` | `Non-Uniform` | 右侧下拉菜单 | 允许分别控制网格的 X/Y/Z 缩放 |
+>
+> 输出/观察:
+> - 这一步的核心是从“统一放大”切换到“非均匀缩放”，这通常是为了把环形网格压扁、拉宽或做不同轴向的变形
+> - 复建时应先把 `Mesh Scale Mode` 设为 `Non-Uniform`，再继续补各轴具体缩放值
+> 图表转写（UE-GTXT v4）
+> - 类型: 网格初始朝向随机化准备图
+> - 图类型: Niagara System / Particle Spawn
+> - 所属: `NS_Tornado` 系统中的 `Empty` 发射器
+> - 目的: 给环形网格实例增加初始朝向控制，为后续做轻微偏向一侧的随机化旋转做准备
+>
+> 节点/模块定义集:
+> | 序号 | 节点/模块 | 类型 | 位置/层级 | 关键可读信息 |
+> |---|---|---|---|---|
+> | 1 | `Initial Mesh Orientation` | Particle Spawn 模块 | `Particle Spawn` 下，当前选中 | 新增专门控制网格初始朝向的模块 |
+> | 2 | `Mesh Orientation Mode` | Orientation 选项 | `Initial Mesh Orientation` 中 | 当前值为 `None` |
+> | 3 | `Rotation` | Orientation 子项 | `Initial Mesh Orientation` 中 | 三轴当前都是 `0.0` |
+> | 4 | `Rotation Coordinate Space` | Orientation 子项 | `Initial Mesh Orientation` 中 | 当前坐标空间为 `Mesh` |
+> | 5 | `Front Face` / `Back Face` | Mesh Renderer | Render 段 | 这些朝向结果最终会作用到正反面环形网格 |
+>
+> 连线/作用关系:
+> | 来源 | 目标 | 关系类型 | 可确认含义 |
+> |---|---|---|---|
+> | `Initial Mesh Orientation` | 网格初始朝向 | 初始化设置 | 在生成阶段定义网格的旋转状态 |
+> | `Rotation (X/Y/Z)` | 网格实例 | 角度输入 | 后续可在各轴上添加随机偏移 |
+> | `Rotation Coordinate Space = Mesh` | 旋转解释空间 | 坐标系选择 | 表示旋转以网格自身空间为基准 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Mesh Orientation Mode` | `None` | 右侧 Details | 当前还未切换到具体的朝向解算模式 |
+> | `Rotation.X/Y/Z` | `0.0 / 0.0 / 0.0` | 右侧 Details | 初始状态先不附加旋转 |
+> | `Rotation Coordinate Space` | `Mesh` | 右侧 Details | 按网格局部空间解释旋转值 |
+> | `Timeline Time` | `≈ 1.0917s` | 下方时间线 | 在偏前时刻检查随机化对环形层的影响 |
+>
+> 输出/观察:
+> - 这一步不是已经完成随机化，而是先把负责随机化的 `Initial Mesh Orientation` 模块插进流程
+> - 字幕表明下一步会在这里加入“稍微偏向一边”的随机旋转，因此复建时不要停在 `None/0/0/0` 这个初始状态
+> 图表转写（UE-GTXT v4）
+> - 类型: 随机朝向结果在实际镜头中的问题复核图
+> - 组成部分: 关卡主视口 + Sequencer
+> - 所属: `NS_Tornado` 中的环形/风带附加层
+> - 目的: 在真实镜头回放中验证刚加入的随机朝向后，检查风带是否仍然保持正确旋转方向
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 龙卷风主体正常旋转，但左右两侧出现细小的青色风带/片段，其中至少有一条方向异常 | 用于观察随机化后的最终视觉结果 |
+> | 下方 | Sequencer | `LS_StylizedTornado` | 仍是 `NS_Tornado > NiagaraComponent0 > System Life Cycle`；模式为 `Desired Age`；游标约在 `0.9796s` | 在较前时间点就能看到方向错误问题 |
+> | 底部字幕 | 教程说明 | 视频字幕 | `This wind still appears, which spins in the opposite direction.` | 明确指出当前随机出来的一股风还在反向旋转 |
+>
+> 设置/参数:
+> | 对象/状态 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Sequencer.Time` | `≈ 0.9796s` | 时间线 | 在前段时间点检查方向问题 |
+> | `Observed Issue` | 某条风带反向旋转 | 主视口 / 字幕 | 当前随机化策略造成的可见问题 |
+>
+> 输出/观察:
+> - 这一步说明“给一点随机化”已经产生副作用：至少有一个附加风带与主龙卷风的旋向不一致
+> - 后续修正方向应是限制随机朝向范围，只保留轻微偏移，避免出现完全反向的旋转结果
+
+### 00:45:48-00:48:40 Add
+
+- 本段定位：Add。
+- 知识点：参考素材应按效果类型、颜色、运动方式和用途打标签，便于后续复现 VFX 风格。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Add` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Alpha`、`Opacity`、`Texture`、`Add`、`Panner`、`Emissive`、`Blender`、`材质`。
+
+**关键画面：**
+
+> 图表转写（UE-GTXT v4）
+> - 类型: 环形附加层亮度继续压暗图
+> - 组成部分: 关卡主视口 + Sequencer
+> - 所属: `NS_Tornado` 场景中的环形附加层
+> - 目的: 在实际镜头里继续压低附加风带/环形层的亮度，使其不要抢过龙卷风主体
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 整体场景非常暗，龙卷风主体几乎不可见，只剩地面中心一小块更浅的雾状区域 | 说明当前正在把附加层和整体亮度压低到更隐蔽的状态 |
+> | 下方 | Sequencer | `LS_StylizedTornado` | 仍是 `NS_Tornado > NiagaraComponent0 > System Life Cycle`；模式为 `Desired Age`；游标约在 `-0.3833s` 的起始附近 | 在极早时间点检查最暗状态下的可见性 |
+> | 底部字幕 | 教程说明 | 视频字幕 | `It is possible to make it even darker like this.` | 直接说明目标是把这层效果再压暗一些 |
+>
+> 设置/参数:
+> | 对象/状态 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Sequencer.Time` | `≈ -0.3833s` | 时间线 | 在起始附近检查最暗的结果 |
+> | `Observed Result` | 附加层几乎融入背景，仅余极弱亮度痕迹 | 主视口 | 目标是降低存在感，避免过白过亮 |
+>
+> 输出/观察:
+> - 这一帧没有暴露新的具体字段，但给出了明确的视觉目标：当前这层效果还可以再黑一点
+> - 后续如果要复建，应优先继续下调附加层颜色强度、alpha 或 add/emissive 贡献，而不是增加更多细节纹理
+> 图表转写（UE-GTXT v4）
+> - 类型: 压暗后中段镜头效果复核图
+> - 组成部分: 关卡主视口 + Sequencer
+> - 所属: `NS_Tornado` 场景中的龙卷风主体与附加环形层
+> - 目的: 检查把附加层压暗后的中段画面，确认主体仍然成立，而附加层不会过分抢眼
+>
+> 模块清单:
+> | 区域 | 模块类型 | Owner | 可读信息 | 与其他模块关系 |
+> |---|---|---|---|---|
+> | 主视口 | 场景预览 | `Stylized_Tornado` | 龙卷风主体的青白色螺旋亮带仍然清晰；周围只剩非常淡的附加风带痕迹 | 说明当前亮度分配开始更偏向主体 |
+> | 下方 | Sequencer | `LS_StylizedTornado` | 仍是 `NS_Tornado > NiagaraComponent0 > System Life Cycle`；模式为 `Desired Age`；游标约在 `2.4333s` | 在中段时间点验证“更暗”后的持续效果 |
+>
+> 设置/参数:
+> | 对象/状态 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Sequencer.Time` | `≈ 2.4333s` | 时间线 | 中段镜头验证点 |
+> | `Observed Result` | 主体亮带保留，附加层仅剩很弱细线 | 主视口 | 说明压暗策略已开始生效 |
+>
+> 输出/观察:
+> - 与上一张起始时刻相比，这一帧能更清楚地说明目标不是“完全看不见”，而是让附加层退到次要位置
+> - 复建时应以“主体清晰、附加层只做轻微补充”为验收标准，而不是追求附加层自身强存在感
+> 图表转写（UE-GTXT v4）
+> - 类型: Blender 中轻微塑形漏斗/圆台网格图
+> - 图类型: Blender 视口 + Modifier 面板
+> - 所属: `Cylinder`
+> - 目的: 在 Blender 里快速把基础圆柱稍微调整成更像漏斗/圆台的形体，为后续新附加层或网格效果做准备
+>
+> 节点/对象定义集:
+> | 序号 | 对象/区域 | 类型 | 位置/层级 | 关键可读信息 |
+> |---|---|---|---|---|
+> | 1 | `Cylinder` | Mesh Object | `Collection > Cylinder` | 当前被选中 |
+> | 2 | 3D Viewport | Blender 视口 | 主区域 | 物体呈上宽下窄的圆台/漏斗形，顶部仍有选中轮廓 |
+> | 3 | Transform Hint | 顶部状态栏 | 视口左上 | 当前缩放提示 `Scale X: 0.9403  Y: 0.9403  Z: 0.9403` |
+> | 4 | `Subdivision` | Modifier | 右侧修改器面板 | 使用 `Catmull-Clark`；`Levels Viewport=2`；`Render=2`；`Optimal Display` 启用 |
+>
+> 对象状态/关系:
+> | 对象 | 属性 | 值 | 含义 |
+> |---|---|---|---|
+> | `Cylinder` | 当前操作 | `Scale ≈ 0.9403` | 说明作者正在对选中的一圈或整体做轻微缩小 |
+> | `Subdivision.Type` | `Catmull-Clark` | Modifier 面板 | 让这个简化形体获得更圆滑的表面 |
+> | `Subdivision.Levels Viewport` | `2` | Modifier 面板 | 视口中显示 2 级细分 |
+> | `Subdivision.Render` | `2` | Modifier 面板 | 渲染也使用 2 级细分 |
+>
+> 设置/参数:
+> | 参数路径 | 值 | 来源 | 作用 |
+> |---|---|---|---|
+> | `Scale.X/Y/Z` | `0.9403 / 0.9403 / 0.9403` | 顶部状态栏 | 进行一次较轻的整体或局部缩放，微调轮廓 |
+> | `Subdivision.Mode` | `Catmull-Clark` | Modifier 面板 | 平滑多边形轮廓 |
+> | `Levels Viewport` | `2` | Modifier 面板 | 提高视口平滑度 |
+> | `Render Levels` | `2` | Modifier 面板 | 保持渲染时与视口一致 |
+> | `Optimal Display` | `Enabled` | Modifier 面板 | 让细分显示更简洁 |
+>
+> 输出/观察:
+> - 这一步不是大幅重做形体，而是像字幕所说的“稍微这样做一点”，用轻微缩放把网格调成更合适的圆台轮廓
+> - 复建时应先从基础 `Cylinder` 出发，加 `Subdivision` 后做小幅缩放，而不是一次性做极端变形
+
+### 00:48:40-00:49:31 System、UV
+
+- 本段定位：System、UV。
+- 知识点：材质与纹理部分要检查 Blend Mode、Opacity/Alpha、Emissive、UV/Panner 和贴图输入。
+- 知识点：本段围绕 `Particle` 进行设置，需结合关键画面核对真实节点和参数。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`Particle`、`Alpha`、`Opacity`、`Texture`、`Panner`、`Emissive`、`材质`、`纹理`。
+
+**关键画面：**
+
+在 Blender 中检查将用于粒子材质的漏斗形网格及其 UV 展开结果
+
+- 左侧为 UV Editing 视图，选中网格全部面后，UV 岛被展开成近似竖直矩形
+- UV 岛内部可见均匀分布的横向条带，说明该网格会把纹理沿高度方向按规则分段映射
+- 右侧 3D 视图中当前对象为 `Cylinder`，整体已塑形成上宽下窄、底部收拢的漏斗/碗状截面
+- 顶口保持圆环开口，侧壁由多圈细分边组成，适合后续在 Unreal 中作为环形能量或烟雾外壳载体
+- 当前画面意图是确认：网格形体与 UV 都已经准备好，下一步可将该模型导出并放入 Unreal Engine 作为 `Particle` 相关视觉资产
+在 Unreal Engine 中确认刚导入的 3D 网格已经可用于龙卷风外层体积效果
+
+- 视口中央显示一个由青色发光条带缠绕形成的锥形体，说明该自制网格已经被用于场景中的风柱视觉
+- 当前工程位于 `Content/VFX_Library/Meshes`
+- 底部内容浏览器中可见本段相关静态网格资源，包含 `SM_CylinderBowl_01`、`SM_CylinderHeight_01`、`SM_CylinderHeightHighPoly_01`、`SM_CylinderTwist_01`、`SM_Ring_01`、`SM_Ring_01_Inverted` 等
+- 顶部已打开的资源标签同时出现 `MI_TornadoMeshWind...`、`VFX_T_Trail_1`、`SM_Ring_01`、`SM_Ring_01_Inverted`，说明该网格会和龙卷风材质、拖尾纹理及环形网格一起配合使用
+- 右侧 Outliner 中存在 `NS_Tornado` 与 `LS_Stylized...`，当前镜头是在实际龙卷风关卡里检查导入后的 3D 对象，而不是孤立查看单个网格
+在 Unreal Engine 场景中单独选中漏斗形静态网格，检查它作为龙卷风底部承托体时的尺寸和落位
+
+- 当前选中对象为 `SM_GroundCylinder_01`
+- 视口里该网格显示为一个上沿张开、底部收拢的半碗状壳体，放置在龙卷风下方，正好包住风柱接地位置
+- 右侧 `Transform` 面板可见：
+  - `Location = (287.0, -16.0, 0.0)`
+  - `Rotation = (0.0, 0.0, 0.0)`
+  - `Scale = (2.0, 2.0, 2.0)`
+- `Static Mesh` 字段已绑定 `SM_GroundCylinder_01`
+- `Materials` 的 `Element 0` 已分配材质，说明该网格不是只做占位，而是已接入可见渲染材质
+- 这一步的目的，是把 Blender 中制作的漏斗形模型放回 UE 关卡，确认其大小、位置与龙卷风主体的贴合关系成立
+
+## 补充视觉证据
+
+### S02 00:04:05
+
+这张补充图是 `S02 00:04:05` 的参数证据，用来说明教程当时如何把场景天空与雾效整体压暗，给龙卷风留出更明显的亮暗对比
+
+- 当前视图在关卡 `Stylized_Tornado`
+- 右侧 `Outliner`
+  - 当前选中对象是 `SkyAtmo`
+  - 场景中可见对象包括：
+    - `Direction`
+    - `Exponent`
+    - `Floor`
+    - `PointLight`
+    - `PostProc`
+    - `SkyAtmo`
+    - `SkyLight`
+    - `WorldDat`
+    - `NS_Tornado`
+- 右侧 `Details`
+  - 当前组件是 `SkyAtmosphere`
+  - 可见关键参数：
+    - `Ground Radius = 1.0`
+    - `Atmosphere Height = 200.0`
+    - `MultiScattering = 1.0`
+  - `Atmosphere - Rayleigh`
+    - `Rayleigh Scattering Scale = 0.0331`
+    - `Rayleigh Exponential Distribution = 8.0`
+  - `Atmosphere - Mie`
+    - `Mie Scattering Scale = 0.003996`
+    - `Mie Absorption Scale = 0.000444`
+  - 界面中还能看到相关颜色条已被调成较暗值
+- 下方 `Sequencer`
+  - 当前序列是 `LS_StylizedTornado`
+  - 播放头时间在 `0.00`
+- 中央预览画面
+  - 整个场景已经被压到深蓝灰色
+  - 地面只剩一块较弱的亮斑
+  - 这与 `S02` 段“先把环境压暗，再突出主体特效”的目标一致
+
+这张补充图的作用不是新增 Niagara 节点，而是给 `S02` 段的环境调色提供明确参数锚点。重点是通过降低 `SkyAtmosphere` 的散射强度，让背景更暗、更平，从而把后续龙卷风和风圈的发光层次衬托出来
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+- 涉及 GPU/CPU Sim、Collision、Bounds 或 Local Space 时，单独验证可见性、性能和碰撞触发范围。
+

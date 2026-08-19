@@ -1,0 +1,1515 @@
+# 26 - 17Substance秋千轨道纹理资源
+
+# 26 - 17Substance秋千轨道纹理资源
+
+## 关键术语
+
+- `Substance`、`材质`、`粒子`、`网格`、`拖尾`、`速度`、`纹理`、`Welcome toSubstance 3DDesigner`、`Niagara`、`颜色`、`Niagara System`、`Emitter`、`Particle`、`Spawn`、`Initialize Particle`、`Lifetime`、`Color`、`Alpha`
+
+## 分段知识
+
+### 00:00:04-00:05:00 速度、颜色、纹理
+
+- 本段定位：速度、颜色、纹理。
+- 知识点：这次后续会制作大约4张纹理资源来进行SwingTrade的示例。
+- 知识点：大约两张会是几乎相似的形式,然后三张会有一点点不同的感觉。
+- 知识点：首先呢,是的,需要先创建一个新的图表,然后进行后续会使用在渐变第一部分中进行的。
+- 知识点：现行渐变式的,后续会利用组合的方法来制作图案的周照形状。
+- 知识点：需要使用3号,所以将位置完全放在你的边缘部分。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`速度`、`颜色`。
+
+**关键画面：**
+
+这一张是 `00:00:04-00:05:00 速度、颜色、纹理` 段的开场界面，作者先在 `Adobe Substance 3D Designer` 中展示本次会用到的现有 `.sbs` 文件，说明这次 Swing Trail 示例会围绕多张程序纹理资源展开，而不是直接在 Niagara 里先搭粒子。
+
+当前可确认的信息如下：
+- 软件处于 `Welcome to Substance 3D Designer` 首页
+- 左侧可见入口包括：
+  - `New Substance graph...`
+  - `Open package...`
+  - `New MDL graph...`
+  - `Import AxF...`
+  - 导航项 `Home`、`Learn`
+- 中部 `Recent` 最近文件列表中可辨认的条目包括：
+  - `Shield.sbs`
+  - `Ribbon.sbs`
+  - `Tile.sbs`
+  - `Swing_Trail.sbs`
+  - `Mask.sbs`
+  - `Magic_Circles.sbs`
+  - `Gradient.sbs`
+  - `Spark.sbs`
+  - `Shockwave.sbs`
+- 列表右侧还能看到最近修改时间与文件大小列
+
+这张图的作用是建立资源背景：本教程接下来要做的 Swing Trail 效果并不是只依赖一张贴图，而是会在 Substance Designer 中拆成多张独立的程序纹理资源来制作和管理，其中既有护盾、Ribbon、魔法圆环，也有渐变、火花和冲击波类纹理作为同套工程素材。
+这张图展示了 Swing Trail 纹理的初始 Substance 图表：作者先用两条线性渐变分支分别做出两张可调的黑白渐变，再在 `Blend` 节点里叠合，作为后续继续加工的基础形状。
+
+节点定义集：
+
+```text
+上支路
+- Gradient Linear 3
+- Transformation 2D
+- Levels
+
+下支路
+- Gradient Linear 3
+- Transformation 2D
+- Levels
+
+汇合
+- Blend
+```
+
+连线集：
+
+```text
+Gradient Linear 3(上) -> Transformation 2D(上) -> Levels(上) -> Blend.Foreground
+Gradient Linear 3(下) -> Transformation 2D(下) -> Levels(下) -> Blend.Background
+Blend.Output -> 当前预览输出
+Blend.Opacity 端口在本图中未见明确外部输入
+```
+
+设置/参数：
+- 所有可见节点分辨率均显示为 `1024x1024 - L16`
+- 当前选中节点是 `Blend`
+- 右侧 `Blend - PROPERTIES` 可见：
+  - `Pixel Ratio = Square`
+  - `Tiling Mode = H and V Tiling`
+  - `Random Seed = 0`
+  - `Opacity = 1`
+  - `Blending Mode = Copy`
+  - `Alpha blending = Use Source Alpha`（界面显示为灰态）
+  - `Cropping Area` 区域已展开但只看清 `Left` 字段标题，具体值不可辨
+
+输出/预览：
+- 右上 2D 预览当前为纯黑结果
+- 底部状态栏提示 `No output node defined`
+- 左侧 `Explorer` 中当前只有一个未保存包 `Unsaved Package*`，内部图表名为 `Substance_graph`
+- 左下 `Library` 当前展开到 `Texture generators > Noises`
+
+这一步的核心不是产出最终可用纹理，而是先搭出两个可独立变形、可独立调层级的黑白渐变分支。结合字幕“层级未来可能还需要调整，所以我就先放着”，可以把这张图理解为：先把两条基础条带建立好并暂时用 `Blend` 叠在一起，后面再根据实际拖尾形状继续调混合关系和层次。
+这一张在前一张两路渐变混合的基础上，继续往图表里加入一个独立的条纹噪声节点 `anisotropic_noise`，并把原本的主链输出接到 `Curve`。从界面看，作者正在为后续做“粗细、疏密可调”的拖尾纹理准备额外的方向性噪声。
+
+节点定义集：
+
+```text
+主链
+- Gradient Linear 3
+- Transformation 2D
+- Levels
+- Gradient Linear 3
+- Transformation 2D
+- Levels
+- Blend
+- Curve
+
+额外纹理源
+- anisotropic_noise
+```
+
+连线集：
+
+```text
+Gradient Linear 3(上) -> Transformation 2D(上) -> Levels(上) -> Blend
+Gradient Linear 3(下) -> Transformation 2D(下) -> Levels(下) -> Blend
+Blend.Output -> Curve
+anisotropic_noise 在本图中单独放置，未见与主链发生连接
+```
+
+设置/参数：
+- 主链上可见节点分辨率仍为 `1024x1024 - L16`
+- 当前选中节点是 `anisotropic_noise`
+- 右侧 `anisotropic_noise - PROPERTIES` 可见：
+  - `Random Seed = 0`
+  - `X Amount = 1`
+  - `Y Amount = 165`
+  - `Y Amount By Resolution = False`
+  - `Rotate = False`
+  - `Smoothness = 1`
+  - 下方还有 `Smoothness Interpolation` 标题，但具体值未完整显示
+
+输出/预览：
+- 右上 2D 预览展示的是 `anisotropic_noise` 自身输出，表现为密集的横向黑白条纹
+- `Curve` 当前已经接在 `Blend` 后面，但预览并未切到 `Curve` 结果
+- 底部状态栏仍提示 `No output node defined`
+
+结合字幕“所以可以把它写得更粗，也可以写得更密集”，这张图说明作者开始引入一张可控的方向性噪声，用它来决定拖尾纹理中的线条细密度和粗细变化；而 `Curve` 的加入则预示后续会进一步重映射黑白分布，把条带和噪声组织成更适合 Swing Trail 的纹理层次。
+
+### 00:05:00-00:09:35 颜色
+
+- 本段定位：颜色。
+- 知识点：再适当多一些图案。
+- 知识点：现在看起来很简单,所以就这样。
+- 知识点：这种效果的张力太高,因此需要更加随机性。
+- 知识点：模糊有和没有的效果有很大分别。
+- 知识点：颜色的差异让造波的感觉变得不同。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`颜色`。
+
+**关键画面：**
+
+这一张进入 `00:05:00-00:09:35 颜色` 段，但当前图表里首先还在细调用于造波纹理的条纹噪声密度。画面显示主链仍停留在两路渐变 `Blend -> Curve` 的状态，同时上方额外放了一个 `anisotropic_noise` 与一个尚未接线的 `Blur HQ Grayscale`，说明作者准备先把方向性条纹调得更密，再考虑后续模糊处理。
+
+节点定义集：
+
+```text
+主链
+- Gradient Linear 3
+- Transformation 2D
+- Levels
+- Gradient Linear 3
+- Transformation 2D
+- Levels
+- Blend
+- Curve
+
+额外纹理源
+- anisotropic_noise
+- Blur HQ Grayscale
+```
+
+连线集：
+
+```text
+Gradient Linear 3(上) -> Transformation 2D(上) -> Levels(上) -> Blend
+Gradient Linear 3(下) -> Transformation 2D(下) -> Levels(下) -> Blend
+Blend.Output -> Curve
+anisotropic_noise 本图中未与主链连接
+Blur HQ Grayscale 本图中未见输入和输出连接
+```
+
+设置/参数：
+- 主链主要节点仍显示 `1024x1024 - L16`
+- 新放置的 `Blur HQ Grayscale` 节点显示为 `1024x1024 - L8`
+- 当前选中节点是 `anisotropic_noise`
+- 右侧 `anisotropic_noise - PROPERTIES` 可见：
+  - `Random Seed = 0`
+  - `X Amount = 1`
+  - `Y Amount = 256`
+  - `Y Amount By Resolution = False`
+  - `Rotate = False`
+  - `Smoothness = 1`
+  - 下方 `Smoothness Interpolation` 标题可见，具体值未完整显示
+
+输出/预览：
+- 右上 2D 预览展示 `anisotropic_noise` 输出，横向黑白条纹比前一张更密集
+- 预览右下角显示 `1024 x 1024 (Grayscale, 16bpc)`
+- 底部状态栏仍为 `No output node defined`
+
+结合字幕“图案再稍微多一些”，这张图表达的是：通过进一步提高 `anisotropic_noise` 的 `Y Amount`，先把横向条纹写得更密，让后续 Swing Trail 的速度纹理有更丰富的分层；`Blur HQ Grayscale` 则像是预备节点，准备后面再拿来柔化这些过于生硬的条纹。
+这一张把上一张还未接线的上方噪声支路正式串起来，用来生成更柔和的横向速度纹理。可以确认作者没有直接把 `anisotropic_noise` 生硬地送进主链，而是先做模糊、再做层级压缩、最后做方向性模糊，让条纹从机械等距线变成更像流动波纹的灰度带。
+
+节点定义集：
+
+```text
+下方原主链
+- Gradient Linear 3
+- Transformation 2D
+- Levels
+- Gradient Linear 3
+- Transformation 2D
+- Levels
+- Blend
+- Curve
+
+上方新噪声支路
+- anisotropic_noise
+- Blur HQ Grayscale
+- Levels
+- Directional Blur
+```
+
+连线集：
+
+```text
+Gradient Linear 3(上) -> Transformation 2D(上) -> Levels(上) -> Blend
+Gradient Linear 3(下) -> Transformation 2D(下) -> Levels(下) -> Blend
+Blend.Output -> Curve
+
+anisotropic_noise -> Blur HQ Grayscale -> Levels -> Directional Blur
+上方 Directional Blur 本图中未见继续连接到下方主链
+```
+
+设置/参数：
+- 上方新支路各节点当前都显示为 `2048x2048 - L16`
+- 下方原主链节点大多仍为较低分辨率显示，画面中未全部清晰可辨
+- 当前选中节点是 `Directional Blur`
+- 右侧 `Directional Blur - PROPERTIES` 可见：
+  - `Width = 1`
+  - `Height = 1`
+  - `Pixel Ratio = Square`
+  - `Tiling Mode = H and V Tiling`
+  - `Random Seed = 0`
+  - `Intensity = 10`
+  - `Angle = 0`
+  - 角度单位区里 `Turns = 0`、`Degrees = 0`
+
+输出/预览：
+- 右上 2D 预览当前展示 `Directional Blur` 结果，为一组被柔化并拉伸过的横向灰度条纹
+- 预览右下角显示 `2048 x 2048 (Grayscale, 16bpc)`
+- 左侧 `Library` 当前仍停在 `Texture generators > Noises`
+- 底部状态栏仍提示 `No output node defined`
+
+结合本段“颜色的差异让造波的感觉变得不同”，这一步虽然还没真正着色，但已经先把波纹基础纹理处理得更像连续流动的速度层。具体做法是先对各向异性噪声做灰度模糊和层级整理，再用 `Directional Blur` 沿 0 度方向拉伸，使之后无论接颜色还是叠到主拖尾形状上，都能更容易形成层层扫过的波动感。
+这一张把上方的速度噪声支路和下方原来的拖尾基础形状真正叠到一起。可以看出作者先用一个中间 `Blend` 把来自 `Directional Blur` 的横向波纹与下方 `Curve` 支路结合，再用右上第二个 `Blend` 与另一条由 `Gradient Linear 3 -> Levels` 生成的遮罩/亮度形状继续混合，最终得到一个更暗、更有层次的灰度纹理。
+
+节点定义集：
+
+```text
+上方支路
+- Levels
+- Directional Blur
+
+下方支路
+- Curve
+
+中间汇合
+- Blend
+
+右上附加形状
+- Gradient Linear 3
+- Levels
+
+最终汇合
+- Blend
+```
+
+连线集：
+
+```text
+Levels(上方噪声链末端) -> Directional Blur
+Directional Blur.Output -> 中间 Blend
+Curve.Output -> 中间 Blend
+中间 Blend.Output -> 右上最终 Blend
+Gradient Linear 3 -> Levels -> 右上最终 Blend
+右上最终 Blend.Output -> 当前预览输出
+```
+
+设置/参数：
+- 画面中可见参与运算的节点基本都显示为 `2048x2048 - L16`
+- 当前选中的是右上最终 `Blend`
+- 右侧 `Blend - PROPERTIES` 可见：
+  - `Random Seed = 0`
+  - `Opacity = 1`
+  - `Blending Mode = Multiply`
+  - `Alpha Blending = Use Source Alpha`（灰态）
+  - `Cropping Area`
+    - `Left = 0`
+    - `Right = 1`
+    - `Top = 0`
+    - `Bottom = 1`
+
+输出/预览：
+- 右上 2D 预览为 `2048 x 2048 (Grayscale, 16bpc)`
+- 结果呈现为整体较暗的横向层叠纹理，中间能看出多层被压暗后的波纹结构
+- 左侧 `Library` 仍停在 `Texture generators > Noises`
+- 底部状态栏继续显示 `No output node defined`
+
+结合字幕“将会加入这样的混合”，这张图说明当前阶段的关键不是继续单独做噪声，而是把“拖尾主体形状”和“横向速度波纹”通过 `Multiply` 型混合压到一起。这样得到的结果会比简单相加更克制，亮部只保留在两类形状共同出现的位置，因此更适合拿来做之后带有颜色层次和速度感的 Swing Trail 遮罩。
+
+### 00:09:35-00:14:27 速度、纹理
+
+- 本段定位：速度、纹理。
+- 知识点：的区域要再多留一点。
+- 知识点：只要不感觉太向线。
+- 知识点：再进行一次多重处理。
+- 知识点：多重处理的话会变得太暗。
+- 知识点：如果想让这个图案本身更柔和的话。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`速度`。
+
+**关键画面：**
+
+这一张继续停留在上一批已经接好的两级 `Blend` 结构上，但重点改成微调进入最终 `Blend` 的上方遮罩支路，让整体不要“太像线”。当前选中的不是最终 `Blend`，而是上方 `Gradient Linear 3 -> Levels` 里的 `Levels`，说明作者在通过压直方图的方式扩大或压缩这层遮罩的有效区域。
+
+节点定义集：
+
+```text
+左侧速度纹理支路
+- Levels
+- Directional Blur
+
+下方基础形状支路
+- Curve
+
+中间汇合
+- Blend
+
+上方遮罩支路
+- Gradient Linear 3
+- Levels
+
+最终汇合
+- Blend
+```
+
+连线集：
+
+```text
+Levels(左侧速度纹理链末端) -> Directional Blur -> 中间 Blend
+Curve.Output -> 中间 Blend
+中间 Blend.Output -> 最终 Blend
+Gradient Linear 3 -> Levels(上方) -> 最终 Blend
+最终 Blend.Output -> 当前预览输出
+```
+
+设置/参数：
+- 画面中可见参与最终运算的节点均显示为 `2048x2048 - L16`
+- 当前选中节点是上方支路的 `Levels`
+- 右侧 `Levels - PROPERTIES` 可见：
+  - `Random Seed = 0`
+  - `Levels Histogram = Luminance Channel`
+  - 下方展示完整直方图与可调黑白输入/输出滑块
+  - 具体数值字段在本图中未展开显示，因此只能确认作者在直接操作直方图区间，而不能可靠写出精确阈值
+
+输出/预览：
+- 右上 2D 预览仍是最终混合后的整体结果，为一张偏暗的横向层叠速度纹理
+- 预览右下角显示 `2048 x 2048 (Grayscale, 16bpc)`
+- 左侧 `Library` 仍位于 `Texture generators > Noises`
+- 底部状态栏继续显示 `No output node defined`
+
+结合字幕“只要不感觉太像线就可以了”，这一步可以理解为：通过调上方遮罩 `Levels` 的黑白分布，控制最终 `Multiply` 混合时哪些区域被压得更深、哪些区域保留得更宽，从而把过于笔直、过于像平行线的条纹打散成更像速度波纹的层状纹理。
+这一张把当前的 2048 纹理链路展示得更完整：上方是已经做好的速度纹理与遮罩的两级混合，下方 `Curve` 继续一路直送到最右侧最终 `Blend`，同时底部又新建了一组 `Gradient Linear 3 -> Levels`，看起来是在为后续进一步调节区域宽度或包络形状做准备。当前选中的仍是这条新梯度支路上的 `Levels`。
+
+节点定义集：
+
+```text
+左上速度纹理支路
+- Levels
+- Directional Blur
+
+中部混合支路
+- Curve
+- Blend
+- Blend
+
+右侧最终混合
+- Blend
+
+底部新支路
+- Gradient Linear 3
+- Levels
+```
+
+连线集：
+
+```text
+Levels(左上) -> Directional Blur -> 中部 Blend(1)
+Curve.Output -> 中部 Blend(1)
+中部 Blend(1).Output -> 上方 Blend(2)
+上方 Blend(2).Output -> 最右侧最终 Blend
+Curve.Output 同时还直接连接到最右侧最终 Blend
+Gradient Linear 3 -> Levels(底部新支路)
+底部新支路在本图中未见接入最右侧最终 Blend
+```
+
+设置/参数：
+- 画面中可见节点几乎都显示为 `2048x2048 - L16`
+- 当前选中的节点是底部新支路的 `Levels`
+- 右侧 `Levels - PROPERTIES` 可见：
+  - `Random Seed = 0`
+  - `Levels Histogram = Luminance Channel`
+  - 当前 2D 预览是一张中部高亮、上下渐黑的横向带状渐变
+  - 直方图与可调黑白滑块可见，但具体阈值数值未展开
+
+输出/预览：
+- 右上 2D 预览当前显示的是所选 `Levels` 节点结果，不是最终总输出
+- 该结果为 `2048 x 2048 (Grayscale, 16bpc)`，形态上是一条中间亮、上下暗的柔和横向光带
+- 底部状态栏仍显示 `No output node defined`
+
+结合字幕“这样”，这张图的意义是：作者不仅在已有速度纹理上继续做多重混合，还另外新建了一条更干净的横向渐变包络，用来控制最终纹理哪些高度区域应该保留更强、哪些区域应该更柔和地衰减，从而避免多重处理后整张图同时又暗又死板。
+这一张把镜头重新拉回到“速度感纹理”本身，重点不在最终总混合，而在解释为什么要使用这条噪声链。上方可完整看到 `anisotropic_noise -> Blur HQ Grayscale -> Levels -> Directional Blur`，并且右侧参数面板明确显示作者把 `anisotropic_noise` 的纵向密度调得非常高，用这类横向层叠噪波去制造速度条纹。
+
+节点定义集：
+
+```text
+速度噪声支路
+- anisotropic_noise
+- Blur HQ Grayscale
+- Levels
+- Directional Blur
+
+下方基础形状/混合支路（局部可见）
+- Levels
+- Levels
+- Blend
+- Curve
+
+右侧汇合
+- Blend（仅可见输入侧）
+```
+
+连线集：
+
+```text
+anisotropic_noise -> Blur HQ Grayscale -> Levels -> Directional Blur -> 右侧 Blend
+下方 Levels(上) -> Blend
+下方 Levels(下) -> Blend
+下方 Blend.Output -> Curve
+Curve.Output 与上方 Directional Blur.Output 一同送往右侧 Blend
+右侧 Blend 的后续输出在本图中未完整显示
+```
+
+设置/参数：
+- 画面中可见节点均为 `2048x2048 - L16`
+- 当前选中节点是 `anisotropic_noise`
+- 右侧 `anisotropic_noise - PROPERTIES` 可见：
+  - `Random Seed = 0`
+  - `X Amount = 2`
+  - `Y Amount = 1024`
+  - `Y Amount By Resolution = False`
+  - `Rotate = False`
+  - 下方还有更多参数，但在本图中未完整展开
+
+输出/预览：
+- 右上 2D 预览显示的是 `anisotropic_noise` 自身输出，为大量高密度的横向黑白条纹
+- 预览右下角显示 `2048 x 2048 (Grayscale, 16bpc)`
+- 左侧 `Library` 仍处于 `Texture generators > Noises`
+- 底部状态栏继续显示 `No output node defined`
+
+结合字幕“在这次的纹理中，可以利用这种噪波的图案来创造速度感的图案”，这张图把当前段的核心讲清楚了：速度感并不是靠单纯的线性渐变，而是靠一张纵向密度极高、横向分层明显的各向异性噪声，再经过模糊和方向拉伸后嵌入主形状。`Y Amount = 1024` 说明作者故意把条纹数量推到很高，用密集噪波来支撑拖尾扫动时那种连续而不规则的速度纹理。
+
+### 00:14:27-00:19:02 材质、网格、颜色
+
+- 本段定位：材质、网格、颜色。
+- 知识点：还可以用做网格的遮罩纹理。
+- 知识点：因为是顺时的纹理。
+- 知识点：最后尺寸大约512x256就足够了。
+- 知识点：第二个就是纹理的情况下。
+- 知识点：而且用这种色调也可以在材质上进行一定的调整。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`颜色`。
+
+**关键画面：**
+
+这一张进入 `00:14:27-00:19:02 材质、网格、颜色` 段，图表开始把前面做好的速度纹理包装成可直接给网格材质使用的遮罩。可以确认底部新增的一组 `Gradient Linear 3 -> Levels -> Blend -> Transformation 2D` 已经正式接入最右侧最终 `Blend`，用来决定遮罩形状，而不仅仅停留在预备支路。
+
+节点定义集：
+
+```text
+上方速度/层次支路
+- Blur HQ Grayscale
+- Levels
+- Directional Blur
+- Blend
+- Blend
+
+中部主形状支路
+- Blend
+- Curve
+
+底部包络/遮罩支路
+- Gradient Linear 3
+- Levels
+- Gradient Linear 1
+- Blend
+- Transformation 2D
+
+最终汇合
+- Blend
+```
+
+连线集：
+
+```text
+Blur HQ Grayscale -> Levels -> Directional Blur -> Blend(上方)
+中部 Blend.Output -> Curve
+Curve.Output -> 最右侧最终 Blend
+
+Gradient Linear 3 -> Levels -> Blend(底部)
+Gradient Linear 1 -> Blend(底部)
+Blend(底部).Output -> Transformation 2D -> 最右侧最终 Blend
+
+上方 Blend(第二级).Output -> 最右侧最终 Blend
+最右侧最终 Blend.Output -> 当前预览输出
+```
+
+设置/参数：
+- 画面中可见所有参与运算的节点均显示为 `2048x2048 - L16`
+- 右侧参数面板仍停留在 `anisotropic_noise - PROPERTIES`
+  - `Random Seed = 0`
+  - `X Amount = 2`
+  - `Y Amount = 1024`
+  - `Y Amount By Resolution = False`
+  - `Rotate = False`
+- 当前真正被高亮选中的节点在画布中并不明显，因此只能可靠确认右侧显示的是之前噪声节点的参数，而不是新底部分支的具体数值
+
+输出/预览：
+- 右上 2D 预览是当前总输出，为一张上亮下暗、带横向速度纹理的灰度遮罩
+- 预览右下角显示 `2048 x 2048 (Grayscale, 16bpc)`
+- 底部状态栏仍为 `No output node defined`
+
+结合字幕“还可以用作网格的遮罩纹理，或者是从上方落下的形态”，这张图说明当前这套纹理已经不只是拖尾速度图，而是被进一步包装成一种可直接控制网格显隐和能量分布的遮罩图。底部包络支路提供了整体轮廓和落下方向感，上方速度噪波则保留了层层扫动的细节，两者在最终 `Blend` 中汇合后就能直接给材质当作 Mask 使用。
+这一张把前面构建好的遮罩/速度纹理图正式落成到一个可输出的 Substance Graph。左侧 `Explorer` 已经不是未保存包，而是 `Swing.sbs`，其中至少包含 `Swing_01` 和 `Swing_02` 两个图表；当前编辑的是 `Swing_01`。最右侧可以看到主链最终接到了 `Gradient Map`，再接到紫色的输出节点，说明作者开始把灰度遮罩转成有色纹理并准备导出。
+
+节点定义集：
+
+```text
+上方速度/遮罩链（局部可见）
+- 多个 Gradient / Levels / Blur / Blend 节点
+
+中部主链
+- Blend
+- Curve
+- Blend
+
+下方包络链
+- Gradient Linear
+- Levels
+- Blend
+- Transformation 2D
+
+输出着色链
+- Gradient Map
+- Output
+```
+
+连线集：
+
+```text
+上方速度/遮罩链 -> 中部 Blend
+中部 Blend -> Curve -> 右侧 Blend
+下方包络链 -> Transformation 2D -> 右侧 Blend
+右侧 Blend.Output -> Gradient Map -> Output
+```
+
+设置/参数：
+- 当前选中节点是 `Gradient Map`
+- 右侧 `Gradient Map - PROPERTIES` 可见：
+  - `Output Size`
+    - `Width = 512 px`
+    - `Height = 256 px`
+  - `Output Format = 8 Bits per Channel`
+  - `Pixel Size`
+    - `Width = 1`
+    - `Height = 1`
+  - `Pixel Ratio = Square`
+  - `Tiling Mode = H and V Tiling`
+  - `Random Seed = 0`
+
+输出/预览：
+- 右上 2D 预览当前是 `Gradient Map` 结果
+- 预览右下角明确显示 `512 x 256 (RGBA, 8bpc)`
+- 预览内容仍接近黑白灰遮罩，但已经处在颜色映射节点上，说明后续可通过渐变色带直接调色
+
+结合本段“最后尺寸大约 512x256 就足够了”，这张图确认了两件事：一是这张纹理会作为正式输出资源保存到 `Swing.sbs` 图里，而不是停留在临时实验图；二是作者刻意把输出压到 `512 x 256`、`RGBA 8bpc`，说明这张图主要承担材质遮罩和颜色映射职责，不需要继续维持 2048 级别的中间运算分辨率。
+这一张切到了同一个 `Swing.sbs` 里的第二个图表 `Swing_02`。整体节点结构和前一张 `Swing_01` 很接近，仍然是“上方噪声速度链 + 中部主形状链 + 下方包络链”汇到右侧输出，但教程说明第二个版本会在噪波叠加方式上做些微差异，因此这张图更像是在展示“第二种变体”的总体布局，而不是重新从头搭图。
+
+节点定义集：
+
+```text
+上方速度纹理链
+- anisotropic_noise
+- Blur HQ Grayscale
+- Levels
+- Directional Blur
+- Blend
+- Blend
+
+中部主形状链
+- Gradient Linear
+- Transformation 2D
+- Levels
+- Gradient Linear
+- Transformation 2D
+- Levels
+- Blend
+- Curve
+
+下方包络链
+- Gradient Linear
+- Levels
+- Gradient Linear
+- Blend
+- Transformation 2D
+
+最终输出链
+- Blend
+- Output
+```
+
+连线集：
+
+```text
+上方速度纹理链 -> 中上 Blend -> 上右 Blend
+中部主形状链 -> Curve -> 右侧最终 Blend
+下方包络链 -> Transformation 2D -> 右侧最终 Blend
+上右 Blend.Output -> 右侧最终 Blend
+右侧最终 Blend -> Output
+```
+
+设置/参数：
+- 右侧当前并不是某个中间节点参数，而是 `Swing.sbs - PROPERTIES`
+- 可见信息包括：
+  - `Location = F:/Substance/Example/Tuto/Part_02/Swing.sbs`
+  - `Description` 为空
+  - 下方还有 `METADATA` 区域，但未展开具体内容
+- 右上预览仍显示 `512 x 256 (RGBA, 8bpc)`，说明 `Swing_02` 也维持了与 `Swing_01` 相同的目标输出规格
+
+输出/预览：
+- 左侧 `Explorer` 显示 `Swing.sbs` 下至少包含两个图表：
+  - `Swing_01`
+  - `Swing_02`
+- 当前选中的是 `Swing_02`
+- 右上 2D 预览为一张与前一张相近的横向黑白速度遮罩图，顶部亮、下方暗，内部保留横向扫动纹理
+
+结合字幕“噪波的添加部分会稍微不同地构成，再多加一层就可以了”，这张图说明第二张 Swing 纹理并不是推翻第一张重做，而是在同一套基础框架上，把噪声叠加方式稍作变化，再额外补一层，使最终得到一张结构相近但细节节奏不同的变体纹理。这样的做法适合在材质里做多张相似但不完全重复的网格遮罩或拖尾贴图。
+
+### 00:19:02-00:22:25 速度
+
+- 本段定位：速度。
+- 知识点：做好后,同样进行模糊处理。
+- 知识点：就模糊到这个程度。
+- 知识点：在级别上适当调整一下。
+- 知识点：如果对比度在这个线条上有点不太好, 可以再加一层。
+- 知识点：如果对比度再强一点就更好了。
+- 核对对象：`速度`。
+
+**关键画面：**
+
+这一张仍在 `Swing_02` 图表里，主题转为“速度层还能怎么继续增强”。画布中的主结构与上一段基本一致，但在最右侧输出前弹出了节点搜索面板，说明作者准备继续插入一层处理节点，以便对现有速度纹理做进一步模糊、混合或对比度修正。
+
+节点定义集：
+
+```text
+已有主链（局部可见）
+- 多组 Gradient / Transformation 2D / Levels
+- 多个 Blend
+- Curve
+- Output
+
+当前准备插入的候选节点（搜索结果）
+- Gradient Map
+- Blend
+- Blur
+- Directional Blur
+- Directional Warp
+- Sharpen
+- HSL
+- Levels
+- Bitmap
+- Text
+- Normal
+- Transformation 2D
+- Gradient (Dynamic)
+- Pixel Processor
+- Distance
+- Curve
+- Value Processor
+- Grayscale Conversion
+- Channels Shuffle
+- FX-Map
+- SVG
+- Uniform Color
+- Warp
+- Emboss
+```
+
+连线集：
+
+```text
+画布中现有速度/遮罩主链 -> 右侧最终 Blend -> Output
+当前弹出的搜索面板表明作者打算在现有主链中间再插入一个新节点，但本图中尚未完成实际连接
+```
+
+设置/参数：
+- 当前右侧参数面板停留在一个 `Blend - PROPERTIES`
+- 可见：
+  - `Output Size = Input x 1`
+  - `Output Format = 16 Bits per Channel`
+  - `Pixel Size = 1 x 1`
+  - `Pixel Ratio = Square`
+  - `Tiling Mode = H and V Tiling`
+  - `Random Seed = 0`
+- 由于搜索面板覆盖画布，当前真正准备插入的具体节点尚未最终确定
+
+输出/预览：
+- 左侧 `Explorer` 当前选中 `Swing.sbs > Swing_02`
+- 右上 2D 预览仍是当前总输出，为 `2048 x 2048 (Grayscale, 16bpc)` 的横向速度遮罩图
+- 预览内容保持顶部亮、内部带横向扫动纹理的结构
+
+结合本段“如果对比度在这个线条上有点不太好，可以再加一层”，这张图的关键不是某个已落定的参数，而是工作意图：作者准备在 `Swing_02` 的速度纹理链里继续插一层处理节点，优先考虑的就是 `Blur`、`Levels`、`Blend` 这类会直接影响线条柔和度与对比度的模块。
+这一张把上一张准备追加的那一层正式放到了速度链末端。可见一条局部独立的速度纹理子链：`Anisotropic Noise -> Blur HQ Grayscale -> Levels -> Directional Blur -> Blend`。也就是说，作者不是简单调现有纹理参数，而是另外补一层经过模糊和方向拉伸的噪波，再用 `Blend` 叠进去，以增强线条的层次和对比度。
+
+节点定义集：
+
+```text
+新增速度子链
+- Anisotropic Noise
+- Blur HQ Grayscale
+- Levels
+- Directional Blur
+- Blend
+
+右上已有包络/遮罩子链（局部可见）
+- Gradient Linear 3
+- Levels
+- Gradient Linear 3
+- Blend
+- Transformation 2D
+```
+
+连线集：
+
+```text
+Anisotropic Noise -> Blur HQ Grayscale -> Levels -> Directional Blur -> Blend
+新增 Blend 的其他输入在本图中尚未接上，或未完整显示后续去向
+右上已有包络/遮罩子链继续独立存在，本图未展示它与新增速度子链的最终汇合位置
+```
+
+设置/参数：
+- 新增速度子链各节点分辨率都显示为 `2048x2048 - L16`
+- 新建 `Blend` 节点当前显示为 `2048x2048 - C8`
+- 右侧 `Blend - PROPERTIES` 可见：
+  - `Width = 1`
+  - `Height = 1`
+  - `Pixel Ratio = Square`
+  - `Tiling Mode = H and V Tiling`
+  - `Random Seed = 0`
+  - `Opacity = 1`
+  - `Blending Mode = Copy`
+  - `Alpha Blending = Use Source Alpha`
+
+输出/预览：
+- 右上 2D 预览当前是全黑画面，说明这个新 `Blend` 还处于刚创建或尚未完成有效输入组合的阶段
+- 预览右下角显示 `2048 x 2048 (RGBA, 8bpc)`
+- 左侧 `Explorer` 仍选中 `Swing.sbs > Swing_02`
+
+结合字幕“我之前在这里写的”，这张图说明作者在 `Swing_02` 中确实按前面提到的思路“再加一层”了：复制一套由各向异性噪波驱动的速度纹理子链，并在末端放一个新的 `Blend` 作为汇合点。此时它还没有形成最终可见结果，但用途已经明确，就是为当前速度遮罩补充额外一层线条对比度和层次变化。
+这一张把上一张新增的速度层继续做完：在 `Directional Blur` 与新增 `Blend` 之后，又补上了 `Pixel Processor`、第二个 `Blend` 和 `histogram_scan`，用于把新增噪波层的强度重新整理出来。右侧 `histogram_scan` 参数面板能直接看到 `Position` 与 `Contrast` 控制，说明这一步的核心是重新抽取亮带、增强线条对比，而不是单纯继续叠加模糊。
+
+节点定义集：
+
+```text
+新增速度增强链
+- Directional Blur
+- Blend
+- Pixel Processor
+- Blend
+- histogram_scan
+
+上方包络/形状链（局部可见）
+- Gradient Linear 3
+- Levels
+- Blend
+- Transformation 2D
+
+右上已有输出汇合链（局部可见）
+- Blend
+```
+
+连线集：
+
+```text
+Directional Blur -> Blend(新增速度层第 1 次汇合)
+Blend.Output -> Pixel Processor
+Pixel Processor.Output -> Blend(新增速度层第 2 次汇合)
+Blend.Output -> histogram_scan
+
+Gradient Linear 3 -> Levels -> Blend -> Transformation 2D
+该上方包络/形状链与新增速度增强链在更右侧继续参与总输出汇合，但本图未完整展示最终 output 端
+```
+
+设置/参数：
+- 可见节点分辨率均为 `2048x2048 - L16`
+- 当前选中节点是 `histogram_scan`
+- 右侧 `histogram_scan - PROPERTIES` 可见：
+  - `Random Seed = 0`
+  - `Position = 0.59`
+  - `Contrast = 0`
+  - `Invert Position = False`
+  - 下方还有 `INPUT VALUES` 区域，但具体条目未展开
+
+输出/预览：
+- 右上 2D 预览显示 `histogram_scan` 当前结果，为多条横向亮带叠在较暗背景上的速度纹理
+- 预览右下角显示 `2048 x 2048 (Grayscale, 16bpc)`
+- 画面能明显看出通过扫描后，亮带位置被重新集中，速度线条比原始噪波更清晰
+
+结合字幕“调节强度带过来”，这一步可以理解为：作者先把新增噪波速度层通过 `Pixel Processor` 和一次额外 `Blend` 整理成更可控的灰度分布，再用 `histogram_scan` 按 `Position` 提取出主要亮带区域。这样做可以在不直接把整层全部压亮的前提下，只把最有用的速度线条抽出来，从而让整体对比度更强、节奏更清楚。
+
+### 00:22:28-00:27:10 材质、拖尾、纹理
+
+- 本段定位：材质、拖尾、纹理。
+- 知识点：图案能更强烈地呈现出来。
+- 知识点：制作了一张更强的纹理。
+- 知识点：像摆动轨迹这种情况。
+- 知识点：其实很简单地指是旋转的。
+- 知识点：无论是长方形还是正方形的纹理。
+- 知识点：对于渐变材质来说。
+- 知识点：多了解一些不是很好吗? 用3号再新做一个。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`、`纹理`、`拖尾`。
+
+**关键画面：**
+
+这一张仍在 `Swing_02` 图表里，但已经把前面加强过的速度层真正合并进最终输出。画面右侧可以清楚看到：来自上方主链、中部包络链，以及下方 `histogram_scan` 强化链的结果，一起汇入 `Gradient Map` 前的最后一个 `Blend`；而这个 `Blend` 的混合模式被明确设为 `Add (Linear Dodge)`，说明作者这一步就是要把纹理亮部直接叠强，做出一张“更强的纹理”。
+
+节点定义集：
+
+```text
+上方主链（局部可见）
+- Curve
+- Blend
+
+中部包络链
+- Gradient Linear 3
+- Levels
+- Gradient Linear 3
+- Blend
+- Transformation 2D
+
+下方速度增强链
+- Blend
+- Pow Grayscale
+- Blend
+- Histogram Scan
+
+最终输出链
+- Blend
+- Gradient Map
+- Output
+```
+
+连线集：
+
+```text
+Curve -> 上方 Blend -> 最终 Blend
+Gradient Linear 3 -> Levels -> Blend <- Gradient Linear 3 -> Transformation 2D -> 最终 Blend
+Blend -> Pow Grayscale -> Blend -> Histogram Scan -> 最终 Blend
+最终 Blend.Output -> Gradient Map -> Output
+```
+
+设置/参数：
+- 右侧当前选中的节点是最终输出前的 `Blend`
+- `Blend - PROPERTIES` 可见：
+  - `Random Seed = 0`
+  - `Opacity = 1`
+  - `Blending Mode = Add (Linear Dodge)`
+  - `Alpha Blending = Use Source Alpha`（灰态）
+  - `Cropping Area` 已展开标题，但具体数值未完整显示
+- 画面中大部分中间节点仍为 `2048x2048 - L16`
+- `Gradient Map` 节点显示为 `512x256 - C8`
+
+输出/预览：
+- 右上 2D 预览当前是最终 `Blend` 结果，为一张明显更亮、更强烈的横向速度遮罩
+- 预览右下角显示 `2048 x 2048 (Grayscale, 16bpc)`，说明此时还在颜色映射前
+- 亮部集中在左上到中上区域，内部横向亮带比前几张更突出
+
+结合字幕“制作了一张更强的纹理”，这张图的关键就在于把前面单独做的速度强化链不再当作辅助层，而是用 `Add (Linear Dodge)` 直接加到最终输出前。相比 `Multiply` 或普通 `Copy`，这种加亮混合会更强地保留亮带，因此更适合做摆动轨迹这类需要明显速度感和高光条带的纹理。
+这一张把视角切回 `Swing_01` 的整体图表与最终输出，强调的是“有细节的材质”效果，而不是继续搭新节点。左侧 `Explorer` 显示当前仍在 `Swing.sbs` 中，`Swing_01` 和 `Swing_02` 两个图都保留；画布中能看到 `Swing_01` 的多条链路共同汇入右下角的 `Gradient Map`，并输出一张已经具备明显横向速度细节的最终纹理。
+
+节点定义集：
+
+```text
+上方速度/噪声链（局部可见）
+- Directional Blur
+- Blend
+- Blend
+
+中部主形状链
+- Curve
+- Blend
+
+下方包络链
+- Gradient Linear 3
+- Levels
+- Gradient Linear 3
+- Blend
+- Transformation 2D
+
+输出链
+- Blend
+- Gradient Map
+- Output
+```
+
+连线集：
+
+```text
+上方速度/噪声链 -> 上方 Blend -> 中部 Blend
+Curve -> 中部 Blend
+下方包络链 -> Transformation 2D -> 中部 Blend
+中部 Blend -> Gradient Map -> Output
+```
+
+设置/参数：
+- 当前右侧选中的是 `Gradient Map`
+- `Gradient Map - PROPERTIES` 可见：
+  - `Output Size`
+    - `Width = 512 px`
+    - `Height = 256 px`
+  - `Output Format = 8 Bits per Channel`
+  - `Pixel Size = 1 x 1`
+  - `Pixel Ratio = Square`
+  - `Tiling Mode = H and V Tiling`
+  - `Random Seed = 0`
+
+输出/预览：
+- 右上 2D 预览当前为 `Swing_01` 的最终输出
+- 预览右下角显示 `512 x 256 (RGBA, 8bpc)`
+- 成品图形态上是左上亮、向右拖开的多层横向亮带，背景保持较暗，内部速度纹理和层次都比较清楚
+
+结合字幕“有细节的材质”，这张图的意义是确认：`Swing_01` 这张纹理在压缩到 `512 x 256` 后，仍然保留了足够的横向亮带层次与速度细节，因此完全可以作为拖尾或摆动轨迹类材质的正式输出贴图，而不只是高分辨率实验图。
+这一张进入新的图表 `Swing_03`。左侧 `Explorer` 已经从前面的 `Swing_01`、`Swing_02` 再扩展出 `Swing_03`，并且当前就是在这个新图里工作。画面中的节点结构明显沿用了前两个 Swing 图的思路：上方是速度噪声链，中部是主形状/Curve 链，下方又多出一条附加变化链，三路结果在右侧逐层汇合，最后仍然接到 `Gradient Map` 和 output。结合字幕“首先把这一部分拿过来”，可以确定这一步是在复制既有结构、快速搭第三种变体。
+
+节点定义集：
+
+```text
+上方速度链
+- Anisotropic Noise
+- Blur HQ Grayscale
+- Levels
+- Directional Blur
+- Blend
+- Blend
+
+中部主形状链
+- Gradient Linear
+- Transformation 2D
+- Levels
+- Gradient Linear
+- Transformation 2D
+- Levels
+- Blend
+- Curve
+
+下方附加变化链
+- Anisotropic Noise / Blur / Levels / Blend / Curve（局部可见，名称并非全部清晰）
+
+输出链
+- Blend
+- Gradient Map
+- Output
+```
+
+连线集：
+
+```text
+上方速度链 -> 上方 Blend -> 右侧总 Blend
+中部主形状链 -> Curve -> 右侧总 Blend
+下方附加变化链 -> 右侧总 Blend
+右侧总 Blend -> Gradient Map -> Output
+```
+
+设置/参数：
+- 右侧当前不是中间节点，而是 `Swing_03 - PROPERTIES`
+- 可见：
+  - `Output Size = Parent x 1`
+  - `Pixel Size = 1 x 1`
+  - 下方还有 `Pixel Ratio`、`Tiling Mode`、`Random Seed` 等基础区块标题
+  - 由于是图表级属性界面，当前图里没有展示具体某个中间节点的参数值
+
+输出/预览：
+- 右上 2D 预览仍显示一张 `512 x 256 (RGBA, 8bpc)` 的横向亮带速度纹理
+- 左侧 `Explorer` 中 `Swing.sbs` 下现在至少有：
+  - `Swing_01`
+  - `Swing_02`
+  - `Swing_03`
+- 当前选中项是 `Swing_03`
+
+这张图的重点不是某个新参数，而是工作方法：作者把前面已经验证过有效的 Swing 纹理结构整体搬到 `Swing_03`，在保留“速度噪波 + 主形状 + 包络/附加层 + Gradient Map 输出”框架的同时，准备继续改出第三个变体。对于拖尾或摆动轨迹类材质，这种在同一 `.sbs` 中维护多张近似结构变体图的做法，能更快地产出多张节奏相近但细节不同的纹理。
+
+### 00:27:10-00:31:42 材质
+
+- 本段定位：材质。
+- 知识点：这部分也可以在某种程度上。
+- 知识点：再把这部分适当扩大一下。
+- 知识点：这部分再扩大一下。
+- 知识点：需要尝试调整到这个程度。
+- 知识点：需要拿一个1号的格拉丁体。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`材质`。
+
+**关键画面：**
+
+这一张回到 `Swing_03` 的局部搭建过程，画面只保留了一条新的速度噪波链，说明作者正在单独调整这一部分，再把它并回总图。当前可确认的节点顺序是 `anisotropic_noise -> Blur HQ Grayscale -> Levels -> Directional Blur`，并且右侧参数面板显示这次把噪波的纵向密度推得比前面更高，用来让这一变体的速度线条更密、更强。
+
+节点定义集：
+
+```text
+速度噪波链
+- anisotropic_noise
+- Blur HQ Grayscale
+- Levels
+- Directional Blur
+```
+
+连线集：
+
+```text
+anisotropic_noise -> Blur HQ Grayscale -> Levels -> Directional Blur
+本图中未显示该链路后续如何接回 Swing_03 总图
+```
+
+设置/参数：
+- 可见节点均显示为 `2048x2048 - L16`
+- 当前选中节点是 `anisotropic_noise`
+- 右侧 `anisotropic_noise - PROPERTIES` 可见：
+  - `X Amount = 1`
+  - `Y Amount = 1565`
+  - `Y Amount By Resolution = False`
+  - `Rotate = False`
+  - `Smoothness = 1`
+  - `Smoothness Interpolation = 0.5`
+  - `Non Square Expansion = True`
+
+输出/预览：
+- 右上 2D 预览显示的是 `anisotropic_noise` 自身输出
+- 预览右下角可见 `2048 x 2048 (Grayscale, 16bpc)`
+- 图像表现为极高密度的横向黑白条纹，比前面 Swing 变体里的速度噪声更密集
+- 左侧 `Explorer` 当前选中 `Swing_03`
+
+结合字幕“这一部分也可以在某种程度上”，这张图可以理解为：`Swing_03` 的速度细节不是照搬前两张，而是先从一条更高密度的各向异性噪波开始，单独把条纹密度调到更强，再继续后面的模糊、层级和方向模糊处理，用来做第三张材质变体的基础速度纹理。
+这一张继续细化 `Swing_03` 的局部材质遮罩结构。可见上方的 `Directional Blur` 速度纹理与下方 `Gradient Linear 1 -> Levels` 形成的包络一起送入一个 `Blend`，而这个 `Blend` 的混合模式明确是 `Subtract`。这说明作者不是再把亮部叠强，而是故意用减法切出更尖锐、更有“被削开”感的条带形状。
+
+节点定义集：
+
+```text
+上方速度链末端
+- Levels
+- Directional Blur
+
+下方包络链
+- Gradient Linear 1
+- Levels
+
+汇合
+- Blend
+```
+
+连线集：
+
+```text
+Levels(上方速度链末端) -> Directional Blur -> Blend
+Gradient Linear 1 -> Levels -> Blend
+Blend.Output -> 本图中未显示后续去向
+```
+
+设置/参数：
+- 可见节点分辨率均为 `2048x2048 - L16`
+- 当前选中的是 `Blend`
+- 右侧 `Blend - PROPERTIES` 可见：
+  - `Pixel Size = 1 x 1`
+  - `Random Seed = 0`
+  - `Opacity = 1`
+  - `Blending Mode = Subtract`
+  - `Alpha Blending = Use Source Alpha`
+
+输出/预览：
+- 右上 2D 预览显示的是当前 `Blend` 结果，为一组左侧较厚、向右快速收尖的横向亮带
+- 预览右下角显示 `2048 x 2048 (Grayscale, 16bpc)`
+- 形态上比单纯平滑拖尾更锐利，更像被切开的摆动轨迹片段
+
+结合字幕“可能会更能体现出一起生活的感觉”，这一步的作用可以理解为：用 `Gradient Linear 1` 形成的大包络去减掉速度纹理的一部分，让亮带前段更饱满、后段更快收尖，从而把单纯的横向噪波改造成更有轨迹方向性、也更适合材质拖尾表现的切削形态。
+这一张继续在 `Swing_03` 的局部链路上工作，画面中心明确选中了一个 `Transformation 2D`，它前面接的是一张竖向亮带渐变；同时右侧仍弹出节点搜索面板，说明作者准备在这个变换后的包络基础上继续接新节点，再与上一张的减法速度层组合。和 `S07_2` 相比，这一张更强调“把哪一部分拿过来并继续变换”。
+
+节点定义集：
+
+```text
+上方局部结果
+- Blend
+
+下方包络链
+- Levels
+- Transformation 2D
+
+待插入候选节点（搜索结果，局部可见）
+- Gradient Map
+- Blend
+- Blur
+- Directional Blur
+- Directional Warp
+- Sharpen
+- HSL
+- Levels
+- Bitmap
+- Text
+- Normal
+- Transformation 2D
+- Gradient (Dynamic)
+- Pixel Processor
+- Distance
+- Curve
+- Value Processor
+- Grayscale Conversion
+- Channels Shuffle
+- FX-Map
+- SVG
+- Uniform Color
+- Warp
+- Emboss
+```
+
+连线集：
+
+```text
+Levels -> Transformation 2D
+上方 Blend 的输出在本图中独立可见，但尚未展示与当前 Transformation 2D 的最终汇合连线
+当前搜索面板说明作者准备在 Transformation 2D 之后继续插入新节点，本图中尚未完成实际连接
+```
+
+设置/参数：
+- 当前选中节点是 `Transformation 2D`
+- 右侧 `Transformation 2D - PROPERTIES` 可见：
+  - `Rotation Angle = 0.00`
+  - `Stretch Width = 100.00%`
+  - `Stretch Height = 100.00%`
+  - `Offset X = 0`
+  - `Offset Y = 0`
+  - `Mipmap Mode = Automatic`
+  - 右侧同时可见快捷项：`90cw`、`180`、`90ccw`、`Hori Mirror`、`Vert Mirror`
+
+输出/预览：
+- 右上 2D 预览显示当前 `Transformation 2D` 结果
+- 预览右下角显示 `2048 x 2048 (Grayscale, 16bpc)`
+- 图像是一张左亮右暗的横向渐变包络，当前仍保持标准矩形分布，没有旋转或拉伸
+
+这张图的意义在于确认：`Swing_03` 不只是调速度噪波，还会配合一条可以单独平移、旋转、镜像的包络链来控制整体材质形状。当前虽然参数还在默认值，但作者已经把 `Transformation 2D` 单独拎出来，并准备继续在其后插节点，这一步会直接决定后面拖尾/摆动纹理在材质里的整体朝向和覆盖区域。
+
+### 00:31:42-00:36:14 关键流程 08
+
+- 本段定位：关键流程 08。
+- 知识点：先用成法处理一下。
+- 知识点：如果贴到头部的话就会合并成这样。
+- 知识点：这个现在有点过了。
+- 知识点：我们想要的并不是这种紧凑的感觉。
+- 知识点：我们来看一下变化。
+
+**关键画面：**
+
+这一张在 `Swing_03` 中进入“关键流程 08”的核心调整：作者把上方已有的速度亮带结果、下方 `Levels -> Transformation 2D` 包络，以及另一条来自左上的输入一起送到一个三输入 `Blend`，并当场展开混合模式下拉菜单比较不同算法。结合字幕“先用乘法处理一下”，这张图说明当前重点是在找一种既能合并速度层，又不会让结果太紧、太挤的混合方式。
+
+节点定义集：
+
+```text
+上方输入链（局部可见）
+- 上游结果节点（名称未完整显示）
+
+下方包络链
+- Levels
+- Transformation 2D
+
+汇合
+- Blend
+```
+
+连线集：
+
+```text
+上方输入链 -> Blend
+中间上方输入链 -> Blend
+Levels -> Transformation 2D -> Blend
+Blend.Output -> 本图中未显示后续去向
+```
+
+设置/参数：
+- 可见节点分辨率均为 `2048x2048 - L16`
+- 当前选中的是 `Blend`
+- 右侧 `Blend - PROPERTIES` 可见：
+  - `Random Seed = 0`
+  - `Opacity = 1`
+  - `Blending Mode` 下拉已展开，可见候选项包括：
+    - `Copy`
+    - `Add (Linear Dodge)`
+    - `Subtract`
+    - `Multiply`
+    - `Add Sub`
+    - `Max (Lighten)`
+    - `Min (Darken)`
+    - `Switch`
+    - `Divide`
+    - `Overlay`
+  - 由于下拉菜单处于展开状态，本图不能可靠断言最终选中了哪一个模式，只能确认作者正在比较这些混合方式
+
+输出/预览：
+- 右上 2D 预览显示当前 `Blend` 结果，为多条横向亮带叠在较暗背景上的速度纹理
+- 预览右下角显示 `2048 x 2048 (Grayscale, 16bpc)`
+- 结果整体仍偏紧密、亮带上下集中，符合字幕里“贴到头部会合并成这样”的提示
+
+结合本段“先用乘法处理一下”“如果贴到头部的话就会合并成这样”，这张图的意义在于：`Swing_03` 的问题不再是有没有速度纹理，而是合并后的层次过于靠前、过于紧凑。作者因此在 `Blend` 上逐个尝试 `Multiply`、`Add`、`Subtract` 等模式，目的是找到既能保留速度层，又不会把所有亮带挤成一团的组合方法。
+这一张继续细修 `Swing_03` 里导致“头部太紧”的那部分。可以清楚看到一条局部链路：左侧一张包络 `Levels`，接 `Transformation 2D`，再过一层 `Levels`，最后与上方已有速度纹理一起汇入 `Blend`。当前右侧参数面板选中的是右侧那层 `Levels`，说明作者正在通过重新压缩这条包络的黑白范围，控制它与速度纹理结合后的前端展开宽度。
+
+节点定义集：
+
+```text
+下方包络调整链
+- Levels
+- Transformation 2D
+- Levels
+
+上方输入链（局部可见）
+- 上游纹理结果节点（名称未完整显示）
+
+汇合
+- Blend
+```
+
+连线集：
+
+```text
+Levels(左) -> Transformation 2D -> Levels(右) -> Blend
+上方输入链 -> Blend
+Blend.Output -> 本图中未显示后续去向
+```
+
+设置/参数：
+- 可见节点分辨率均为 `2048x2048 - L16`
+- 当前选中节点是右侧的 `Levels`
+- 右侧 `Levels - PROPERTIES` 可见：
+  - `Random Seed = 0`
+  - `Levels Histogram = Luminance Channel`
+  - 直方图与输入/输出滑块全部可见
+  - 具体阈值数值未展开，因此只能确认作者在通过直方图重新收放亮区范围
+
+输出/预览：
+- 右上 2D 预览显示当前 `Levels` 节点结果
+- 预览右下角显示 `2048 x 2048 (Grayscale, 16bpc)`
+- 结果是一张左侧极亮、向右衰减的横向包络，亮区靠前且边界比较锐利
+- 结合后方 `Blend` 缩略图可以看出，这个包络会直接影响最终速度亮带在左侧的集中程度
+
+结合字幕“这个现在有点过了”“我们想要的并不是这种紧凑的感觉”，这一步的目标很明确：不是继续增加纹理细节，而是把包络控制得别太往前挤。通过在 `Transformation 2D` 之后再加一层 `Levels`，作者可以单独放松或压紧前端亮区，从而减少速度纹理贴到头部时那种过度堆叠的感觉。
+这一张继续沿着上一张的局部链路往后走：多个 `Blend` 和一层 `Levels` 调整后的结果，被进一步送入 `pow_grayscale`。这说明作者不仅在控制“头部不要太紧”，还在用幂函数重新分配亮度，让左侧高亮柱和横向亮带的强弱关系更可控。
+
+节点定义集：
+
+```text
+左侧局部链路
+- Blend
+- Levels
+- Blend
+- Blend
+
+后处理
+- pow_grayscale
+```
+
+连线集：
+
+```text
+左下 Blend -> Levels -> 中间 Blend
+左上 Blend -> 中间 Blend
+中间 Blend.Output -> pow_grayscale
+```
+
+设置/参数：
+- 可见节点分辨率均为 `2048x2048 - L16`
+- 当前选中节点是 `pow_grayscale`
+- 右侧 `pow_grayscale - PROPERTIES` 可见：
+  - `Output Format = 16 Bits per Channel`
+  - `Pixel Size = 1 x 1`
+  - `Random Seed = 0`
+  - `exponent = 1.34`
+
+输出/预览：
+- 右上 2D 预览显示当前 `pow_grayscale` 结果
+- 预览右下角显示 `2048 x 2048 (Grayscale, 16bpc)`
+- 图像表现为左侧一条非常亮的竖向光柱，右侧衔接多层逐步变暗的横向亮带；整体比上一张更强调亮暗差
+
+这一步的作用很直接：在前面已经把局部包络与速度层合适排开之后，再用 `pow_grayscale` 的 `exponent = 1.34` 去强化亮暗分布。这样可以把真正重要的亮带和头部高亮推得更突出，同时压暗中间灰区，让材质看起来更有力度，而不是一整片平均发白。
+
+### 00:36:14-00:38:46 Substance、粒子、网格
+
+- 本段定位：Substance、粒子、网格。
+- 知识点：如果将这种东西映射到网格上。
+- 知识点：那也可以这样使用。
+- 知识点：如果不映射到网格上。
+- 知识点：那就不需要这样切旁边了。
+- 知识点：可以根据需要的形状。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`、`粒子`、`蒙太奇`。
+
+**关键画面：**
+
+这一张继续在 `Swing_03` 的局部链路上工作，但重点从“头部不要太紧”转到“如果映射到网格上，这个形状应当怎么长”。可见当前链路是多个 `Blend`、一层 `Levels` 和一层 `pow_grayscale` 之后，再送入 `Transformation 2D`。右上预览已经不再是单纯横向亮带，而是下方一条亮边向上拉出大量尖刺，明显是在构造适合贴到网格上的竖向拉伸形态。
+
+节点定义集：
+
+```text
+左侧局部汇合链
+- Blend
+- Levels
+- Blend
+- Blend
+- pow_grayscale
+
+后处理
+- Transformation 2D
+```
+
+连线集：
+
+```text
+Blend(左上) -> Blend(中)
+Blend(左下) -> Levels -> Blend(中)
+Blend(中).Output -> pow_grayscale -> Transformation 2D
+```
+
+设置/参数：
+- 可见节点分辨率均为 `2048x2048 - L16`
+- 当前选中节点是 `Transformation 2D`
+- 右侧 `Transformation 2D - PROPERTIES` 可见：
+  - `Random Seed = 0`
+  - `Rotation Angle = 0.00`
+  - `Stretch Width = 100.00%`
+  - `Stretch Height = 100.00%`
+  - 右侧可见快捷项 `90cw`、`180`、`90ccw`、`Hori Mirror`、`Vert Mirror`
+  - 下方偏移量区域存在，但本图中未完整看到具体值
+
+输出/预览：
+- 右上 2D 预览显示当前 `Transformation 2D` 结果
+- 预览右下角显示 `2048 x 2048 (Grayscale, 16bpc)`
+- 结果形态为：
+  - 底部一条横向高亮基底
+  - 基底上方向上长出很多细长亮刺
+  - 上半部分整体较暗，尖刺高度和密度并不完全一致
+
+结合字幕“这样的形状”，这一步的意义很明确：作者把前面整理好的速度亮带进一步转成一种更适合贴网格的刺状遮罩。若这类纹理要映射到竖向或弧面网格上，这种“下沿连续、上方分叉拉丝”的轮廓会比单纯平行亮带更容易表现出生长、扫动或撕裂的感觉。
+这一张沿着上一张的刺状遮罩链继续往右推进。当前可见链路已经整理成 `Blend -> Pow Grayscale -> Transformation 2D -> output`，说明这部分结果在 `Swing_03` 中已经被当作一个可直接输出的局部成品。同时作者打开了节点搜索面板并搜索 `mapp`，搜索结果集中出现大量 `Mapper` 节点，表明这一步正在思考“如果要映射到网格、样条或其他承载体上，还可以接什么映射类节点”。
+
+节点定义集：
+
+```text
+当前局部输出链
+- Blend
+- Pow Grayscale
+- Transformation 2D
+- output
+
+搜索结果中的映射类候选节点
+- Flood Fill Mapper Color
+- Flood Fill Mapper Grayscale
+- Height Map Frequencies Mapper
+- PBR Render Mapping Color
+- PBR Render Mapping Grayscale
+- Shape Mapper
+- Spline Bridge Mapper Color
+- Spline Bridge Mapper Grayscale
+- Spline Flow Mapper
+- Spline Mapper Color
+- Spline Mapper Grayscale
+- UV Mapper Color
+- UV Mapper Grayscale
+```
+
+连线集：
+
+```text
+Blend -> Pow Grayscale -> Transformation 2D -> output
+当前搜索面板说明作者准备在这条局部成品链基础上考虑附加映射节点，但本图中尚未实际接入任何 Mapper
+```
+
+设置/参数：
+- 可见节点分辨率均为 `2048x2048 - L16`
+- 右侧当前露出的仍是上一层 `Levels` 属性面板下半部分
+  - 可见 `Histogram = Luminance Channel`
+  - 其他精确参数在本图里不是当前关注点
+- 当前真正操作重点是搜索面板，而不是某个节点数值微调
+
+输出/预览：
+- 右上 2D 预览显示当前刺状遮罩局部成品
+- 预览右下角可见 `2048 x 2048 (Grayscale, 16bpc)`
+- 图像仍保持“底边亮带 + 向上尖刺”的结构，说明这一局部形状已经稳定
+- 左上角还能看到一个独立的 `output` 节点，表明这条链可单独输出
+
+结合本段“如果将这种东西映射到网格上，那也可以这样使用”，这张图的价值在于把“形状已经够用了”和“接下来要不要专门做映射”这两个阶段分开。作者先把刺状遮罩整理成一条可直接输出的链，再去搜索 `Mapper` 类节点；如果后续真要贴到网格、样条或特定承载体上，就可以从这些候选节点里挑合适的映射方式继续扩展。
+这一张给出了本段的完成效果：前面那条“底边亮带 + 向上尖刺”的局部纹理，已经通过 `shape_mapper` 被映射成一个完整的环形边缘发光图。也就是说，作者不仅证明这种刺状纹理能贴到网格上，还直接演示了把它包到圆环轮廓上的结果。
+
+节点定义集：
+
+```text
+前序局部纹理链（局部可见）
+- 多个 Blend / Levels / Transformation 2D / Gradient 节点
+
+映射与输出链
+- shape_mapper
+- output
+```
+
+连线集：
+
+```text
+前序局部纹理链 -> shape_mapper
+shape_mapper -> output
+```
+
+设置/参数：
+- 当前选中节点是 `shape_mapper`
+- 右侧 `shape_mapper - PROPERTIES` 可见：
+  - `Pattern Amount = 4`
+  - `Radius = 0.12`
+  - `Width = 0.93`
+  - `Rotation = 0`
+  - `Flip one on two = False`
+  - `Non Square Expansion = True`
+- 下方还有 `INPUT VALUES` 区域，但未展开更多参数
+
+输出/预览：
+- 右上 2D 预览显示的是 `shape_mapper` 结果
+- 预览右下角显示 `2048 x 2048 (Grayscale, 16bpc)`
+- 成品图形态为：
+  - 一个完整的亮环
+  - 环外缘和内缘都较亮
+  - 环体内部由大量向中心收束的细刺组成
+  - 中心区域基本保持黑色空洞
+
+结合字幕“完成效果”，这张图把本段逻辑闭环了：如果这类纹理要贴到网格或其他环形承载体上，就不必停留在矩形条带阶段，而可以直接用 `shape_mapper` 把刺状亮带包成圆环边缘。这样得到的结果既保留了前面速度/撕裂式纹理的细节，又能直接服务于环形网格、护罩边缘或粒子蒙版类效果。
+
+## 补充视觉证据
+
+### S01 00:02:16
+
+这是 `## 补充视觉证据 / S01 00:02:16` 给出的早期图表补图，用来补清最基础的两条渐变分支是怎样通过 `Transformation 2D` 和 `Levels` 构造出来的，以及作者在这一阶段会直接把变换设为 `90` 度来旋转渐变方向。
+
+节点定义集：
+
+```text
+上支路
+- Gradient Linear 3
+- Transformation 2D
+- Levels
+
+下支路
+- Gradient Linear 3
+- Transformation 2D
+- Levels
+```
+
+连线集：
+
+```text
+Gradient Linear 3(上) -> Transformation 2D(上) -> Levels(上)
+Gradient Linear 3(下) -> Transformation 2D(下) -> Levels(下)
+两条支路在本补图中尚未继续连到后续 Blend
+```
+
+设置/参数：
+- 所有可见节点分辨率均为 `1024x1024 - L16`
+- 当前选中的是下支路的 `Transformation 2D`
+- 右侧 `Transformation 2D - PROPERTIES` 可见：
+  - `Random Seed = 0`
+  - `Transform matrix`
+  - `Rotation Angle = 0.00`
+  - `Stretch Width = 100.00%`
+  - `Stretch Height = 100.00%`
+  - 可见快捷旋转按钮：`90cw`、`180`、`90ccw`
+  - 画面字幕明确说明“这次会直接用 90 度的设置”
+
+输出/预览：
+- 右上 2D 预览当前显示的是一张横向黑到白的线性渐变
+- 预览右下角显示 `1024 x 1024 (Grayscale, 16bpc)`
+- 左侧 `Explorer` 当前仍是 `Unsaved Package* / Substance_graph`
+- 底部状态栏为 `No output node defined`
+
+这张补图的价值在于把最前面的基础操作说清楚：后续所有 Swing 纹理的层级、混合与速度处理，都是从这种“线性渐变 -> 旋转变换 -> Levels 调整”的最小单元起步的。尤其是这里补充说明了会直接使用 `Transformation 2D` 的 `90` 度旋转，这能帮助读者理解为什么后面很多条带和包络看起来已经天然带有横向或纵向的组织方向。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

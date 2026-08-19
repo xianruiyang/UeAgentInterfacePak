@@ -1,0 +1,370 @@
+# 24-2创建Houdini资源
+
+# 24-2创建Houdini资源
+
+## 关键术语
+
+- `Velocity`、`Color`、`UV`、`Add`、`Normal`、`Houdini`、`RBD`、`Mesh`、`粒子`、`网格`、`Niagara`、`纹理`、`速度`、`噪声`、`Niagara System`、`Emitter`、`Particle`、`Spawn Rate`
+
+## 分段知识
+
+### 00:00:01-00:04:43 RBD、速度
+
+- 本段定位：RBD、速度。
+- 知识点：当没有LSE是可以确认结果不同,现在是0,抱歉。
+- 知识点：这个速度是朝着刚开始,可以觉得有一点速度适当设定了错误的方向。
+- 知识点：每个点都有自己的速度,现在把它应用到这里。
+- 知识点：模拟被应用了,因为感觉是朝着这个速度方向适当推动了这个状态啊。
+- 知识点：10左右的结果值给需要这样扩散的。
+- 知识点：如果扩散太远的话,我们可能会很难利用。
+- 知识点：就是当地关闭也可以吧,到这里播放的结果值。
+- 核对对象：`速度`。
+
+**关键画面：**
+
+这一帧延续前一页末尾的速度对照测试，当前仍停留在 `geo1` 的辅助分支：
+
+- `setup_packed_prims -> add1 -> transform3 -> pointvop1 -> attribtransfer1`
+- `attribtransfer1` 再把属性回传到主链并送往 `TO_DOPS`
+
+左侧视口中，碎块悬停在地面上方，没有表现出明显的飞散趋势，符合“零初速度”状态下的预览。当前选中的是 `Attribute VOP pointvop1`，右侧参数面板可确认：
+
+- `Run Over = Points`
+- `Vex Source = Myself`
+- `Export Parameters = *`
+- `Enable Multithreading` 已启用
+- `Velocity_Str = 0`
+
+这说明教程在进入新一页时，先用 `Velocity_Str = 0` 作为基准状态，确认当前写入到辅助点并传回 packed 碎块的 `v` 属性可以被完全关闭；后续所有扩散效果变化都要以这个零速度基线做对照。
+这一帧开始查看把模拟结果重新导回 SOP 之后的播放节奏。当前可见的相关链路为：
+
+- 主输出链仍从 `attribtransfer1 -> TO_DOPS`
+- 右侧新增结果读取分支：`dopimport1 -> simple_retime1`
+
+左侧视口中，碎块已经分散悬浮在地面上方，说明当前显示的不是初始静止摆放，而是 DOP 模拟导回后的某个中间帧结果。当前选中的是 `Labs Simple Retime simple_retime1`，右侧参数面板可确认：
+
+- `Global Retime = 1`
+- 使用一条可编辑的 `Retiming Ramp`
+- 当前可见控制点之一：
+  - `Point No. = 2`
+  - `Position = 0.59901`
+  - `Value = 0.36363`
+- `Interpolation = Linear`
+
+这一步的作用，是在已经得到碎块扩散模拟之后，通过 `simple_retime1` 对时间采样曲线做再分配，让碎块展开、停顿或落地的节奏更适合后续导出到 Niagara 使用，而不必完全照搬 Houdini 原始模拟的线性播放速度。
+这一帧切到 Houdini 的 `/out` 输出网络，开始准备把 RBD 模拟结果导出为 FBX。当前网络中可见一个单独的输出节点：
+
+- `rbd_to_fbx1`，节点类型为 `Labs RBD to FBX`
+
+左侧视口仍显示处于扩散过程中的碎块结果，用来边看效果边确认导出帧段。当前选中的是 `rbd_to_fbx1`，右侧参数面板可确认的设置为：
+
+- `Export Path = $HIP/export/${HIPNAME}.fbx`
+- `Start/End/Inc = 1 / 60 / 1`
+
+高级区域中还能确认：
+
+- `Override Name` 未启用
+- `Axis System = Y Up (Right-handed)`
+- `Convert Axis System` 未启用
+- `Convert Units` 未启用
+- `Export in ASCII Format` 未启用
+
+这一步说明教程已经从“内部模拟与调速”进入“准备导出给外部使用”的阶段。当前导出策略是把 1 到 60 帧的刚体动画作为一段完整 FBX 输出，后续即可在 Niagara 或其他引擎流程里按帧读取碎块运动。
+
+### 00:04:43-00:09:41 网格
+
+- 本段定位：网格。
+- 知识点：围绕当前效果继续调整 Niagara 系统，需结合关键画面确认实际节点和参数。
+
+**关键画面：**
+
+这一帧继续停留在 `/out` 输出网络，仍以 `Labs RBD to FBX` 节点 `rbd_to_fbx1` 为中心，说明当前段落先围绕 Houdini 侧的网格动画导出流程做补充说明。左侧视口中可见一组已经散开的碎块悬停在地面之上，播放条停在第 `60` 帧，表明作者正在用最终结果帧来确认导出内容。
+
+当前选中节点仍为 `rbd_to_fbx1`，右侧参数面板中可确认：
+
+- `Export Path = $HIP/export/${HIPNAME}.fbx`
+- `Start/End/Inc = 1 / 60 / 1`
+- `Axis System = Y Up (Right-handed)`
+- `Convert Axis System` 未启用
+- `Convert Units` 未启用
+- `Export in ASCII Format` 未启用
+
+这张图的重点不在新增参数，而是在强调该节点就是把当前碎块 RBD 结果整理成可交给后续 Niagara/引擎侧使用的 FBX 动画输出入口。
+这一帧回到 `geo1` 的完整 SOP 网络，并同时显示 `/out` 中的 `rbd_to_fbx1` 设置，用来明确 FBX 导出的真实来源。当前画面中可确认：
+
+- 左侧主建模与模拟准备链从 `sphere1` 开始，经过 `mountain1`、`autouv1`、`visualize_uvs1`、`isooffset1`、`scatter1`、`voronoifracture1`、`material1`、`material2`、`explodedview1`、`transform1`、`rest1`、`setup_packed_prims`
+- 下方仍保留辅助分支 `add1 -> transform3 -> pointvop1 -> attribtransfer1 -> TO_DOPS`
+- 右下存在结果整理分支 `dopimport1 -> simple_retime1 -> transform4 -> To_Export -> rop_fbx2`
+
+当前选中的是 `/out` 里的 `Labs RBD to FBX rbd_to_fbx1`，右侧参数面板能确认：
+
+- `Node To Export = /obj/geo1/To_Export`
+- `Export Path = $HIP/OUT/04_RBD_01.fbx`
+- `Start/End/Inc = 1 / 60 / 1`
+
+`Root Transform` 当前为默认值：
+
+- `Translate = (0, 0, 0)`
+- `Rotate = (0, 0, 0)`
+- `Scale = (1, 1, 1)`
+- `Pivot = (0, 0, 0)`
+- `Uniform Scale = 1`
+
+这一步把导出入口和实际 SOP 结果节点 `To_Export` 明确对应起来，说明教程不是直接导出 `TO_DOPS` 的原始模拟输入，而是导出经过 `dopimport`、`simple_retime`、`transform4` 整理后的最终网格动画结果。
+这一帧切换到一个新的几何制作支线，用 `spiral1` 配合 `sweep1` 生成一条细长带状网格。当前可见节点关系非常简洁：
+
+- `spiral1 -> sweep1`
+
+左侧视口中可以看到一段弯曲上扬的细窄条带，说明 `Sweep` 正在把输入曲线生成为 ribbon 形网格。当前选中的是 `Sweep sweep1`，右侧参数面板能确认：
+
+- `Surface Shape = Ribbon`
+- `Surface Type = Quadrilaterals`
+- `Columns = 5`
+- `Width = 0.1`
+- `Stretch Around Turns` 已启用
+- `Max Stretch = 10`
+- `End Cap Type = None`
+- `Apply Scale Along Curve` 未启用
+- `Rotate Order = Pitch, Yaw, Roll`
+- `Apply Roll or Twist` 已启用
+- `Roll = 0`
+- `Full Twists = 0`
+- `Partial Twist = 0`
+- `Twist Per = Per Full Curve by Distance`
+- `Apply Yaw` 未启用
+- `Apply Pitch` 未启用
+
+这一步的目标，是先生成一条足够薄的带状基础网格，供后续继续做 UV、纹理或粒子可视化相关处理，而不是直接处理前面的碎块 RBD 结果。
+
+### 00:09:41-00:13:57 UV、Mesh、纹理
+
+- 本段定位：UV、Mesh、纹理。
+- 知识点：在这输入Transform的值。
+- 知识点：就一输入值不断复制这个消息的节点。
+- 知识点：我来给你展示一个例子。
+- 知识点：总的数量大约是3个。
+- 知识点：每次这个值移动2米10。
+- 知识点：可以认为Mesh会复制一次。
+- 知识点：这个Scale值在这里乘以0.5。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：材质侧要核对 Blend Mode、Opacity/Alpha、Emissive、UV/Panner、Depth Fade 或 SubUV/Flipbook 的真实连接。
+- 核对对象：`纹理`。
+
+**关键画面：**
+
+这一帧在前一段 `spiral1 -> sweep1` 生成的 ribbon 网格之后，继续接入 `Copy and Transform` 节点 `copy1`，准备把这条细长条带按固定偏移复制成多段。当前可见节点关系为：
+
+- `spiral1 -> sweep1 -> copy1`
+
+左侧视口中仍显示一条单独的弯曲 ribbon，说明复制结果还没被拉开到多个明显实例，或当前显示仍聚焦单个带状网格。当前选中的是 `Copy and Transform copy1`，右侧参数面板可确认：
+
+- `Total Number = 2`
+- `Pack and Instance` 未启用
+- `Transform Order = Scale Rot Trans`
+- 旋转顺序为 `Rx Ry Rz`
+- `Translate = (0, 0, 0)`
+- `Rotate = (0, 0, 0)`
+- `Scale = (1, 1, 1)`
+- `Shear = (0, 0, 0)`
+- `Uniform Scale = 1`
+
+这一步的核心是引入一个可逐次叠加变换的复制节点，后续只要给 `Translate`、`Rotate` 或 `Scale` 填入值，就能让同一条 ribbon 沿指定方向连续复制，形成多段 mesh 排列。
+这一帧继续编辑 `spiral1 -> sweep1 -> copy1` 这条 ribbon 复制链。左侧视口中已经能明显看到两条细长 ribbon 彼此交叉，说明复制体已经通过旋转产生对称展开效果。
+
+当前选中仍是 `Copy and Transform copy1`，右侧参数面板显示的关键变化为：
+
+- `Total Number = 2`
+- `Rotate = (0, 180, 0)`
+
+其余当前可见参数保持：
+
+- `Translate = (0, 0, 0)`
+- `Scale = (1, 1, 1)`
+- `Shear = (0, 0, 0)`
+- `Uniform Scale = 1`
+- `Transform Order = Scale Rot Trans`
+- 旋转顺序为 `Rx Ry Rz`
+
+从结果可以确认，教程这里不是通过额外建第二条曲线，而是直接把同一条 swept ribbon 复制一份，并让复制实例绕 `Y` 轴翻转 `180` 度，从而快速得到一组相互交叉的双 mesh 形态。
+这一帧在 ribbon 复制链后继续叠加更多复制节点，并在末端补上用于纹理朝向的属性生成节点。当前可见节点顺序为：
+
+- `copy2 -> copy3 -> copy4 -> polyframe1`
+
+左侧视口中已经不再是单一或双 ribbon，而是形成了一组围绕中心旋开的多条带状网格，整体类似花瓣/旋涡状排列。这说明教程通过连续叠加多个 `Copy and Transform` 节点，让同一个 ribbon 模块不断复制并旋转，快速搭出了更复杂的装饰性 mesh。
+
+当前选中的是 `PolyFrame polyframe1`，右侧参数面板可确认：
+
+- `Entity = Points`
+- `Style = Texture UV`
+- `Attribute Name = uv`
+- `Normal Name = N`
+- `Tangent Name = tangentu`
+- `Bitangent Name = tangentv`
+- `Make Frame Orthogonal` 未启用
+- `Left-Handed Frame` 未启用
+
+这一步的目的，是在多重复制完成后为网格补上基于点的 `uv`、法线和切线/副切线框架，让后续贴图、流动纹理或材质方向控制有可靠的属性基础，而不是只停留在几何形态本身。
+
+### 00:13:57-00:18:35 Velocity、Normal、粒子
+
+- 本段定位：Velocity、Normal、粒子。
+- 知识点：斯坦特尾直会被拿来用。
+- 知识点：乘以-1直来反转。
+- 知识点：已经给Velocity和Normal值了。
+- 知识点：在这里检查Normal值的话。
+- 知识点：能看到确认方向的部分。
+- 核对对象：`Velocity`、`粒子`、`速度`、`噪声`。
+
+**关键画面：**
+
+这一帧在多重 ribbon 复制链 `copy2 -> copy3 -> copy4 -> polyframe1` 之后，继续接入 `Add` 节点 `add1`，把当前带状网格进一步转换为点集。左侧视口中已经不再显示完整面片，而是显示为由大量规则点构成的旋涡状图案，说明几何面已经被剥离，只保留了采样点分布。
+
+当前选中的是 `Add add1`，右侧参数面板可确认：
+
+- 位于 `Points` 标签页
+- `Delete Geometry But Keep the Points` 已启用
+- `Number of Points = 0`
+
+结合这个设置，可以确定此处不是要额外手工生成新点，而是直接删除原有 polygon/surface，只保留现有几何的点位置。这样后续就能基于这些点继续写入 `Velocity`、`Normal` 或粒子发射所需属性，而不用保留 ribbon 的面结构。
+这一帧在点云化之后继续搭建点属性链，当前可见节点顺序为：
+
+- `polyframe1 -> add1 -> pointvop1 -> pointvelocity1`
+
+左侧视口中，旋涡状 ribbon 已经显示为密集的蓝色点列/线框点阵，说明当前节点正在针对点集而非面片工作。当前选中的是 `Point Velocity pointvelocity1`，右侧参数面板停在 `Curl Noise` 标签页，可确认：
+
+- `Add Curl Noise` 已启用
+- `Animated` 已启用
+- `Scale = 1`
+- `Pulse Duration = 1`
+- `Swirl Size = 1`
+- `Swirl Scale = (1, 1, 1)`
+- `Offset = (0, 0, 0)`
+- `Grain = 0.5`
+- `Turbulence = 3`
+- `Location Attribute = P`
+
+这一步的作用，是在已经生成基础方向/法线相关属性之后，再叠加一层基于位置 `P` 的卷曲噪声速度，让这些点不会只沿单一固定方向运动，而是具有更自然、更有扰动感的流动趋势。
+这一帧把前面构建的 ribbon 复制链、点属性链和矢量可视化结果放到了一起。当前可见的主链为：
+
+- `spiral1 -> sweep1 -> copy1 -> copy2 -> copy3 -> copy4 -> polyframe1 -> add1 -> pointvop1 -> pointvelocity1 -> transform1 -> vector_field1`
+
+同时，`sweep1` 旁边又复制出一条支线：
+
+- `sweep1 -> sweep2`
+
+左侧视口中可以看到大量青绿到蓝紫色的短线/矢量条，围绕旋涡状中心向外分布，说明当前几何已经不只是点本身，而是在显示每个点的方向和强度。当前选中的是 `Sweep sweep2`，右侧参数面板可确认：
+
+- `Surface Shape = Ribbon`
+- `Surface Type = Quadrilaterals`
+- `Columns = 5`
+- `Width = 0.02`
+- `Stretch Around Turns` 已启用
+- `Max Stretch = 10`
+- `End Cap Type = None`
+- `Apply Scale Along Curve` 未启用
+- `Rotate Order = Pitch, Yaw, Roll`
+- `Apply Roll or Twist` 已启用
+- `Roll = 0`
+- `Full Twists = 0`
+- `Partial Twist = 0`
+- `Twist Per = Per Full Curve by Distance`
+
+这一步说明教程一方面继续复用原始 ribbon 生成逻辑，通过 `sweep2` 做更细的带状截面；另一方面已经把点速度链结果送入 `vector_field1` 做可视化检查。也就是说，此时不仅在构建 mesh，还在同步验证 `Velocity` 与 `Normal` 的方向是否符合预期。
+
+### 00:18:35-00:22:43 Niagara、Color、Add
+
+- 本段定位：Niagara、Color、Add。
+- 知识点：这里现在噪音就是把这个模式晃动一下来用的。
+- 知识点：用噪音的时候这个位置值基于原来接收。
+- 知识点：刚才用Mount这个节点来摇动这个Position值。
+- 知识点：也选择了噪声移动到Position值上。
+- 知识点：通过By Group这种模式连接线。
+- 知识点：这些点一个个按左影顺序这样乱放着。
+- 知识点：最后看起来就是一条不知道的纠结的线。
+- 复现要点：Spawn Rate、Burst 或 Spawn Per Unit 决定生成节奏，需要和 Lifetime 配合控制屏幕密度。
+- 复现要点：Initialize Particle 通常负责 Lifetime、Color、Position、Sprite Size 或 Mesh Scale 等基础属性。
+- 核对对象：`Niagara`、`Color`、`Add`、`粒子`、`噪声`。
+
+**关键画面：**
+
+这一帧在前面构建的 ribbon/point/velocity 链基础上，进一步把右侧 ribbon 支线复制成更多层级，并在末端加入 `Scatter` 节点生成粒子发射用的点集。当前可见节点关系为：
+
+- 左侧主链：`spiral1 -> sweep1 -> copy1 -> copy2 -> copy3 -> copy4 -> polyframe1 -> add1 -> pointvop1 -> pointvelocity1 -> transform1 -> vector_field1`
+- 右侧复制支线：`sweep2 -> copy5 -> copy6 -> copy7 -> copy8 -> scatter1`
+
+左侧视口中显示为由大量黑色点构成的旋涡/花瓣状图案，说明当前正在查看散点结果，而不是 ribbon 面片本身。当前选中的是 `Scatter scatter1`，右侧参数面板可确认：
+
+- `Generate = By Density`
+- `Force Total Count` 已启用
+- `Total Count = 1000`
+- `Max Point Limit = 1000000`
+- `Randomize Point Order` 已启用
+- `Relax Iterations = 10`
+- `Use Geometric Normals` 已启用
+- `Scale Radii By = 1`
+- `Max Relax Radius = 10`
+- `Global Seed = 0`
+
+这一步的作用，是把已经复制好的 ribbon 形态重新离散化成一个数量可控的点云，为后续在 Niagara 中驱动粒子位置、颜色或噪声偏移做准备；教程此时明确把目标点数控制在大约 `1000` 个。
+这一帧继续沿用前一张图的双链结构，但在右侧散点支线后面新增了一套独立的点属性处理链。当前可见节点关系为：
+
+- 左侧主链：`copy2 -> copy3 -> copy4 -> polyframe1 -> add1 -> pointvop1 -> pointvelocity1 -> transform1 -> vector_field1`
+- 右侧支链：`copy5 -> copy6 -> copy7 -> copy8 -> scatter1 -> pointvop2 -> add2`
+
+左侧视口中仍显示由大量散点构成的旋涡状图案，说明当前关注点依旧是点分布与点级属性，而非 mesh 面片。当前选中的是 `Add add2`，右侧参数面板可确认：
+
+- 位于 `Points` 标签页
+- `Delete Geometry But Keep the Points` 未启用
+- `Number of Points = 0`
+
+从链路布局可以确认，这里新加的 `pointvop2` 不是替换左侧已有的 `pointvop1`，而是专门给右侧 `scatter1` 生成的粒子点云再做一轮独立的属性计算。`add2` 处于这条支链末端，说明教程正在为后续把这些散点进一步整理、连接或输出做准备。
+这一帧把右侧散点支链继续补完整，并明确进入导出阶段。当前可见的完整双链结构为：
+
+- 左侧主链：`copy1 -> copy2 -> copy3 -> copy4 -> polyframe1 -> add1 -> pointvop1 -> pointvelocity1 -> transform1 -> vector_field1`
+- 右侧支链：`sweep2 -> copy5 -> copy6 -> copy7 -> copy8 -> scatter1 -> pointvop2 -> add2 -> transform2 -> normal1 -> rop_fbx1`
+
+左侧视口中，几何已经显示为一团高光尖锐的深蓝/白色折面形态，说明当前查看的是整理并导出前的最终 mesh 结果，而不再只是点云或矢量调试视图。当前选中的是 `ROP FBX Output rop_fbx1`，右侧参数面板可确认：
+
+- `Output File = $HIP/OUT/04_VFMesh_01.fbx`
+- `Create Intermediate Directories` 已启用
+- `Export in ASCII Format` 已启用
+- `FBX SDK Version = FBX202000`
+- `Vertex Cache Format = Maya Compatible (MC)`
+- `Axis System = Y Up (Right-handed)`
+- `Convert Units` 已启用
+- `Conversion Level of Detail = 1`
+- `Export End Effectors` 已启用
+- `Compute Smoothing Groups` 已启用
+
+这说明教程已经把这组用于 Niagara 的网格/粒子辅助资源整理为可单独导出的 FBX 文件 `04_VFMesh_01.fbx`。与前面 RBD 动画的 `rbd_to_fbx1` 不同，这里导出的更像是当前构建出来的静态或单帧辅助 mesh 资源，用于后续粒子表现、颜色或 Additive 线条效果。
+
+## 补充视觉证据
+
+### S01 00:03:11
+
+这张补充截图对应 `S01 00:03:11`，用于补足 RBD 结果导回后的整理链参数。当前可见的相关节点关系为：
+
+- 左侧仍保留 RBD 输入准备链的一部分：`setup_packed_prims -> add1 -> transform3 -> pointvop1 -> attribtransfer1 -> TO_DOPS`
+- 右侧结果导回链为：`dopimport1 -> simple_retime1 -> transform4`
+
+左侧视口中可见散开的碎块落在地面平面上，说明当前显示的是导回后的模拟结果而不是初始碎块。当前选中的是 `Transform transform4`，右侧参数面板可确认：
+
+- `Transform Order = Scale Rot Trans`
+- 旋转顺序为 `Rx Ry Rz`
+- `Translate = (0, 0, 0)`
+- `Rotate = (0, 0, 0)`
+- `Scale = (1, 1, 1)`
+- `Shear = (0, 0, 0)`
+- `Uniform Scale = 1`
+- `Recompute Point Normals` 已启用
+- `Recompute Affected Normals` 已启用
+- `Preserve Normal Length` 已启用
+
+这张图补充证明了：在 `dopimport1` 和 `simple_retime1` 之后，教程还专门放了一个 `transform4` 作为导出前的结果整理节点；但该时刻它仍保持默认零位移/零旋转/单位缩放，主要作用是作为一个可插入的最终修正位，而不是已经做了明显位置或尺寸改动。
+
+## 复现检查
+
+- 先单独验证 Emitter 的 Spawn、Lifetime、Renderer 和材质，再叠加到完整 Niagara System。
+- 节点名、模块名和参数值以关键截图中的实际 UI 为准；OCR 只用于辅助定位。
+- 涉及透明、Additive、SubUV、Flipbook 或 Depth Fade 时，重点检查材质混合模式、Alpha/Opacity 与 Emissive 强度。
+

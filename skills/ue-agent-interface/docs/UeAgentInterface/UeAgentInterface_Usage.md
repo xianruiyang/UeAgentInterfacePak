@@ -1,155 +1,135 @@
 # UeAgentInterface 使用入口
 
-本文是 UeAgentInterface 的调用入口说明。完整命令参数、返回字段和边界以 `<SkillDir>/docs/UeAgentInterface/commands/` 下的正式分册为准。
+本文只说明当前正式公开入口和验证边界。命令全集与参数以
+`Resources/UaiCommandManifest.json` 为真源；Python 签名以该 manifest 生成的
+`UeAgentInterfaceCMD/cli/uai/commands/generated.pyi` 为准。
 
-## 推荐入口
+## 统一调用链
 
-日常自动化优先使用已定位 `UeAgentInterfaceCMD` 仓库中的 Python `uai_core`，不直接手写 HTTP：
-
-```text
-<UaiCmdRoot>/cli/uai_core
-```
-
-`UaiCmdRoot` 通常是 `<ProjectRoot>/UeAgentInterfaceCMD`，但不保证在项目根目录下。找不到默认候选时，应先向用户确认是否已安装 UAICMD 以及安装路径；只有确认没有可用 UAICMD 或用户明确要求回退时，才使用 CLI。skill 场景的 CLI 回退入口固定为：
+公开调用固定经过以下链路：
 
 ```text
-<SkillDir>/tools/uai-cli.exe
+Agent / 用户
+  -> import uai 或薄 CLI
+  -> Connection TOML
+  -> 可替换 Transport（当前为 HTTP Adapter）
+  -> POST /api/uai/command
+  -> CommandService
+  -> 正式 Command Registry
+  -> 唯一 C++ 业务 owner
+  -> UE mechanics / save / settle / readback
 ```
 
-推荐流程：
+Python 只负责读取连接配置、编码一条 `uai.command.v1` 请求、发送并无损还原
+`Result`。它不实现 HJSON、Planning、Verification、领域默认值、route 选择、业务
+重试或第二套 UE 逻辑。命名方法、`Client.execute()` 和 CLI 共用同一 Client、
+Protocol 与 Transport。
 
-1. 定位 `UaiCmdRoot`，将 `<UaiCmdRoot>/cli` 加入 `sys.path`，导入 `UaiCore` 和 `uai_core.commands.*` wrapper。
-2. 用 `ue.doctor()` 检查 UE Editor 服务连通性。
-3. 单条命令优先用对应 wrapper；多步骤任务用 `ue.batch(..., stop_on_error=True)`。
-4. 读取 `CommandResult.response` 或 `BatchResult.response` 定位失败命令、失败索引和返回数据；如果回退 CLI，则读取 `<UserWorkDir>/runtimeLogs/` 下的 report JSON。
-5. 写入资产或配置后做 export/readback、compile、probe、screenshot、smoke 或 coverage 验证。
+`/api/uai/command` 是业务命令的唯一 HTTP ingress。ping/status/listener 只负责连接
+与服务状态，不拥有业务语义。未出现在正式 manifest 中的命令必须 fail closed。
 
-不要在命令行里内联长 JSON；复杂参数写入 JSON 文件。CLI 仓库开发、发布验证和 CLI 自身行为仍以 `UeAgentInterfaceCMD/docs/USAGE.md` 为准。
+## Python SDK
 
-## 文档阅读顺序
+调用方只需导入一个包，并用一行 Connection TOML 建立连接：
 
-1. `<SkillDir>/docs/UeAgentInterface/commands/README.md`：正式命令总索引、任务路由、工作流优先级。
-2. `<SkillDir>/docs/UeAgentInterface/UeAgentInterface_Status.md`：当前能力与边界快照。
-3. `<SkillDir>/docs/UeAgentInterface/Workflow_ExecBatch_Practice.md`：批处理和高效调用。
-4. `<SkillDir>/docs/UeAgentInterfaceCMD/USAGE.md`：CLI 具体参数和 report/log 行为。
-5. `<SkillDir>/docs/UeAgentInterface/commands/<编号>_*.md`：具体分册。
+```python
+import uai
 
-skill 内不同步 `deprecatedCommand/**` 和 generated 覆盖矩阵；需要排查同步差异时再回到插件仓库源文档。
+with uai.connect("connection.toml") as ue:
+    result = ue.project.summary()
 
-## 分册路由
-
-| 范围 | 分册 |
-| --- | --- |
-| Core / Level / Assets / Landscape | `<SkillDir>/docs/UeAgentInterface/commands/01_Core_Level_Assets_Landscape.md` |
-| Blueprint | `<SkillDir>/docs/UeAgentInterface/commands/02_Blueprint.md` |
-| UMG / WidgetBlueprint | `<SkillDir>/docs/UeAgentInterface/commands/03_UMG.md` |
-| StaticMesh / EnhancedInput | `<SkillDir>/docs/UeAgentInterface/commands/04_StaticMesh_EnhancedInput.md` |
-| Material / Material Instance / Material Function | `<SkillDir>/docs/UeAgentInterface/commands/05_Material.md` |
-| Level Sequence / UMG Animation / Sequencer | `<SkillDir>/docs/UeAgentInterface/commands/06_Sequence.md` |
-| Niagara System | `<SkillDir>/docs/UeAgentInterface/commands/07_Niagara_System.md` |
-| Niagara Emitter / Renderer / Event / Parameter | `<SkillDir>/docs/UeAgentInterface/commands/08_Niagara_Emitter.md` |
-| Niagara Stage / Graph / Node / Module Input | `<SkillDir>/docs/UeAgentInterface/commands/09_Niagara_StageGraph.md` |
-| Modeling Mode | `<SkillDir>/docs/UeAgentInterface/commands/10_Modeling.md` |
-| AnimBlueprint | `<SkillDir>/docs/UeAgentInterface/commands/11_AnimBlueprint.md` |
-| Montage | `<SkillDir>/docs/UeAgentInterface/commands/12_Montage.md` |
-| Animation Assets / Skeleton | `<SkillDir>/docs/UeAgentInterface/commands/13_AnimationAssets_Skeleton.md` |
-| IK Rig / IK Retargeter | `<SkillDir>/docs/UeAgentInterface/commands/14_IKRig_IKRetargeter.md` |
-| Niagara folder format | `<SkillDir>/docs/UeAgentInterface/commands/15_Niagara_FolderFormat.md` |
-| Skeletal Mesh folder format | `<SkillDir>/docs/UeAgentInterface/commands/16_SkeletalMesh_FolderFormat.md` |
-| Control Rig / Shape Library | `<SkillDir>/docs/UeAgentInterface/commands/17_ControlRig_FolderFormat.md` |
-| Deformer / ML Deformer / Geometry Cache | `<SkillDir>/docs/UeAgentInterface/commands/18_Deformer_MLDeformer_GeometryCache.md` |
-| AI Behavior / Blackboard / StateTree / EQS / Navigation / Smart Object | `<SkillDir>/docs/UeAgentInterface/commands/19_AI_Behavior_Blackboard_StateTree_EQS_Navigation_SmartObject.md` |
-| Audio | `<SkillDir>/docs/UeAgentInterface/commands/20_Audio.md` |
-| Texture / RenderTarget / Media | `<SkillDir>/docs/UeAgentInterface/commands/21_Texture_RenderTarget_Media.md` |
-| Project Settings / Config | `<SkillDir>/docs/UeAgentInterface/commands/22_ProjectSettings_Config.md` |
-| Level Content JSON | `<SkillDir>/docs/UeAgentInterface/commands/23_LevelContent_JSON.md` |
-| DataAsset / PrimaryAsset / DataTable | `<SkillDir>/docs/UeAgentInterface/commands/24_DataDriven_DataAsset_DataTable.md` |
-| Level Topology / Streaming / World Partition / DataLayer / HLOD | `<SkillDir>/docs/UeAgentInterface/commands/25_LevelTopology_Streaming_WorldPartition_DataLayer_HLOD.md` |
-| Physics / Chaos 基础 | `<SkillDir>/docs/UeAgentInterface/commands/26_Physics_Baseline.md` |
-| Localization / Packaging / Platform Profiles | `<SkillDir>/docs/UeAgentInterface/commands/27_Localization_Packaging_PlatformProfiles.md` |
-| Node Graph 通用排布 | `<SkillDir>/docs/UeAgentInterface/commands/28_NodeGraph.md` |
-
-## 调用格式
-
-底层 HTTP 协议仍是 `POST /api/exec`：
-
-```json
-{
-  "request_id": "task-001",
-  "command": "command_name",
-  "params": {}
-}
+if not result.ok:
+    raise RuntimeError(result.error)
+print(result.payload)
 ```
 
-CLI `batch` 文件通常写成：
+动态 command ID 使用同一个 Client：
 
-```json
-{
-  "stop_on_error": true,
-  "steps": [
-    {
-      "request_id": "step-001",
-      "command": "get_world_state",
-      "params": {}
-    }
-  ]
-}
+```python
+result = ue.execute("project.summary", {})
 ```
 
-## 资产编辑原则
+一个命名方法或一次 `execute()` 只发送一条同名 command。多步骤工作流由调用者
+显式逐条执行；每一步先判断稳定 Result，再根据独立 readback 决定是否继续。
 
-默认不要用一长串原子命令手搓完整资产。优先级：
+Connection TOML、认证引用和完整 SDK 说明见
+`UeAgentInterfaceCMD/docs/PYTHON_SDK_AND_CLI.md`。认证 secret 只通过 TOML 支持的
+环境变量或受控文件引用，不进入业务参数、report 或日志。
 
-1. 单文件 JSON：小型资产、DataAsset/DataTable、配置、曲线、RenderTarget 等。
-2. 文件夹式 JSON：Blueprint、UMG、AnimBlueprint、Material、Sequence、Niagara、ControlRig、SkeletalMesh 等。
-3. Level Content / Level Topology JSON：场景 Actor 内容和关卡拓扑。
-4. 动作命令：compile、screenshot、runtime probe、build、import、packaging。
-5. 原子写入命令：只用于 bootstrap、迁移、探针、局部补修和故障恢复。
+## CLI
 
-标准节奏：
+CLI 是同一 SDK 的薄入口：
+
+```powershell
+uai-cli --connection connection.toml connection probe
+uai-cli --connection connection.toml exec project.summary
+uai-cli --connection connection.toml exec reference.asset_read --params-file params.json
+```
+
+复杂参数写入 `<UserWorkDir>/tmp/uai_params/`；report 和程序日志写入
+`<UserWorkDir>/runtimeLogs/`。CLI 不提供隐藏的批处理语义、业务默认值或兼容 route。
+
+## 查询、修改与读回
+
+标准节奏是：
 
 ```text
-bootstrap -> export -> refine -> validate -> apply -> export/readback -> verify
+query/export -> choose one command -> execute -> settle/save -> independent readback -> cleanup
 ```
 
-## 写入后必须检查
+- Query 必须无业务副作用。
+- 写命令返回 `ok=true` 只证明服务端完成了该 command 的返回语义。
+- 持久资产必须通过正式读取 command、unload/reload 或等价独立机制验证。
+- 需要 compile、probe、screenshot 或 diff 的领域，必须在读回后继续完成对应验收。
+- 失败时读取 `result.error`；不得静默重放 effectful command。
+- Result envelope 有效不等于业务成功，必须先检查 `ok` 和领域错误字段。
 
-写入 JSON、folder JSON 或 `value_text` 后，检查命令返回中的诊断字段：
+## HJSON authoring
 
-- `issues[]` / `warnings[]`
-- `property_results[]`
-- `requested_value_text`
-- `applied_value_text`
-- `property_value_read_back`
-- `property_import_status`
-- `property_import_verified`
-- `property_import_error`
-- `value_text_exact_match`
-- `value_text_changed_after_import`
-- `cpp_type`
+复杂资产优先使用服务端结构化 HJSON export/apply/readback：
 
-`json_file` 读取失败、JSON 解析失败、属性不存在、ImportText 失败或 folder 可选文件存在但不可解析，都必须当作需要处理的失败，不要继续下一步写入。
+1. 先导出目标、直接引用和必要 owner context。
+2. 通过 profile、字段投影、引用和文件拆分控制 token，不使用硬性 token 拒绝门禁。
+3. 类属性、对象/节点属性、图结构和关系使用统一对象/属性/关系模型。
+4. `update` 保留省略字段；`replace` 只使用服务端合同声明的原生默认值。
+5. 写入前携带导出 revision；写入后由 C++ owner 负责 Planning、执行、保存与独立读回。
+6. Python 不解析、合并或重建 HJSON 业务语义。
 
-## 长任务和编辑器生命周期
+完整规则见 `HjsonAuthoring_Guide.md` 及 `hjson-authoring/` 分册。
 
-Packaging、Localization commandlet、部分 build/probe 属于长任务，必须使用 `timeout_seconds` 和显式许可参数，例如 `allow_uat=true`、`allow_commandlet=true`。
+## Editor 与长任务
 
-关闭编辑器前的安全顺序：
+默认复用并保持用户主 Editor 运行。启动 UAI Editor 时可使用：
 
-1. `editor_list_dirty_resources`
-2. `editor_resolve_dirty_resources`
-3. `editor_close`
+```text
+-UeAgentInterfaceAutoStart -UeAgentInterfaceStartMinimized
+```
 
-出现 UE 崩溃或 UAI 服务异常退出时，先收集 crash context、UE log、CLI report 和本轮 runtime log，定位根因后再继续同类命令。
+该参数只控制启动首态，不持续压制用户恢复窗口。普通读写、readback、screenshot 和
+smoke 结束后不得关闭 Editor。
 
-## 覆盖状态
+只有插件或 Editor C++ 普通编译、证据确认必须重启，或用户明确要求时才关闭。
+关闭前先调用 `editor.dirty_resources()`，处理 dirty resource，再调用
+`editor.safe_exit(...)`；异步接受不等于退出完成，必须由进程外 witness 验证终止。
+长任务、cancel/recovery 和 terminal state 见
+`contracts/long_running_session_public_commands.md`。
 
-截至最近一次 coverage：
+## 证据等级
 
-- 命令总数：`867`
-- 缺正式文档：`0`
-- 缺实现：`0`
-- 缺 smoke：`0`
-- actionable smoke debt：`0`
+manifest、generated binding、handler forwarding 或 mock 只能证明结构层。声明命令
+production-ready 还必须证明正式 public ingress、唯一 C++ owner、真实 UE mechanics、
+必要的 compile/settle、持久化、独立读回、失败语义和 cleanup。旧实现、旧测试、旧
+门禁与旧 fixture 只作为待审资产，不得形成第二套权威。
 
-覆盖状态以插件源仓库的 `docs/generated/command_coverage_matrix.md` 为准；skill 内不携带 generated 覆盖矩阵。
+## 文档路由
+
+- 当前架构与覆盖边界：`UeAgentInterface_Status.md`
+- 正式命令参数：运行中服务的 manifest、`client.command_search(...)`、
+  `client.command_detail(...)` 与默认生成 SDK
+- Python SDK 与 CLI：`UeAgentInterfaceCMD/docs/PYTHON_SDK_AND_CLI.md`
+- Read/Export：`contracts/read_export_command_contract.md`
+- Reference CRUD：`contracts/reference_crud_route.md`
+- SimpleAuthoring typed CRUD：`contracts/simple_authoring_typed_crud.md`
+- Long-running / Session：`contracts/long_running_session_public_commands.md`
+
+旧生成报告和 deprecated 命令页不是当前行为真源，也不进入分发 skill。
