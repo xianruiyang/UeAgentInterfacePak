@@ -11,9 +11,8 @@
 -> export/readback 当前 folder
 -> 按 ExportProfile included_files/tutorial read_order 读取必需入口
 -> 按需打开 authoring HJSON
--> 如需新增节点/模块/组件/控件/输入来源，先 node_catalog_search
--> 从 items_tsv 选候选
--> 对选中候选做唯一 exact 查询，按需读取 seed 和 placement
+-> 如需新增节点/模块/组件/控件/输入来源，调用对应领域 exact candidate command
+-> 选择唯一候选并保留 executable identity、binding_revision 与领域 context
 -> 编辑普通 value/connection/layout/properties
 -> validate/lint/adapter/apply
 -> export/readback/compile/probe 验证
@@ -22,9 +21,9 @@
 执行规则：
 
 1. 先导出真实资产结构，再在 `llm_authoring` 文件上改。
-2. 新增候选优先来自 `node_catalog_search`，分类不明确时先 `node_catalog_categories`。
-3. `node_catalog_search.items_tsv` 是候选选择的压缩主返回，不是通用 Apply payload。只对选中行发起唯一 `exact` 查询；若该 kind 有正式 Apply 投影，读取独立的 `seed` 与 `placement`。
-4. `seed` 只表达 ApplyInputContract 允许的最小目标片段；`placement` 只表达 workspace contract、unit、文件 pattern 和目标位置。operation、owner、父级、连线、layout 与属性必须来自用户意图、现有上下文或 UE readback，不能由 Catalog 猜测。
+2. 新增候选来自当前领域唯一 candidate command；八个当前入口是 `ai.behavior.candidates`、`animation_rig_graph.candidates`、`audio.graph.candidates`、`blueprint.component.candidates`、`blueprint.node.candidates`、`material.expression.candidates`、`niagara.module.candidates` 与 `pcg.node.candidates`。
+3. 候选返回不是通用 Apply payload。只把该领域合同声明的 executable `name`/path、`binding_revision` 与适用 context 原样写入对应 HJSON；`query.content.search` 只搜索现有 Asset/Actor/Component，不复制创建候选 mechanics。
+4. operation、owner、父级、连线、layout、placement 与属性必须来自用户意图、现有上下文或 UE readback，不能由候选显示名、分类或客户端映射猜测。
 5. 不要手写完整 readback 对象；真实 id、template、slot、pin、默认属性、generated/readback/debug 字段由 apply 后的 UE/UAI 补齐。
 6. apply 成功后必须重新 export/readback；后续编辑以读回的新结构为依据继续。
 
@@ -34,40 +33,71 @@
 
 | 类型 | 常见 canonical 字段 | 说明 |
 | --- | --- | --- |
-| 资产/脚本候选 | `path` | Catalog 可直接投影为目标 seed 时使用。 |
+| 资产/脚本候选 | 领域合同返回的 executable `name`/path + `binding_revision` | 只在 owning domain 的目标 HJSON 合同中使用。 |
 | 无路径 action | `name` + discriminator | 只有 owner/context 内可唯一解析时合法。 |
 | 资产 workspace | `target.asset_path`、`target.asset_kind` | folder/single-file profile 的目标身份。 |
 | Level lifecycle | `world_path` + actor/component identity，创建时可带 `actor_class` / `component_class` | 类路径是 type assertion，不替代 owner identity。 |
-| Blueprint/UMG | `node_class`、`function_owner_class + function_name`、`widget_class` 等 | exact seed 保留实际 InputContract 字段名。 |
+| Blueprint candidate-bound node/Component | 领域返回的完整 `candidate` object | 当前 Blueprint root authoring 由服务端校验 binding 并展开 native class/name 字段；调用方不维护第二份映射。 |
+| 其它 Blueprint/UMG 内容 | `function_owner_class + function_name`、`widget_class` 等 | exact seed 保留实际 InputContract 字段名。 |
 
-`candidate_id` 是 Catalog detail selector，不是 Apply payload 字段。`full_name` 只用于 display/legacy 消歧；是否接受 `asset_path`、`class_path`、`object_path` 或领域 class 字段，以当前 InputContract 为准，不能把它们全局判定为 legacy，也不能从字段名猜语义。
+显示 label、tooltip、category 只用于选择，不是 Apply payload 身份。是否接受 `asset_path`、`class_path`、`object_path`、`name` 或领域 class 字段，以当前 InputContract 为准，不能从字段名猜语义。
 
 旧多文件 workspace、旧平铺 graph、旧 index/properties 布局会直接拒绝；完整边界见 `06_LegacyMigration.md`。
 
-## Catalog Seed 与 Placement
+## 领域 Candidate Identity 与 HJSON Binding
 
-`node_catalog_search.items_tsv` 首行是 header；`path` / `name` 用于选择候选和构造 exact 查询：
-
-```text
-name	full_name	category	tooltip	path
-Multiply	Multiply	Math	Multiplies inputs	Multiply
-```
-
-唯一 exact 命中后，返回形状为：
+候选命令按领域返回可执行身份与 binding revision。Blueprint node 与 Component 是当前明确允许“候选对象原样进入 HJSON”的领域：
 
 ```hjson
-seed: { path: "/Script/Engine.MaterialExpressionMultiply" }
-placement: {
-  schema: uai.catalog_placement.v1
-  workspace_contract_id: uai.apply_workspace.material.graph_mutation
-  input_contract_id: uai.apply_input.material.graph_mutation
-  unit_id: primary
-  path_pattern: index.hjson
-  target_path: "$"
+provider_extension: {
+  components: {
+    "component:PointLight": {
+      operation: create
+      candidate: {
+        name: PointLight
+        component_class: "/Script/Engine.PointLightComponent"
+        binding_revision: "sha256:..."
+      }
+      parent: DefaultSceneRoot
+    }
+  }
+  graphs: {
+    "event_graph:EventGraph": {
+      operation: update
+      graph: { graph_kind: event_graph }
+      nodes: {
+        "11111111-1111-1111-1111-111111111111": {
+          operation: create
+          candidate: {
+            name: "/Script/BlueprintGraph.K2Node_IfThenElse"
+            binding_revision: "sha256:..."
+            display_name: Branch
+            graph_id: "graph:..."
+          }
+          pos: { x: 800, y: 600 }
+        }
+      }
+    }
+  }
 }
 ```
 
-`seed` 的字段名以实际 InputContract 为准，可能是 `path`，也可能是 `actor_class`、`component_class`、`widget_class`、`node_class` 或领域 selector。不要把 TSV 的列名强行写入目标 HJSON。`seed` 不含 operation、默认值、layout、readback 或 completion provenance。
+服务端在首写前以同一 candidate mechanics 校验 target、graph/SCS context、executable identity 与 `binding_revision`，再展开 Blueprint native mutation 字段。调用方不把 `candidate.graph_id` 改写成 graph map key，也不自行补一套 `node_type/node_class` 或 Component `name/class`；如果显式提供这些字段，它们必须与 candidate 完全一致。
+
+Material 使用自己的领域形状：
+
+```hjson
+value: {
+  class_ref: "/Script/Engine.MaterialExpressionScalarParameter"
+  candidate: {
+    name: "/Script/Engine.MaterialExpressionScalarParameter"
+    binding_revision: "sha256:..."
+  }
+  position: { x: -300, y: 0 }
+}
+```
+
+`candidate.name` 必须与本次实际创建使用的 `class_ref` 一致，`binding_revision` 必须原样复制；服务端在写前重新解析并拒绝 stale binding。其它领域使用各自的 HJSON 形状，不能把 Material 字段推广成全局 schema。候选 identity 不含 operation、owner、父级、默认值、layout、readback 或 completion provenance。
 
 ## Apply 输入源
 
@@ -114,10 +144,12 @@ known struct 继续使用 canonical codec，generic/Blueprint struct 使用 `fie
 
 ## 直接写入支持面
 
-| catalog / kind | 可直接用于 HJSON 补全 | 推荐 seed | 补全与限制 |
+| domain candidate / kind | 可直接用于 HJSON 补全 | 推荐 identity | 补全与限制 |
 | --- | --- | --- | --- |
 | `actor_component` | 是 | exact `seed.component_class` | 还需 owner actor identity、component name 和 operation。 |
 | `umg_widget` | 是 | exact `seed.widget_class` | 还需 widget identity、parent/slot context 和 operation。 |
+| `blueprint.node.candidates` | 是 | 完整 exact `candidate` object | 还需 Blueprint graph stable map key、node stable id、operation 与 placement；服务端校验 graph binding 并展开 native node fields。 |
+| `blueprint.component.candidates` | 是 | 完整 exact `candidate` object | 还需 Component stable map key、operation 与 parent；服务端校验 SCS binding 并展开 native Component fields。 |
 | `material_expression` | 是 | exact `seed.path` | graph mutation context、identity、连线、root input 和属性另写。 |
 | `material_function_call` | 是 | exact `seed.path` | Material Function 是资产实体；已知可靠路径时可以直接按目标 contract 写。 |
 | `niagara_dynamic_input` | 条件支持 | exact `seed.path` | 必须放入已有 module input 上下文；子 input/data interface 需 readback 后继续编辑。 |
@@ -127,7 +159,7 @@ known struct 继续使用 canonical codec，generic/Blueprint struct 使用 `fie
 | `niagara_module` | 是 | exact `seed.path` | 必须放入目标 stage；operation、顺序、输入和 stage identity 不在 seed 中。 |
 | `niagara_graph_function` | 无 standalone projection | 无 | 需要 Script graph contract；当前 folder Script profile不覆盖 graph topology。 |
 
-判断可写时，以当前 CommandSpec、InputContract、`seed/placement` 和 readback 验证为准。`items_tsv` 中的 `path` / `name` 只表示候选 selector，不表示目标 contract 接受同名字段。
+判断可写时，以当前 CommandSpec、InputContract、领域 candidate contract 和 readback 验证为准。候选返回中的字段只在 owning domain 明确声明时可写入目标 HJSON。
 
 ## 写入示例
 
@@ -202,7 +234,7 @@ modules: [
 
 ## 来源解析
 
-刚搜索完候选或在 HJSON 中看到 `path`/`name` seed 后，如需理解含义，可调用 `node_origin_resolve`。已知路径实体优先传 `path`：
+刚搜索完候选或在 HJSON 中看到 `path`/`name` 后，如需理解来源，可调用 `reference.origin.resolve`。已知路径实体优先传 `path`：
 
 ```hjson
 {
@@ -234,8 +266,8 @@ modules: [
 
 - 把 display-only `full_name` 或任意字段名当作所有领域通用身份，而没有核对目标 InputContract。
 - 仅凭显示名写入本应有路径的自定义资产、类或对象。
-- 从 `items_tsv` 解析出的 `path` / `name` seed 与实际放置位置不匹配。
-- `write_support` 或 `support_reason` 表示当前 item 不能按目标用途写入。
+- 领域 candidate 的 executable identity、binding revision 或 context 与实际目标不匹配。
+- 把一个领域的候选字段形状复制到另一个领域，或绕过 stale binding 校验。
 - Blueprint/Material 从 pin 拉线搜索时没有传真实 pin context。
 - Niagara module seed 没有放进 `apply_mode: patch` 的目标 stage，或 selector 多实例歧义时没有写 `occurrence`。
 - apply 成功但 export/readback 没有出现目标对象、目标连接或目标值。

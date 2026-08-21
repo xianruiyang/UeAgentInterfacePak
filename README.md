@@ -184,7 +184,7 @@ vector service 与 embedding 环境；环境不完整时可降级到 keyword 或
   更新 installed 并做完整一致性检查。
 - Plugin/CMD 正式文档进入 `ue-agent-interface/docs/` 时，只同步适合日常 skill 阅读的内容；deprecated、
   generated coverage、临时调试与任务复盘不得进入分发副本。
-- Skill 内 CLI 来自 CMD 的正式构建；刷新时同时记录来源版本与默认配置，再验证 packaged executable。
+- Skill 内 CLI 来自 CMD 的正式构建；刷新时在 `tools/uai-cli.release.json` 记录 CMD 来源提交、公开 CLI 版本和 artifact hash，并只分发当前 Connection TOML 模板，再验证 packaged executable。
 - `release dev-mirror` 只用于本地镜像或排查，不是正式发布。
 - 正式发布必须使用当前项目政策与对应 CMD 版本登记的门禁，验证 clean commit/tree、submodule gitlink、
   skill/installed parity、包 hygiene 和适用测试；本 README 不把命令存在或一次旧结果当成准入。

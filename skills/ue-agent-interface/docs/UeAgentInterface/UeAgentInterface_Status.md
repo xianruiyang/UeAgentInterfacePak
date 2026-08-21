@@ -81,8 +81,8 @@ HJSON 以 LLM 易用和最小必要字段为目标：
 Pak 与 installed `ue-agent-interface` skill 只同步正式可用文档、公开 CLI、Connection
 模板和稳定工作流。以下内容不得进入 skill：
 
-- deprecated 命令页
-- 旧生成文档和覆盖报告
+- `commands/deprecatedCommand/`
+- `docs/generated/`
 - coverage 生成物
 - 任务表、任务复盘、runtime log 与临时文件
 

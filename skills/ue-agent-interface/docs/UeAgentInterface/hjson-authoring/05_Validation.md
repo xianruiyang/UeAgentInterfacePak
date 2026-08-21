@@ -26,7 +26,7 @@
 - raw config、export timestamp、coverage report 等 report/debug 字段进入默认 authoring。
 - path-backed seed 使用旧 `full_name`、`asset_path`、`class_path`、`object_path`、`component_class_path`、`script_asset_path` 或 `module_script_path` 作为主输入。
 - 仅凭显示 `name` 写入本应有路径的自定义资产、类或对象。
-- 从 `items_tsv` 解析出的 `path` / `name` seed 被放到与目标 profile/path 不一致的位置。
+- 领域 candidate 返回的 executable identity、`binding_revision` 或 context 被放到与 owning domain/profile 不一致的位置。
 - 忽略 `write_support/support_reason`，把候选用于不支持的写入场景。
 
 ## Adapter 必须拦截

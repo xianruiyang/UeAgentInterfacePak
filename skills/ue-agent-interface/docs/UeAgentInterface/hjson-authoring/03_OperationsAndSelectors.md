@@ -42,14 +42,14 @@ selector 不应包含导出路径、行号、派生 count、runtime report 或�
 
 LLM 可以用最小 seed 创建结构，让 adapter/UAI 补齐默认值。最小 seed 是“能唯一表达新增目标的最小 authoring”，不是完整 readback：只写身份、必要定位上下文、必要 `operation` 和用户要改的初始字段。
 
-涉及节点、模块、组件、控件、Material expression 或 Niagara dynamic input 时，优先直接解析 `node_catalog_search.items_tsv` 并使用 `path` / `name` seed；完整链路见 `00_DirectHjsonAuthoring.md`。
+涉及节点、模块、组件、控件、Material expression 或 Niagara dynamic input 时，先调用对应领域的 exact candidate command，并按该领域合同原样使用 executable `name`/path、`binding_revision` 与必要 context；完整链路见 `00_DirectHjsonAuthoring.md`。
 
 | 结构 | 最小 seed |
 | --- | --- |
-| Blueprint component | path-backed 组件写 `path`；无路径候选写 `name`；`component_id/component_class/relative_transform` 可由 adapter 默认补齐。 |
+| Blueprint component | 当前 `blueprint.component.candidates` 返回的完整 `candidate` object 原样写入 Blueprint root entry；另写 stable map key、`operation` 与 parent，native `name/class` 由服务端校验后展开。 |
 | UMG widget | path-backed Widget 写 `path`；无路径候选写 `name`；需要挂载时额外写 `parent_widget_id`，slot 按父容器类型补。 |
 | Material node | 内置 expression 通常写 `name`；Material Function Call 或明确 class/asset 时写 `path`；`node_id` 可由 adapter 从 `name` 默认生成。 |
-| Blueprint graph node | 函数调用用 `path + function_name`；事件/变量可用 `name` 或上下文判别字段；必须有正确 graph/pin 上下文并通过 compile/readback 验证。 |
+| Blueprint graph node | 当前 Branch 创建使用 `blueprint.node.candidates` 返回的完整 `candidate` object；graph stable map key、node stable id、`operation` 与 placement 另写。函数、事件和变量仍按各自明确合同，不能套用 Branch 字段。 |
 | Niagara dynamic input | path-backed script 写 `path`；无路径候选写 `name`；只放在某个 module input 的 `value` 位置。 |
 | Niagara module | stage 写 `apply_mode: patch`；module 写 `operation: upsert` + `path` 或 `name` + `inputs: []`。需要定位多个同脚本实例时补 `occurrence`。 |
 | Socket | `socket_name` + parent bone/component |

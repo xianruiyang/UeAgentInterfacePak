@@ -1,65 +1,72 @@
 # Read and semantic export command contract
-
-## Public edge
+## Public authority
 
 Read, search, query, probe, validation, difference inspection, and semantic
-export use the shared `POST /api/uai/command` edge and `uai.command.v1` wire
-schema. The public command manifest is exported from the C++ command registry;
-Python bindings are generated from that manifest. Public parameters never
-expose descriptor IDs, provider bindings, route selectors, or another dispatch
-language.
+export use the shared `POST /api/uai/command` adapter and
+`uai.command.v1` wire schema. Their public identities and fields come only
+from the process-active `FUeAgentImmutableCommandRegistry`; the committed
+manifest and generated Python bindings are one-way projections.
 
-The read inventory contains 46 commands:
+Public parameters never expose descriptor IDs, provider bindings, route
+selectors, HTTP paths, or another dispatch language. Internal descriptor/route
+inventories may remain implementation details, but they neither define nor
+supplement the public command set.
 
-- 23 WorldRead commands;
-- 16 AssetProjectRead commands;
-- 7 ContentGraphRead commands.
+## Command and content discovery
 
-Each command maps one-to-one to an exact immutable QueryDescriptor and one
-production provider. Commands accept `input`, `context`, and `projection`
-objects; commands that address a concrete object additionally require
-`target`. Query and search return the common C10 projection of C2/C4 typed
-truth and have no mutation path.
+Unknown command identities are discovered through
+`query.command.search`, then resolved through
+`query.command.detail` with the exact returned `command_id` and
+`contract_hash`. There is no public `reference.catalog_search`.
 
-Domain input remains owned and validated by the selected descriptor. In
-particular, `content_graph.compound` requires `input.sections`; the public edge
-does not manufacture client-side business defaults. Semantic Export owns its
-complete-section and closure defaults on the server.
+Object, asset, node, component, Actor, field and creation candidates belong to
+the applicable domain Query surface. A selected identity must be accepted
+unchanged by the downstream public read or authoring command; Python and the CLI
+do not apply aliases or domain mappings.
 
-## Production ownership
+## Read behavior
 
-WorldRead resolves the explicit execution world, actor, component, navigation,
-physics, and spatial owners. AssetProjectRead resolves real assets, registry
-records, open editors, dirty packages, project settings, and configuration
-scopes. ContentGraphRead resolves Blueprint, Material, Niagara, PCG, Animation,
-and Audio owners and recursively captures their complete object hierarchy.
+Query and read handlers are side-effect free. They validate the public input,
+resolve the exact domain owner, and return a typed observation with its
+identity, revision, completeness and applicable partial/failure information.
+An internal result envelope being structurally valid is not business success;
+callers check the command Result and its query/operation error before consuming
+payload fields.
 
-Canonical state preserves boolean, exact integer, decimal, string, array, and
-object values together with type, default, authored presence, override state,
-provenance, and revision. Recursive containers have no artificial nesting
-depth limit; cumulative C1 resource budgets remain authoritative.
+`reference.asset_read` accepts required `object_path` and optional
+`context` and `projection`. It is an independent readback surface and does
+not infer persistence from a previous apply result, a catalog candidate, or a
+local file.
 
 ## Semantic export
 
-`content_graph.export_workspace` requires:
+`content_graph.export_workspace` accepts:
 
-- `target`: the asset object path;
-- `workspace_path`: the destination directory.
+- required `target`;
+- required `workspace_path`;
+- optional `profile_id`.
 
-Optional parameters are `input`, `context`, `projection`, and `profile_id`.
-Export performs a fresh `content_graph.compound` read through the same C3Q
-provider used by the public Query command, retains that C4 snapshot, composes
-the C5 semantic authoring model and export plan, and publishes it through C8F.
-The returned receipt includes the final workspace path, entry file, snapshot
-ID, snapshot evidence ID, plan fingerprint, inventory hash, included file
-count, and observed token telemetry.
+The server performs a fresh content-graph read, composes the semantic authoring
+model and export plan, and atomically publishes the workspace. Complete export
+is not rejected by a hard token gate; token reduction comes from semantic
+projection, profiles, references and deterministic file layout.
 
-The workspace is organized by semantic target, owner, and field set. It
-preserves exact canonical values while using compact external field names and
-does not serialize the raw C4 envelope. Complete export is never rejected by a
-token hard gate. Token reduction is achieved through field contracts,
-projection profiles, semantic units, and deterministic file layout.
+The returned artifact/receipt is evidence only for the command's declared
+scope. A successful transport envelope does not by itself prove a complete
+workspace, correct target coverage, or later importability.
 
-The retired `/api/uai/reference` and `/api/uai/export` routes, legacy
-route-local export writer, and route-local serializer are not active and are
-not fallback paths.
+## Retired routes and second truths
+
+The retired `/api/uai/reference` and `/api/uai/export` routes, route-local
+writers, route-local serializers, Python CommandSpec registries, and historical
+command catalogs are not active and are not fallback paths. Tests and docs
+must not restore them to satisfy an obsolete command count or receipt.
+
+## Evidence boundary
+
+Current contract tests verify that discovery, reference read, and semantic
+export identities exist in the immutable manifest, that
+`reference.catalog_search` is absent, that generated bindings contain the
+same identities, and that public fields expose no internal dispatch data.
+Domain product readiness still requires current public execution, real UE
+observation, applicable persistence/readback, failure and cleanup evidence.

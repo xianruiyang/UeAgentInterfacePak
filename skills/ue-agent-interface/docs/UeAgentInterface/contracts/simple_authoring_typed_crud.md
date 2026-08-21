@@ -22,11 +22,17 @@ Python code do not maintain a second command list.
 
 The public caller performs only these steps:
 
-1. use `query.command.search` and `query.command.detail` to select the exact
-   command contract, then use the relevant public Query/candidate command to
-   resolve canonical target and field identities;
+1. use the active domain Query/candidate command to select a canonical target
+   and obtain its current revision and any required field identities;
 2. call one generated typed SDK method with the command's declared parameters;
-3. inspect the returned operation outcome and structured error.
+3. inspect the returned operation outcome and structured error;
+4. use the active domain Query/readback command to independently confirm the
+   resulting state when the task needs an external readback.
+
+There is no public `reference.catalog_search` command. Command discovery uses
+`query.command.search` followed by exact `query.command.detail`; target and
+field discovery stays with the active domain owner instead of a second global
+target directory.
 
 For update-style commands, `target_ref` identifies the selected target,
 `expected_revision` prevents stale writes, and `changes[]` contains typed field
@@ -130,8 +136,19 @@ The seven Editor Project write commands are:
 - `editor_project.scalability_group.update`
 - `editor_project.string_table.update`
 
-Callers resolve `editor_project_target` and the profile-specific field catalog
-through the public Query/candidate surface selected by `query.command.search`
-and `query.command.detail`, then submit the generated method. All seven
-commands share the same authority, revision, C8D and C9 rules while retaining
-their profile-owned fields and native UE mutation hooks.
+Callers select the target through the relevant active Editor Project Query
+surface, then request its exact write metadata with the closed
+`editor_project_capability: "target.read"` action. The five Query commands are
+`config.section`, `config.resolved_value`, `project.settings`,
+`project.platform`, and `project.validation`; they all route `target.read` to
+the same production Editor Project resolver. The observation contains
+`target_ref`, `profile_id`, and `target_revision`; project-settings targets also
+contain exact `fields[]` identities, type IDs, current canonical values, and
+field revisions, while config-backed targets contain independently loaded
+`entries`.
+
+The caller then submits the matching generated update method and uses the same
+Query route for independent readback. It must not guess a revision, restore
+`reference.catalog_search`, or maintain a second target/field catalog. All
+seven commands share the same authority, revision, C8D and C9 rules while
+retaining their profile-owned fields and native UE mutation hooks.

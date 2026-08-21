@@ -6,7 +6,7 @@
 
 | 文档 | 内容 |
 | --- | --- |
-| `hjson-authoring/00_DirectHjsonAuthoring.md` | 直接编辑 `llm_authoring` HJSON、`node_catalog_search.items_tsv -> exact seed + placement -> apply/readback` 的统一主链路。 |
+| `hjson-authoring/00_DirectHjsonAuthoring.md` | 直接编辑 `llm_authoring` HJSON、领域 candidate identity -> HJSON binding -> apply/readback 的统一主链路。 |
 | `hjson-authoring/01_Workflow.md` | export -> read guide/index -> edit `llm_authoring` -> validate/dry-run -> apply -> readback 的通用流程。 |
 | `hjson-authoring/02_CommonInputValue.md` | 通用 `value`、enum、source、只读字段和 compact HJSON 规则。 |
 | `hjson-authoring/03_OperationsAndSelectors.md` | selector、operation、新增/删除/替换结构、最小 seed。 |
@@ -61,7 +61,8 @@
 export/readback folder package
 -> follow ExportProfile included_files/tutorial read_order
 -> edit only required llm_authoring files
--> when adding candidates, select items_tsv identity then request exact seed + placement
+-> when adding content, query the exact owning domain candidate command
+-> copy the exact candidate projection allowed by that domain into its HJSON
 -> validate/lint/dry-run when available
 -> apply
 -> export/readback/compile/probe
@@ -70,10 +71,12 @@ export/readback folder package
 
 不要用一长串原子命令替代已有 HJSON/folder workflow。新增内容默认走“最小 seed -> apply 补全 -> readback 继续编辑”：不要从 readback 复制完整对象，也不要手写 UE/UAI 会生成的 id、template、slot、pin、默认属性、diagnostics 或 derived 字段。
 
-公开 seed 主身份只有两类：
+多数公开 seed 以两类字段表达主身份：
 
 - `path`：调用方已经知道资产、类、对象或 owner 路径时使用。
-- `name`：从 `node_catalog_search` 返回的无路径候选或上下文可解析候选使用。
+- `name`：从当前领域 candidate command 返回的无路径候选或上下文可解析候选使用；同时保留该领域要求的 `binding_revision` 与 context。
+
+领域合同也可以要求保留完整 candidate object。当前 Blueprint node/Component root authoring 就属于这种情况：完整 `candidate` 原样进入 HJSON，服务端写前校验并展开 native class/name 字段。不能为了套用 `path/name` 概括而在调用侧拆解或重建它。
 
 字段是否可写只由当前 CommandSpec 或 folder contract 决定；folder authoring 不把历史 identity alias 自动迁移为新 target。旧结构拒绝和 deprecated 命令边界见 `hjson-authoring/06_LegacyMigration.md`。
 
@@ -163,7 +166,7 @@ UE Details、UObject 属性面板和资产设置面板可编辑字段统一走�
 1. 导出或读取固定 fixture。
 2. 读取导航文件，按需打开目标 `llm_authoring` 文件。
 3. 只编辑 authoring 文件，不改 readback/debug/legacy。
-4. 新增候选时解析 `node_catalog_search.items_tsv`，优先使用 `path` 列，无路径候选使用 `name` 列。
+4. 新增内容时调用对应领域 candidate command，只复制返回合同明确允许的 candidate projection；通常是 executable `name`/path、`binding_revision` 与必要 context，Blueprint node/Component 则是完整 candidate object。不从显示文本猜 identity。
 5. 运行 lint、validate 或 dry-run；没有 dedicated validate 时记录 coverage gap。
 6. apply。
 7. export/readback，比较语义结果。

@@ -51,8 +51,9 @@ auth_header = "X-UeAgentInterface-Token"
 连接文件采用严格字段校验。当前 command ingress 强制认证，正式模板通过
 `UAI_AUTH_TOKEN` 环境变量显式引用 secret；TOML、业务调用、command params、日志和
 manifest 都不保存 token。也可以使用 `bearer_file` 引用只含 token 的受控文件。
-`connection probe` 只证明 ping route 可达，只有真实 command Result 才证明认证后的
-public command edge 可用。
+`connection probe` 只证明与 command route 同属一个 owned transport 生命周期的
+ping route 可达；probe 不进入 CommandService，也不证明 command 认证。只有真实
+command Result 才证明认证后的 public command edge 可用。
 
 ## SDK 调用
 
@@ -81,6 +82,12 @@ ue.query.command_search(intent, limit=3)
 ue.query.command_detail(command_id, contract_hash)
 
 ue.query.calibration_read("runtime_probe", limit=2)
+
+ue.asset.factory_candidates(
+    "asset.media_source.create",
+    query="file media",
+    limit=5,
+)
 
 ue.reference.asset_apply(
     object_path,
@@ -135,12 +142,18 @@ ue.content_graph.import_workspace(
 )
 ```
 
-当前正式 manifest 包含 340 条命令（均为 active command），覆盖 Query discovery、
-Read/Export、Reference CRUD、
+当前公开命令集合以 C++ 冻结 `FUeAgentImmutableCommandRegistry` 的正式 manifest
+为唯一依据，覆盖 Query discovery、Read/Export、Reference CRUD、
 SimpleAuthoring、Timeline/Spatial、GraphCompound、Destructive/Import 与
-LongRunning/Session 等统一模块。命名方法全部由 C++ 正式 manifest 生成，Python
-不手写或补充第二份命令列表；manifest 数量本身不代表每条 command 都已获得完整
-E3/E4 真实 UE 证据。
+LongRunning/Session 等模块。命名方法全部由该 manifest 生成，Python 不手写或
+补充第二份命令列表；硬编码命令数量既不是同步机制，也不代表每条 command 都已
+获得完整 E3/E4 真实 UE 证据。
+
+创建 typed asset 时若缺少精确 factory identity，先调用
+`asset.factory.candidates`，并把返回的 `factory_ref` 按
+`query.command.detail` 所示字段原样交给选定 create command。factory catalog、
+官方插件可用性和不支持语义只由服务端拥有；SDK 不扫描源码、猜 class path 或在
+插件缺失时伪造成功。
 
 `content_graph.compound` 的领域合同要求 `input.sections`。SDK 不在客户端
 补业务默认值；完整 authoring Export 需要的 sections 和 closure 默认由
@@ -155,6 +168,32 @@ E3/E4 真实 UE 证据。
 语义；Localization target 使用显式 create/update/upsert/remove。字段省略与默认行为由
 对应服务端 schema 决定。`expected_revision` 是写前必填并发条件，
 `authorization_id` 绑定本次公开写入。
+
+领域 candidate 返回值不是由 Python 翻译的通用 seed。调用方只按 owning domain 合同复制允许的
+projection；当前 Blueprint node/Component authoring 将选中的完整 `candidate` object 原样放进
+`uai.blueprint.edit/1`。服务端在首写前复用同一 candidate mechanics 校验 target、graph/SCS context、
+executable identity 与 binding revision，再展开 native node `node_type/node_class` 或 Component
+`name/class`。SDK 不重建这些字段，response-level `graph_revision`/`scs_revision` 也不替代 Import 所需的
+公开 content-graph `expected_revision`。
+
+三种 carrier 在 C++ source loader 中先收敛为同一个只读 resolved source。服务端分别
+保留 carrier/path/manifest/digest 形成的来源完整性指纹，以及由规范化 HJSON 文档形成的
+语义指纹；Import planning 只使用后者，因此仅改变 inline、single-file、directory 或
+空白/字段顺序不会改变业务计划。directory manifest 的 `base_revision` 必须与本次
+`expected_revision` 完全一致。以上 resolved 字段均为服务端内部合同，调用方不得自行
+构造或传入指纹。
+
+成功的领域 Import 至少返回 `terminal_status=succeeded`、`mutation_applied=true`、
+`compile_settled=true`、`saved=true`、`reloaded=true`、非空
+`persistence_receipt_id` 和 `independent_readback`。这些值只能由领域 mechanics 已取得的
+编译稳定、保存、卸载/重载与独立读回证据生成；缺少任一阶段时服务端返回 typed failure，
+SDK 不补真值或把部分结果升级为成功。
+
+TextureGraph graph mutation 与 `graph_validate_evaluate_settle` 返回同一
+AssetDurable owner 生成的 `package-md5:*` 修订。把 settle 的返回值原样交给
+`artifact_capture.expected_settled_revision` 或 `artifact_bake.expected_revision`；
+不得换成 content-graph 查询修订。bake 会在源资产未持久化、内存状态仍脏、修订过期或
+目标冲突时 fail closed。`runtime_probe` 是不持久化的当前状态读取，只接受自身正式参数。
 
 需要按 command ID 调用时使用同一个 Client：
 
@@ -231,7 +270,7 @@ uai-cli --connection connection.toml exec query.calibration.read `
 
 参数来源三选一：
 
-- `--params-json '{"catalog_kind":"uai_reference",...}'`
+- `--params-json '{"intent":"inspect the current editor","limit":3}'`
 - `--params-file params.json`
 - `--params-stdin`
 
@@ -250,7 +289,8 @@ uai-cli --connection connection.toml exec query.calibration.read `
 
 ## 静态 binding 生成
 
-静态 binding 的唯一输入是 C++ CommandContractRegistry 导出的正式 manifest：
+静态 binding 的唯一输入是 C++ `FUeAgentImmutableCommandRegistry` 经
+`FUeAgentActiveCommandManifest` 导出的正式 manifest：
 
 ```powershell
 python tools/uai_binding/generate_bindings.py `

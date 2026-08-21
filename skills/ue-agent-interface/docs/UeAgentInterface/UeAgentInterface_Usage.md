@@ -95,7 +95,9 @@ query/export -> choose one command -> execute -> settle/save -> independent read
 5. 写入前携带导出 revision；写入后由 C++ owner 负责 Planning、执行、保存与独立读回。
 6. Python 不解析、合并或重建 HJSON 业务语义。
 
-完整规则见 `HjsonAuthoring_Guide.md` 及 `hjson-authoring/` 分册。
+完整规则见 `HjsonAuthoring_Guide.md`、`hjson-authoring/` 分册，以及
+`active/t07_hjson_model.md` 至 `active/t10_operation_lifecycle_core.md` 和
+`active/t60_hjson_external_input_domain.md` 的当前实现与验证边界。
 
 ## Editor 与长任务
 
@@ -124,12 +126,14 @@ production-ready 还必须证明正式 public ingress、唯一 C++ owner、真�
 ## 文档路由
 
 - 当前架构与覆盖边界：`UeAgentInterface_Status.md`
-- 正式命令参数：运行中服务的 manifest、`client.command_search(...)`、
-  `client.command_detail(...)` 与默认生成 SDK
+- 正式命令集合与参数：`Resources/UaiCommandManifest.json`
+- Python 静态签名：`UeAgentInterfaceCMD/cli/uai/commands/generated.pyi`
+- 当前实现与验证边界：`active/`；该目录只描述产品合同和验证边界，不承担交付工作区的需求、任务状态或最终完成裁判
 - Python SDK 与 CLI：`UeAgentInterfaceCMD/docs/PYTHON_SDK_AND_CLI.md`
 - Read/Export：`contracts/read_export_command_contract.md`
 - Reference CRUD：`contracts/reference_crud_route.md`
 - SimpleAuthoring typed CRUD：`contracts/simple_authoring_typed_crud.md`
 - Long-running / Session：`contracts/long_running_session_public_commands.md`
 
-旧生成报告和 deprecated 命令页不是当前行为真源，也不进入分发 skill。
+历史命令分册、生成式命令规格和覆盖债务报告已退出活动文档路径；不得用它们反推
+当前命令合同或实现状态。

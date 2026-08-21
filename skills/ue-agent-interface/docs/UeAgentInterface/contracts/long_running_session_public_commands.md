@@ -84,8 +84,8 @@ terminal report 使用 `uai.localization.owned_tool_report.v1`：compile 提供
 - `voxel_grid` + `policy:voxel-session:apply/v1`
 - `host_lifecycle` + `policy:host-lifecycle:prepare-safe-exit/v1`
 
-`modeling_tool` 只接受 subject `modeling-session:operation-local`、action
-`spawn_transient_box`，以及可选的正数 `size_x/size_y/size_z`；缺省尺寸为 100，单轴上限
+`modeling_tool` 只接受 subject `modeling-session:operation-local`、参数 `action_id`
+取值 `spawn_transient_box`，以及可选的正数 `size_x/size_y/size_z`；缺省尺寸为 100，单轴上限
 为 100000。`voxel_grid` 只接受 subject `voxel-session:operation-local`，以及正数
 `cell_size` 和整数 `cells_x/cells_y/cells_z`；各轴 cell 数不得超过 1024，最终尺寸同样
 不得超过 100000。两者都创建 operation-owned transient `ADynamicMeshActor`，不写入旧
@@ -109,8 +109,30 @@ action 设置请求 culture 后立即恢复先前 culture；terminal signal 的 
 
 ### Capture
 
-- image：`policy:image-capture:viewport/v1`，subject
-  `capture-subject:editor-viewport:active`
+- image：`capture.image.execute` 只接受以下 15 个 exact policy；每个 policy 的 subject 与
+  参数合同由 active T44 catalog 和 `query.command.detail` 共同公开，客户端不得从旧 command
+  identity 或 Editor 状态推断 policy：
+
+  - `policy:image-capture:anim-blueprint/v1`
+  - `policy:image-capture:anim-sequence/v1`
+  - `policy:image-capture:behavior-tree/v1`
+  - `policy:image-capture:blueprint/v1`
+  - `policy:image-capture:control-rig/v1`
+  - `policy:image-capture:metasound/v1`
+  - `policy:image-capture:niagara/v1`
+  - `policy:image-capture:pcg-viewport/v1`
+  - `policy:image-capture:viewport/v1`
+  - `policy:image-capture:viewport-buffer/v1`
+  - `policy:image-capture:level-sequence/v1`
+  - `policy:image-capture:sound-cue/v1`
+  - `policy:image-capture:state-tree/v1`
+  - `policy:image-capture:texture/v1`
+  - `policy:image-capture:umg/v1`
+
+  两条 active viewport policy 的 subject 均为 `capture-subject:viewport:active`；资产与
+  Actor policy 使用 `capture-subject:asset:<object-path>` 或
+  `capture-subject:actor:<actor-name-or-label>`；每个 policy 的精确字段继续以正式
+  manifest 与 `query.command.detail` 为准。
 - submix media：`policy:media-recording:submix-wav/v1`，subject
   `media-source:audio-submix:master` 或显式 `USoundSubmix` object path
 - sound preview：`policy:media-recording:sound-preview-wav/v1`，subject
@@ -128,13 +150,25 @@ session 自报的 success 当作 C9。
 已经渲染的 level viewport；最小化导致 viewport 为零尺寸时会明确返回
 `capture_image_viewport_unavailable`，不会生成替代图片冒充 viewport readback。
 
+全部 image policy 都要求 Editor 进程具备渲染能力。`FApp::CanEverRender()` 为 false
+（包括 `-NullRHI`）时，operation 在参数投影、截图 mechanics 或打开资产编辑器之前以
+`capture_image_rhi_unavailable:<policy_id>` 失败关闭，不生成 artifact，也不提供无渲染
+fallback。图片产品验证使用具备 RHI 的 owned worker；NullRHI 只验证这一失败合同和不依赖
+渲染的 capture mechanics。
+
 ## 旧入口终态
 
 旧 `/api/exec` 的 editor close、submix record、packaging task、localization external task、
-world-partition resave、viewport screenshot 与 voxel-grid session command 已进入 retired
-tombstone：exact 和 prefixed registry 均不可达，并统一判定为 unsupported。旧 owner、
-handler、generated spec/doc、hidden resave consumer、active legacy smoke/coverage，以及
-EditorViewport adapter 内第二套 screenshot 方法、辅助函数和 capability 广告均已从
-编译树删除。不得恢复
+world-partition resave、viewport screenshot 与 voxel-grid session command 均不在当前
+immutable registry/manifest 中。旧 compiled registry、prefix/exact dispatch 与
+`FUeAgentHttpServer` handler 已从编译树物理删除，不再存在一套可执行 tombstone registry；
+未知旧 identity 只会在当前 exact ingress 以未注册 identity 失败关闭。
+
+仍被 EditorProject、ModelingGeometry 与 CaptureMedia 当前领域 owner 复用的 UE mechanics
+位于私有 `LegacyMechanics` 边界。该边界不拥有 listener、route、authentication、command
+registry 或 dispatch，模块启动也不能实例化它；每个当前 consumer 只能显式调用其所需
+mechanics。旧 generated spec/doc、hidden resave consumer、active legacy smoke/coverage，
+以及 EditorViewport adapter 内第二套 screenshot 方法、辅助函数和 capability 广告均已从
+活动入口删除。不得恢复
 `GRecordSessions`、`FShotJob`、`GExternalTasks`、`GVoxelGridSessions`、ownerless task map、
 delayed-exit wrapper、第二 screenshot 流程或 Python business owner。

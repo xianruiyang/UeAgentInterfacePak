@@ -17,15 +17,15 @@
 ## 2. 发现与取证
 
 1. 已知命令用法时直接调用。
-2. 不知道模块或 Dynamic Input 的真实脚本路径时，先用 `node_catalog_search` 搜索 3-5 条候选。
-3. 选定候选后用 exact 查询获取唯一 `candidate`，并在该 kind 有正式投影时读取独立的 `seed` 与 `placement`；不要批量展开所有候选。
+2. 不知道模块真实脚本路径时，先用 `niagara.module.candidates` 在目标资产、usage/stage 上下文中搜索 3-5 条候选；Dynamic Input 只使用当前 Niagara 合同明确提供的候选入口或真实 readback。
+3. 选定候选后保留 exact executable `name`、`binding_revision` 与返回的 usage/context；不要批量展开所有候选，也不要经 `query.content.search` 转换领域 identity。
 4. 用对应 `niagara*_export_folder` 获取目标资产当前 `index.hjson`。
 5. 需要 live Stack 细节时，再调用 `niagara_emitter_list_*` 或 `niagara_system_list_*`。
 6. 编辑 HJSON、Apply、重新 Export，对比稳定 identity 与语义结果。
 
-模块和 Dynamic Input 路径必须来自当前 UE catalog/readback。不要凭 UI 显示名、记忆或网络示例拼路径。
+模块和 Dynamic Input 路径必须来自当前领域 candidate/readback。不要凭 UI 显示名、记忆或网络示例拼路径。
 
-`seed` 只提供目标 InputContract 允许的最小片段，例如 module script 的 `path`；`placement` 只描述 workspace contract/unit/target path。stage identity、module GUID、顺序、operation 和 input context 必须来自当前 workspace/readback，不在 Catalog 中补全。Niagara input value source 和 Script graph function 没有可脱离 owner 的 standalone placement。
+候选只提供目标 InputContract 允许的 executable identity 与 binding metadata。stage identity、module GUID、顺序、operation 和 input context 必须来自当前 workspace/readback，不由候选查询补全。Niagara input value source 和 Script graph function 没有可脱离 owner 的 standalone placement。
 
 ## 3. Workspace
 
@@ -87,7 +87,7 @@ System workspace 会把 system stages 和 embedded emitter stages 合并到 `pro
 
 `niagara_script_export_folder` 当前只导出资产 identity，因此可用于确认 target 和执行资产生命周期 roundtrip，不能用来读取或编辑 Script graph。
 
-需要理解脚本来源时用 `node_origin_resolve`。需要 Script graph authoring 时搜索专用 graph 命令；当前 folder contract 没有该能力时应明确报告边界。
+需要理解脚本来源时用 `reference.origin.resolve`。需要 Script graph authoring 时搜索专用 graph 命令；当前 folder contract 没有该能力时应明确报告边界。
 
 ## 7. 验证
 

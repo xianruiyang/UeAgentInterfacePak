@@ -57,6 +57,24 @@ with uai.connect("connection.toml") as client:
 版本锁定调用为
 `client.execute_exact(command_id, params, contract_hash=contract_hash)`。
 
+创建 typed asset 时若不知道精确 factory identity，使用公开查询而不是猜类名：
+
+```python
+candidates = client.asset.factory_candidates(
+    "asset.media_source.create",
+    query="file media",
+    limit=5,
+)
+```
+
+按 `query.command.detail` 的字段合同复制返回的 `factory_ref`；factory catalog、
+官方插件可用性与 unsupported failure 都由服务端拥有，Python 不扫描源码或建立第二份映射。
+
+TextureGraph mutation/settle 返回 `package-md5:*`。将成功 settle 的修订原样交给
+`artifact_capture.expected_settled_revision` 或 `artifact_bake.expected_revision`；
+不得改用 content-graph revision。bake 对未持久化、内存脏、stale 或目标冲突 fail closed，
+`runtime_probe` 则是无 revision 参数的不持久化当前状态读取。
+
 同一流程的 CLI 形式是：
 
 ```powershell
