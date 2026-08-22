@@ -79,10 +79,24 @@ immutable profile bound at startup. They do not choose mutation mechanics by
 string, save files, synthesize verification results or fall back to legacy
 handlers.
 
+`world.actor.create` uses ordinary UE Actor spawning for non-Volume classes.
+For any `AVolume` subclass it additionally creates a standard box brush through
+the Engine's Volume actor factory and cube builder. An unavailable builder or
+invalid/empty brush bounds is a typed command failure and the partially
+created Actor is removed; success never leaves a brushless Volume that only
+has an Actor identity.
+
 `complete` requires durable acknowledgement and a semantic match from the
 independent persisted readback. A mismatch is `partial`; unavailable durable
 state is `state_unknown`. A successful transport envelope is not proof of a UE
 state change.
+
+Verification failures keep their stable public codes. An unavailable oracle
+returns `verification_oracle_unavailable` and includes the exact oracle stage,
+cause and bounded detail in the Result error's `diagnostic_detail`; a semantic
+mismatch returns `verification_semantic_mismatch` with the total difference
+count and at most eight path/left/right summaries. These diagnostics explain
+the failed readback but never authorize an automatic replay of the write.
 
 ## Target, field and revision semantics
 
@@ -92,10 +106,53 @@ state change.
   expected post-write business state.
 - C9 re-resolves the persisted target after C8D. It must not reuse the live
   object, pre-write snapshot, handler cache or caller-provided value.
+- World C9 consumes only the package artifacts declared for its verification
+  target. It loads the receipt's map package and each declared External Actor
+  package from disk into isolated transient package names, reads the canonical
+  state there, and unloads that isolated set. It does not enumerate or reuse
+  the live Editor World or live Actor instances; a missing, duplicate or
+  unloadable declared package makes independent readback unavailable.
 - Editor Project settings/config readback uses durable config-file state rather
   than the mutable global config cache.
 - Legal canonical values have no policy-defined nesting-depth limit. Resource
   budgets still bound bytes, nodes and execution work.
+
+### Modeling carrier revisions
+
+The 24 Modeling commands that edit an existing carrier require
+`target_revision`; operations with a second mesh also require
+`operand_revision`. Both fields use the same closed object shape:
+
+```json
+{
+  "source_id": "uai://mesh/example",
+  "generation": "modeling-carrier-v1:...",
+  "sequence": 1
+}
+```
+
+`sequence` is a non-negative integer no greater than `9007199254740991`, so it
+is exactly representable on the JSON wire. The ModelingGeometryEffect carrier
+revision owner is the only implementation that derives this revision for an
+exact `ADynamicMeshActor` or `UStaticMesh`. Its versioned generation identifies
+the resolved carrier, while its sequence covers the transform, geometry and
+topology, UV/normal/material state, material slots and supported collision
+state that can change a Modeling result.
+
+`world.object_transform.read` delegates to that same owner for these two
+carrier types. A caller copies the returned revision object unchanged into the
+matching Modeling request; the SDK, fixture and command handler do not rebuild
+or translate it. The service resolves the carrier and compares every revision
+field before baseline attachment or mutation. A guessed or stale target or
+operand revision fails closed. Element `selection` contains only
+`element_kind` and `element_ids`; it has no second mesh revision, and
+`mesh.topology.edges.weld` has no separate top-level revision field.
+
+After a successful write, the caller invokes `world.object_transform.read`
+again to obtain the new current revision and independently inspect the
+carrier. The pre-write revision is never copied into post-write state. Other
+Actor, Component, Graph and Viewport targets retain their existing revision
+owners and are not interpreted as Modeling carriers.
 
 ## Persistence ownership
 
@@ -103,6 +160,37 @@ C8D owns persistence for all five families. Package-backed content is saved as
 an owned package artifact; Editor Project profiles use their declared project
 config artifact. Domain hooks mutate UE state but do not independently save or
 delete durable artifacts.
+
+The durable target set must contain every package actually created or changed
+by the mutation, including packages allocated after preflight such as External
+Actor packages. A command cannot report `complete` merely because the World
+package was persisted while a dynamically created package remains dirty.
+Mutation facts may extend only the prepared request's physical artifact set:
+each added package must still belong to a frozen planned change, preserve that
+change's save/delete intent, pass the current fence and allowed-root checks,
+and receive its backup and journal entry before persistence starts. The same
+C8D session, journal, transaction root and backend then stage, publish or
+restore the combined inventory. This does not scan or absorb unrelated dirty
+packages.
+
+`world.actor.create` and `world.level_game_mode.update` no longer expose the
+legacy `save_level` parameter. Both commands are durable typed CRUD operations;
+success always uses C8D, and neither command offers a transient boolean mode.
+The former bindings and descriptor hashes are retired without an alias:
+
+- `world.actor.create`: binding
+  `sha256:f9af6f2b2e42cc61652b7da31beda95bbb42144457dff1e450140cb51de79b83`,
+  descriptor
+  `sha256:ef48592d995cc18cfbe112bac443db7ff7f047a82e126b3a90df0623ca128fc5`;
+- `world.level_game_mode.update`: binding
+  `sha256:215b69f6e2ec40557ad5b2f2aea58d2b9709f1f2819130de85ffd492017cf805`,
+  descriptor
+  `sha256:86238f06501f0d6a34297302dd18e57ee4602f2efcb52dbf326370ae2e3eb23d`.
+
+Callers remove the argument and use the newly generated exact contract hash;
+submitting the old field is rejected by `additionalProperties:false` rather
+than silently ignored. A genuinely transient World mutation would require a
+separate lifecycle contract and is not provided by these commands.
 
 Consequently, the following standalone legacy write/save commands are retired
 and have no exact or prefix invoker:

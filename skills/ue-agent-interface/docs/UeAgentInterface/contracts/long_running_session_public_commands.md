@@ -80,9 +80,30 @@ terminal report 使用 `uai.localization.owned_tool_report.v1`：compile 提供
 - `runtime_preview` + `policy:runtime-session:pie/v1`
 - `runtime_preview` + `policy:runtime-session:culture-preview/v1`
 - `world_context` + `policy:world-context:set-current/v1`
+- `world_context` + `policy:world-context:create-blank/v1`
+- `world_context` + `policy:world-context:partition-region-loader/v1`
+- `world_context` + `policy:world-context:partition-actor-loader/v1`
 - `modeling_tool` + `policy:modeling-tool:invoke-action/v1`
 - `voxel_grid` + `policy:voxel-session:apply/v1`
 - `host_lifecycle` + `policy:host-lifecycle:prepare-safe-exit/v1`
+
+World-context policies use subject `world:/Game/...` and never infer a map from
+the current selection. `set-current/v1` opens one existing map and accepts only
+optional `save_existing_map` (default `true`). `create-blank/v1` creates and
+persists one map; `overwrite_policy` is `fail`, `reuse`, or `replace` (default
+`fail`), `save_existing_map` defaults to `true`, and
+`create_world_partition=true` enables External Actors and initializes World
+Partition before the map is saved.
+
+Both partition loader policies require that the subject is the exact current
+World Partition map. The region loader takes `bounds.center[3]`,
+`bounds.extent[3]`, an optional non-empty `label`, and optional `dry_run`; the
+actor loader takes at least one `actor_guids[]` or currently resolvable
+`actor_ids[]`, plus optional `dry_run`. A non-dry loader remains owned by its
+operation after publishing a `world-partition-loader:*` session ref. The caller
+must use `operation.cancel`, advance to the cancelled terminal state, and then
+`operation.release`; switching maps or dropping the Python object is not a
+cleanup contract.
 
 `modeling_tool` 只接受 subject `modeling-session:operation-local`、参数 `action_id`
 取值 `spawn_transient_box`，以及可选的正数 `size_x/size_y/size_z`；缺省尺寸为 100，单轴上限
