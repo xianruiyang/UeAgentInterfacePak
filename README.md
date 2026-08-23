@@ -58,7 +58,7 @@ README、command 数量、binding、示例图或旧测试外推。
 | `skills/ue-essential-knowledge/` | Pak-owned UE 核心知识导航分发候选 | 推荐；不承载任务级复盘 |
 | `skills/ue-kb/` | Pak-owned UE 本地知识内容与索引分发候选 | 离线知识工作流使用；从 manifest/skill 进入 |
 | `skills/kbcli-knowledge-base/` | kbCli runtime submodule 发布引用 | 由其外部仓库和 gitlink 管理，不做 installed-to-Pak 复制 |
-| `skills/understand-space/` | 仍有消费者的旧 Pak 同名投影 | 通用 owner 已在 AgentBase；迁移前保留，但不得覆盖 installed |
+| `understand-space`（外部） | AgentBase-owned 通用空间能力 | Pak 不保留同名副本；installed deployment 只跟随 AgentBase owner |
 | `docs/images/` | 本 README 的展示与菜单图片 | 随包 |
 | `retired/strict_v2/` | 重构前历史证据 | 不安装、不运行、不作为当前规范；逐消费者审计后才退出 |
 
@@ -95,8 +95,9 @@ working tree 与 gitlink 不同，不会自动成为发布内容。
 [`skills/README.md`](skills/README.md)。
 
 `C:/Users/<User>/.codex/skills/` 是机器 installed deployment，不是本仓库的另一份可随意反向覆盖真源。
-Pak-owned skill 应从 Pak 向 installed 做有界同步和完整文件集检查；`understand-space` 由 AgentBase
-提供，不参加 Pak 同名副本同步。
+Pak-owned skill 应从 Pak 向 installed 做有界同步和完整文件集检查；正式同步入口只接受已登记的 Pak
+publication owner。`understand-space` 由 AgentBase 提供，不参加 Pak 同步，也不得从任意 Pak 同名路径
+覆盖 installed。
 
 `ue-agent-interface` 内置 `<SkillDir>/tools/uai-cli.exe` 作为回退入口。日常自动化优先定位正式
 `UeAgentInterfaceCMD` 仓库并使用其公开 Python SDK：

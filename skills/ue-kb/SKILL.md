@@ -1,6 +1,6 @@
 ---
 name: ue-kb
-description: 项目本地 Unreal Engine 知识库 skill。以 UE 5.7 官方网页文档 Markdown 转换版为主来源，并包含独立整理的 Niagara、Animation、Character/Animation、World Creation、Programming/Scripting、Platforms/Builds、Pipeline/Plugins、Asset Creation、Audio、Cinematics/Media、PCG、Integrated Tutorials、Level Design 与 Rendering 补充内容；Niagara 覆盖知识卡和社区实践教程，Character/Animation 覆盖 Control Rig、Motion Matching、Chaos Cloth、MetaHuman、Mutable、Live Link、Mocap、Mass/Crowds 与 Skeletal Mesh 社区教程；World Creation 覆盖 World Partition、Landscape、Water、Dataprep、Datasmith、RealityCapture、建筑建模、样条与世界构建社区教程；PCG 覆盖 PCG Framework、Graph、节点实战、程序化建筑/城市/道路/隧道和视频转写实操教程；Integrated Tutorials 覆盖跨 PCG、资产、材质、Landscape、Spline/Blueprint、灯光、渲染和完整环境制作的综合流程；Programming/Scripting 覆盖 Blueprint/C++、K2Node、Editor Utility、Enhanced Input、Gameplay Tags、插件和 Pak；Platforms/Builds 覆盖 packaging、cooking、DLC、UBA、Horde、Linux/Windows/移动端部署；Pipeline/Plugins 覆盖插件打包、跨版本编译、Interchange/gLTF 管线、NNE、Editor Utility Widget、编辑器工具扩展和自定义窗口；Asset Creation 覆盖导入、资产工具和内容制作流程；Audio 覆盖 MetaSound、Sound Cue、listener 与音频工作流；Cinematics/Media 覆盖 Sequencer、Level Sequence、Movie Render Queue、nDisplay、ICVFX、Virtual Camera、Media Capture、SMPTE 2110 与 Switchboard；Rendering 覆盖 Movie Render Graph、Movie Render Queue、Render Pass、Lighting、Lumen、Material 等社区教程；适合 Blueprint、C++、Niagara、Animation、Character、World Partition、Landscape、PCG、Integrated Tutorials、Level Design/Whitebox、UMG、Physics、Collision、Networking、Editor、Rendering、Asset Pipeline、Plugins、Audio、Cinematics、Media、Packaging 等版本敏感问题；默认 Hybrid-first、中文 source-language 检索、fetch 后再回答。使用 kbCli 时必须按 kbcli-knowledge-base skill 解析随包 `$KbExe`，不要依赖 PATH 中的 `kb`。此 skill 不会自动安装到 Codex。
+description: 项目本地 Unreal Engine 5.7 知识库 skill，用于需要版本敏感、source-backed 查询的 UE 问题：Blueprint/C++、Niagara、动画与角色、World Partition/Landscape、PCG 与综合教程、Level Design/UMG/物理/网络、编辑器与资产管线、插件/构建/打包、渲染、音频、影视与媒体。知识以 Epic 官方网页文档 Markdown 转换版为主，并含 manifest 登记的社区与补充来源；默认通过 kbCli Hybrid-first 检索，使用 source-language 查询并 fetch 来源后回答。适合查证概念、API、工作流、版本差异与实践证据；不用于直接操作 Unreal Editor、替代项目源码或当前运行状态验证，或把未登记材料当权威来源。kbCli 运行时按 kbcli-knowledge-base skill 解析随包 `$KbExe`，不依赖 PATH 中的 `kb`；此 skill 不自动安装。
 ---
 
 # UE KB
@@ -14,6 +14,21 @@ description: 项目本地 Unreal Engine 知识库 skill。以 UE 5.7 官方网�
 首选 manifest：
 
 `kb-manifest.json`
+
+## Owner、版本与派生投影
+
+- 本 skill 拥有 UE 领域知识包的 manifest、来源登记、可查询内容与发布投影；具体事实仍由
+  manifest 登记的官方文档、引擎源码或明确 Supplemental source 拥有。
+- 本次知识内容身份由 manifest 的 `content_version` 与 source 的 `source_id`、fingerprint、
+  `updated_at` 共同确定。文件时间、搜索命中、index build id 或 RagTest Git HEAD 都不能单独
+  充当知识版本。
+- kbCli 是 external `D:/program/RagTest` / `kbcli-knowledge-base` 的领域无关运行时。每次消费
+  通过 active installed skill 解析 Release，并用 `version --json`、`doctor --json` 与目标
+  manifest 状态读回实际版本和可用能力；本 skill 不复制或修改 runtime。
+- FTS、embedding 与 Qdrant collection 是可重建投影。`kb-models.json` 是机器级模型绑定，分发
+  副本不携带它不等于 UE 知识包损坏，但在建立本机绑定并启动服务前不得声称 vector/Hybrid 可用。
+- Pak 是此 skill 的分发 owner，installed 是当前机器消费者；只允许 Pak -> installed 同步，
+  installed 不反向定义 source 或内容版本。
 
 ## 范围
 

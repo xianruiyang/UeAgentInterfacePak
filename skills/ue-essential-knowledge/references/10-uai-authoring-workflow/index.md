@@ -13,9 +13,17 @@
 - 需要从节点/模块查询结果写入结构化 JSON，再 apply/readback。
 - 需要判断某个字段是 LLM 可写、只读信息、诊断信息还是 legacy 兼容字段。
 
+## 已闭合工作流
+
+- 知识、命令和项目事实的唯一 owner、版本、失效与降级合同由 `ue-agent-interface` 的
+  `references/ue-knowledge-routing.md` 组织；本分类不复制该合同。
+- Level viewport projection-aware 取景案例先读
+  `../07-world-level-rendering/viewport-projection-and-framing.md`，再进入当前 UAI manifest 和
+  readback/capture。
+- 对 command/参数已知且无需 UE 原理、版本或空间判断的普通查询，直接进入 UAI，不触发 KB。
+
 ## 后续填充位置
 
 - catalog search -> authoring JSON -> apply -> readback 的标准流程。
 - folder format 与 LLM-facing profile 的区别。
 - apply 后编译与保存门禁。
-- 文档和 skill 同步检查清单。

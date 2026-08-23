@@ -212,6 +212,25 @@ result = ue.execute(
 服务端 Result。Unicode、任意精度整数、显式 `null`、未知 response 字段和失败
 结果均按协议保留。
 
+## Editor safe-exit lifecycle runner
+
+生成 binding 会精确暴露 `client.editor.safe_exit(dirty_resolution,
+external_witness)`，但 `external_witness` 不是普通业务参数。安全关闭 Editor 时使用项目正式
+runner `scripts/ue/SafeExitLifecycle.py`；它保持 Python SDK 的单 command 转发边界，同时负责
+外层进程身份、heartbeat、两阶段不可变回执和 terminal 解析。不要在业务脚本、Connection TOML
+或 CLI 参数中复制这套生命周期状态。
+
+runner 需要 `.uproject`、完整 Connection TOML、`RunEditor.ps1 -PassThru` 返回的精确 Editor
+PID，以及 coordination root 之外的输出路径。`reject` 不接受资源列表；`save` 只接受重复的
+`--save-resource <exact-package-name>`，`discard` 只接受重复的
+`--discard-resource <exact-package-name>`。服务端会将列表与当前 `/Game` dirty package 集合做
+exact-set 比较。
+
+成功输出为 `uai.safe_exit.terminal.v1`，必须同时具有 `terminal_status=succeeded`、
+`exit_requested=true`、`process_exited=true`、`force_kill=false` 和匹配的两阶段摘要。
+dirty reject 输出 `uai.safe_exit.runner_result.v1` 且 Editor 保持运行；外部等待超时保留精确
+coordination root 并返回非成功状态。`transport_disconnected` 本身不表示退出成功。
+
 ## Command discovery
 
 不知道 command 名称时，只在 `query.command.search` 这一步按意图搜索；它返回少量

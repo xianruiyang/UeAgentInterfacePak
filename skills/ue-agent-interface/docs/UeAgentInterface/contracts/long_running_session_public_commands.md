@@ -15,7 +15,7 @@
 | `capture.image.execute` | `client.capture.image_execute(...)` | `subject_ref`、`policy_id`、`parameters` |
 | `capture.media.execute` | `client.capture.media_execute(...)` | `subject_ref`、`policy_id`、`parameters` |
 | `capture.render.execute` | `client.capture.render_execute(...)` | `subject_ref`、`policy_id`、`parameters` |
-| `editor.safe_exit` | `client.editor.safe_exit(...)` | `dirty_resolution` |
+| `editor.safe_exit` | `client.editor.safe_exit(...)` | `dirty_resolution`、`external_witness` |
 
 start 成功只表示 operation 已被接受，不表示 native work 已完成。返回值是
 `uai.long_running.snapshot.v1`，其中 `operation_ref` 必须原样保存：
@@ -107,18 +107,63 @@ cleanup contract.
 
 `modeling_tool` 只接受 subject `modeling-session:operation-local`、参数 `action_id`
 取值 `spawn_transient_box`，以及可选的正数 `size_x/size_y/size_z`；缺省尺寸为 100，单轴上限
-为 100000。`voxel_grid` 只接受 subject `voxel-session:operation-local`，以及正数
-`cell_size` 和整数 `cells_x/cells_y/cells_z`；各轴 cell 数不得超过 1024，最终尺寸同样
-不得超过 100000。两者都创建 operation-owned transient `ADynamicMeshActor`，不写入旧
-static session registry；cancel/release 只销毁该 operation 的 actor。
+为 100000。它创建 operation-owned transient `ADynamicMeshActor`，不写入旧 static session
+registry；cancel/release 只销毁该 operation 的 actor。
 
-调用方通过 typed signal 的 `session_ref` 取得 actor path，再用 `world.actor_components`
-确认唯一 `DynamicMeshComponent`，并用 `world.property(..., property_path="Bounds")` 独立
-读回非零几何边界。对 `UPrimitiveComponent`，`Bounds` 是 WorldRead 提供的通用计算属性，
-返回 origin、extent 与 sphere radius；它不依赖 session 自报成功。
+`voxel_grid` 只接受 subject `voxel-session:operation-local`。`begin` 通过显式 `mode=create|edit`
+创建或解析一个 managed `ADynamicMeshActor`，并以该 Actor 上唯一的 editor-only serialized
+component 作为 active grid-state owner；session memory 只保存当前 fenced revision，不成为第二
+持久真源。每次 bounds 修改都要求 `expected_revision` 和显式坐标空间。`apply` 生成 exposed-face
+mesh 与可选 exact-cover collision，并在 C8D prepare/enlist/persist/verify/acknowledge 合同内只保存
+预检为 clean 的目标 Map/External Actor packages；成功结果必须包含 C9 isolated-package 等价读回。
+`cancel` 只移除尚未提交的 create Actor，`close` 只释放 clean session，二者都不得改变 viewport
+或窗口。旧 sidecar 仅在 component 不存在时允许导入一次，随后移动到可恢复 tombstone，不再参与
+active read 或 write。
 
-`editor.safe_exit` 先按 `dirty_resolution` 处理 dirty resource，再由 operation-owned ticker
-请求退出；`RequestExit` 返回仍是非终态，真正关闭必须由进程外 witness 验证。
+调用方从 session/apply readback 取得 actor path 和 revision，再用 `world.actor_components`
+确认唯一 `DynamicMeshComponent` 与 authoring-state component，并用
+`world.property(..., property_path="Bounds")` 独立读回非零几何边界。对
+`UPrimitiveComponent`，`Bounds` 是 WorldRead 提供的通用计算属性，返回 origin、extent 与
+sphere radius；它不依赖 session 自报成功。持久完成则以 apply 返回的 durability receipt 与 C9
+readback 为准，不以当前内存 Actor 或 package dirty 标志代替。
+
+#### Safe Exit
+
+普通调用方不得手工拼装 `external_witness`。正式入口是项目的
+`scripts/ue/SafeExitLifecycle.py`：它绑定 `RunEditor.ps1 -PassThru` 返回的精确 Editor
+进程身份，在项目 `Saved/UeAgentInterface/SafeExitCompletion/v1/<launch>/<attempt>/`
+创建单次 armed witness 与 heartbeat，再通过公开 SDK 依次发送一条
+`editor.safe_exit` 和一条 `operation.resume`。Connection TOML 只承载 transport 与认证，
+不保存 launch、attempt 或 completion 状态。
+
+```powershell
+python -X utf8 scripts/ue/SafeExitLifecycle.py `
+  --project D:/Project/Project.uproject `
+  --connection D:/Project/connection.toml `
+  --editor-pid <exact-run-editor-pid> `
+  --output D:/Project/runtimeLogs/safe-exit-terminal.json `
+  --mode reject
+```
+
+Plugin 必须在 dirty save/discard 和创建 operation 前验证 witness 的 launch/attempt/nonce、
+Editor 身份、独立 witness 身份、存活状态、有效期和新鲜 heartbeat。缺失、过期或身份不一致
+返回 typed failure，不改变 dirty package，也不请求退出。`dirty_resolution.mode=reject` 在存在
+适用 `/Game` dirty package 时返回 `editor_safe_exit_dirty_resources_present`；`save` 或
+`discard` 必须提供与当前 dirty package name 集合完全一致的 `save_resources` 或
+`discard_resources`。
+
+通过 dirty 决策后，operation-owned ticker 请求退出。Plugin 在 engine pre-exit 阶段以单写者
+不可变发布 `uai.safe_exit.pre_exit_committed.v1`，其中包含 dirty 决策、精确 operation ref 与
+Editor 身份；仍存活的 runner 用启动时取得的精确进程 handle 等待自然退出，再不可变发布
+`uai.safe_exit.process_exited.v1`。resolver 只有在两阶段 launch/attempt/nonce、Editor identity
+一致，且 `process_exited=true`、`force_kill=false` 时才发布
+`uai.safe_exit.terminal.v1`。成功 terminal 同时记录 operation ref、退出码、两阶段摘要和
+`operation_lease_cleanup=process_terminated`；`transport_disconnected`、PID 不存在或 start
+command accepted 单独都不是完成证据。
+
+正常成功与 dirty reject 会在输出发布前停止 heartbeat 并清理 attempt root；等待超时则返回
+`pending_external_timeout` 并保留精确 coordination root 供诊断，不以强杀升级为成功。输出路径
+必须位于 coordination root 之外，且采用不可覆盖发布；重复解析或重试不得重放退出副作用。
 
 `culture-preview/v1` 的 subject 是 `culture:<Culture>`，参数精确为
 `culture`、`restore_after` 与 `scope="session"`。该 policy 使用 Editor world

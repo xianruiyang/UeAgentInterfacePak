@@ -12,7 +12,7 @@ description: Unreal Engine 重要知识阅读导航。用于在分析、设计�
 1. 先判断任务属于哪类 UE 知识，再只读取相关分类文件。
 2. 如果任务跨多个系统，按“核心概念 -> 具体系统 -> 调试/验证 -> UAI authoring”的顺序读取。
 3. 如果涉及当前项目真实状态，必须回到 UeAgentInterface、本地资产读回、源码或正式文档确认；不要把本 skill 的通用知识当成项目当前事实。
-4. 如果涉及空间、方向、坐标、transform、屏幕/世界/局部坐标，必须同时遵守 `understand-space` skill 的空间合同原则。
+4. 如果涉及空间、方向、坐标、transform、屏幕/世界/局部坐标，必须同时遵守 AgentBase-owned `understand-space` skill 的空间合同原则。
 5. 如果涉及 UAI 结构化 JSON 的实现细节，优先读取本地项目代码、正式 UAI 文档和实测记录；本 skill 只提供背景与阅读路由。
 
 ## 阅读入口

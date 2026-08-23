@@ -111,8 +111,12 @@ query/export -> choose one command -> execute -> settle/save -> independent read
 smoke 结束后不得关闭 Editor。
 
 只有插件或 Editor C++ 普通编译、证据确认必须重启，或用户明确要求时才关闭。
-关闭前先调用 `editor.dirty_resources()`，处理 dirty resource，再调用
-`editor.safe_exit(...)`；异步接受不等于退出完成，必须由进程外 witness 验证终止。
+关闭前先调用 `editor.dirty_resources()` 并裁决 exact dirty resource 集合；实际关闭使用项目
+`scripts/ue/SafeExitLifecycle.py`，向它传入 `RunEditor.ps1 -PassThru` 返回的精确 PID、正式
+Connection TOML、输出路径和 `reject|save|discard` 决策。普通调用方不得直接拼装
+`editor.safe_exit(...)` 的 `external_witness`，也不得把异步 accepted、transport disconnect、
+PID 消失或强杀解释为完成；只有 runner 合并 Plugin pre-exit 回执与精确进程退出回执后形成的
+durable terminal 才证明正常关闭。
 长任务、cancel/recovery 和 terminal state 见
 `contracts/long_running_session_public_commands.md`。
 

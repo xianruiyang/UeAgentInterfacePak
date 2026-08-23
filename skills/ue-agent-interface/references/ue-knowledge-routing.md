@@ -12,6 +12,23 @@
 | 领域专项教程 | 对应专项 KB，例如 `uai-niagara-bplus` | 效果拆解、模块组合、材质和案例流程 |
 | 项目当前事实 | UAI readback/probe、源码或等价 runtime probe | 当前 Editor、资产、关卡、编译和运行结果 |
 
+## 唯一 owner 与消费合同
+
+| 层 | 唯一 owner / 正式来源 | 运行时消费与版本证据 | 失效和降级 |
+| --- | --- | --- | --- |
+| UAI 命令行为 | Plugin C++ command manifest；CMD 生成 binding 与正式 SDK/CLI 文档 | `ue-agent-interface` 只消费当前 manifest、`uai.command.v1` 和实际 Connection TOML；不确定时查询当前 command detail | command 缺失、schema 不匹配或 readback 失败时停止相关 UE 写入并报告能力缺口；不改用直接 HTTP、旧 CLI 或 Python 第二实现 |
+| 高价值阅读导航 | Pak-owned `ue-essential-knowledge`，单向同步到 installed | 文件内容与 Pak -> installed 一致性是部署身份；它没有权威 UE 事实版本 | 分类仍是框架或条目缺失时明确报告，再进入 `ue-kb`、官方文档、源码或项目读回；不得按模型记忆补成事实 |
+| UE 版本知识 | `ue-kb/kb-manifest.json` 登记的 source；官方文档、引擎源码或明确 Supplemental source 才是事实来源 | `content_version`、`source_id`、source fingerprint/更新时间、`chunk_id` 和 source URL 定位本次证据；FTS/vector 是可重建投影 | Hybrid 依赖不完整时先报告精确状态，再按该 skill 合同降级 keyword 或 standalone Markdown；不得把降级结果称为 Hybrid |
+| 通用 KB 运行时 | external `D:/program/RagTest` / `kbcli-knowledge-base` | 每次从 active installed skill 解析 Release，读取 `kb version --json`、`doctor` 和目标 manifest 状态；RagTest Git HEAD 不替代消费版本 | runtime 不可执行时只保留直接来源读取；机器模型绑定缺失只使 vector/Hybrid 不可用，不等于 UE 知识内容失效 |
+| 通用空间意图 | AgentBase-owned `understand-space`，installed 是活动消费者 | 使用 AgentBase owner 与 installed parity；Pak 不保留同名投影，正式同步入口拒绝 external owner | 空间任务缺少该合同或 frame/identity 未决时停止依赖空间结论的写入；不影响与空间无关的 UAI 读取 |
+
+Pak-owned 三个 UE/UAI skill 只按 Pak -> installed 单向同步。installed 是当前机器消费面，
+不是反向真源；Pak 不保留 `understand-space` 同名投影，该能力只解析 AgentBase owner。不同层发生冲突时，
+分别回到其 source/version owner 和当前项目 readback 判断“预期”与“现状”，不能按 skill 命中顺序
+拼接，也不能用当前运行结果静默改写规范。KB source 的 UE 版本与当前产品引擎不一致时，只能把
+该 source 用作明确标注的背景或检索线索；版本相关行为必须回到当前引擎源码、当前 manifest 和
+真实产品 readback，不能用较新文档替代当前版本证据。
+
 ## 决策顺序
 
 1. 命令和当前用法已知、任务不需要额外 UE 原理时，直接执行，不读取 KB。
@@ -39,6 +56,31 @@
 - 教程中的节点、模块、类和资产名通过 `node_catalog_search`、资产查询或当前 UE 读回确认。
 - 教程与当前引擎版本、插件能力或项目读回冲突时，以当前版本事实和项目读回为准。
 - 教程未覆盖 apply/readback 边界时，不猜 HJSON 字段；回到 authoring contract、实际导出和 readback。
+
+## 真实纵向案例：Level viewport 取景与截图
+
+当目标是把真实关卡内容取景后截图，projection type 会改变计划和 oracle，应同时触发三个层次：
+
+1. `ue-essential-knowledge` 的
+   `references/07-world-level-rendering/viewport-projection-and-framing.md`
+   将投影类型列为显式空间与验证维度。
+2. `ue-kb` 查询 UE 5.7 的 `Viewport Toolbar` / `CameraComponent` 来源，作为 Perspective、
+   Orthographic 和 Projection Type 的可定位背景；search 只定位，结论前 fetch source chunk。
+   当前项目产品运行于 UE 5.6，因此这些 5.7 chunks 不拥有 5.6 行为结论。
+3. 从正式 manifest 使用 `viewport.instance.list`，只为 perspective 图像目标选择
+   `viewport_type=perspective`，冻结同一 `viewport_ref`，再执行 state read、camera frame、
+   capture、restore 和最终 readback。
+
+T52 的真实七 Actor 白盒消费者直接证明了该知识会改变结果：未区分投影时选到正交 viewport，
+frame/restore 失败；保持原 frame policy、只选择同 world 的 perspective viewport 后，frame、
+512x200 PNG capture、像素/内容 oracle、restore 以及两次正式 owned-worker run 均通过。证据入口是
+`plan/results/TROOT-UAI-52-OWNED-RHI-REAL-CONTENT-VISUAL.r10.json`。这不证明非透视
+`viewport.camera.frame` 的行为。该 UE 5.6 产品结果和当前 Plugin 实现才是本案例的行为证据，
+5.7 文档只解释为何 projection type 值得作为候选验证维度。
+
+相近非触发场景：若当前 command 和语义已知，只读取 `editor.dirty_resources` 或查询 command detail，
+且不需要 UE 机制、版本依据或空间判断，只使用 `ue-agent-interface`，不加载 essential knowledge、
+`ue-kb` 或 `understand-space`。
 
 ## Token 边界
 

@@ -32,7 +32,10 @@ command manifest、生成的 Python binding、统一 Result 协议和 Connection
 8. 当前项目真实状态以 UAI readback/runtime probe 为准。教程、模型记忆、静态
    配置和文件存在性不能替代项目读回。
 9. 默认复用并保持用户的主 Unreal Editor。只有插件或 Editor C++ 普通编译、
-   有证据确认必须关闭/重启，或用户明确要求时才关闭；不得使用 Live Coding。
+   有证据确认必须关闭/重启，或用户明确要求时才关闭；不得使用 Live Coding。需要关闭时先
+   读取 exact dirty resource，再使用项目 `scripts/ue/SafeExitLifecycle.py`；不得手工拼
+   `external_witness`，也不得以 accepted、transport disconnect、PID 消失或强杀代替 durable
+   terminal。
 10. UE Automation 只能由项目正式 Runner 启动 owned worker。无渲染测试使用
     unattended NullRHI worker；需要 RHI 时使用 unattended RHI worker；普通
     CRUD、readback、probe 和 screenshot 复用主 Editor。
@@ -40,6 +43,9 @@ command manifest、生成的 Python binding、统一 Result 协议和 Connection
     只允许服务端契约认可的路径，不为绕过校验改写目标。
 12. 临时参数与 HJSON 写入 `<UserWorkDir>/tmp/uai_params/`，程序日志和 report
     写入 `<UserWorkDir>/runtimeLogs/`，不写进 skill 目录。
+13. 为任务、回归、实验或一次性输出创建、迁移或清理 UE package 前，读取
+    [Content workspace lifecycle](docs/UeAgentInterface/contracts/content_workspace_lifecycle.md)。
+    Plugin 正式文档是事实 owner，本副本只负责路由；路径本身不构成清理授权。
 
 ## 入口定位
 

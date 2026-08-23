@@ -12,9 +12,13 @@
 - 视觉结果和资产/材质读回不一致，需要排查渲染路径或视口状态。
 - 任务涉及空间构图、相机截图、遮挡、尺寸、反射或性能表现。
 
+## 已组织条目
+
+- `viewport-projection-and-framing.md`：把 projection type、精确 viewport identity、
+  perspective 取景、截图 oracle、restore/readback 组织为一个最小纵向验证合同。
+
 ## 后续填充位置
 
 - Level 与 World 状态读回规则。
-- Camera/viewport 截图验证流程。
 - Lumen 与反射常见限制。
 - Bounds、LOD、Nanite 与可见性排查。
