@@ -33,8 +33,10 @@ command manifest、生成的 Python binding、统一 Result 协议和 Connection
    Python 中复制 HJSON 语义或手写完整 readback。
 8. 当前项目真实状态以 UAI readback/runtime probe 为准。教程、模型记忆、静态
    配置和文件存在性不能替代项目读回。
-9. 默认复用并保持用户的主 Unreal Editor。只有插件或 Editor C++ 普通编译、
-   有证据确认必须关闭/重启，或用户明确要求时才关闭；不得使用 Live Coding。需要关闭时先
+9. 默认复用并保持用户的主 Unreal Editor。任务确实需要自行启动 owned Editor 时使用项目
+   `scripts/ue/StartUaiEditorLifecycle.ps1`；只有其 durable receipt 将精确 launch identity 与认证
+   public `runtime_probe` PID 绑定并标记 `ready` 后才继续，不以端口开放、进程存活或窗口出现代替。
+   只有插件或 Editor C++ 普通编译、有证据确认必须关闭/重启，或用户明确要求时才关闭；不得使用 Live Coding。需要关闭时先
    读取 exact dirty resource，再使用项目 `scripts/ue/SafeExitLifecycle.py`；不得手工拼
    `external_witness`，也不得以 accepted、transport disconnect、PID 消失或强杀代替 durable
    terminal。
@@ -86,7 +88,7 @@ search/detail 确认该领域的当前入口或报告能力缺口，不回退 Py
 
 ## 按需阅读
 
-- Python SDK、Connection TOML、CLI、缺失能力和写后读回：
+- Python SDK、Connection TOML、CLI、owned Editor startup/safe-exit、缺失能力和写后读回：
   `references/public-sdk-playbook.md`
 - UE Essential Knowledge、UE KB、专项教程和项目读回选择：
   `references/ue-knowledge-routing.md`
@@ -111,6 +113,8 @@ search/detail 确认该领域的当前入口或报告能力缺口，不回退 Py
   `docs/UeAgentInterface/contracts/long_running_session_public_commands.md`
 - AssetDurable journal 检查、无重放恢复与状态语义：
   `docs/UeAgentInterface/contracts/asset_durable_maintenance.md`
+- destructive content 的 plan/authorize/commit 与 Data Layer 删除：
+  `docs/UeAgentInterface/active/t31_destructive_content_ops.md`
 
 只加载当前任务需要的 reference、manifest 条目、binding 签名、KB chunk 和 HJSON
 文件；内容未变化且当前上下文已有可信证据时不重复加载。

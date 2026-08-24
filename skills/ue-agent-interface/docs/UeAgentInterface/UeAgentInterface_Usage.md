@@ -101,18 +101,28 @@ query/export -> choose one command -> execute -> settle/save -> independent read
 
 ## Editor 与长任务
 
-默认复用并保持用户主 Editor 运行。启动 UAI Editor 时可使用：
+默认复用并保持用户主 Editor 运行。只有任务确实需要自行创建一个 owned Editor 时，才使用项目正式入口
+`scripts/ue/StartUaiEditorLifecycle.ps1`；不要自行组合进程启动、端口轮询和失败清理。该 runner 通过
+`RunEditor.ps1` 以 hidden、no-activate、RenderOffScreen、unattended 方式启动，并生成
+`uai.editor_startup_lifecycle_receipt.v1`。底层启动参数仍是：
 
 ```text
 -UeAgentInterfaceAutoStart -UeAgentInterfaceStartMinimized
 ```
 
-该参数只控制启动首态，不持续压制用户恢复窗口。普通读写、readback、screenshot 和
-smoke 结束后不得关闭 Editor。
+这些参数只控制启动首态，不能单独证明 UAI 已就绪。只有 runner 保存的 PID、start-time 与 executable identity
+仍精确匹配，并且认证 public SDK 的 `query.calibration.read(category="runtime_probe")` 返回同一 PID 时，
+receipt 才能进入 `ready`。端口开放、`connection probe` 成功、窗口出现或单独的 runtime PID 都不能替代该
+组合判据；当前 Result envelope 也没有可替代它的 server-session identity。
+
+`port_conflict`、`exited_before_ready`、`readiness_process_identity_mismatch` 和
+`unconnectable_timeout` 是启动阶段的不同失败。runner 只清理本次 owned process tree，并保留既有 Editor 与
+listener。普通读写、readback、screenshot 和 smoke 结束后不得关闭用户 Editor。
 
 只有插件或 Editor C++ 普通编译、证据确认必须重启，或用户明确要求时才关闭。
-关闭前先调用 `editor.dirty_resources()` 并裁决 exact dirty resource 集合；实际关闭使用项目
-`scripts/ue/SafeExitLifecycle.py`，向它传入 `RunEditor.ps1 -PassThru` 返回的精确 PID、正式
+启动就绪与关闭是两个不同职责。关闭前先调用 `editor.dirty_resources()` 并裁决 exact dirty resource 集合；实际关闭使用项目
+`scripts/ue/SafeExitLifecycle.py`，向它传入 startup receipt 的 `process_identity.process_id`（或底层
+`RunEditor.ps1 -PassThru` 返回的同一精确 PID）、正式
 Connection TOML、输出路径和 `reject|save|discard` 决策。普通调用方不得直接拼装
 `editor.safe_exit(...)` 的 `external_witness`，也不得把异步 accepted、transport disconnect、
 PID 消失或强杀解释为完成；只有 runner 合并 Plugin pre-exit 回执与精确进程退出回执后形成的
@@ -134,6 +144,8 @@ production-ready 还必须证明正式 public ingress、唯一 C++ owner、真�
 - Python 静态签名：`UeAgentInterfaceCMD/cli/uai/commands/generated.pyi`
 - 当前实现与验证边界：`active/`；该目录只描述产品合同和验证边界，不承担交付工作区的需求、任务状态或最终完成裁判
 - Python SDK 与 CLI：`UeAgentInterfaceCMD/docs/PYTHON_SDK_AND_CLI.md`
+- AssetDurable journal 只读检查、无重放 reconcile 与正式 runner：
+  `contracts/asset_durable_maintenance.md`
 - Read/Export：`contracts/read_export_command_contract.md`
 - Reference CRUD：`contracts/reference_crud_route.md`
 - SimpleAuthoring typed CRUD：`contracts/simple_authoring_typed_crud.md`

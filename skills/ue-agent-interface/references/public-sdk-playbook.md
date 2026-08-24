@@ -30,8 +30,9 @@ manifest 没有的命令视为尚未迁移，必须明确报告能力缺口，�
 ## Command discovery
 
 稳定逻辑引用 `uai-skill:public-sdk-playbook#command-discovery` 指向本节；机器
-`query.command.detail` 同时返回该引用与
-`uai-docs:python-sdk-and-cli#command-discovery`。不知道 command 名称时按以下单向
+`query.command.detail` 至少返回该引用与
+`uai-docs:python-sdk-and-cli#command-discovery`，复杂领域还会返回注册声明拥有的
+领域或 command-specific 引用。不知道 command 名称时按以下单向
 流程调用，不从源码、旧测试或历史 helper 猜 ID 和参数：
 
 ```python
@@ -149,6 +150,30 @@ python scripts/ue/ReconcileAssetDurableJournal.py `
 取得；本节不复制字段合同。runner 收据中的 `verified` 或 `rolled_back` 才是 terminal；
 `state_unknown` 会保留活动 journal 和缺失证据，调用方应停止并按收据裁决，不得重放原
 操作。已存在的 receipt 路径会 fail closed，避免覆盖前一次处置证据。
+
+## Owned Editor startup lifecycle
+
+默认复用用户已经运行的 Editor。只有任务需要一个可由本次工作精确清理的独立 Editor 时，使用项目正式
+`scripts/ue/StartUaiEditorLifecycle.ps1`：
+
+```powershell
+pwsh -NoProfile -File scripts/ue/StartUaiEditorLifecycle.ps1 `
+  -UERoot <UE-install-root> `
+  -ProjectPath <project.uproject> `
+  -ReceiptPath runtimeLogs/<task>/editor-startup.json
+```
+
+该入口让 `UeLifecycleHost.psm1` 持有 PID、start-time、executable、listener 与 exact cleanup，让
+`RunEditor.ps1` 只组装 UE 启动参数。它通过本项目 `InvokeUaiCommand.py` 的 runtime descriptor 取得非敏感端口
+投影，并由同一 public SDK exact 执行 `query.calibration.read("runtime_probe", limit=1)`。只有外部 launch
+identity 仍与 OS 进程精确匹配，且返回的 `items[0].identity="process:<PID>"` 等于 launch PID 时，
+`uai.editor_startup_lifecycle_receipt.v1` 才能进入 `ready`。
+
+runtime probe 本身没有 start time、launch nonce 或 server-session ID；端口开放、`connection probe`、窗口出现
+或一个未与 launch identity 交叉验证的 PID 均不是 readiness。`port_conflict`、`exited_before_ready`、
+`readiness_process_identity_mismatch` 与 `unconnectable_timeout` 必须保持不同终态。失败只清理 receipt 所属的
+owned process tree；成功后正常关闭仍交给 `SafeExitLifecycle.py`，startup runner 不复制 safe-exit witness 或
+terminal owner。receipt 路径必须是未使用的新路径，认证 secret 只经现有受控环境装配，不进入 receipt、参数或日志。
 
 ## Connection TOML
 

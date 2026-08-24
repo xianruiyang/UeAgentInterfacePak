@@ -233,6 +233,30 @@ result = ue.execute(
 服务端 Result。Unicode、任意精度整数、显式 `null`、未知 response 字段和失败
 结果均按协议保留。
 
+## Editor startup lifecycle runner
+
+默认连接并复用用户已经运行的 Editor。任务确实需要自行启动 owned Editor 时，使用项目
+`scripts/ue/StartUaiEditorLifecycle.ps1`；不要在业务脚本里手工拼接 `RunEditor.ps1`、端口轮询或进程清理。
+runner 从现有 runtime-settings bridge 取得非敏感 loopback descriptor，通过 `RunEditor.ps1` 启动
+hidden/no-activate Editor，再以本页同一 public SDK exact 执行
+`query.calibration.read(category="runtime_probe", limit=1)`。
+
+`runtime_probe` 只返回当前服务进程的 `process:<PID>`，不返回 process start time、launch nonce 或
+server-session ID。只有 startup runner 同时证明外部保存的 PID/start-time/executable identity 仍匹配，且
+probe PID 等于本次 launch PID，`uai.editor_startup_lifecycle_receipt.v1` 才能标记 `ready`。裸 TCP、
+`connection probe`、进程存活或窗口出现均不能单独证明 readiness。非 ready 路径形成稳定失败码，并只清理
+本次 owned process tree；启动 runner 不拥有正常退出终态。
+
+```powershell
+pwsh -NoProfile -File scripts/ue/StartUaiEditorLifecycle.ps1 `
+  -UERoot <UE-install-root> `
+  -ProjectPath <project.uproject> `
+  -ReceiptPath runtimeLogs/<task>/editor-startup.json
+```
+
+`InvokeUaiCommand.py --mode runtime-descriptor` 仅向该生命周期入口投影 transport、loopback port 和 token
+transport；它不输出 token，也不携带 PID、attempt 或 terminal state。
+
 ## Editor safe-exit lifecycle runner
 
 生成 binding 会精确暴露 `client.editor.safe_exit(dirty_resolution,
@@ -258,11 +282,17 @@ coordination root 并返回非成功状态。`transport_disconnected` 本身不�
 候选、匹配原因、精确 `command_id` 与 `contract_hash`。随后必须把候选身份原样交给
 `query.command.detail`，读取 `purpose`（含 `non_purpose`）、`input_fields` 与
 `result_fields` 的 nested `schema`、`errors`、named/generic/exact/CLI 调用模板和
-稳定教程引用。detail 返回的两个稳定逻辑引用是：
+稳定教程引用。每条 command 至少返回以下两个发现入口：
 
 - `uai-docs:python-sdk-and-cli#command-discovery`：本节；
 - `uai-skill:public-sdk-playbook#command-discovery`：installed
   `ue-agent-interface/references/public-sdk-playbook.md` 的对应章节。
+
+复杂领域还会返回由该 command 注册声明拥有的领域或 command-specific 引用。例如
+`world.data_layer.delete` 返回
+`uai-docs:t31-destructive-content-ops#world-data-layer-delete`。这些引用随 frozen
+registry 投影到 detail 与活动 manifest；教程元数据变化会改变 registry/manifest
+身份，但不会改变该 command 的 executable `binding_hash`。
 
 ```python
 import uai
