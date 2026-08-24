@@ -131,14 +131,26 @@ ue.content_graph.export_workspace(
     profile_id="llm_authoring",
 )
 
+import json
+
+authoring = ue.content_graph.authoring_schema(target).payload["query_result"]
+document = authoring["template"]
+document["root"]["fields"][chosen_field]["value"] = desired_value
+edited_hjson = json.dumps(
+    document,
+    ensure_ascii=False,
+    separators=(",", ":"),
+)
+
+# authorization_id 来自本次已授权工作流；不得照抄示例或自行生成。
 ue.content_graph.import_workspace(
     target,
     {
         "kind": "inline",
         "document": edited_hjson,
     },
-    exported_revision,
-    "authorization:agent-edit",
+    authoring["revision"],
+    authorization_id,
 )
 ```
 
@@ -159,13 +171,22 @@ LongRunning/Session 等模块。命名方法全部由该 manifest 生成，Pytho
 补业务默认值；完整 authoring Export 需要的 sections 和 closure 默认由
 服务端 `content_graph.export_workspace` command 统一拥有。
 
+复杂资产编辑在领域显式支持时先调用 `content_graph.authoring_schema`。其
+`query_result` 是模型字段入口，返回领域 schema/field owner、允许的 intents、
+当前值、可直接编辑的稀疏模板和本次 content-graph revision。调用方只修改返回模板
+中已声明可写的值；不得从旧教程、源码或其他资产类型猜字段，也不得把 native Timeline
+revision 与 content-graph revision 互换。不支持该查询的领域会 typed fail closed，
+而不是返回一个伪通用 schema。
+
 `content_graph.import_workspace` 的 `source` 只描述工作区来源，可使用
 `{"kind":"directory","path":"..."}`、`{"kind":"single_file","path":"..."}` 或
 `{"kind":"inline","document":"..."}`；目标类型、解析、Planning、执行、验证、
 保存和读回事务全部由 C++ 服务端负责。Python 只原样转发一个调用。领域 mutation
 意图写在对应 HJSON schema 中，不存在旧 `intent` 或 `dry_run` 公开参数。
-当前已激活的 Timeline/Animation persisted target 支持其 schema 定义的 update/replace
-语义；Localization target 使用显式 create/update/upsert/remove。字段省略与默认行为由
+当前 Sequence schema 的稀疏 settings 路径委派给
+`timeline.sequence.settings.update`，只修改已声明字段并保留既有 bindings/tracks/sections/
+channels/keys；完整 structure replacement 是不同的显式语义。Localization target 使用
+显式 create/update/upsert/remove。字段省略、preserve、remove/null/default 的适用性只由
 对应服务端 schema 决定。`expected_revision` 是写前必填并发条件，
 `authorization_id` 绑定本次公开写入。
 
@@ -235,8 +256,9 @@ coordination root 并返回非成功状态。`transport_disconnected` 本身不�
 
 不知道 command 名称时，只在 `query.command.search` 这一步按意图搜索；它返回少量
 候选、匹配原因、精确 `command_id` 与 `contract_hash`。随后必须把候选身份原样交给
-`query.command.detail`，读取字段合同、失败语义、最小命名调用、generic/exact/CLI
-调用模板与稳定教程引用。detail 返回的两个稳定逻辑引用是：
+`query.command.detail`，读取 `purpose`（含 `non_purpose`）、`input_fields` 与
+`result_fields` 的 nested `schema`、`errors`、named/generic/exact/CLI 调用模板和
+稳定教程引用。detail 返回的两个稳定逻辑引用是：
 
 - `uai-docs:python-sdk-and-cli#command-discovery`：本节；
 - `uai-skill:public-sdk-playbook#command-discovery`：installed
@@ -256,13 +278,17 @@ with uai.connect("connection.toml") as client:
         candidate["contract_hash"],
     )
 
-    # 按 detail.input_fields 填充参数；已知命令也可直接使用生成命名方法。
+    tutorial = detail.payload
+    # 按 tutorial["input_fields"] 的 nested schema 填充参数；
+    # invocation.python_named 由正式生成方法与字段投影得出。
     result = client.query.calibration_read("runtime_probe", limit=2)
 ```
 
 需要动态调用时使用 `client.execute(command_id, params)`；需要锁定搜索返回的精确
 版本时使用 `client.execute_exact(command_id, params, contract_hash=contract_hash)`。
 搜索结果不得被前缀、别名或旧 helper 重写。
+每条 command 的具体教程不复制进 SDK 文档或 skill；detail 的
+`tutorial_references` 指向稳定逻辑文档，字段与 hash 随活动 registry 即时返回。
 
 CLI 走同一 Client、Protocol 和 Transport：
 

@@ -1,8 +1,8 @@
 {
   "schema": "uai.packaged_cli.release",
   "source_repository": "UeAgentInterfaceCMD",
-  "source_commit": "21e6c45e45e10b981b6d3b65f8474f2d409bde13",
+  "source_commit": "77112db29a49c48da33b17e7275501e808c6745b",
   "cli_version": "0.2.0",
   "artifact": "uai-cli.exe",
-  "artifact_sha256": "4309acf30aa970acce25241b148764e53ce4b7947c287b7ea8fee7027980fbae"
+  "artifact_sha256": "db3a18274e0db54f7e9efc3e3bcd3c6d19710952ae6a8511788b4756bd4cb5be"
 }

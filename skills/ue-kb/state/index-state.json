@@ -1,5 +1,5 @@
 {
-  "build_id": "sha256:615bea6057d93801",
+  "build_id": "sha256:36bc2d31b49a18f5",
   "chunk_fingerprint": "sha256:2923434b62f2cfc6",
   "chunks": {
     "stale": false
@@ -14,7 +14,7 @@
     "stale": false
   },
   "schema_version": "0.1.0",
-  "updated_at": "2026-06-11T18:05:31Z",
+  "updated_at": "2026-08-24T06:34:50Z",
   "vector": {
     "available": true,
     "collection": "ue-kb",
@@ -88,7 +88,7 @@
         }
       },
       "status": "ok",
-      "time": 0.000526815
+      "time": 0.001069855
     },
     "embedding_fingerprint": "sha256:5c509eb1c0747b0d",
     "payload_indexes": [

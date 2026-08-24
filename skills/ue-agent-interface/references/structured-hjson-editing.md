@@ -1,6 +1,8 @@
 # Structured HJSON Editing
 
-本页定义单文件和 folder HJSON 的日常编辑流程。字段细节仍以 `docs/UeAgentInterface/HjsonAuthoring_Guide.md`、当前命令 authoring pack、实际导出和 readback 为准。
+本页定义单文件和 folder HJSON 的日常编辑流程。动态领域的字段细节以运行中的
+`content_graph.authoring_schema` 返回为准；静态 authoring guide、命令 detail、实际导出
+和 readback 只补充该查询没有承担的领域约束，不能形成第二字段合同。
 
 ## 选择编辑面
 
@@ -8,9 +10,12 @@
 
 优先级：
 
-1. 支持 folder HJSON 的复杂资产直接编辑 folder authoring。
-2. 单文件资产使用单文件 HJSON round-trip。
-3. 新增内容先最小 seed -> apply -> readback -> patch 必要字段。
+1. 领域支持 `content_graph.authoring_schema` 时，先取得当前 schema、field owner、
+   allowed intents、稀疏 template 和 revision，再选择 inline/single-file/directory carrier。
+2. 使用正式 folder Export 时先检查返回的 `scope`。只有明确声明完整结构覆盖时才按 whole-asset
+   workspace 编辑；`field_set_complete=true` 但 `asset_structure_complete=false` 只授权编辑该
+   field set，省略结构必须由 Import 保留，不能从导出缺失推断删除或完整覆盖。
+3. 单文件资产使用单文件 HJSON round-trip；新增内容从正式 create schema 的最小 seed 开始。
 4. 原子命令只用于 bootstrap、只读 probe、迁移、schema 边界、局部修复和故障恢复。
 
 `_json` 可以保留为稳定命令名，但文件 authoring 统一使用 HJSON。HTTP/CLI JSON envelope 和第三方协议 JSON 不属于文件格式迁移范围。
@@ -33,6 +38,11 @@ folder root
 - 一个目标能在一个文件表达时，不联动修改无关文件。
 
 ## 字段规则
+
+若响应包含 `fields` 合同，`path`、`owner`、`missing`、`nullable`、
+`default_supported`、`allowed_intents` 与 `value_contract` 整体决定字段语义。未出现的
+intent 一律不支持，不能从其他字段或领域类推。省略只在 `missing=preserve` 时表示保留；
+`remove`、`null` 与 `default` 必须逐字段声明。
 
 默认 authoring 字段使用：
 
@@ -62,9 +72,14 @@ folder root
 ## 直接与程序化编辑
 
 - 小范围修改可以直接编辑完整目标 HJSON 对象，写后必须 parse。
-- 程序化文件读取使用 `load_authoring_file(...)`；字符串读取使用 `loads_authoring_hjson(...)`。
-- 写出使用 `write_authoring_file(...)` / `dumps_authoring_hjson(...)`。
-- 批量、重复数组或跨文件一致性修改使用结构化 Python API。
+- 动态 schema 返回的 template 可以作为 JSON（HJSON 的合法子集）修改和序列化；调用方只
+  改值并把 document 原样传给公开 Import，不补默认、路由、revision 或领域变换。
+- 编辑 directory export 后必须保留 manifest 的 `target_identity`、`base_revision`、`entry_file`
+  和文件集合，并用修改后文件的 UTF-8 内容重新计算对应 SHA-256 `content_hash`；旧 hash
+  不匹配时 Import 在 UE 写入前失败。
+- 若领域 detail 指向正式 HJSON reader/writer，文件读取与写出只用该入口；没有正式入口时
+  不臆造 `load_authoring_file`、`write_authoring_file` 等 helper。
+- 批量、重复数组或跨文件一致性修改使用结构化数据操作，但 Python 不复制服务端业务。
 - 不使用正则、全局字符串替换、手工拼接或 `json.dumps(..., indent=2)` 修改 authoring。
 - 程序化重写不得无必要改变未修改字段、文件布局和稳定顺序。
 
@@ -83,18 +98,18 @@ folder root
 ## Apply 与验证
 
 ```text
-export/readback
+authoring_schema or verified scoped export
 -> navigate target
 -> minimal edit
--> parse/round-trip
--> validate/diff/dry-run
--> preflight/apply
--> compile/save
--> export/readback/probe/screenshot
+-> local parse/round-trip
+-> content_graph.import_workspace
+-> server validate/plan/mutate/compile/save/reload
+-> independent readback/probe/screenshot
 -> semantic comparison
 ```
 
-- 多文件变更全部 parse/validate 通过后才 apply。
+- 公共 Import 没有第二个 `intent` 或 `dry_run` 参数；intent 在文档中，预写验证和失败
+  终态由服务端拥有。多文件变更全部 parse 通过后才提交。
 - apply 后导出到独立 readback 位置，不覆盖 authoring 输入。
 - diff 比较业务语义，不把空白、同行方式和字段顺序当作业务变化。
 - readback 缺少目标、值不一致、分支不活跃或 compile 失败时，任务未完成。

@@ -1,42 +1,86 @@
-# T22 Sequence HJSON Domain
+# T22 Sequence HJSON domain
 
-The only Sequence **HJSON** authoring ingress is
-`client.content_graph.import_workspace(...)`, with
-`client.content_graph.structure(...)` for independent readback. The shared SDK
-also exposes `client.content_graph.export_workspace(...)`, but T22 does not
-claim a lossless Sequence export projection; it returns
-`sequence_domain_export_not_registered` instead of a false-success read
-payload. Callers obtain current fields and hashes through `command_search` and
-`command_detail`; `uai-cli ... exec <command-id>` exposes the same contracts.
-No task-specific generated binding is active.
+Use command discovery only through the default SDK:
 
-`sequence-domain-provider` is the sole HJSON domain provider for
-`/Script/LevelSequence.LevelSequence` and schema `uai.sequence.edit/1`. It owns
-the root contract `uai.init.sequence.root/1` and is selected by T13's frozen
-provider registry; it does not register a second public command.
+```python
+candidate = client.query.command_search(
+    "edit one Level Sequence setting without replacing tracks",
+    limit=3,
+).payload["candidates"][0]
+detail = client.query.command_detail(
+    candidate["command_id"],
+    candidate["contract_hash"],
+)
+```
 
-T13 remains the sole initialization, recursive traversal, default resolution,
-binding, failure, rollback, and cleanup authority. This provider consumes that
-contract and does not implement private recursion or initialization.
+The model-facing authoring flow starts with
+`client.content_graph.authoring_schema(target)`. For an explicitly supported
+Level Sequence target, `payload["query_result"]` returns the exact schema ID,
+field owner and field set, allowed intents, current values, a sparse editable
+template, and the current content-graph revision. This command is the public
+field schema authority: callers copy those identities and values rather than
+guessing field names or reading old examples as a second schema.
 
-The provider accepts arbitrary valid HJSON through the common workspace parser,
-then delegates Sequence mutation and independent readback to T55
-Timeline/Sequence native mechanics. `root.structure` uses the shared exact-time
-representation for display rate, tick resolution, playback range, bindings,
-tracks, sections, channels, and keys. Missing targets require
-`expected_revision: missing`; existing targets require the revision returned by
-the previous independent structure or import readback. Validation completes
-before delegated mutation.
+```python
+import json
 
-For a missing `/Script/LevelSequence.LevelSequence` target, `root.structure`
-must include `display_rate` and `tick_resolution`; the import creates the asset
-through `timeline.sequence.create`. A missing-root document cannot also contain
-`root.operation`, so creation and later structural replacement remain separate,
-revision-guarded transactions. For an existing target, the same structure is
-applied through `timeline.sequence.structure.replace` with the native revision
-captured by the preceding readback.
+authoring = client.content_graph.authoring_schema(target).payload["query_result"]
+document = authoring["template"]
+field = document["root"]["fields"][chosen_field]
+field["value"] = desired_value
+edited_hjson = json.dumps(
+    document,
+    ensure_ascii=False,
+    separators=(",", ":"),
+)
 
-Successful imports return mutation, compile/settle, save, reload, persistence,
-and independent-readback evidence. Direct `timeline.sequence.*` commands remain
-the native public command family; this document defines their HJSON projection,
-not a replacement owner or a second Sequence implementation.
+result = client.content_graph.import_workspace(
+    target,
+    {"kind": "inline", "document": edited_hjson},
+    authoring["revision"],
+    authorization_id,
+)
+state = client.content_graph.structure(target)
+```
+
+`authorization_id` must be the exact ID obtained from the authorized workflow;
+examples do not mint or guess one. Missing fields preserve current state. The
+returned field contract decides whether `set`, `remove`, `null`, or
+`default` is supported. Unsupported intents fail before native mutation with
+the owning field and JSON pointer. The current Sequence schema exposes a
+non-destructive sparse settings surface; it does not imply that every Sequence
+field or every HJSON domain supports the same intents.
+
+`content_graph.import_workspace` remains the only public HJSON write contract.
+Its source may be inline, single-file, or directory; all three carriers resolve
+to the same document semantics. The Sequence provider delegates sparse settings
+to `client.timeline.sequence_settings_update(...)` and full structure
+replacement to `client.timeline.sequence_structure_replace(...)`. Direct
+native callers discover both contracts with
+`client.query.command_search(...)` and
+`client.query.command_detail(...)`; a content-graph revision and a native
+Timeline revision are different contracts and must not be interchanged.
+
+T13 is the initialization mechanics owner for common source resolution,
+validation, planning, rollback, and cleanup. The Sequence domain provider owns
+its HJSON schema and field semantics. T55 owns native Level Sequence mutation,
+compile/settle, save, unload/reload, and independent readback. These roles form
+one delegation chain, not competing public implementations.
+
+The shared SDK also exposes
+`client.content_graph.export_workspace(target, workspace_path)`. For a Level
+Sequence, the active Sequence provider publishes a directly re-importable
+`uai.sequence.edit/1` entry and a verified
+`uai.content_graph.workspace/1` manifest. The current export is deliberately a
+`sequence.timeline.settings/1` projection, not a lossless export of the whole
+asset: require `scope.field_set_complete=true`,
+`scope.asset_structure_complete=false`, and
+`scope.omitted_structure_preserved=true` in the result. Edit only fields owned
+by that field set, keep the exported `base_revision`, and update the manifest
+content hash before directory import. Use
+`client.timeline.sequence_read(...)` for independent persisted readback; never
+infer track, section, or key coverage from this partial export.
+
+The exact CLI surface is available through `uai-cli exec <command-id>` with
+the current command hash and one JSON parameter object. No task-specific
+generated binding or Python-side Sequence/HJSON business logic is active.

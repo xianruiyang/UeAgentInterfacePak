@@ -16,13 +16,15 @@ command manifest、生成的 Python binding、统一 Result 协议和 Connection
 3. 命名方法、`Client.execute()` 与 CLI 必须共用同一个 Client、Protocol 和
    Transport。当前只实现 HTTP Adapter，但调用方不能依赖 HTTP 类型，也不得直接
    调用 HTTP。
-4. 能力和参数以
+4. 能力和生成方法签名以
    `Plugins/UeAgentInterface/Resources/UaiCommandManifest.json` 与
-   `UeAgentInterfaceCMD/cli/uai/commands/generated.pyi` 为准。正式 manifest
+   `UeAgentInterfaceCMD/cli/uai/commands/generated.pyi` 为准；用途边界、嵌套字段
+   schema、结果形状、失败语义、调用模板和教程入口以运行中 Editor 的
+   `query.command.detail` 为准。正式 manifest
    没有的能力必须 fail closed，不回退旧实现、不扫描源码猜参数、不新增临时替代
-   指令。不知道 command 名称时，通过默认 binding 或普通 CLI 调用
-   `query.command.search`，再用返回的精确 ID/hash 调用 `query.command.detail`；
-   读取其字段、调用模板和稳定教程引用后才执行，不导入任务级 helper。
+   指令。不知道 command 名称，或不确定对象字段、用途和结果时，先调用
+   `query.command.search`，再用候选的精确 ID/hash 调用 `query.command.detail`；
+   不导入任务级 helper，也不把 detail 内容复制成长驻指令目录。
 5. 多步骤工作流由 Agent 显式逐条调用；每一步只依据真实 Result 和独立 readback
    决定是否继续。
 6. 写命令成功不等于任务完成。必须用正式读取 command 独立读回，并按资产类型
@@ -58,6 +60,30 @@ command manifest、生成的 Python binding、统一 Result 协议和 Connection
   `<SkillDir>/tools/uai-cli.exe`，且仍须提供 Connection TOML。
 - 不使用项目旧 `dist` 产物、PATH 中来源不明的裸命令或直接 HTTP 作为 fallback。
 
+## 指令发现 bootstrap
+
+skill 只常驻两条发现指令：
+
+```python
+search = client.query.command_search(intent, limit=3)
+candidate = search.payload["candidates"][0]
+detail = client.query.command_detail(
+    candidate["command_id"],
+    candidate["contract_hash"],
+).payload
+```
+
+执行前读取 `detail["purpose"]`（含 `non_purpose`）、`input_fields`/`result_fields`
+中的 nested `schema`、`errors`、`invocation` 和 `tutorial_references`。只有 search
+按自然语言匹配；detail 和 exact 执行必须保留同一 `command_id`/`contract_hash`。
+完整 SDK/CLI 形式按需读取 `references/public-sdk-playbook.md`。
+
+复杂资产 HJSON 不从旧文档猜字段。领域明确支持时先调用
+`client.content_graph.authoring_schema(target)`，直接复用返回的 schema、field owner、
+allowed intents、template 和 revision，再把修改后的 document 交给
+`client.content_graph.import_workspace(...)`。若 schema 查询 typed fail，则通过上述
+search/detail 确认该领域的当前入口或报告能力缺口，不回退 Python 业务实现。
+
 ## 按需阅读
 
 - Python SDK、Connection TOML、CLI、缺失能力和写后读回：
@@ -83,6 +109,8 @@ command manifest、生成的 Python binding、统一 Result 协议和 Connection
   `docs/UeAgentInterface/contracts/simple_authoring_typed_crud.md`
 - 长任务、Editor session、Capture、operation lifecycle、safe-exit 与 artifact readback：
   `docs/UeAgentInterface/contracts/long_running_session_public_commands.md`
+- AssetDurable journal 检查、无重放恢复与状态语义：
+  `docs/UeAgentInterface/contracts/asset_durable_maintenance.md`
 
 只加载当前任务需要的 reference、manifest 条目、binding 签名、KB chunk 和 HJSON
 文件；内容未变化且当前上下文已有可信证据时不重复加载。
@@ -93,19 +121,24 @@ command manifest、生成的 Python binding、统一 Result 协议和 Connection
    布局时建立 space contract。
 2. 若需要 UE 原理或版本依据，定向读取相关知识；知识不能替代当前项目读回。
 3. 用 UAI Query/readback 获取当前状态。
-4. 从正式 manifest 选择一个 command，并按生成 binding 构造参数；能力缺失时
-   停止并报告服务端缺口。
+4. 从正式 manifest 选择一个 command；未知或语义不清时执行上述 search/detail，
+   按 detail 的字段 schema 与生成 binding 构造参数。能力缺失时停止并报告服务端缺口。
 5. 通过 `import uai`、`uai.connect(...)` 调用一个命名方法；自动化脚本需要动态
    ID 时才用 `Client.execute()`。
 6. 若为写操作，调用独立读取 command 验证持久状态，再完成必要的
    compile/save/probe/screenshot/diff。
-7. 失败时读取稳定 Result/Error，不自动重放写操作；若指令返回成功却没有完成其
-   语义，保留输入、结果、读回和日志证据，修复服务端实现与测试，不长期绕路。
+7. 失败时读取稳定 Result/Error，不自动重放写操作；若结果提供 AssetDurable
+   `journal_id` 或进入 `state_unknown`，按 `references/public-sdk-playbook.md` 的
+   Durable journal maintenance 路由使用项目正式 runner，不直接读取/改写 journal、
+   不猜 owner/fence。若指令返回成功却没有完成其语义，保留输入、结果、读回和
+   日志证据，修复服务端实现与测试，不长期绕路。
 8. 清理 Agent 创建的临时资产、测试线程和无继续价值的服务；保持用户主 Editor
    运行。
 
 ## HJSON 原则
 
+- 动态领域以 `content_graph.authoring_schema` 返回的 field schema 为模型编辑权威；
+  只改返回模板中已声明可写的字段，不复制大 schema 到 skill，也不把其他领域示例当合同。
 - 导出内容应方便 LLM 使用，只暴露完成当前编辑所需的结构化字段；token 控制通过
   投影、字段分层、引用和文件拆分实现，不使用硬性 token 拒绝门禁。
 - folder 导航顺序由正式 ExportProfile、`included_files`、`read_order` 和实际

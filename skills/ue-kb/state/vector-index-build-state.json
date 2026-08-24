@@ -73,103 +73,103 @@
       }
     },
     "status": "ok",
-    "time": 0.000526815
+    "time": 0.001069855
   },
-  "completed_items": 10,
-  "deleted_stale_points": 10,
+  "completed_items": 11,
+  "deleted_stale_points": 13,
   "embedding_fingerprint": "sha256:5c509eb1c0747b0d",
   "embedding_text_policy_fingerprint": "sha256:18893d59dcf186e7",
-  "existing_points_scanned": 15557,
+  "existing_points_scanned": 15559,
   "kb_id": "ue-kb",
-  "pending_items": 10,
+  "pending_items": 11,
   "point_count": 15557,
   "qdrant_url": "http://127.0.0.1:6333",
   "remaining_items": 0,
   "resume_supported": true,
   "schema_version": "0.1.0",
-  "skipped_unchanged": 15547,
+  "skipped_unchanged": 15546,
   "status": "complete",
   "timings": {
     "batches_total": {
-      "attach_vectors_ms": 0.0524,
-      "avg_batch_ms": 3785.7792,
-      "avg_item_ms": 1892.8896,
-      "batches": 5,
+      "attach_vectors_ms": 0.0648,
+      "avg_batch_ms": 3694.02745,
+      "avg_item_ms": 2014.9240636363638,
+      "batches": 6,
       "direct_upsert_attempt_ms": 0.0,
       "direct_upsert_batches": 0,
-      "embedding_ms": 18768.428200000002,
-      "items": 10,
-      "items_per_sec": 0.5282928280656198,
-      "managed_batches": 5,
-      "max_batch_ms": 6006.8901,
-      "point_shell_ms": 0.5627,
-      "qdrant_upsert_ms": 159.80530000000002,
-      "total_ms": 18928.896
+      "embedding_ms": 21799.5953,
+      "items": 11,
+      "items_per_sec": 0.49629661883896753,
+      "managed_batches": 6,
+      "max_batch_ms": 5903.2729,
+      "point_shell_ms": 0.7797999999999999,
+      "qdrant_upsert_ms": 363.64340000000004,
+      "total_ms": 22164.1647
     },
-    "elapsed_ms": 23527.4885,
+    "elapsed_ms": 28597.1709,
     "stages": {
       "classify_existing_points_ms": {
-        "avg_ms": 228.6585,
+        "avg_ms": 370.3338,
         "count": 1,
-        "total_ms": 228.6585
+        "total_ms": 370.3338
       },
       "delete_stale_points_ms": {
-        "avg_ms": 93.8975,
+        "avg_ms": 62.4538,
         "count": 1,
-        "total_ms": 93.8975
+        "total_ms": 62.4538
       },
       "embedding_binding_ms": {
-        "avg_ms": 1.0911,
+        "avg_ms": 0.9962,
         "count": 1,
-        "total_ms": 1.0911
+        "total_ms": 0.9962
       },
       "fingerprint_and_chunk_map_ms": {
-        "avg_ms": 850.8539,
+        "avg_ms": 1016.686,
         "count": 1,
-        "total_ms": 850.8539
+        "total_ms": 1016.686
       },
       "load_chunks_ms": {
-        "avg_ms": 875.533,
+        "avg_ms": 1423.5526,
         "count": 1,
-        "total_ms": 875.533
+        "total_ms": 1423.5526
       },
       "load_optimization_profile_ms": {
-        "avg_ms": 10.095,
+        "avg_ms": 13.4295,
         "count": 1,
-        "total_ms": 10.095
+        "total_ms": 13.4295
       },
       "managed_service_startup_ms": {
-        "avg_ms": 313.9137,
+        "avg_ms": 215.4207,
         "count": 1,
-        "total_ms": 313.9137
+        "total_ms": 215.4207
       },
       "prepare_vector_items_ms": {
-        "avg_ms": 7.9017,
+        "avg_ms": 8.5387,
         "count": 1,
-        "total_ms": 7.9017
+        "total_ms": 8.5387
       },
       "progress_write_ms": {
-        "avg_ms": 1.0277333333333336,
-        "count": 6,
-        "total_ms": 6.166400000000001
+        "avg_ms": 2.461242857142857,
+        "count": 7,
+        "total_ms": 17.2287
       },
       "qdrant_collection_ms": {
-        "avg_ms": 238.4279,
+        "avg_ms": 633.1814,
         "count": 1,
-        "total_ms": 238.4279
+        "total_ms": 633.1814
       },
       "scan_existing_points_ms": {
-        "avg_ms": 927.3624,
+        "avg_ms": 1645.976,
         "count": 1,
-        "total_ms": 927.3624
+        "total_ms": 1645.976
       },
       "sort_vector_items_ms": {
-        "avg_ms": 0.0009,
+        "avg_ms": 0.001,
         "count": 1,
-        "total_ms": 0.0009
+        "total_ms": 0.001
       }
     }
   },
   "total_chunks": 15557,
-  "updated_at": "2026-06-11T18:05:31Z"
+  "updated_at": "2026-08-24T06:34:50Z"
 }
