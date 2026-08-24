@@ -69,6 +69,14 @@ command manifest、生成的 Python binding、统一 Result 协议和 Connection
 - Niagara 制作与修复：`references/niagara-vfx-authoring.md`
 - Control Rig、动画 IK 和 Shape Library：
   `references/control-rig-animation-authoring.md`
+- Audio/MetaSound/SoundCue 当前正式领域合同：
+  `docs/UeAgentInterface/active/t21_audio_domain.md`
+- Sequence、LevelSequence 与 WidgetAnimation 当前正式领域合同：
+  `docs/UeAgentInterface/active/t22_sequence_domain.md`
+- Animation Curve、Montage 与相关资产当前正式领域合同：
+  `docs/UeAgentInterface/active/t23_animation_curve_domain.md`
+- ControlRig、IKRig、IKRetargeter 与 Skeleton 当前正式领域合同：
+  `docs/UeAgentInterface/active/t24_animation_rig_graph_domain.md`
 - HJSON 正式总入口：`docs/UeAgentInterface/HjsonAuthoring_Guide.md`
 - 当前 Python/CLI 行为：`docs/UeAgentInterfaceCMD/PYTHON_SDK_AND_CLI.md`
 - 102 条 typed CRUD、目标/字段解析、revision、C8D/C9 与旧写入口终态：
