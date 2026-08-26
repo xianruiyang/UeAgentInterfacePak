@@ -72,6 +72,10 @@ intent 一律不支持，不能从其他字段或领域类推。省略只在 `mi
    `content_graph.structure` 中选择：匹配 `kind=blueprint_graph` 以及所需的
    `value.name`/`value.graph_kind`，再把同一 container 的 opaque `id` 原样传入
    candidate 查询；不得从节点类型推断、缓存旧 GUID 或自行重建 ID。
+   同一 structure 也是既有 Blueprint 节点的紧凑语义读回：事件、组件绑定事件、
+   函数调用和变量节点分别在 `value` 中给出其 event、delegate、function 或
+   variable identity。应连同稳定节点 `id` 直接选择/验证，不得从位置、数量、边或
+   原始 K2 class 推断，也不得只为这些已投影语义导出完整 workspace。
 2. 候选最小 HJSON 形状是 `candidate: { name: ... }` 或
    `candidate: { id: ... }`。`name` 必须在同一上下文唯一；`id` 是精确选择器。
    模型明确知道并希望断言更多内容时，可补领域公开的 `class_path`、`asset_path`
