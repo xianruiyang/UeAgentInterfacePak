@@ -23,7 +23,8 @@ command manifest、生成的 Python binding、统一 Result 协议和 Connection
    `query.command.detail` 为准。正式 manifest
    没有的能力必须 fail closed，不回退旧实现、不扫描源码猜参数、不新增临时替代
    指令。不知道 command 名称，或不确定对象字段、用途和结果时，先调用
-   `query.command.search`，再用候选的精确 ID/hash 调用 `query.command.detail`；
+   `query.command.search`，再用候选的精确 ID/hash 和可选 `variant_id` 调用
+   `query.command.detail`；
    不导入任务级 helper，也不把 detail 内容复制成长驻指令目录。
 5. 多步骤工作流由 Agent 显式逐条调用；每一步只依据真实 Result 和独立 readback
    决定是否继续。
@@ -69,15 +70,21 @@ skill 只常驻两条发现指令：
 ```python
 search = client.query.command_search(intent, limit=3)
 candidate = search.payload["candidates"][0]
+detail_options = {}
+if candidate.get("variant_id"):
+    detail_options["variant_id"] = candidate["variant_id"]
 detail = client.query.command_detail(
     candidate["command_id"],
     candidate["contract_hash"],
+    **detail_options,
 ).payload
 ```
 
 执行前读取 `detail["purpose"]`（含 `non_purpose`）、`input_fields`/`result_fields`
 中的 nested `schema`、`errors`、`invocation` 和 `tutorial_references`。只有 search
-按自然语言匹配；detail 和 exact 执行必须保留同一 `command_id`/`contract_hash`。
+按自然语言匹配；detail 必须保留同一 `command_id`/`contract_hash` 和候选可选的
+`variant_id`。variant detail 以 `request_schema` 公开可执行请求；实际 exact 执行仍使用
+同一 `command_id`/`contract_hash`，不得把 `variant_id` 改造成第二指令或本地映射。
 完整 SDK/CLI 形式按需读取 `references/public-sdk-playbook.md`。
 
 复杂资产 HJSON 不从旧文档猜字段。领域明确支持时先调用
@@ -85,6 +92,36 @@ detail = client.query.command_detail(
 allowed intents、template 和 revision，再把修改后的 document 交给
 `client.content_graph.import_workspace(...)`。若 schema 查询 typed fail，则通过上述
 search/detail 确认该领域的当前入口或报告能力缺口，不回退 Python 业务实现。
+
+新增节点、组件、Actor 或同类结构时，先用 `query.command.search/detail` 找到当前
+领域的 exact candidate command，再在原生创建上下文中查询候选。候选最小 HJSON
+选择器只能是 `{name: ...}` 或 `{id: ...}`；已知更多字段时可作为 assertion
+补充；`candidate_id` 不是别名。不得复制完整搜索行、猜 class/spawner/factory 或把实例名、父级、graph、
+level、stage、placement 混入候选。服务端必须在同一上下文重枚举并调用同一个原生
+action/spawner/factory；具体日常流程按需读取
+`references/structured-hjson-editing.md`。
+
+当前最小候选 bootstrap 只常驻以下 exact command id，参数与返回字段仍必须读取对应
+`query.command.detail`，不得从 skill 猜测：
+
+- Blueprint 图表右键或 pin-drag：`blueprint.node.candidates`
+- Blueprint Add Component：`blueprint.component.candidates`
+- Level Place Actors：`world.actor.candidates`
+- Material Graph/Pin：`material.expression.candidates`
+- Niagara Stack Add Module：`niagara.module.candidates`
+- PCG Graph 背景右键：`pcg.node.candidates`
+- BehaviorTree 空白背景：`ai.behavior.candidates`
+- Animation Blueprint StateMachine/State：`animation.state_machine.candidates`
+  （对 future missing target 与同一 `class_settings` 分别查询 `animation_graph` 和
+  `state_machine_graph`；instance name/position/transition 留在 candidate 外）
+- Control Rig 默认图：`animation_rig_graph.candidates`
+- MetaSound/SoundCue：`audio.graph.candidates`（两者当前覆盖边界不同，写入前读取 T21 文档）
+- UMG WidgetTree：`umg.widget.candidates`（绑定同一 Widget Blueprint；只把
+  `supported: true` 的 `name/id` 写入 HJSON，两个 coverage flag 当前均为 false）
+
+其他未列出的领域继续通过 search/detail 找到各自的原生 candidate owner；不得把上述
+入口泛化为跨领域目录，也不得恢复
+`node_catalog_search`。
 
 ## 按需阅读
 
@@ -95,10 +132,16 @@ search/detail 确认该领域的当前入口或报告能力缺口，不回退 Py
 - 单文件/folder HJSON 导航、字段、特殊字符、编辑和验证：
   `references/structured-hjson-editing.md`
 - Niagara 制作与修复：`references/niagara-vfx-authoring.md`
+- Animation Blueprint StateMachine/State 原生候选、最小 HJSON 与 create-only 边界：
+  `docs/UeAgentInterface/active/t16_animation_blueprint_domain.md`
+- PCG Graph 原生候选、最小 HJSON 与持久化边界：
+  `docs/UeAgentInterface/active/t19_pcg_domain.md`
 - Control Rig、动画 IK 和 Shape Library：
   `references/control-rig-animation-authoring.md`
 - Audio/MetaSound/SoundCue 当前正式领域合同：
   `docs/UeAgentInterface/active/t21_audio_domain.md`
+- UMG WidgetTree candidate、最小 HJSON 与完整 Designer Palette DCR：
+  `docs/UeAgentInterface/active/t15_umg_widget_domain.md`
 - Sequence、LevelSequence 与 WidgetAnimation 当前正式领域合同：
   `docs/UeAgentInterface/active/t22_sequence_domain.md`
 - Animation Curve、Montage 与相关资产当前正式领域合同：
@@ -155,6 +198,9 @@ search/detail 确认该领域的当前入口或报告能力缺口，不回退 Py
   分离；enum/choice 使用结构化 selected value。
 - 蓝图等图资产的类属性、节点属性、节点图与连接应通过统一对象/属性/关系模型和
   独立投影组合，不能由 Python 或特定领域捷径重建。
+- 搜索结果只负责选择“创建什么”；HJSON stable key/selector 与领域 context 负责
+  “创建在哪里、实例叫什么、怎样连接或放置”。`name` 只在当前原生上下文唯一时
+  使用；`id` 是精确紧凑选择器。两者都不要求模型复制内部 revision 或实现身份。
 
 ## 输出
 

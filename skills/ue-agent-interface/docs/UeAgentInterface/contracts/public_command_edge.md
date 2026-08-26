@@ -65,10 +65,16 @@ that a write persisted or that independent readback matched.
 Command discovery is owned only by:
 
 - `query.command.search(intent, limit?, cursor?)`
-- `query.command.detail(command_id, contract_hash)`
+- `query.command.detail(command_id, contract_hash, variant_id?)`
 
 Search returns a bounded candidate set with exact command identities and
-contract hashes. The selected pair is passed unchanged to detail. There is no
+contract hashes. A candidate may additionally carry an exact executable
+`variant_id` when one command owns multiple policy/family request shapes. The
+selected command/hash pair and optional variant are passed unchanged to detail.
+Variant detail returns its exact purpose and complete top-level
+`request_schema`; a command-only candidate keeps the generic command detail
+contract. Variant identity selects discovery metadata and does not create a
+second executable command or replace the command contract hash. There is no
 public `reference.catalog_search`; target, field, node, component, Actor, and
 other content candidates remain with their applicable domain Query owner.
 

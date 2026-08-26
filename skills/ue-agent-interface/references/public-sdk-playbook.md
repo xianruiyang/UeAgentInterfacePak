@@ -44,19 +44,25 @@ with uai.connect("connection.toml") as client:
         limit=3,
     )
     candidate = candidates.payload["candidates"][0]
+    detail_options = {}
+    if candidate.get("variant_id"):
+        detail_options["variant_id"] = candidate["variant_id"]
     detail = client.query.command_detail(
         candidate["command_id"],
         candidate["contract_hash"],
+        **detail_options,
     )
 
     tutorial = detail.payload
-    # 读取 purpose/non_purpose、input_fields/result_fields 的 nested schema、
+    # variant 读取 request_schema；command-only 读取 input_fields/result_fields 的 nested schema；
     # errors、invocation 与 tutorial_references 后选择 named、generic 或 exact。
     result = client.query.calibration_read("runtime_probe", limit=2)
 ```
 
-只有 `query.command.search` 允许按意图匹配；detail 与执行必须保留精确
-`command_id`/`contract_hash`。默认动态调用为 `client.execute(command_id, params)`；
+只有 `query.command.search` 允许按意图匹配；detail 必须保留精确
+`command_id`/`contract_hash` 与候选可选的 `variant_id`。variant detail 返回完整顶层
+`request_schema`；实际执行仍使用候选的 command identity，不把 variant 建成第二入口。
+默认动态调用为 `client.execute(command_id, params)`；
 版本锁定调用为
 `client.execute_exact(command_id, params, contract_hash=contract_hash)`。
 `invocation.python_named` 由正式 namespace、function 与字段投影生成；复制调用形状时
@@ -87,7 +93,7 @@ TextureGraph mutation/settle 返回 `package-md5:*`。将成功 settle 的修订
 uai-cli --connection connection.toml exec query.command.search `
   --params-json '{"intent":"inspect the current editor without changing assets","limit":3}'
 uai-cli --connection connection.toml exec query.command.detail `
-  --params-json '{"command_id":"query.calibration.read","contract_hash":"sha256:<exact>"}'
+  --params-json '{"command_id":"editor.session","contract_hash":"sha256:<exact>","variant_id":"policy:world-context:set-current/v1"}'
 uai-cli --connection connection.toml exec query.calibration.read `
   --contract-hash sha256:<exact> `
   --params-json '{"category":"runtime_probe","limit":2}'

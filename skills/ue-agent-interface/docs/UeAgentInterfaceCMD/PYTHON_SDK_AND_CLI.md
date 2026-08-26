@@ -190,12 +190,16 @@ channels/keys；完整 structure replacement 是不同的显式语义。Localiza
 对应服务端 schema 决定。`expected_revision` 是写前必填并发条件，
 `authorization_id` 绑定本次公开写入。
 
-领域 candidate 返回值不是由 Python 翻译的通用 seed。调用方只按 owning domain 合同复制允许的
-projection；当前 Blueprint node/Component authoring 将选中的完整 `candidate` object 原样放进
-`uai.blueprint.edit/1`。服务端在首写前复用同一 candidate mechanics 校验 target、graph/SCS context、
-executable identity 与 binding revision，再展开 native node `node_type/node_class` 或 Component
-`name/class`。SDK 不重建这些字段，response-level `graph_revision`/`scs_revision` 也不替代 Import 所需的
-公开 content-graph `expected_revision`。
+领域 candidate 返回值不是由 Python 翻译的通用 seed。调用方只按 owning domain 合同把
+`candidate: {name: ...}` 或 `candidate: {id: ...}` 放进 HJSON；明确知道的 `class_path`、
+`asset_path`、factory 等字段可作为 assertion，但不要求复制完整搜索行。graph/pin、SCS
+parent、World/level、stage、placement 和稳定实例身份属于外层 context，不得混入 candidate。
+服务端在首写前从同一 UE 原生 owner 重枚举并唯一解析选择器，再调用同一
+action/spawner/factory。SDK 不重建 node class、Component class、asset factory 或 asset
+mapping；candidate query 返回的 revision 也不替代 Import 所需的公开 content-graph
+`expected_revision`。当前稳定入口包括 `blueprint.node.candidates`、
+`blueprint.component.candidates` 和 `world.actor.candidates`；具体参数与教程以
+`query.command.detail` 为准。
 
 三种 carrier 在 C++ source loader 中先收敛为同一个只读 resolved source。服务端分别
 保留 carrier/path/manifest/digest 形成的来源完整性指纹，以及由规范化 HJSON 文档形成的
@@ -279,10 +283,12 @@ coordination root 并返回非成功状态。`transport_disconnected` 本身不�
 ## Command discovery
 
 不知道 command 名称时，只在 `query.command.search` 这一步按意图搜索；它返回少量
-候选、匹配原因、精确 `command_id` 与 `contract_hash`。随后必须把候选身份原样交给
-`query.command.detail`，读取 `purpose`（含 `non_purpose`）、`input_fields` 与
-`result_fields` 的 nested `schema`、`errors`、named/generic/exact/CLI 调用模板和
-稳定教程引用。每条 command 至少返回以下两个发现入口：
+候选、匹配原因、精确 `command_id` 与 `contract_hash`。同一 command 存在多个
+policy/family 请求形状时，候选还会包含精确 `variant_id`。随后必须把候选身份原样
+交给 `query.command.detail`：command-only detail 读取 `input_fields`/`result_fields`
+的 nested `schema`；variant detail 还必须读取完整顶层 `request_schema`。两者都要读取
+`purpose`（含 `non_purpose`）、`errors`、named/generic/exact/CLI 调用模板和稳定教程引用。
+每条 command 至少返回以下两个发现入口：
 
 - `uai-docs:python-sdk-and-cli#command-discovery`：本节；
 - `uai-skill:public-sdk-playbook#command-discovery`：installed
@@ -303,20 +309,27 @@ with uai.connect("connection.toml") as client:
         limit=3,
     )
     candidate = candidates.payload["candidates"][0]
+    detail_options = {}
+    if candidate.get("variant_id"):
+        detail_options["variant_id"] = candidate["variant_id"]
     detail = client.query.command_detail(
         candidate["command_id"],
         candidate["contract_hash"],
+        **detail_options,
     )
 
     tutorial = detail.payload
-    # 按 tutorial["input_fields"] 的 nested schema 填充参数；
+    # variant 按 tutorial["request_schema"] 填充完整请求；
+    # command-only 按 tutorial["input_fields"] 的 nested schema 填充参数；
     # invocation.python_named 由正式生成方法与字段投影得出。
     result = client.query.calibration_read("runtime_probe", limit=2)
 ```
 
 需要动态调用时使用 `client.execute(command_id, params)`；需要锁定搜索返回的精确
 版本时使用 `client.execute_exact(command_id, params, contract_hash=contract_hash)`。
-搜索结果不得被前缀、别名或旧 helper 重写。
+搜索结果的 `command_id`、`contract_hash` 和可选 `variant_id` 不得被前缀、别名或旧
+helper 重写。`variant_id` 只选择 detail 中的可执行请求合同，实际执行仍调用候选的
+`command_id`。
 每条 command 的具体教程不复制进 SDK 文档或 skill；detail 的
 `tutorial_references` 指向稳定逻辑文档，字段与 hash 随活动 registry 即时返回。
 
@@ -326,7 +339,7 @@ CLI 走同一 Client、Protocol 和 Transport：
 uai-cli --connection connection.toml exec query.command.search `
   --params-json '{"intent":"inspect the current editor without changing assets","limit":3}'
 uai-cli --connection connection.toml exec query.command.detail `
-  --params-json '{"command_id":"query.calibration.read","contract_hash":"sha256:<exact>"}'
+  --params-json '{"command_id":"editor.session","contract_hash":"sha256:<exact>","variant_id":"policy:world-context:set-current/v1"}'
 uai-cli --connection connection.toml exec query.calibration.read `
   --contract-hash sha256:<exact> `
   --params-json '{"category":"runtime_probe","limit":2}'

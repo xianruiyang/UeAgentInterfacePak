@@ -176,8 +176,10 @@ action 设置请求 culture 后立即恢复先前 culture；terminal signal 的 
 ### Capture
 
 - image：`capture.image.execute` 只接受以下 15 个 exact policy；每个 policy 的 subject 与
-  参数合同由 active T44 catalog 和 `query.command.detail` 共同公开，客户端不得从旧 command
-  identity 或 Editor 状态推断 policy：
+  参数合同由 production policy descriptor 拥有。只有 descriptor 已提供完整 discovery
+  contract 的 policy 才会作为 `query.command.search` 候选公开；客户端必须把候选的
+  `variant_id` 原样交给 `query.command.detail`，并按返回的完整 `request_schema` 调用，
+  不得从旧 command identity、Editor 状态或其他 policy 推断字段：
 
   - `policy:image-capture:anim-blueprint/v1`
   - `policy:image-capture:anim-sequence/v1`
@@ -195,10 +197,16 @@ action 设置请求 culture 后立即恢复先前 culture；terminal signal 的 
   - `policy:image-capture:texture/v1`
   - `policy:image-capture:umg/v1`
 
-  两条 active viewport policy 的 subject 均为 `capture-subject:viewport:active`；资产与
+  当前首个纵向公开的 viewport variant 是 `policy:image-capture:viewport/v1`；
+  `policy:image-capture:transform-candidates/v1` 另以 actor subject 公开候选序列帧能力。
+  `policy:image-capture:viewport/v1` 与
+  `policy:image-capture:viewport-buffer/v1` 两条 active viewport policy 的 subject
+  均为 `capture-subject:viewport:active`；transform-candidates 使用 actor subject；资产与
   Actor policy 使用 `capture-subject:asset:<object-path>` 或
   `capture-subject:actor:<actor-name-or-label>`；每个 policy 的精确字段继续以正式
-  manifest 与 `query.command.detail` 为准。
+  manifest 与带 `variant_id` 的 `query.command.detail` 为准。尚未形成完整 discovery
+  contract 的 policy 仍可由既有已知消费者使用，但不属于自然语言发现已覆盖范围，
+  search 缺席时必须 fail closed，不能猜测。
 - submix media：`policy:media-recording:submix-wav/v1`，subject
   `media-source:audio-submix:master` 或显式 `USoundSubmix` object path
 - sound preview：`policy:media-recording:sound-preview-wav/v1`，subject
