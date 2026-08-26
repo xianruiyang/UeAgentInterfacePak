@@ -44,11 +44,28 @@ Apply completion may accept more information than Export displays. Missing gener
 
 ## 5. Script resolution
 
-`ResolveScript` is the only module and dynamic-input script resolver. It accepts an explicit mounted asset path or an exact catalog name, normalizes package paths to object paths, and validates Niagara script usage.
+`ResolveScript` remains the resolver for existing module assertions, dynamic
+inputs, and non-candidate internal references. New external Stack modules use
+the contextual candidate chain instead: `niagara.module.candidates` resolves
+the exact System/usage/usage-id/emitter Stack group and enumerates that group's
+native Add Module actions.
 
 Aliases that describe the same script must resolve to the same value. Conflicting aliases fail in preflight with `niagara_script_reference_conflict:*`. Unknown scripts fail with `niagara_script_not_found`. Missing dynamic-input references fail with `niagara_script_reference_missing`. These failures never become warning-and-skip mutations.
 
-Module selectors use dedicated fields such as `module_selector_script_asset_path`; they are not merged into dynamic-input script references.
+For native module creation, HJSON contains only `candidate: {name: ...}` or
+`candidate: {id: ...}` inside the target stage module entry. Stage identity,
+ordering, inputs, and operation remain outside `candidate`; the caller does not
+copy a script path or binding revision from search. The server re-enumerates the
+same native Stack action set in preflight and immediately before executing the
+selected `INiagaraStackItemGroupAddUtilities::ExecuteAddAction`. Both selectors
+are conjunctive when supplied together. Current creation support is explicitly
+limited to `asset_module`; scratch-pad, assignment/set-specific, and wizard
+actions remain visible in search but fail before mutation. Dynamic-input search
+and creation are a separate surface.
+
+Module selectors for existing entries use dedicated fields such as
+`module_selector_script_asset_path`; they are not merged into dynamic-input
+script references or candidate identity.
 
 ## 6. Mutation and rollback
 
@@ -60,7 +77,17 @@ Target and source paths must remain valid long package names under registered UE
 
 The same input is idempotent. If the named handle already exists, Apply reuses the handle, performs the requested matching-parent source synchronization, and repairs System integration instead of adding a duplicate. `replace` changes only the handle's parent-backed emitter instance; explicit owner properties, renderer patches, Event Handlers and stage patches in the same request are applied afterward and therefore have higher priority. Integration rebuilds System spawn/update emitter nodes, synchronizes the overview graph, recomputes emitter execution order, invalidates cached data and broadcasts the structural post-edit change before compilation. This step is required: `enabled=true` on the asset is insufficient when a runtime instance still reports the emitter as `Disabled` and never ticks.
 
-Stack module add, move, remove, Assignment creation/replacement, and dynamic-input replacement use the shared Niagara stage/module helper. Assignment creation uses Niagara's native `AddParameterModuleToStack`; target defaults come from `FNiagaraConstants::GetAttributeDefaultValue`, not values invented by the authoring provider. Replacing a dynamic input removes its owned nested value nodes before changing the link, preventing orphaned graph nodes. Clearing a dynamic input follows Niagara's native Reset semantics: it removes the module-input override pin after deleting owned value nodes, so the module script's UE-native default becomes active again instead of leaving an empty synthetic literal override.
+Native asset-module creation replays the exact contextual Add Module action.
+Existing module move/remove, Assignment creation/replacement, and dynamic-input
+replacement continue through the shared Niagara stage/module helper. Assignment
+creation uses Niagara's native `AddParameterModuleToStack`; target defaults come
+from `FNiagaraConstants::GetAttributeDefaultValue`, not values invented by the
+authoring provider. Replacing a dynamic input removes its owned nested value
+nodes before changing the link, preventing orphaned graph nodes. Clearing a
+dynamic input follows Niagara's native Reset semantics: it removes the
+module-input override pin after deleting owned value nodes, so the module
+script's UE-native default becomes active again instead of leaving an empty
+synthetic literal override.
 
 Asset operations capture an asset-level rollback object. Stack operations capture the owned Niagara graph and restore that graph on mutation, compile, verification, or save failure. The shared operation coordinator also captures the incoming dirty state of every package reported by a prepared state and restores it after the editor transaction is cancelled; a failed command therefore preserves both semantic content and the caller's original dirty state. Renderer rollback preserves the original UObject names and ordering so repeated failed transactions remain addressable by stable renderer identity. Existing-handle source refresh participates in the same graph, emitter-property, renderer and Event Handler rollback capture. A `replace` refresh also retains the previous instance until commit and restores it before graph and structure rollback if a later nested mutation, compile, verification or save phase fails. Emitter completion additionally records every handle created by the transaction and removes those handles in reverse order during rollback.
 
@@ -99,6 +126,29 @@ provider_extension: {
               input_name: "Module.Jitter Amount"
             }
           }
+        }
+      }
+    }
+  }
+}
+```
+
+新建原生资产模块时使用最小候选；查询需要的 usage/usage-id/emitter context 与
+创建位置都在候选外层：
+
+```hjson
+operation: update
+target: { asset_path: "/Game/VFX/NS_Example", asset_kind: system }
+provider_extension: {
+  stages: {
+    "system|SystemUpdateScript|<usage-guid>": {
+      target: {
+        usage: SystemUpdateScript
+        usage_id: "<usage-guid>"
+      }
+      modules: {
+        native_asset_module: {
+          candidate: { id: "candidate:..." }
         }
       }
     }
@@ -232,3 +282,6 @@ Additional command-level smoke gates cover:
 - `NiagaraFolderWorkflow`: System、Emitter、Script 六个 folder 命令的 `Export -> Apply -> Export` HJSON golden；
 - Export 前后 package dirty 状态与 semantic snapshot 不变；
 - published create/clone assets carry `RF_Public | RF_Standalone` and remain resolvable across commands.
+- contextual System Update module search leaves the package clean, accepts an
+  id-only candidate, replays the same native asset-module action, and survives
+  save/unload/reload with independent script and selected-version readback.

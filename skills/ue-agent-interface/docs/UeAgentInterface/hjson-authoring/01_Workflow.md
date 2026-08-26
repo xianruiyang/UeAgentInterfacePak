@@ -36,7 +36,7 @@ export/readback folder
 3. 只打开当前目标需要的 `llm_authoring` 文件；大型 `items/<id>/...` 按需读取。
 4. 只编辑 authoring 文件，不改 readback/debug/legacy。
 5. 新增节点、模块、组件、控件或输入来源前，先按 `00_DirectHjsonAuthoring.md` 调用对应领域的 exact candidate command 查询真实候选。
-6. 只复制候选合同返回的 executable `name`/path、`binding_revision` 与必要 context；显示 label、tooltip 和分类不作为执行身份。
+6. 候选只复制最小 `candidate.name` 或 `candidate.id`；原生 graph/pin、stage、parent、level 与 placement context 写在领域合同指定的外层。明确知道的更多字段只能作为 assertion；完整搜索行、内部 revision、label、tooltip 和分类不进入 HJSON。
 7. 对普通 input 值，只改 `value` 内部字段，不用 `operation` 表达普通改值。
 8. 对新增、删除、清空、替换、批量 patch 等非普通值编辑，才使用 `operation`。
 9. 运行 authoring hygiene lint。
@@ -49,7 +49,7 @@ export/readback folder
 优先顺序：
 
 1. 直接改 `llm_authoring` JSON。
-2. 用领域 candidate command 返回的 executable identity 与 `binding_revision` 构造该领域允许的最小 HJSON 片段。
+2. 用领域 candidate command 返回的 `name` 或紧凑 `id` 构造该领域允许的最小 HJSON 片段，并把创建 context 保留在候选外层。
 3. 用 Python 生成或修改 HJSON 文件，但仍让 JSON 明确表达最终业务意图。
 4. 只有 bootstrap、探针、迁移、schema 边界和故障恢复才使用原子命令。
 

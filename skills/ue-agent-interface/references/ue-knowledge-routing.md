@@ -53,7 +53,9 @@ Pak-owned 三个 UE/UAI skill 只按 Pak -> installed 单向同步。installed �
 ## 从教程到执行
 
 - 从教程提取目标状态、必要资产、约束、步骤依赖和验收方式，不直接复制为 UAI 参数。
-- 教程中的节点、模块、类和资产名通过 `node_catalog_search`、资产查询或当前 UE 读回确认。
+- 教程中的节点、模块和其他可创建内容先通过 `query.command.search/detail` 定位对应领域的
+  exact candidate command，再在真实创建上下文中查询；已有资产和对象通过正式内容/资产
+  查询或当前 UE 读回确认。不得恢复 `node_catalog_search` 作为全局目录。
 - 教程与当前引擎版本、插件能力或项目读回冲突时，以当前版本事实和项目读回为准。
 - 教程未覆盖 apply/readback 边界时，不猜 HJSON 字段；回到 authoring contract、实际导出和 readback。
 

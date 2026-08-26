@@ -74,9 +74,12 @@ export/readback folder package
 多数公开 seed 以两类字段表达主身份：
 
 - `path`：调用方已经知道资产、类、对象或 owner 路径时使用。
-- `name`：从当前领域 candidate command 返回的无路径候选或上下文可解析候选使用；同时保留该领域要求的 `binding_revision` 与 context。
+- `name` 或短 `id`：从当前领域 candidate command 返回、并能在同一原生创建上下文唯一解析的候选使用。
 
-领域合同也可以要求保留完整 candidate object。当前 Blueprint node/Component root authoring 就属于这种情况：完整 `candidate` 原样进入 HJSON，服务端写前校验并展开 native class/name 字段。不能为了套用 `path/name` 概括而在调用侧拆解或重建它。
+Blueprint node/Component 的 canonical 新建输入只保留 `candidate:{name}` 或
+`candidate:{id}`；graph/pin、SCS parent、实例身份与 placement 留在外层。服务端在写前
+从同一原生 owner 重枚举并恢复 action/class/asset override 等内部身份。其他尚未迁移的
+领域若当前合同仍要求完整 binding，只能视为明确兼容输入，不能类推为长期目标。
 
 字段是否可写只由当前 CommandSpec 或 folder contract 决定；folder authoring 不把历史 identity alias 自动迁移为新 target。旧结构拒绝和 deprecated 命令边界见 `hjson-authoring/06_LegacyMigration.md`。
 
@@ -166,7 +169,9 @@ UE Details、UObject 属性面板和资产设置面板可编辑字段统一走�
 1. 导出或读取固定 fixture。
 2. 读取导航文件，按需打开目标 `llm_authoring` 文件。
 3. 只编辑 authoring 文件，不改 readback/debug/legacy。
-4. 新增内容时调用对应领域 candidate command，只复制返回合同明确允许的 candidate projection；通常是 executable `name`/path、`binding_revision` 与必要 context，Blueprint node/Component 则是完整 candidate object。不从显示文本猜 identity。
+4. 新增内容时调用对应领域 candidate command；已迁移的领域只写
+   `candidate:{name}` 或 `candidate:{id}`，可选丰富字段只作 assertion，外层 context 不混入
+   candidate。尚未迁移的领域严格按当前合同处理并记录缺口，不从显示文本猜 identity。
 5. 运行 lint、validate 或 dry-run；没有 dedicated validate 时记录 coverage gap。
 6. apply。
 7. export/readback，比较语义结果。

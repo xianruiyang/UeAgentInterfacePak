@@ -17,15 +17,15 @@
 ## 2. 发现与取证
 
 1. 已知命令用法时直接调用。
-2. 不知道模块真实脚本路径时，先用 `niagara.module.candidates` 在目标资产、usage/stage 上下文中搜索 3-5 条候选；Dynamic Input 只使用当前 Niagara 合同明确提供的候选入口或真实 readback。
-3. 选定候选后保留 exact executable `name`、`binding_revision` 与返回的 usage/context；不要批量展开所有候选，也不要经 `query.content.search` 转换领域 identity。
+2. 新增模块时，先用 `niagara.module.candidates` 在目标 System、usage、usage-id 和可选 emitter-handle 上下文中搜索 3-5 条候选；Dynamic Input 只使用当前 Niagara 合同明确提供的候选入口或真实 readback。
+3. 选定候选后只保留 `candidate.id` 或在该上下文唯一的 `candidate.name`；usage/context 写在 stage 外层，不复制完整候选、脚本路径或 binding revision，也不要经 `query.content.search` 转换领域 identity。
 4. 用对应 `niagara*_export_folder` 获取目标资产当前 `index.hjson`。
 5. 需要 live Stack 细节时，再调用 `niagara_emitter_list_*` 或 `niagara_system_list_*`。
 6. 编辑 HJSON、Apply、重新 Export，对比稳定 identity 与语义结果。
 
-模块和 Dynamic Input 路径必须来自当前领域 candidate/readback。不要凭 UI 显示名、记忆或网络示例拼路径。
+新模块通过当前领域候选创建；已有模块和 Dynamic Input 的路径 assertion 必须来自当前 readback。不要凭 UI 显示名、记忆或网络示例拼路径。
 
-候选只提供目标 InputContract 允许的 executable identity 与 binding metadata。stage identity、module GUID、顺序、operation 和 input context 必须来自当前 workspace/readback，不由候选查询补全。Niagara input value source 和 Script graph function 没有可脱离 owner 的 standalone placement。
+候选只选择“创建什么”。stage identity、module stable key/GUID、顺序、operation 和 input context 必须来自当前 workspace/readback 或用户意图，不由候选查询补全。服务端在首写前重枚举同一原生 Stack action；当前只有 `asset_module` 可创建，其他 Add Module action 会明确拒绝。Niagara input value source 和 Script graph function 没有可脱离 owner 的 standalone placement。
 
 ## 3. Workspace
 
@@ -41,18 +41,18 @@ Saved/UeAssetFolders/NiagaraScript/<asset path>/index.hjson
 
 ## 4. Module 与 Dynamic Input
 
-以下例子在现有 Particle Update stage 中新增一个 Jitter Position module，并为它的 `Module.Jitter Amount` 设置 Dynamic Input。stage key 和 usage ID 必须保留 Export 结果；module key 可使用 Export 返回的合法稳定 GUID，也可使用由 Apply 在资产与 stage 上下文中补全为确定性 GUID 的稳定语义键。
+以下例子在现有 Particle Update stage 中新增一个已搜索到的原生资产 module，并为它的 `Module.Jitter Amount` 设置 Dynamic Input。stage key 和 usage ID 必须保留 Export 结果；module key 可使用 Export 返回的合法稳定 GUID，也可使用由 Apply 在资产与 stage 上下文中补全为确定性 GUID 的稳定语义键。
 
 ~~~hjson
 operation: update
 target: { asset_path: "/Game/VFX/NE_Example", asset_kind: emitter }
 provider_extension: {
   stages: {
-    "system|ParticleUpdateScript|<usage-guid>": {
+    "standalone|ParticleUpdateScript|<usage-guid>": {
       target: { usage: ParticleUpdateScript, usage_id: "<usage-guid>" }
       modules: {
-        "127bbec0-8e0b-4f38-b31f-a484942dd680": {
-          script_asset_path: "/Niagara/Modules/Update/Position/JitterPosition.JitterPosition"
+        "native-jitter-module": {
+          candidate: { id: "candidate:..." }
           module_index: 0
           dynamic_inputs: {
             "Module.Jitter Amount": {
@@ -70,7 +70,7 @@ provider_extension: {
 规则：
 
 - 已有 module 优先使用导出的 module GUID key。
-- 新 module 使用调用方提供的合法 GUID；Apply 创建后由读回确认实际 GUID。
+- 新 module 可使用调用方提供的合法 GUID 或稳定语义 key；Apply 创建后由读回确认实际 GUID。
 - `module_index` 是目标顺序；不写则保持/追加。
 - Dynamic Input key 与 `input_name` 应一致；Apply 会通过 Niagara schema 解析真实输入。
 - 删除 module：在该 module 对象上写 `remove: true`。
