@@ -192,7 +192,9 @@ channels/keys；完整 structure replacement 是不同的显式语义。Localiza
 
 领域 candidate 返回值不是由 Python 翻译的通用 seed。调用方只按 owning domain 合同把
 `candidate: {name: ...}` 或 `candidate: {id: ...}` 放进 HJSON；明确知道的 `class_path`、
-`asset_path`、factory 等字段可作为 assertion，但不要求复制完整搜索行。graph/pin、SCS
+`asset_path`、factory 等字段可作为 assertion，但不要求复制完整搜索行。Blueprint node
+候选公开的 function/event/variable/node 安全语义字段也可随 `name/id` 原样写回作精确
+assertion；不得从显示名合成，且内部 `native_action_signature` 不公开。graph/pin、SCS
 parent、World/level、stage、placement 和稳定实例身份属于外层 context，不得混入 candidate。
 服务端在首写前从同一 UE 原生 owner 重枚举并唯一解析选择器，再调用同一
 action/spawner/factory。SDK 不重建 node class、Component class、asset factory 或 asset

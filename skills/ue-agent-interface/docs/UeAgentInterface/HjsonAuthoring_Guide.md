@@ -78,8 +78,11 @@ export/readback folder package
 
 Blueprint node/Component 的 canonical 新建输入只保留 `candidate:{name}` 或
 `candidate:{id}`；graph/pin、SCS parent、实例身份与 placement 留在外层。服务端在写前
-从同一原生 owner 重枚举并恢复 action/class/asset override 等内部身份。其他尚未迁移的
-领域若当前合同仍要求完整 binding，只能视为明确兼容输入，不能类推为长期目标。
+从同一原生 owner 重枚举并恢复 action/class/asset override 等内部身份。Blueprint node
+候选还会公开 function/event/variable/node 的安全语义字段；模型明确知道时可把查询原值与
+`name/id` 一起写入作精确 assertion，但不得自行合成或用它替代选择器，内部
+`native_action_signature` 不公开。其他尚未迁移的领域若当前合同仍要求完整 binding，只能
+视为明确兼容输入，不能类推为长期目标。
 
 字段是否可写只由当前 CommandSpec 或 folder contract 决定；folder authoring 不把历史 identity alias 自动迁移为新 target。旧结构拒绝和 deprecated 命令边界见 `hjson-authoring/06_LegacyMigration.md`。
 

@@ -79,7 +79,11 @@ intent 一律不支持，不能从其他字段或领域类推。省略只在 `mi
 2. 候选最小 HJSON 形状是 `candidate: { name: ... }` 或
    `candidate: { id: ... }`。`name` 必须在同一上下文唯一；`id` 是精确选择器。
    模型明确知道并希望断言更多内容时，可补领域公开的 `class_path`、`asset_path`
-   等字段，但这些字段不能替代 `name/id`。不要写 `candidate_id` 别名。
+   等字段，但这些字段不能替代 `name/id`。Blueprint node 查询还可返回
+   function/event/variable/node 的安全语义字段；可把查询原值随 `name/id` 写回作精确
+   assertion，不得从本地化显示名合成。内部 `native_action_signature` 不公开。不要写
+   `candidate_id` 别名。候选分页时沿 `next_cursor` 读到 `has_more=false` 后才能声称全集
+   或唯一。
 3. stable map key、对象 selector 和外层 context 表达实例名、owner、父级、graph、
    level、stage、placement、连线和 layout；不得把这些字段混入 candidate。
 4. 服务端在首写前必须从同一原生 owner 重枚举候选，按 `name/id` 唯一解析，并
