@@ -32,6 +32,16 @@
 
 `level_apply_folder` 的 3D transform 使用固定合同：Actor 为 `subject: actor.transform` 与 `Fwrite/Fread/Fverify: ue_actor_world_transform`；SceneComponent attachment 为 `subject: component.relative_transform` 与 `Fwrite/Fread/Fverify: ue_scene_component_parent_relative_transform`。每个 SceneComponent 的 Export attachment 都显式包含 `parent_component`、`socket_name` 和完整 `transform`；detached/root component 用空字符串表达无 parent/socket，不得通过缺字段暗示。Apply source 一旦提供 attachment，就必须同时提供 `parent_component` 和 `socket_name`，部分 attachment patch 以 `level_component_attachment_patch_incomplete` 拒绝。`dimension` 必须是字符串 `3d`，`conversion_chain` 必须是非空字符串。旧的数字 `dimension`、`semantic_frame/write_frame/read_frame/verify_frame`、`units` 和数组形式 `conversion_chain` 不再接受。
 
+## Transform Owner 选择
+
+`space_contract` 只定义坐标系与转换责任，不取代领域的值 schema。模型先按正在编辑的 authoring surface 选择 owner：
+
+- 通用 UObject/FProperty descriptor 使用 [`uai.uobject_properties.v2`](02_CommonInputValue.md) 的 Transform value codec。
+- World HJSON 的 `actor_upsert.transform` 使用当前 `content_graph.authoring_schema` 返回的动态字段合同；命名轴别名、components object 和规范化范围以该 schema 为准。
+- Level Authoring 的 Actor/SceneComponent 持久化形态使用本页下方的 Level contract。
+
+这些合同可以表达相同的空间语义，但输入形态不能互换。领域动态 schema 是该领域的字段权威；本页只要求其写入、读回和验证坐标系闭合。
+
 ## 常见合同
 
 Graph 节点布局：
@@ -74,9 +84,9 @@ Component relative transform：
 }
 ```
 
-这是 Level Authoring 持久化层的 canonical 形态。上层 World HJSON adapter 可以按其
-动态 `content_graph.authoring_schema` 明确接受命名轴别名并规范化，但直接进入
-Level Authoring 的值不能把命名轴或裸数组当作 canonical。
+这是 Level Authoring 持久化层的 canonical 形态。上层 World HJSON adapter 使用其当前
+`content_graph.authoring_schema`；直接进入 Level Authoring 的值不能把 World adapter 接受的
+别名或其他领域形态当作 canonical。
 
 ## 禁止事项
 

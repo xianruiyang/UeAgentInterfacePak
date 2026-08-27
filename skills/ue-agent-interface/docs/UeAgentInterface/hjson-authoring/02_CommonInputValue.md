@@ -1,6 +1,6 @@
 # Common Input Value Contract
 
-本页定义结构化 HJSON authoring 的唯一通用值规则。通用 UObject/FProperty 属性必须使用 `uai.uobject_properties.v2`；领域结构可以保留业务字段，但其基础类型叶子应复用同一 canonical value。
+本页只定义 `uai.uobject_properties.v2` 的通用 UObject/FProperty descriptor 与 value codec。领域结构由各自的动态 authoring schema 定义字段形态；只有领域 schema 明确引用本合同的值，才复用这里的 canonical value，不能把本页的 Transform 容器形态套用到所有领域。
 
 ## UObject Descriptor
 
@@ -34,10 +34,10 @@
 | Rotator | `rotator` | `{components:[pitch,yaw,roll]}` |
 | Quat | `quat` | `{components:[x,y,z,w]}` |
 | Color | `color8/linear_color` | `{components:[r,g,b,a]}` |
-| Transform | `transform` | `{translation:[x,y,z],rotation:[pitch,yaw,roll],scale:[x,y,z]}` |
+| Transform（仅 `uai.uobject_properties.v2`） | `transform` | `{translation:[x,y,z],rotation:[pitch,yaw,roll],scale:[x,y,z]}` |
 | 引用 | `object_ref/soft_object_ref/class_ref/...` | `{path:"/Game/A.A"}` 或 `{path:null}` |
 
-固定分量必须长度完全一致；不接受 `{x,y,z}`、`{r,g,b,a}` 或 v1 裸数组。Transform 只接受 `translation/rotation/scale` 三个字段。
+在本页负责的 UObject/FProperty codec 中，固定分量必须长度完全一致；不接受 `{x,y,z}`、`{r,g,b,a}` 或 v1 裸数组，Transform 只接受 `translation/rotation/scale` 三个字段。World、Level 或其他领域的 Transform 必须先读取该领域的动态 schema 与 [Space Contract](04_SpaceContract.md)，不得从这一行推断其输入形态。
 
 硬 UObject 引用在导入时会先解析已加载的 `UObjectRedirector` 链，再对最终对象执行 allowed-class 校验。重定向链循环或最终对象类型不兼容会拒绝导入；不能把 redirector 自身的类型当作目标类型，也不能依赖重启 Editor 后重定向对象恰好未加载的状态。
 
@@ -78,7 +78,7 @@ enum descriptor 应携带 `candidates` 或 `candidates_ref`。LLM 只修改 `val
 
 ## Domain Values
 
-领域结构不需要伪装成 FProperty descriptor。例如 Niagara module input 可以保留 `source/default/link/dynamic_input`，Sequence key 可以保留 frame/interpolation。领域层负责业务结构，基础 scalar/vector/color/transform/reference payload 仍使用上面的 canonical 形态。
+领域结构不需要伪装成 FProperty descriptor。例如 Niagara module input 可以保留 `source/default/link/dynamic_input`，Sequence key 可以保留 frame/interpolation。领域层负责业务结构和字段形态；基础值只有在该领域 schema 明确引用本合同的对应 value codec 时才使用上面的 canonical 形态。特别是领域 Transform 可以由自己的 adapter 定义 components object、别名与规范化规则，不能与本页的 UObject Transform 互换。
 
 领域 source 示例：
 
