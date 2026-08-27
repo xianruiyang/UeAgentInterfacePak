@@ -4,6 +4,64 @@
 UeAgentInterface 服务。C++ 正式 command manifest 是公开能力真源；Python 只做
 网络转发、协议封装与无损结果还原。
 
+## Project-owned runner
+
+当前项目存在 `scripts/ue/InvokeUaiCommand.py` 时，先使用该 owned-runtime runner。它从
+项目配置和当前 Editor 生命周期取得真实端口与认证，在
+`<ProjectRoot>/tmp/uai_params/` 创建并清理临时 Connection；stdout、参数、TOML 和 receipt
+都不暴露 token。`runtime-descriptor` 只投影 transport、loopback port 与 token 的传递方式，
+不是业务调用必需的手工连接步骤。
+
+未知 command 时，仍只调用正式 `query.command.search/detail`，但由 runner 负责连接。先准备
+最小 params 文件：
+
+```json
+{"intent":"inspect the current editor without changing assets","limit":3}
+```
+
+```powershell
+py -3 scripts/ue/InvokeUaiCommand.py `
+  --mode execute `
+  --expected-command-id query.command.search `
+  --params-file tmp/uai_params/command-search.json
+```
+
+从返回的 `result.payload.candidates` 选中候选后，把精确 identity 写入第二个 params 文件：
+
+```json
+{"command_id":"query.calibration.read","contract_hash":"sha256:<exact>"}
+```
+
+```powershell
+py -3 scripts/ue/InvokeUaiCommand.py `
+  --mode execute `
+  --expected-command-id query.command.detail `
+  --params-file tmp/uai_params/command-detail.json
+```
+
+若 command identity 已知，可省去手工 detail params，由 runner 直接读取 live contract：
+
+```powershell
+py -3 scripts/ue/InvokeUaiCommand.py `
+  --mode detail `
+  --expected-command-id query.calibration.read
+```
+
+真正执行仍是一条 exact public command。只读命令不加写授权；写命令必须显式增加
+`--allow-side-effects`：
+
+```powershell
+py -3 scripts/ue/InvokeUaiCommand.py `
+  --mode execute `
+  --expected-command-id query.calibration.read `
+  --params-file tmp/uai_params/runtime-probe.json
+```
+
+runner 输出的 `detail` 是本次 live contract，`result` 是原 UAI Result 的无损信封。调用方仍须
+检查 `result.ok/error` 并做独立 readback；runner 不决定 candidate、不补领域参数、不自动重试，
+也不能把单个任务流程藏进脚本。项目 runner 不存在时，才使用下述 Connection TOML + SDK 或
+skill 自带 CLI 路径。
+
 ## Python
 
 调用方只导入一个包，并用一行连接配置创建 Client：

@@ -10,7 +10,8 @@ command manifest、生成的 Python binding、统一 Result 协议和 Connection
 
 ## 必须遵守的边界
 
-1. 普通调用只使用 `import uai` 和 `uai.connect(<connection.toml>)`。
+1. 当前项目存在正式 owned-runtime runner 时优先使用该 runner；否则普通调用只使用
+   `import uai` 和 `uai.connect(<connection.toml>)`。两条路径都只能转发公开 UAI command。
 2. 每个 `ue.<namespace>.<command>(...)` 只转发一条同名真实 command；Python
    不实现 HJSON、Planning、State、Verification、领域规则、业务默认值或隐藏重试。
 3. 命名方法、`Client.execute()` 与 CLI 必须共用同一个 Client、Protocol 和
@@ -51,7 +52,9 @@ command manifest、生成的 Python binding、统一 Result 协议和 Connection
     `runtimeLogs/`、`reports/`，也不把运行产物写进 skill 目录。
 13. 为任务、回归、实验或一次性输出创建、迁移或清理 UE package 前，读取
     [Content workspace lifecycle](docs/UeAgentInterface/contracts/content_workspace_lifecycle.md)。
-    Plugin 正式文档是事实 owner，本副本只负责路由；路径本身不构成清理授权。
+    Plugin 正式 owner 是
+    `<ProjectRoot>/Plugins/UeAgentInterface/docs/contracts/content_workspace_lifecycle.md`；
+    上述链接只是 Pak/installed 同步镜像，路径本身不构成清理授权。
 
 ## 入口定位
 
@@ -63,6 +66,29 @@ command manifest、生成的 Python binding、统一 Result 协议和 Connection
 - 找不到开发入口时，先确认安装路径；确认不可用后才使用
   `<SkillDir>/tools/uai-cli.exe`，且仍须提供 Connection TOML。
 - 不使用项目旧 `dist` 产物、PATH 中来源不明的裸命令或直接 HTTP 作为 fallback。
+
+## 当前项目固定 bootstrap
+
+若 `<ProjectRoot>/scripts/ue/InvokeUaiCommand.py` 存在，优先把它作为当前项目 owned-runtime
+的公开单指令 runner；不要先照静态 Connection 示例猜端口、读取 AuthToken 或手工设置
+`UAI_AUTH_TOKEN`。runner 从项目拥有的 Editor 生命周期读取实际连接，创建并清理临时
+Connection，只经公开 SDK 执行 search/detail 或转发一条 exact command；它不拥有 UE 业务、
+领域参数、HJSON、重试或验收。
+
+`--mode runtime-descriptor` 只在需要确认当前 transport 时使用，返回非敏感 endpoint 投影，
+不是每条命令的前置。未知 command 时，先把自然语言 intent 写入
+`<ProjectRoot>/tmp/uai_params/`，通过 runner exact 执行 `query.command.search`；再把选中候选的
+`command_id`、`contract_hash` 和可选 `variant_id` exact 交给 `query.command.detail`。已知 command
+可直接用 runner `--mode detail` 读取 live contract；执行时用 `--mode execute --params-file ...`，
+写命令还必须显式提供 `--allow-side-effects`。精确命令行和结果信封按需读取
+`references/public-sdk-playbook.md#project-owned-runner`。只有该 runner 不存在时，才按下节定位
+Connection 并直接使用 `import uai` 或 skill 自带 CLI。
+
+所有长运行 command 共用同一固定生命周期理解：`accepted` 只表示 operation 已登记；调用方以
+原样 operation ref 和最新 generation 执行 `operation.resume`。typed signal 表明 `entered`、
+`ready` 或 `active` 时，session 可以处于可使用但尚未 terminal 的状态；任务结束后再按 exact
+detail 的 cancel/resume-safe-boundary/terminal/release 合同收敛。不得只轮询 accepted，也不得把
+running 冒充完成。
 
 ## 指令发现 bootstrap
 
