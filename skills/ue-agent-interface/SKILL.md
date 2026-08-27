@@ -46,8 +46,9 @@ command manifest、生成的 Python binding、统一 Result 协议和 Connection
     CRUD、readback、probe 和 screenshot 复用主 Editor。
 11. 只读 source/reference 可访问正式允许的 mount；创建、覆盖、移动、删除目标
     只允许服务端契约认可的路径，不为绕过校验改写目标。
-12. 临时参数与 HJSON 写入 `<UserWorkDir>/tmp/uai_params/`，程序日志和 report
-    写入 `<UserWorkDir>/runtimeLogs/`，不写进 skill 目录。
+12. 临时参数与 HJSON 写入 `<ProjectRoot>/tmp/uai_params/`；正式 Runner 的 receipt、日志和
+    artifact 使用其调用方传入的 task-specific `<ProjectRoot>/tmp/<run-id>/`。不得自行恢复已退出的
+    `runtimeLogs/`、`reports/`，也不把运行产物写进 skill 目录。
 13. 为任务、回归、实验或一次性输出创建、迁移或清理 UE package 前，读取
     [Content workspace lifecycle](docs/UeAgentInterface/contracts/content_workspace_lifecycle.md)。
     Plugin 正式文档是事实 owner，本副本只负责路由；路径本身不构成清理授权。
@@ -123,6 +124,13 @@ action/spawner/factory；具体日常流程按需读取
 入口泛化为跨领域目录，也不得恢复
 `node_catalog_search`。
 
+暂停式 PIE 调试先对 `editor.session` 查询 exact runtime-debug policy，再对
+`runtime.scenario.execute` 查询 bounded variant。start 返回 accepted 只表示 operation 已登记；必须用
+`operation.resume` 推进到 active/terminal。每段 scenario 都使用最近 active/terminal signal 的
+`session_ref`、`pause_epoch` 和 `workspace_revision`，终态消费刷新后的同一路径 Current HJSON 与可选
+artifact 后 release operation；不得复用上段 revision，也不得用 dormant `world.*` 或 OS 输入补流程。
+具体 schema、当前 step/camera 覆盖和失败语义按需读取长任务合同，不复制到 skill。
+
 ## 按需阅读
 
 - Python SDK、Connection TOML、CLI、owned Editor startup/safe-exit、缺失能力和写后读回：
@@ -152,7 +160,7 @@ action/spawner/factory；具体日常流程按需读取
 - 当前 Python/CLI 行为：`docs/UeAgentInterfaceCMD/PYTHON_SDK_AND_CLI.md`
 - 102 条 typed CRUD、目标/字段解析、revision、C8D/C9 与旧写入口终态：
   `docs/UeAgentInterface/contracts/simple_authoring_typed_crud.md`
-- 长任务、Editor session、Capture、operation lifecycle、safe-exit 与 artifact readback：
+- 长任务、Editor session、暂停式 PIE scenario、Capture、operation lifecycle、safe-exit 与 artifact readback：
   `docs/UeAgentInterface/contracts/long_running_session_public_commands.md`
 - AssetDurable journal 检查、无重放恢复与状态语义：
   `docs/UeAgentInterface/contracts/asset_durable_maintenance.md`

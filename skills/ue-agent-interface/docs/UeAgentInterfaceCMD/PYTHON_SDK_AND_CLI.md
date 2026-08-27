@@ -257,7 +257,7 @@ probe PID 等于本次 launch PID，`uai.editor_startup_lifecycle_receipt.v1` �
 pwsh -NoProfile -File scripts/ue/StartUaiEditorLifecycle.ps1 `
   -UERoot <UE-install-root> `
   -ProjectPath <project.uproject> `
-  -ReceiptPath runtimeLogs/<task>/editor-startup.json
+  -ReceiptPath tmp/<run-id>/editor-startup.json
 ```
 
 `InvokeUaiCommand.py --mode runtime-descriptor` 仅向该生命周期入口投影 transport、loopback port 和 token

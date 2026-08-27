@@ -58,9 +58,9 @@ Component relative transform：
 ```json
 {
   "relative_transform": {
-    "translation": { "x": 0, "y": 0, "z": 120 },
-    "rotation": { "pitch": 0, "yaw": 90, "roll": 0 },
-    "scale": { "x": 1, "y": 1, "z": 1 },
+    "translation": { "components": [0, 0, 120] },
+    "rotation": { "components": [0, 90, 0] },
+    "scale": { "components": [1, 1, 1] },
     "space_contract": {
       "subject": "StaticMeshComponent Mesh",
       "dimension": "3d",
@@ -73,6 +73,10 @@ Component relative transform：
   }
 }
 ```
+
+这是 Level Authoring 持久化层的 canonical 形态。上层 World HJSON adapter 可以按其
+动态 `content_graph.authoring_schema` 明确接受命名轴别名并规范化，但直接进入
+Level Authoring 的值不能把命名轴或裸数组当作 canonical。
 
 ## 禁止事项
 

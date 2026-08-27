@@ -6,12 +6,13 @@
 
 ## 统一生命周期
 
-六条 start command 是：
+七条 start command 是：
 
 | command | Python 方法 | 必填参数 |
 |---|---|---|
 | `job.compile_build` | `client.job.compile_build(...)` | `family_id`、`subject_ref`、`policy_id`、`parameters` |
 | `editor.session` | `client.editor.session(...)` | `family_id`、`subject_ref`、`policy_id`、`parameters` |
+| `runtime.scenario.execute` | `client.runtime.scenario_execute(...)` | `subject_ref`、`policy_id`、`parameters` |
 | `capture.image.execute` | `client.capture.image_execute(...)` | `subject_ref`、`policy_id`、`parameters` |
 | `capture.media.execute` | `client.capture.media_execute(...)` | `subject_ref`、`policy_id`、`parameters` |
 | `capture.render.execute` | `client.capture.render_execute(...)` | `subject_ref`、`policy_id`、`parameters` |
@@ -78,6 +79,7 @@ terminal report 使用 `uai.localization.owned_tool_report.v1`：compile 提供
 
 - `asset_editor` + `policy:asset-editor:open/v1`
 - `runtime_preview` + `policy:runtime-session:pie/v1`
+- `runtime_preview` + `policy:runtime-session:pie-debug/v1`
 - `runtime_preview` + `policy:runtime-session:culture-preview/v1`
 - `world_context` + `policy:world-context:set-current/v1`
 - `world_context` + `policy:world-context:create-blank/v1`
@@ -86,6 +88,81 @@ terminal report 使用 `uai.localization.owned_tool_report.v1`：compile 提供
 - `modeling_tool` + `policy:modeling-tool:invoke-action/v1`
 - `voxel_grid` + `policy:voxel-session:apply/v1`
 - `host_lifecycle` + `policy:host-lifecycle:prepare-safe-exit/v1`
+
+The PIE runtime-preview variant requires subject
+`runtime-subject:pie:<non-negative instance>` and an empty `parameters` object.
+For the first in-process PIE instance, use `runtime-subject:pie:0`. Resume the
+returned operation until the session is running; query only the explicit
+`runtime_instance` / PIE context. To stop, cancel the operation, resume it until
+terminal, read its receipt, and release it. A stop request alone is not a
+terminal result.
+
+`policy:runtime-session:pie-debug/v1` 是面向非实时 LLM 调试的 run-to-pause
+variant。subject 同样使用 `runtime-subject:pie:<non-negative instance>`，参数只接受
+`local_player_index`。它创建不显示、不激活、不抢焦点的自有 PIE 窗口；只有在目标 PIE
+World、LocalPlayer 和玩家视角均唯一解析，游戏已经暂停，并成功覆盖发布当前 workspace 后，
+session 才报告 `phase=active`。当前 workspace 固定为
+`Saved/UeAgentInterface/RuntimeDebug/PIE_<instance>/Current`；同一 PIE session 每次刷新只覆盖
+`current.hjson` 与 owner 标记，不累积按 revision 命名的副本。快照同时以结构化 identity/pose 目录区分
+场景内 CameraActor、LocalPlayer 的 evaluated camera 和最终 PIE output surface。下述 bounded scenario
+可以在事件时间点选择其中一类采集；这些 observation 不授权直接修改 Current HJSON 或现有相机。
+
+### Bounded PIE Runtime Scenario
+
+`runtime.scenario.execute` 只接受 `policy:runtime-scenario:bounded/v1`，subject 必须原样使用
+上述 active signal 返回的 `runtime-session:pie-debug:<instance>:<guid>`。参数必须携带最新
+`expected_pause_epoch`、`expected_workspace_revision`、三个有界 limit
+（`wall_seconds`、`game_seconds`、`frame_count`）和按 `at_seconds` 非递减排列的 `steps`。
+任何 identity 或 revision 过期都会在恢复 PIE 前失败。
+
+当前可执行 step 只有：
+
+- `wait`：只声明 `type` 与 `at_seconds`；
+- `input_key`：声明 UE `key`、`pressed|released|repeat|axis` 和可选 `amount`；
+- `input_action`：声明精确 `UInputAction` 对象路径 `action_ref`，以及与资产 ValueType 匹配的
+  `bool`、一维数值、二维数值数组或三维数值数组 `value`；
+- `actor_transform`：使用 workspace 中的 `actor_ref`，并显式声明
+  `ue_world`、三维、厘米和 `pitch_yaw_roll_degrees`，location/rotation/scale 至少提供一项；
+- `capture`：`format` 只接受 `png`，`source` 明确选择 `pie_output_surface`、
+  `pie_player_camera` 或 `scene_camera`，同一 scenario 最多一项。
+
+`input_key` 通过 LocalPlayer viewport 的 simulated input 路径注入。`input_action` 则解析同一
+LocalPlayer 的 Enhanced Input subsystem，要求目标 Action 在开始时为零，并只用 operation 自己
+逐帧重复的 one-shot sample；它不占用或清除 action-keyed continuous injection，也不改 mapping
+context。非零 sample 会保持到同一 action 的后续 sample；精确零值停止该 action。不同 action
+可以在同一 `at_seconds` 形成同时组合，按时间排列可形成顺序组合；非零到零的时间差表达长按、
+短按或有界摇杆/视角输入，多条中间 sample 表达轻推和模拟轴曲线。同一 action 在同一时刻的
+重复 sample 会被拒绝，值类型与资产不匹配也会在恢复 PIE 前失败。
+
+两种输入路径都不调用操作系统键鼠、不移动系统光标、不切换前台窗口，也不依赖用户当前焦点。
+所有成功、失败、超时和取消终态都会先停止 operation-scoped 重注入；`input_key` 发送配对 release
+或 axis zero，`input_action` 必须在有界屏障内实际观察到曾经的非零值回到零值。无法证明释放时
+返回 `state_unknown`，不得清空用户 mapping、刷新全局按键或重放流程。
+
+`pie_output_surface` 在对应事件点重解同一 PIE session、World、LocalPlayer、GameViewport 与最终
+surface identity，直接读取用户在该 PIE 输出面会看到的像素；它没有移动语义。`pie_player_camera`
+读取目标 LocalPlayer 的 `PlayerCameraManager` evaluated POV，不接受 pose/FOV override；若需改变玩家
+视点，只能让同一 scenario 的正常 PIE 逻辑或 `input_action` 先改变它。
+
+`scene_camera` 有两种互斥选择：提供 workspace 目录中的 exact `camera_ref` 时，可选
+`view_transform` 的 location/rotation 任一项及 `fov_degrees`，它们只作用于离屏观察副本；不提供
+`camera_ref` 时必须给出完整 location、rotation 与 `1..179` 的 FOV，创建 operation-owned 临时视角。
+`view_transform` 显式使用 `frame=ue_world`、`dimension=3`、`unit=centimeter` 和
+`rotation_format=pitch_yaw_roll_degrees`。两种路径都不移动、切换或保存现有场景相机，也不修改玩家
+view target。
+
+三类采集都不捕获 Level Editor viewport，不激活窗口，也不依赖前台焦点。图像与
+`capture.image.execute` 共用唯一 Capture image artifact owner，并在 PNG 发布后通过独立 readback
+oracle 验证。terminal signal 仅在验证成功时返回 `artifact_ref`、`capture_source_ref` 与
+`capture_evidence_id`；source identity 会区分 output surface、evaluated player camera、exact scene
+camera 或 operation-owned transient scene camera。读图、发布或读回失败会使 scenario 失败，不能以
+已经重新暂停和刷新 workspace 冒充截图成功。
+
+scenario 从已验证暂停屏障开始，短暂恢复同一 PIE，执行到完成、失败、超时或取消后立即停止
+dispatch、释放输入、重新暂停并覆盖刷新同一 current workspace；存在 capture 时，只有完成该
+暂停与 workspace 刷新后才提交图像 artifact。terminal typed signal 返回新的 `pause_epoch`、
+`workspace_revision` 与 `workspace_path`；调用方消费后必须
+`operation.release`。需要下一段流程时，必须使用这次刷新后的 revision，不能复用上一次计划。
 
 World-context policies use subject `world:/Game/...` and never infer a map from
 the current selection. `set-current/v1` opens one existing map and accepts only
@@ -120,12 +197,11 @@ mesh 与可选 exact-cover collision，并在 C8D prepare/enlist/persist/verify/
 或窗口。旧 sidecar 仅在 component 不存在时允许导入一次，随后移动到可恢复 tombstone，不再参与
 active read 或 write。
 
-调用方从 session/apply readback 取得 actor path 和 revision，再用 `world.actor_components`
-确认唯一 `DynamicMeshComponent` 与 authoring-state component，并用
-`world.property(..., property_path="Bounds")` 独立读回非零几何边界。对
-`UPrimitiveComponent`，`Bounds` 是 WorldRead 提供的通用计算属性，返回 origin、extent 与
-sphere radius；它不依赖 session 自报成功。持久完成则以 apply 返回的 durability receipt 与 C9
-readback 为准，不以当前内存 Actor 或 package dirty 标志代替。
+调用方从 session/apply readback 取得 actor path 和 revision；持久化 Actor 与 Component
+结构通过 World `content_graph.items` 读取，持久完成以 apply 返回的 durability receipt 与 C9
+readback 为准，不以当前内存 Actor 或 package dirty 标志代替。通用 PIE/运行时 Bounds
+读取尚未形成产品合同，不得用已休眠的 `world.property` 或其他静态 HJSON 字段冒充；若后续需要，
+应单独设计运行时状态查询与生命周期。
 
 #### Safe Exit
 
@@ -141,7 +217,7 @@ python -X utf8 scripts/ue/SafeExitLifecycle.py `
   --project D:/Project/Project.uproject `
   --connection D:/Project/connection.toml `
   --editor-pid <exact-run-editor-pid> `
-  --output D:/Project/runtimeLogs/safe-exit-terminal.json `
+  --output D:/Project/tmp/<run-id>/safe-exit-terminal.json `
   --mode reject
 ```
 

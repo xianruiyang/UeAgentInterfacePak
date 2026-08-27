@@ -117,12 +117,21 @@ intent 一律不支持，不能从其他字段或领域类推。省略只在 `mi
   operation: upsert
   candidate: { id: "candidate:..." }
   transform: {
-    location: { x: 0, y: 0, z: 50 }
-    rotation: { pitch: 0, yaw: 0, roll: 0 }
-    scale: { x: 1, y: 1, z: 1 }
+    translation: { components: [0, 0, 50] }
+    rotation: { components: [0, 0, 0] }
+    scale: { components: [1, 1, 1] }
   }
 }
 ```
+
+World Actor `transform` 不是 skill 常驻的第二字段表；每次以目标当前返回的
+`content_graph.authoring_schema.fields` 为准。当前 canonical 是上述
+`components[3]`，且默认模板省略 transform；省略表示保留。若动态合同列出
+`accepted_named_axes`，可以使用 `location:{x,y,z}`、
+`rotation:{pitch,yaw,roll}`、`scale:{x,y,z}` 兼容输入。不得使用裸数组，也不得让
+`location + translation` 或 `components + named axes` 同时决定同一字段。通用 UObject
+property 的 `value_kind:transform` 是另一 owner 的合同，不能据此改写 World Actor
+transform。
 
 对应查询入口是 `blueprint.node.candidates`、
 `blueprint.component.candidates`、`world.actor.candidates`。只把这些 ID 当作发现

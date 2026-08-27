@@ -149,7 +149,7 @@ readback，再把同一绑定原样交给 reconcile。runner 不读取 journal �
 python scripts/ue/ReconcileAssetDurableJournal.py `
   --journal-id <32-hex-journal-id> `
   --verification-id <caller-owned-verification-id> `
-  --receipt runtimeLogs/<task>/asset-durable-reconciliation.json
+  --receipt tmp/<run-id>/asset-durable-reconciliation.json
 ```
 
 命令的实际输入、结果、错误和 exact binding 必须先通过 `query.command.search/detail`
@@ -166,7 +166,7 @@ python scripts/ue/ReconcileAssetDurableJournal.py `
 pwsh -NoProfile -File scripts/ue/StartUaiEditorLifecycle.ps1 `
   -UERoot <UE-install-root> `
   -ProjectPath <project.uproject> `
-  -ReceiptPath runtimeLogs/<task>/editor-startup.json
+  -ReceiptPath tmp/<run-id>/editor-startup.json
 ```
 
 该入口让 `UeLifecycleHost.psm1` 持有 PID、start-time、executable、listener 与 exact cleanup，让

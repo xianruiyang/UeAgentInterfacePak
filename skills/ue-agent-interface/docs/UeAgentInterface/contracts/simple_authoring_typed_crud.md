@@ -139,20 +139,21 @@ the resolved carrier, while its sequence covers the transform, geometry and
 topology, UV/normal/material state, material slots and supported collision
 state that can change a Modeling result.
 
-`world.object_transform.read` delegates to that same owner for these two
-carrier types. A caller copies the returned revision object unchanged into the
-matching Modeling request; the SDK, fixture and command handler do not rebuild
-or translate it. The service resolves the carrier and compares every revision
-field before baseline attachment or mutation. A guessed or stale target or
-operand revision fails closed. Element `selection` contains only
+A StaticMesh content-graph read exposes that revision as its top-level
+`revision`; a selected World HJSON `ADynamicMeshActor` item exposes it as
+`carrier_revision`. A caller copies the returned revision object unchanged into
+the matching Modeling request; the SDK, fixture and command handler do not
+rebuild or translate it. The service resolves the carrier and compares every
+revision field before baseline attachment or mutation. A guessed or stale
+target or operand revision fails closed. Element `selection` contains only
 `element_kind` and `element_ids`; it has no second mesh revision, and
 `mesh.topology.edges.weld` has no separate top-level revision field.
 
-After a successful write, the caller invokes `world.object_transform.read`
-again to obtain the new current revision and independently inspect the
-carrier. The pre-write revision is never copied into post-write state. Other
-Actor, Component, Graph and Viewport targets retain their existing revision
-owners and are not interpreted as Modeling carriers.
+After a successful write, the caller reads the same content-graph carrier again
+to obtain its new current revision and independently inspect it. The pre-write
+revision is never copied into post-write state. Other Actor, Component, Graph
+and Viewport targets retain their existing revision owners and are not
+interpreted as Modeling carriers.
 
 ## Persistence ownership
 

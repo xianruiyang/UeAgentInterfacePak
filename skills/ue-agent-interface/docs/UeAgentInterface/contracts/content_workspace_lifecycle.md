@@ -19,7 +19,7 @@ user/unknown protected by default.
 | Active task content | `/Game/UAI/Tasks/<task_key>/**` while Agent-owned work has not been accepted | The current task contract and its receipts. Retain until the task is accepted, abandoned with evidence preserved, or reclassified. | Move through Unreal package semantics to the user's chosen destination, reclassify to a registered regression fixture, or remove only the exact task-owned packages after dirty/reference/recovery checks. |
 | Long-term regression fixture | `/Game/UAI/Regression/<fixture_key>/**` | The formal test source or runner that names the exact package and reconstruction/acceptance oracle. Retain while that consumer remains active. | Retire or migrate the consuming test first, prove no remaining package consumers, then remove through the destructive-content contract and read back absence. |
 | Reconstructable experiment | `/Game/UAI/Experiments/<capability_key>/<run_key>/**` | The exact experiment producer and a reproducible input/runner receipt. Retain only while it changes an active decision or reproduces an unresolved defect. | Extract the minimum durable evidence outside Content, confirm reconstruction inputs, then remove exact self-owned packages and read back absence. |
-| One-time package output | `/Game/UAI/Transient/<run_key>/**` | The current run receipt. It must not acquire downstream consumers. If a filesystem artifact is sufficient, use `tmp/` or `runtimeLogs/` instead of Content. | Clean within the same run after the result is observed. A failed or uncertain cleanup is recorded as an unresolved exact package; it is never retried blindly or treated as absent. |
+| One-time package output | `/Game/UAI/Transient/<run_key>/**` | The current run receipt. It must not acquire downstream consumers. If a filesystem artifact is sufficient, use task-specific `tmp/<run-id>/` instead of Content. | Clean within the same run after the result is observed. A failed or uncertain cleanup is recorded as an unresolved exact package; it is never retried blindly or treated as absent. |
 
 `task_key`, `fixture_key`, `capability_key`, and `run_key` are
 UE-valid stable path segments. The task/result receipt keeps the mapping to the
@@ -47,8 +47,9 @@ Acceptance has only three durable outcomes:
 - a long-term regression fixture with a real formal test consumer;
 - a task result that keeps no UE package after exact cleanup.
 
-Representative evidence may be retained in `runtimeLogs/`; it does not require
-retaining every generated package.
+Representative evidence may be retained in task-specific `tmp/<run-id>/` while its active
+task or result still consumes it; this does not require retaining every generated package or
+recreating the retired `runtimeLogs/` and `reports/` roots.
 
 ## Cleanup and migration gates
 

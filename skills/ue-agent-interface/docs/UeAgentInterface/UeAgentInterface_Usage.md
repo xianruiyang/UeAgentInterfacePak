@@ -66,8 +66,9 @@ uai-cli --connection connection.toml exec project.summary
 uai-cli --connection connection.toml exec reference.asset_read --params-file params.json
 ```
 
-复杂参数写入 `<UserWorkDir>/tmp/uai_params/`；report 和程序日志写入
-`<UserWorkDir>/runtimeLogs/`。CLI 不提供隐藏的批处理语义、业务默认值或兼容 route。
+复杂参数写入 `<UserWorkDir>/tmp/uai_params/`；report、程序日志和 runner receipt 写入
+任务专属 `<UserWorkDir>/tmp/<run-id>/`。不得重新创建已废弃的 `runtimeLogs/` 或 `reports/`；
+CLI 不提供隐藏的批处理语义、业务默认值或兼容 route。
 
 ## 查询、修改与读回
 
