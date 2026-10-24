@@ -9,7 +9,7 @@ description: 项目本地 Unreal Engine 5.7 知识库 skill，用于需要版本
 
 不要假设此 skill 已安装到 Codex。使用时从项目路径显式定位 manifest。
 
-不要直接调用 PATH 中的 `kb`、registry alias 或源码 checkout 中的 Debug build。此 skill 只声明 UE 知识库的位置、语言和查询约束；kbCli 运行时入口必须交给 `kbcli-knowledge-base` skill 解析。若当前上下文未加载该 skill，先打开 `C:/Users/gzxt/.codex/skills/kbcli-knowledge-base/SKILL.md`，按其“运行时”章节通过 `scripts/resolve-kbcli.ps1` 得到 `$KbExe`、`$VectorExe` 和 `$ModelRegistry`。
+不要直接调用 PATH 中的 `kb`、registry alias 或源码 checkout 中的 Debug build。此 skill 只声明 UE 知识库的位置、语言和查询约束；kbCli 运行时入口必须交给 `kbcli-knowledge-base` skill 解析。若当前上下文未加载该 skill，从当前 skill 清单或 Pak 的 `skills/kbcli-knowledge-base/SKILL.md` 定位并读取，按其“运行时”章节通过 `scripts/resolve-kbcli.ps1` 得到 `$KbExe`、`$VectorExe` 和 `$ModelRegistry`。下方路径变量使用实际读取的 skill 路径，不写死开发者用户目录。
 
 首选 manifest：
 
