@@ -1,6 +1,6 @@
 interface:
   display_name: "UE Agent Interface"
-  short_description: "用 UAI 和结构化 HJSON 自动化 UE 编辑器"
+  short_description: "通过公开 CLI、SDK 与 HJSON 制作和预览 UE 内容"
   icon_small: "./assets/ue-agent-interface-small.svg"
-  icon_large: "./assets/ue-agent-interface-small.svg"
-  default_prompt: "使用 $ue-agent-interface 通过公开 uai SDK 或打包 CLI 与 Connection TOML 操作 Unreal Editor；每次只转发正式 manifest 中的一条真实命令，优先结构化 HJSON authoring，并用独立 readback、compile/settle、probe、screenshot 或 smoke 验证结果。"
+  icon_large: "./assets/ue-agent-interface.png"
+  default_prompt: "使用 $ue-agent-interface 操作 Unreal Editor：单次查询或命令使用 ueagentinterfacecmd，连续句柄操作使用公开 uai SDK，资产内容直接编辑 HJSON，按目标取得必要读回或画面证据。"

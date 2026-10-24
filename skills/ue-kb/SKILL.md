@@ -71,7 +71,7 @@ if (-not (Test-Path -LiteralPath $UeKbSkillFile -PathType Leaf)) {
 $UeKbSkillDir = Split-Path -Parent $UeKbSkillFile
 $Manifest = Join-Path $UeKbSkillDir "kb-manifest.json"
 
-$KbCliSkillFile = "C:\Users\gzxt\.codex\skills\kbcli-knowledge-base\SKILL.md"
+$KbCliSkillFile = "<loaded kbcli-knowledge-base SKILL.md full path>"
 if (-not (Test-Path -LiteralPath $KbCliSkillFile -PathType Leaf)) {
     throw "kbcli-knowledge-base skill unavailable; do not fall back to PATH kb"
 }

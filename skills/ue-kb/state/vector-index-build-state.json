@@ -1,7 +1,7 @@
 {
   "build_mode": "bucket",
   "build_scope": "delta",
-  "chunk_fingerprint": "sha256:2923434b62f2cfc6",
+  "chunk_fingerprint": "sha256:da988e83765acb14",
   "collection": "ue-kb",
   "collection_info": {
     "result": {
@@ -41,135 +41,141 @@
           "wal_segments_ahead": 0
         }
       },
-      "indexed_vectors_count": 0,
+      "indexed_vectors_count": 16784,
       "optimizer_status": "ok",
       "payload_schema": {
         "chunk_id": {
           "data_type": "keyword",
-          "points": 15557
+          "points": 18766
         },
         "doc_id": {
           "data_type": "keyword",
-          "points": 15557
+          "points": 18766
         },
         "kb_id": {
           "data_type": "keyword",
-          "points": 15557
+          "points": 18766
         },
         "language": {
           "data_type": "keyword",
-          "points": 15557
+          "points": 18766
         },
         "source_id": {
           "data_type": "keyword",
-          "points": 15557
+          "points": 18766
         }
       },
-      "points_count": 15557,
+      "points_count": 13550,
       "segments_count": 8,
-      "status": "green",
+      "status": "yellow",
       "update_queue": {
         "length": 0
       }
     },
     "status": "ok",
-    "time": 0.001069855
+    "time": 0.00746157
   },
-  "completed_items": 11,
-  "deleted_stale_points": 13,
-  "embedding_fingerprint": "sha256:5c509eb1c0747b0d",
+  "completed_items": 13550,
+  "deleted_stale_points": 15557,
+  "embedding_fingerprint": "sha256:ec92838543b64b6b",
   "embedding_text_policy_fingerprint": "sha256:18893d59dcf186e7",
-  "existing_points_scanned": 15559,
+  "existing_points_scanned": 15557,
   "kb_id": "ue-kb",
-  "pending_items": 11,
-  "point_count": 15557,
+  "pending_items": 13550,
+  "point_count": 13550,
   "qdrant_url": "http://127.0.0.1:6333",
   "remaining_items": 0,
   "resume_supported": true,
   "schema_version": "0.1.0",
-  "skipped_unchanged": 15546,
+  "skipped_unchanged": 0,
+  "statistics_warnings": [],
   "status": "complete",
   "timings": {
     "batches_total": {
-      "attach_vectors_ms": 0.0648,
-      "avg_batch_ms": 3694.02745,
-      "avg_item_ms": 2014.9240636363638,
-      "batches": 6,
-      "direct_upsert_attempt_ms": 0.0,
-      "direct_upsert_batches": 0,
-      "embedding_ms": 21799.5953,
-      "items": 11,
-      "items_per_sec": 0.49629661883896753,
-      "managed_batches": 6,
-      "max_batch_ms": 5903.2729,
-      "point_shell_ms": 0.7797999999999999,
-      "qdrant_upsert_ms": 363.64340000000004,
-      "total_ms": 22164.1647
+      "attach_vectors_ms": 104.99219999999995,
+      "avg_batch_ms": 2229.4294880847156,
+      "avg_item_ms": 1414.001256132845,
+      "batches": 8594,
+      "direct_upsert_attempt_ms": 19151986.971399967,
+      "direct_upsert_batches": 8594,
+      "embedding_ms": 18967837.74239995,
+      "items": 13550,
+      "items_per_sec": 0.7072129502451096,
+      "managed_batches": 0,
+      "max_batch_ms": 9545.9072,
+      "point_shell_ms": 7611.574300000015,
+      "qdrant_upsert_ms": 140557.3776,
+      "total_ms": 19159717.020600047
     },
-    "elapsed_ms": 28597.1709,
+    "elapsed_ms": 19192310.6452,
     "stages": {
       "classify_existing_points_ms": {
-        "avg_ms": 370.3338,
+        "avg_ms": 170.99629999999968,
         "count": 1,
-        "total_ms": 370.3338
+        "total_ms": 170.99629999999968
       },
       "delete_stale_points_ms": {
-        "avg_ms": 62.4538,
+        "avg_ms": 2155.1427,
         "count": 1,
-        "total_ms": 62.4538
+        "total_ms": 2155.1427
       },
       "embedding_binding_ms": {
-        "avg_ms": 0.9962,
+        "avg_ms": 2.3337,
         "count": 1,
-        "total_ms": 0.9962
+        "total_ms": 2.3337
       },
       "fingerprint_and_chunk_map_ms": {
-        "avg_ms": 1016.686,
+        "avg_ms": 5.6235,
         "count": 1,
-        "total_ms": 1016.686
+        "total_ms": 5.6235
       },
       "load_chunks_ms": {
-        "avg_ms": 1423.5526,
+        "avg_ms": 1115.7445,
         "count": 1,
-        "total_ms": 1423.5526
+        "total_ms": 1115.7445
       },
       "load_optimization_profile_ms": {
-        "avg_ms": 13.4295,
+        "avg_ms": 9.7588,
         "count": 1,
-        "total_ms": 13.4295
+        "total_ms": 9.7588
       },
-      "managed_service_startup_ms": {
-        "avg_ms": 215.4207,
+      "model_artifact_identity_ms": {
+        "avg_ms": 5.5215,
         "count": 1,
-        "total_ms": 215.4207
+        "total_ms": 5.5215
       },
       "prepare_vector_items_ms": {
-        "avg_ms": 8.5387,
+        "avg_ms": 42.9271,
         "count": 1,
-        "total_ms": 8.5387
+        "total_ms": 42.9271
       },
       "progress_write_ms": {
-        "avg_ms": 2.461242857142857,
-        "count": 7,
-        "total_ms": 17.2287
+        "avg_ms": 2.3295317044793475,
+        "count": 8595,
+        "total_ms": 20022.324999999993
       },
       "qdrant_collection_ms": {
-        "avg_ms": 633.1814,
+        "avg_ms": 21.9131,
         "count": 1,
-        "total_ms": 633.1814
+        "total_ms": 21.9131
       },
       "scan_existing_points_ms": {
-        "avg_ms": 1645.976,
+        "avg_ms": 1995.8882000000003,
         "count": 1,
-        "total_ms": 1645.976
+        "total_ms": 1995.8882000000003
       },
       "sort_vector_items_ms": {
-        "avg_ms": 0.001,
+        "avg_ms": 1.9804,
         "count": 1,
-        "total_ms": 0.001
+        "total_ms": 1.9804
+      },
+      "verify_token_budget_ms": {
+        "avg_ms": 4521.7233,
+        "count": 1,
+        "total_ms": 4521.7233
       }
     }
   },
-  "total_chunks": 15557,
-  "updated_at": "2026-08-24T06:34:50Z"
+  "total_chunks": 13550,
+  "updated_at": "2026-09-29T15:05:35Z"
 }

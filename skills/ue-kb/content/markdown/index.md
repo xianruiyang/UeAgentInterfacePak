@@ -41,7 +41,7 @@
 - [UE5 程序化管道- 教程篇（免费下载）](ue5.md)
 - [虚幻引擎5.4.4中制作PCG森林路径全流程](5-4-4-pcg.md)
 - [虚幻引擎5.6！制作PCG森林小径环境！](5-6-pcg.md)
-- [UE supplemental Animation knowledge cards](ue-supplemental-animation-knowledge-cards.md)
+- [Animation / IK / Control Rig 知识卡](animation-ik-control-rig.md)
 - [在虚幻引擎中创建漫画书启动元素](item.md)
 - [在虚幻引擎中离线运行本地 LLM - 运行时本地 LLM 插件教程](llm-llm.md)
 - [在虚幻引擎中利用漫画着色器的方向向量](item.md)

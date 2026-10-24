@@ -1,14 +1,14 @@
 # UeAgentInterfacePak
 
-> 本仓库把 UAI 的发布引用、Codex skills、UE 知识内容和分发文档放在一个 Pak 入口中。当前
-> `codex/uai-development` 是开发与整理现场，不是已经通过正式门禁的发行包；文件存在、Git clean 或
-> 示例曾经成功，都不等于对应能力在当前版本已验证。
+本仓库统一分发 UAI 插件、Python SDK/CLI 的匹配 Git 引用、Codex skills 和 UE 知识内容。
+当前基线是 **Windows + 带配套原生补丁的 UE 5.6.1**，需要源码构建插件及相关引擎模块。
+从旧版升级请先阅读 [升级与旧版恢复](docs/UPGRADING.md)。
 
 ## 快速导航
 
 | 要做的事 | 入口 | 边界 |
 | --- | --- | --- |
-| 了解 Pak parent 与安装方式 | 本 README | 不从 parent README 推断具体 command 已可用 |
+| 了解 Pak 与安装方式 | 本 README、[升级说明](docs/UPGRADING.md) | 以所选 Pak 提交的子模块版本为准 |
 | 修改 UE 插件或正式命令文档 | `UeAgentInterface/` submodule | 进入插件 owner 仓库单独开发、测试和提交 |
 | 修改公开 Python SDK、薄 CLI 或发布工具 | `UeAgentInterfaceCMD/` submodule | 进入 CMD owner 仓库单独开发、测试和提交 |
 | 维护 Pak 直接分发 skill | [`skills/README.md`](skills/README.md) | 区分 Pak-owned、submodule、external owner 与 installed |
@@ -29,8 +29,8 @@ README、command 数量、binding、示例图或旧测试外推。
   承担要求实时反应的操作；截图、相机控制和短序列帧只能支持有界观察，不能冒充实时调试。
 - 截图与结构读回仍可能遗漏或误判，视觉结果需要多证据校验。
 - 默认不弹出或抢占 UE 窗口，不进行全屏调试；需要前台交互时应先取得用户授权。
-- 支持的 UE 版本、平台和模型组合应由具体发行提交及其构建/运行证据声明；本开发 checkout 不固定一条
-  未验证的版本或“仅某模型可用”结论。
+- 当前验证基线是 Windows 与配套补丁的 UE 5.6.1；其他引擎版本和平台需要单独适配与验证，
+  不限制调用模型品牌，也不把某个模型的一次成功视为所有组合均已验证。
 
 ## 效果一览
 
@@ -54,7 +54,7 @@ README、command 数量、binding、示例图或旧测试外推。
 | --- | --- | --- |
 | `UeAgentInterface/` | UE Editor 插件的发布 gitlink | 普通使用需要插件；修改进入 nested owner，Pak 只更新已验证提交的 gitlink |
 | `UeAgentInterfaceCMD/` | 公开 `uai` SDK、薄 CLI 与发布工具的发布 gitlink | Agent 使用 SDK 时需要可定位；修改进入 nested owner |
-| `skills/ue-agent-interface/` | Pak-owned UAI workflow 分发候选，含正式文档同步副本和内置 CLI | 使用 UAI workflow 时安装；Pak 与 installed 需单独同步验证 |
+| `skills/ue-agent-interface/` | Pak-owned UAI 最小冷启动 skill，路由当前公开 SDK、项目 runner、HJSON、生命周期与验证 | 使用 UAI workflow 时安装；不镜像完整命令文档或内置旧 CLI，需要时显式同步 installed |
 | `skills/ue-essential-knowledge/` | Pak-owned UE 核心知识导航分发候选 | 推荐；不承载任务级复盘 |
 | `skills/ue-kb/` | Pak-owned UE 本地知识内容与索引分发候选 | 离线知识工作流使用；从 manifest/skill 进入 |
 | `skills/kbcli-knowledge-base/` | kbCli runtime submodule 发布引用 | 由其外部仓库和 gitlink 管理，不做 installed-to-Pak 复制 |
@@ -62,31 +62,34 @@ README、command 数量、binding、示例图或旧测试外推。
 | `docs/images/` | 本 README 的展示与菜单图片 | 随包 |
 | `retired/strict_v2/` | 重构前历史证据 | 不安装、不运行、不作为当前规范；逐消费者审计后才退出 |
 
-当前 tree 没有 `releases/` 目录，因此本 README 不把它列为已有发布入口。正式 release manifest、notes 或
-tag 只有在相应产物实际建立并通过发布门禁后才能被声明。
+版本组合由 Pak 提交的 gitlink 固定；更新和恢复步骤见 [升级说明](docs/UPGRADING.md)。
 
 ## 获取包内容
 
-克隆或复制一个明确的 Pak 版本后，初始化 submodule：
+首次获取：
 
 ```powershell
-git submodule update --init --recursive
+git clone --recurse-submodules https://github.com/xianruiyang/UeAgentInterfacePak.git
 ```
 
 如果只需要插件，可以直接使用插件 owner 仓库，并放到目标项目的 `Plugins/UeAgentInterface/`。使用
-整个 Pak 时，仍应确认 Pak gitlink、direct skills 与 intended release 属于同一验证集合；当前 nested
-working tree 与 gitlink 不同，不会自动成为发布内容。
+整个 Pak 时，子模块保持 Pak 固定的提交，不分别切到各仓库最新 main。已有 checkout 更新时遵循升级说明，
+先保护本地改动，再更新子模块；本地未提交变化不会自动成为发布内容。
 
 ## 插件安装
 
-1. 关闭目标 UE 项目和 Visual Studio。
-2. 在目标项目根目录创建 `Plugins` 目录。
-3. 将正式 Pak 中的 `UeAgentInterface/` 放到 `Plugins/UeAgentInterface/`。
-4. 对 C++ 项目重新生成工程文件并执行非 Live Coding 的 Editor target 构建。
-5. 打开 `.uproject` 并确认插件启用。
+1. 关闭使用目标引擎安装的 Editor，保存需要保留的修改。
+2. 按 [引擎补丁说明](UeAgentInterface/EnginePatches/README.md) 为 UE 5.6.1 应用匹配补丁并重编对应模块。
+   PropertyEditor、UMGEditor、AudioEditor、MetasoundEditor 的新增接口是当前插件的编译/链接依赖。
+3. 在目标项目根目录创建 `Plugins`，将选定版本的 `UeAgentInterface/` 放到 `Plugins/UeAgentInterface/`。
+4. 重新生成 C++ 工程文件并执行非 Live Coding 的 Editor target 构建。
+5. 打开 `.uproject`，确认插件及其声明的依赖启用，再安装配套 SDK。
 
 插件依赖以对应提交的 `UeAgentInterface.uplugin` 为准，不在 Pak README 复制一份容易失效的插件列表。
 引擎版本或内置插件不匹配时，应先解决加载/编译问题，再使用 UAI 自动化。
+
+普通项目 Editor target 构建不会自动重编 Installed Build 的引擎模块；只放入 Plugin 或更新公共头文件
+不能完成安装。补丁源码随 Plugin 分发，引擎二进制需要在目标安装中构建，不由 Pak 携带。
 
 ## Skill 安装
 
@@ -95,19 +98,20 @@ working tree 与 gitlink 不同，不会自动成为发布内容。
 [`skills/README.md`](skills/README.md)。
 
 `C:/Users/<User>/.codex/skills/` 是机器 installed deployment，不是本仓库的另一份可随意反向覆盖真源。
-Pak-owned skill 应从 Pak 向 installed 做有界同步和完整文件集检查；正式同步入口只接受已登记的 Pak
-publication owner。`understand-space` 由 AgentBase 提供，不参加 Pak 同步，也不得从任意 Pak 同名路径
+Pak-owned skill 应从 Pak 向 installed 做显式同步；同步入口只接受已登记的 Pak publication owner。
+`understand-space` 由 AgentBase 提供，不参加 Pak 同步，也不得从任意 Pak 同名路径
 覆盖 installed。
 
-`ue-agent-interface` 内置 `<SkillDir>/tools/uai-cli.exe` 作为回退入口。日常自动化优先定位正式
-`UeAgentInterfaceCMD` 仓库并使用其公开 Python SDK：
+`ue-agent-interface` 只教当前公开实现。`UeAgentInterfaceCMD/tools/sdk_environment.py install` 一起安装
+公开 `ueagentinterfacecmd` 命令和 Python SDK，`uninstall` 一起移除。SDK 源码位于：
 
 ```text
 <UaiCmdRoot>/cli/uai
 ```
 
-找不到 UAICMD 时先询问安装路径；只有确认没有可用开发入口或用户明确要求回退，才使用 skill 内置
-CLI。不要把任意 `dist/uai-cli.exe` 或 PATH 中的裸命令当作隐式 fallback。
+单次查询使用 `ueagentinterfacecmd exec ...`，连续操作使用 SDK。在 GptProjectTest 开发工作区中还可使用
+`scripts/ue/InvokeUaiCommand.py` 保存机器收据；该项目脚本不随 Pak 分发，其他项目使用 CLI 的 `--report`。
+这些入口共用 CMD 的项目连接实现；入口缺失时使用上述正式安装入口。
 
 ## 启动服务与连接
 
@@ -117,15 +121,14 @@ CLI。不要把任意 `dist/uai-cli.exe` 或 PATH 中的裸命令当作隐式 fa
 
 ![UE 菜单中的 UeAgentInterface 服务入口](docs/images/ue-agent-interface-menu.png)
 
-当前正式客户端方向是一份 Connection TOML 加公开 `uai` SDK：
+连续操作使用公开 `uai` SDK；本地项目连接由 CMD 共用实现持有：
 
 ```python
 import uai
 
-with uai.connect("connection.toml") as ue:
+with uai.connect_project() as ue:
     result = ue.query.command_search(
         "inspect the current editor runtime",
-        limit=3,
     )
 ```
 
@@ -137,10 +140,9 @@ Python 只调用公开 SDK，不直接 HTTP，也不在客户端复制 UE 业务
 
 1. 使用明确版本的插件、CMD 和 Pak skills，并确认它们的版本关系。
 2. 启动 UE 项目，通过菜单开启 UAI Server；默认最小化或不抢焦点。
-3. 先定位 UAICMD，优先使用公开 `uai` SDK；满足回退条件时才用 skill 内置 CLI。
-4. 查询 command、node、component 或 actor candidate，直接消费正式返回的 identity，不在调用侧建立别名表。
-5. 临时 Connection TOML、params、batch 和任务脚本写到用户工作区 `tmp/`；report、截图与运行日志写到
-   `runtimeLogs/`，不写入 Pak 或 skill 目录。
+3. 安装配套 CMD，使用公开 `uai` SDK 或 `ueagentinterfacecmd`；项目 runner 仅在所属项目提供时使用。
+4. 未知 command 先做名称发现，再批量取得所选名称的最小用法；节点、组件或 actor 候选优先使用可读名称，只有服务端返回同名 refine 时才使用最短选择器。
+5. 临时 params、receipt、截图与运行输出写到任务专属 `tmp/<run-id>/`，不写入 Pak 或 skill 目录。
 6. 对复杂资产优先使用结构化 authoring；应用后检查错误、warning、compile/settle、dirty resource、
    持久化、独立读回与必要截图。
 7. 真实任务暴露基础能力缺口时，在正确 Plugin/CMD/knowledge owner 修复，再回到原内容复验。
@@ -175,21 +177,21 @@ vector service 与 embedding 环境；环境不完整时可降级到 keyword 或
 `--no-ignore`。不要删除 `.ignore` 来做日常浏览，也不要把它当作内容不可达或可以删除的证据。
 
 根 `.gitignore` 只排除 runtime、cache、临时、虚拟环境、package metadata 和 skill-local report 等
-可重建本地输出。Knowledge indexes、内置 CLI、templates 和正式 docs 是分发内容，不因“generated”或
-二进制形态自动进入 ignore。
+可重建本地输出。Knowledge indexes 是有 owner 的分发内容；是否保留不由“generated”或二进制形态
+单独决定。
 
 ## 开发与发布维护
 
 - Plugin、CMD 与 kbcli 是独立仓库；先在正确 owner 形成提交和证据，再由 Pak 更新 gitlink。
-- `ue-agent-interface`、`ue-essential-knowledge` 与 `ue-kb` 是 Pak 直接分发候选；修改后需按正式同步流程
-  更新 installed 并做完整一致性检查。
-- Plugin/CMD 正式文档进入 `ue-agent-interface/docs/` 时，只同步适合日常 skill 阅读的内容；deprecated、
-  generated coverage、临时调试与任务复盘不得进入分发副本。
-- Skill 内 CLI 来自 CMD 的正式构建；刷新时在 `tools/uai-cli.release.json` 记录 CMD 来源提交、公开 CLI 版本和 artifact hash，并只分发当前 Connection TOML 模板，再验证 packaged executable。
+- `ue-agent-interface`、`ue-essential-knowledge` 与 `ue-kb` 是 Pak 直接分发候选；当前机器需要消费改动时
+  直接同步 installed。
+- `ue-agent-interface` 只维护从当前公开实现与已验证实践形成的最小 bootstrap 和按需 references；Plugin/CMD
+  完整文档、通用 UE 教程、历史 schema、任务复盘和机器协议不进入活动 skill。
+- 当前项目使用源码 SDK 与正式 runner。未来 packaged CLI 只有在出现独立真实消费者后，才作为单独发布
+  能力从当前 CMD 构建、验证和登记；不把旧可执行文件或静态连接模板留作 skill fallback。
 - `release dev-mirror` 只用于本地镜像或排查，不是正式发布。
-- 正式发布必须使用当前项目政策与对应 CMD 版本登记的门禁，验证 clean commit/tree、submodule gitlink、
-  skill/installed parity、包 hygiene 和适用测试；本 README 不把命令存在或一次旧结果当成准入。
-- GitHub push、tag、Release 和远端发布仍是用户边界；Codex 自管开发提交不会自动进入用户主线或远端。
+- 正式发布按当前项目政策直接核对分支、HEAD、拟提交 diff 与 submodule gitlink，只纳入本次发布范围。
+- GitHub push、tag 和 Release 需要用户明确授权；开发提交不会自动进入用户主线或远端。
 
 ## 参考
 

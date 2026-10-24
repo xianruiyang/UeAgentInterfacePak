@@ -27,16 +27,12 @@
 涉及坐标、方向、bounds 或屏幕投影时同时使用 AgentBase-owned `understand-space`，建立
 `Fsemantic -> Fwrite -> Fread -> Fverify`；本页只补 UE viewport identity、projection 和产品验收入口。
 
-## 来源与当前产品证据
+## 来源与适用版本
 
 - UE 5.7 版本事实通过 `ue-kb` 的官方来源
   `references/UE5_7Doc/docs/get-started/unreal-engine-for-new-users/viewport-toolbar/index.md`
   与 `references/UE5_7Doc/docs/gameplay-systems/gameplay-framework/cameras/index.md` 获取；查询后必须
-  fetch chunk，并保留 source URL。当前项目产品运行于 UE 5.6，所以这些来源只提供可定位背景，
-  不替代当前版本的 manifest、Plugin 源码或产品 readback。
-- 当前 UAI 契约读取 Plugin 正式 `t45_viewport_graph_control.md` 和 command manifest。
-- T52 产品证据位于
-  `plan/results/TROOT-UAI-52-OWNED-RHI-REAL-CONTENT-VISUAL.r10.json`：错误选择正交 viewport
-  失败；保持同一 frame policy、只改为同 world perspective viewport 后，真实内容 frame、capture、
-  image oracle、restore 和 cleanup 在 UE 5.6 上通过。该当前产品结果决定行为证据边界，不外推
-  非透视 command 行为，也不把 UE 5.7 文档静默降格为 5.6 规范。
+  fetch chunk，并保留 source URL。使用前核对实际 Engine 版本；不同版本的资料只作为背景，
+  不替代当前 UAI 契约与实际 readback。
+- 当前 UAI 契约读取正式 `t45_viewport_graph_control.md` 和 command manifest；实际行为以本次
+  公开操作的 readback 与图像 artifact 为据，不用其他项目或历史实践结果代替当前判断。

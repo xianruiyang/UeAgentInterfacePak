@@ -1,29 +1,16 @@
 # UAI Authoring 工作流
 
-## 覆盖范围
-
-- UeAgentInterface 命令、folder format、apply/readback/smoke。
-- 结构化 JSON authoring、Profile、Adapter、Migration warning。
-- node/module 查询、`kind/name/full_name` 身份、来源解析。
-- 文档、Pak skill、installed skill 同步边界。
-
 ## 阅读时机
 
-- 需要通过 UAI 修改 UE 资产或验证当前项目状态。
-- 需要从节点/模块查询结果写入结构化 JSON，再 apply/readback。
-- 需要判断某个字段是 LLM 可写、只读信息、诊断信息还是 legacy 兼容字段。
+通过 UAI 修改 UE 资产、处理候选查询与 HJSON 工作区，或判断可写属性、诊断与读回的职责时，进入
+`ue-agent-interface` skill。已知 command 和参数、且无需 UE 原理或版本判断的普通查询直接使用 UAI，
+不要求先检索知识库。
 
-## 已闭合工作流
+## 正式入口
 
-- 知识、命令和项目事实的唯一 owner、版本、失效与降级合同由 `ue-agent-interface` 的
-  `references/ue-knowledge-routing.md` 组织；本分类不复制该合同。
-- Level viewport projection-aware 取景案例先读
-  `../07-world-level-rendering/viewport-projection-and-framing.md`，再进入当前 UAI manifest 和
-  readback/capture。
-- 对 command/参数已知且无需 UE 原理、版本或空间判断的普通查询，直接进入 UAI，不触发 KB。
-
-## 后续填充位置
-
-- catalog search -> authoring JSON -> apply -> readback 的标准流程。
-- folder format 与 LLM-facing profile 的区别。
-- apply 后编译与保存门禁。
+- 知识、命令与项目事实的使用边界由 `ue-agent-interface/references/verification-and-knowledge.md` 维护。
+- `ue-agent-interface/references/hjson-workspace.md` 说明当前导出、编辑、导入、诊断与持久读回流程；
+  本分类不复制字段或生成第二套 authoring 规范。
+- Level viewport 取景先读 `../07-world-level-rendering/viewport-projection-and-framing.md`，
+  再使用当前公开查询和 capture 入口。
+- Plugin/CMD 文档由各自仓库维护，Pak-owned skill 与 installed 副本的边界见 Pak `skills/README.md`。
