@@ -3,6 +3,7 @@
 本仓库统一分发 UAI 插件、Python SDK/CLI 的匹配 Git 引用、Codex skills 和 UE 知识内容。
 当前基线是 **Windows + 带配套原生补丁的 UE 5.6.1**，需要源码构建插件及相关引擎模块。
 从旧版升级请先阅读 [升级与旧版恢复](docs/UPGRADING.md)。
+本次版本与验证范围见 [2026-10-24 发行说明](docs/releases/2026-10-24.md)。
 
 ## 快速导航
 
