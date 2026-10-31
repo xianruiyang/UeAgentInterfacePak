@@ -36,10 +36,14 @@ grid.add_shape({
     "center": {"x": 200, "y": 0, "z": 50},
     "size": {"x": 400, "y": 200, "z": 100},
 }).raise_for_error()
-result = grid.apply()
+result = grid.apply(color=[0.22, 0.36, 0.48])
 result.raise_for_error()
 print(result.payload.get("warnings"), result.payload.get("readback"))
 ```
+
+新建网格首次 apply 默认使用插件内置尺寸材质；`color` 是 0～1 的线性 RGB，可省略或在后续 apply 时修改。
+网格原点首次按实际局部 bounds-min 固定，后续改变几何不会重新对齐。显式 `material_ref` 可换成其他材质，
+此时不要同时传 `color`；编辑既有网格默认保留原材质。
 
 创建前使用已保存且目标 package 干净的地图；既有地图有授权待保存内容时先按普通资源保存流程处理。
 apply 自身负责目标保存和独立读回，不需要为普通制作额外切图、重载或启动 PIE。

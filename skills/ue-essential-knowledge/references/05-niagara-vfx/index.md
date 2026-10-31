@@ -117,6 +117,12 @@ X = cross(Y, Z)
 
 `FacingMode` 影响的是 Mesh 实例 transform，不是材质 UV；`MeshOrientation` 仍参与最终旋转。当前 shader 中 `LockedAxis` 位于 facing matrix 路径，`Default` 下不要把它当成独立朝向规则。
 
+## 时间变化与可见范围
+
+初始随机朝向只说明粒子生成时的状态；持续自转取决于后续怎样更新朝向，绕点运动还涉及位置变化。系统Actor或父级的整体变换属于另一层；[Local Space](https://dev.epicgames.com/documentation/unreal-engine/emitter-settings-reference-for-niagara-effects-in-unreal-engine)决定粒子相对发射器本地空间还是世界空间解释，影响已有粒子怎样随组件运动。按目标分清初始分布、粒子自身运动与整体运动，并结合实际数据流判断叠加结果；材质[UV动画](../04-materials-shaders/index.md#局部半透明效果的范围与内部变化)不能代替这些空间变化。
+
+粒子是否生成和存活、模拟目标、空间解释与可见边界分别判断。[Bounds 参与可见性判断](https://dev.epicgames.com/documentation/en-us/unreal-engine/scalability-and-best-practices-for-niagara?application_version=5.7)，固定范围需容纳目标运动与渲染尺寸，过大又会削弱剔除的收益；CPU/GPU选择取决于效果与平台负担，不是粒子消失的通用修复。同步改变模拟目标、边界和空间后恢复可见，不能据此将原因归给其中一项；一个生成计数或静帧也不能证明完整生命周期与运动符合目标。
+
 ## 后续填充位置
 
 - Niagara 执行阶段和数据流。

@@ -3,7 +3,7 @@
 本仓库统一分发 UAI 插件、Python SDK/CLI 的匹配 Git 引用、Codex skills 和 UE 知识内容。
 当前基线是 **Windows + 带配套原生补丁的 UE 5.6.1**，需要源码构建插件及相关引擎模块。
 从旧版升级请先阅读 [升级与旧版恢复](docs/UPGRADING.md)。
-本次版本与验证范围见 [2026-10-24 发行说明](docs/releases/2026-10-24.md)。
+本次版本与验证范围见 [2026-10-31 发行说明](docs/releases/2026-10-31.md)；上一版说明保留在对应日期文档中。
 
 ## 快速导航
 
@@ -56,7 +56,7 @@ README、command 数量、binding、示例图或旧测试外推。
 | `UeAgentInterface/` | UE Editor 插件的发布 gitlink | 普通使用需要插件；修改进入 nested owner，Pak 只更新已验证提交的 gitlink |
 | `UeAgentInterfaceCMD/` | 公开 `uai` SDK、薄 CLI 与发布工具的发布 gitlink | Agent 使用 SDK 时需要可定位；修改进入 nested owner |
 | `skills/ue-agent-interface/` | Pak-owned UAI 最小冷启动 skill，路由当前公开 SDK、项目 runner、HJSON、生命周期与验证 | 使用 UAI workflow 时安装；不镜像完整命令文档或内置旧 CLI，需要时显式同步 installed |
-| `skills/ue-essential-knowledge/` | Pak-owned UE 核心知识导航分发候选 | 推荐；不承载任务级复盘 |
+| `skills/ue-essential-knowledge/` | Pak-owned UE 关键基础知识与设计原理，包含关卡设计、白盒、游戏框架及主题导航 | 按知识需要选用；不承载 UAI 操作流程或任务级复盘 |
 | `skills/ue-kb/` | Pak-owned UE 本地知识内容与索引分发候选 | 离线知识工作流使用；从 manifest/skill 进入 |
 | `skills/kbcli-knowledge-base/` | kbCli runtime submodule 发布引用 | 由其外部仓库和 gitlink 管理，不做 installed-to-Pak 复制 |
 | `understand-space`（外部） | AgentBase-owned 通用空间能力 | Pak 不保留同名副本；installed deployment 只跟随 AgentBase owner |
@@ -95,7 +95,7 @@ git clone --recurse-submodules https://github.com/xianruiyang/UeAgentInterfacePa
 ## Skill 安装
 
 完整工作流通常使用 `ue-agent-interface`；离线 UE 知识检索还会使用 `ue-kb` 和
-`kbcli-knowledge-base`，`ue-essential-knowledge` 提供轻量主题导航。具体 owner 与同步边界见
+`kbcli-knowledge-base`；`ue-essential-knowledge` 提供关键基础知识、关卡设计原理和主题导航，UAI skill 按需引用。具体 owner 与同步边界见
 [`skills/README.md`](skills/README.md)。
 
 `C:/Users/<User>/.codex/skills/` 是机器 installed deployment，不是本仓库的另一份可随意反向覆盖真源。

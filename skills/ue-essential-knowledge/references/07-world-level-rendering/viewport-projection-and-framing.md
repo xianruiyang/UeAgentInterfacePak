@@ -1,38 +1,30 @@
-# Viewport 投影、取景与截图验证
+# 视口投影与取景
 
-本页只组织跨任务稳定的判断顺序，不拥有 UE 版本事实或 UAI command 契约。版本事实回到
-`ue-kb` 的登记来源，参数和返回回到当前 UAI manifest，项目结果回到真实 readback 与图像 artifact。
+## 投影决定画面的空间含义
 
-## 何时读取
+透视投影随深度产生近大远小；正交投影保持平行线，同尺寸对象不因远近改变屏幕尺度。正交视图适合看平面关系、标高和对齐；透视视图适合判断玩家能看到的入口、纵深与遮挡。二者可以观察同一场景，但尺寸感和构图不能直接互相替代。参见 [Epic：Using Editor Viewports](https://dev.epicgames.com/documentation/en-us/unreal-engine/using-editor-viewports-in-unreal-engine)。
 
-- 需要在 Level viewport 中 frame Actor、构图、截图或比较屏幕结果。
-- 视觉 oracle 使用 FOV、屏幕边距、像素覆盖、遮挡或图像区域。
-- 同一 world 存在多个 viewport，或者当前 viewport projection 尚未确定。
+FOV、相机位置和画幅共同决定透视构图。提高 FOV 与后退相机不是同一种变化：两者对近远物体的相对大小和边缘变形影响不同。水平 FOV、垂直 FOV、Cine Camera 的焦距与传感器尺寸也不是可互换数值；涉及具体计算时先确定正在使用的相机与投影参数。
 
-若只是执行语义已知、与空间和渲染无关的 UAI 查询，本页不触发。
+## 窗口、渲染目标与输出画幅
 
-## 最小判断合同
+原生窗口、嵌入视口的渲染目标和最终图像是不同尺寸层级。最小化后的窗口图标矩形不能代表可用视口尺寸；后台视口可以保留有效渲染目标，而从未完成首次布局的视口可能尚无渲染尺寸。渲染和像素读回本身不要求把窗口置于前台。
 
-1. **语义 frame**：先明确目标是 Perspective 还是 Orthographic 图像，不把“属于同一 world”
-   当作 projection 等价证据。Perspective 使用视野与距离形成近大远小的画面；Orthographic 的
-   屏幕尺度不应套用 perspective FOV oracle。
-2. **写入 frame**：从 UAI `viewport.instance.list` 取得 exact `viewport_ref` 和
-   `viewport_type`，把二者与目标 world 一起冻结。需要 perspective 取景时只选择
-   `viewport_type=perspective`。
-3. **读回 frame**：修改前读取完整 viewport state；frame 后用同一 identity 独立读取 camera
-   state，并由 capture artifact 检查实际画面。command 成功 envelope 不能代替读回。
-4. **验证 frame**：核对目标 Actor 的独立 bounds/transform、图像尺寸与内容 oracle，再恢复
-   原 state 并读回。未知的 projection 行为必须保留为未覆盖维度。
+离屏初始化可以给同一视口一个明确的渲染画幅，但该尺寸属于采集策略，不能声称恢复了原窗口几何。它的宽高比会参与相机投影；最后缩小输出图像只改变像素数量，不能补回另一画幅原本没有渲染的视野。临时固定渲染尺寸还需释放固定约束，才能让后续正常编辑器布局重新接管。
 
-涉及坐标、方向、bounds 或屏幕投影时同时使用 AgentBase-owned `understand-space`，建立
-`Fsemantic -> Fwrite -> Fread -> Fverify`；本页只补 UE viewport identity、projection 和产品验收入口。
+首次分配成功也不等于首张画面已稳定。同一个 Game Thread 调用中反复 Draw 和同步读回，不能替代完整的 Editor 帧推进；依赖首个视图才能开始的渲染与资源处理可能仍未完成。此类问题应把初始化安排到真实帧生命周期中，再核对同一次捕获的首图，不能用后续已稳定的第二张图代替首图验收。固定少量初始化帧也不代表所有动态或时序效果都已收敛。
 
-## 来源与适用版本
+## 总览、玩家视角与空间可读性
 
-- UE 5.7 版本事实通过 `ue-kb` 的官方来源
-  `references/UE5_7Doc/docs/get-started/unreal-engine-for-new-users/viewport-toolbar/index.md`
-  与 `references/UE5_7Doc/docs/gameplay-systems/gameplay-framework/cameras/index.md` 获取；查询后必须
-  fetch chunk，并保留 source URL。使用前核对实际 Engine 版本；不同版本的资料只作为背景，
-  不替代当前 UAI 契约与实际 readback。
-- 当前 UAI 契约读取正式 `t45_viewport_graph_control.md` 和 command manifest；实际行为以本次
-  公开操作的 readback 与图像 artifact 为据，不用其他项目或历史实践结果代替当前判断。
+- 总览能解释区域关系，不能说明玩家站在分岔口是否认得出路。俯视图上相交的路线可能处于不同高度，也可能只有视觉联系。
+- 取景框、门洞、桥下空隙和局部遮挡可逐步展示目标。地标露出的一部分也能帮助定位，不必始终完整可见。
+- Actor 的 bounds 是空间包围范围，不等于轮廓、可见像素或碰撞。将 bounds 放进画面仍可能被墙体遮挡；旋转对象的轴对齐包围盒也可能明显大于其实体。
+- 第三人称镜头还受相机臂、相机碰撞、肩位、角色朝向和瞄准模式影响。自由编辑器相机从洞口穿过去，不代表玩家镜头不会被推近或遮住。
+
+## 同一场景也可能得到不同显示结果
+
+Level Editor 视口、资产编辑器预览和运行时相机可以使用不同的世界、光照、后处理及曝光。独立 SceneCapture 即便复制了视口位置与 FOV，也不等于复制了视口的后处理、显示标志和曝光历史；较高分辨率的独立画面不能自动代表用户实际看到的视口效果。Game View 隐藏部分编辑器辅助显示，不会把编辑器世界变成正在运行的游戏。
+
+View Mode、Show Flags、实时更新、画质档位和视口曝光覆盖都会改变观察结果。仅调整编辑器 EV 覆盖可以让眼前画面变亮或变暗，却未必改变玩家相机的效果。比较两张画面时，先识别这些差异，而不是直接归因于资产错误。参见 [Epic：Viewport Toolbar](https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-toolbar)。
+
+具体曝光机制见[光照、材质与曝光](lighting-and-exposure.md)；坐标转换、屏幕投影和尺寸推理使用 `understand-space` 的相应知识。菜单位置和可用显示选项随引擎版本变化。

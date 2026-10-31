@@ -6,7 +6,7 @@ Pak working tree 不自动改变当前机器正在消费的 installed 版本。
 | 路径 | 当前职责 | 维护边界 |
 | --- | --- | --- |
 | `ue-agent-interface/` | Pak 直接持有的 UAI workflow 分发候选 | 正式命令文档来自 Plugin/CMD owner；当前机器需要消费改动时显式同步 installed |
-| `ue-essential-knowledge/` | Pak 直接持有的 UE 核心知识导航分发候选 | 只承载跨任务稳定的分类入口，不承载任务复盘或临时调试结论 |
+| `ue-essential-knowledge/` | Pak 直接持有的 UE 关键基础知识、设计原理与分类导航 | 包括关卡设计、白盒和游戏框架；不承载 UAI 操作协议、任务复盘或临时调试结论 |
 | `ue-kb/` | Pak 直接持有的 UE 知识内容与索引分发候选 | 从 `SKILL.md` 与 `kb-manifest.json` 进入；大体积 payload 默认不参加 Pak parent 普通搜索 |
 | `kbcli-knowledge-base/` | 外部 kbCli runtime 的 Git submodule 发布引用 | 通过 submodule owner/version 更新；不得用 installed-to-Pak 文件复制覆盖 |
 | `understand-space`（外部） | AgentBase-owned 通用空间能力 | 本目录不保留同名副本；installed deployment 跟随其外部 owner |

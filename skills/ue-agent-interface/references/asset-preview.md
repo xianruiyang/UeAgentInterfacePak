@@ -1,10 +1,24 @@
 # 资产预览
 
-材质外观、网格和资产自身效果优先在对应资产预览中观察；只有游戏运行逻辑才进入
-[PIE](pie.md)。资产预览不要求先创建展示关卡。
+学习已导入包、筛选形制时用文件夹总览；材质、网格、动画、Niagara等本体问题需要隔离观察时，在对应原生资产编辑器中
+取景并调用公开截图入口。已有有效场景画面能回答本体问题时直接复用，不固定先做原生预览再做场景预览。资产预览不要求先创建展示关卡，也不启动关卡PIE；
+依赖游戏运行的行为才进入 [PIE](pie.md)。
 
-本页承载公共配置与动作；截图读[预览截图与时间轴](preview-capture.md)，
+本页承载公共配置与动作；单图、动态多帧的选择与采集读[预览截图与时间轴](preview-capture.md)，
 具体资产的特殊组和原生限制按需读[预览类型差异](preview-types.md)。
+截图使用 `capture-subject:asset:<object-path>` 时可省略 `policy_id`，默认由资产预览 owner 按真实类型和目标取图；这不是所有资产共用的离屏渲染器。没有适用预览时保留诊断，图/窗口或独立序列相机等其他观察显式选策略。
+
+## 文件夹资产总览
+
+用 `client.asset.folder_preview(folder=content_folder)` 对所需UE内容目录取得带名称的原生缩略图总览，无需逐个打开资产窗口。按当前空间用途和视觉方向选择目录、类型及候选，不为“学完整个包”默认查看所有资产。它返回普通Operation：命名后提交，`finish()`取得回执，再materialize图片artifacts；结果未知时恢复该命名Operation。
+
+默认递归、每页 24 项，优先原生缓存，仅为当页缺图资产逐项生成；需要筛选类型、调整页大小、仅查缓存或续页时，读取 `asset.folder.preview` 的公开 usage/`describe --parameter options`。回执的 `asset_catalog` 把名称、完整路径、类型、缩略图状态与图上位置对应起来；用 `next_after` 继续同一目录和筛选条件。按 `primary_artifact` 后接 `additional_artifacts` 的显式顺序查看各张图，不以 `artifacts` 遍历顺序推断页序。失败或不支持项仍保留定位，不能把占位项算作已经看过的形态；对选中或缺图且影响判断的资产，再进入下方单资产原生预览。
+
+拟定场景缩放前，需要实际尺寸时用公开 `asset.sample` 的 `bounds` 采样。StaticMesh/SkeletalMesh 返回资产本地厘米空间的中心与半尺寸；它不同于要求场景组件身份的 `world.mesh.closest_vertex`，无需先落图取顶点来猜资产大小。
+
+网格材质路径正确但画面仍疑似缺材质时，`asset.sample` 的 `section` 采样可核对实际 LOD0 面段引用和材质槽索引；参数和返回字段从公开 usage/describe 读取，不能只凭槽列表推断所有面段绑定正确。
+
+总览和原生预览用于判断资产本体与选型，不证明实际场景的照明、邻接、通路或组合完成。选型可在场景替换前进行；新场景组合审阅仍遵守[场景制作](scene-creation.md)中对应旧内容先退出的顺序。
 
 ## 打开与收尾
 
@@ -34,7 +48,7 @@ print(closed.payload.get("lifecycle_status"), closed.payload.get("cleanup_comple
 
 默认 `managed` 接续 UAI 创建的窗口，包括预览配置、动作或截图隐式打开的窗口，并在内容导入重载后
 保留归属。多个会话共享窗口，最后持有者负责关闭；用户原有窗口仅借用，收尾时保持打开。
-动作和截图完成后仍保留预览，需要收尾时可用上述 open 会话领取并关闭。
+动作和截图完成后仍保留预览；当前资产判断结束且无继续需要时，用上述open会话按归属完成收尾，不让临时资产窗口长期占用场景工作。用户借用窗口仍保持打开。
 
 只有明确负责关闭已有窗口时才使用 `{"ownership": "adopt"}`，包括旧操作已释放的遗留窗口。
 检查关闭结果的 `cleanup_complete`；本次负责关闭的窗口以真实窗口登记消失为准，借用的用户窗口仍保持打开。
@@ -50,7 +64,7 @@ print(closed.payload.get("lifecycle_status"), closed.payload.get("cleanup_comple
 未打开时标为 defaults 的值不是实时读回。
 
 `view` 管相机，`display` 管显示，`subject` 管临时预览载体，`environment` 与 `post_process`
-管环境和后处理，`playback` 管速率等稳定播放配置，`simulation` 管原生模拟选项，`capture` 管渲染/输出尺寸及多图采样配置。只编辑需要改变的字段；如只切换材质形状，
+管环境和后处理，`playback` 管速率等稳定播放配置，`simulation` 管原生模拟选项，`capture` 管渲染/输出尺寸及多图采样配置。后台原生预览尺寸为0时截图自动按窗口所属显示器工作区临时初始化，无需先手改 `RenderWidth/RenderHeight`；回执说明尺寸来源与恢复，未切换为另一渲染器。只编辑需要改变的字段；如只切换材质形状，
 修改 `Shape` 即可，不同时回填旧 `Mesh`。各组仍使用公共类型、引用、枚举和诊断。
 
 `view` 的 `OrbitCamera`、`LookAtLocation`、`CameraLocked` 沿用原生相机状态。环绕模式下
@@ -85,4 +99,6 @@ handle = started.operation
 `seek`（仅 seek 携带 `time_seconds`）。有限动作按同一长任务流程用 `handle.finish()` 取得终态及 details 并释放；
 操作释放不关闭预览窗口。Sequencer 的 `time_seconds` 是当前 focused sequence 本地绝对时间，允许其时间轴中的负起点；动画与 Flipbook 仍按自身 `[0, Duration]` 范围。截图在原生取景过渡结束后开始采集。
 动作能力以当前 index/status 为准，不把一种资产的播放接口套到另一种资产。
-不要关闭用户窗口来绕过能力缺口。需要图像时按[预览截图与时间轴](preview-capture.md)触发已配置的采集。
+不要关闭用户窗口来绕过能力缺口。打开窗口、`play` 或 `status` 只提供会话与播放状态，
+不代替视觉观察；按[预览截图与时间轴](preview-capture.md)取得已配置的真实图像。
+动态效果使用多帧观察运动及阶段变化；依赖模拟历史时沿同一轨迹连续推进，不逐点 seek 拼成运动证据。

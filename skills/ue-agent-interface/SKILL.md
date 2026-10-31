@@ -1,11 +1,13 @@
 ---
 name: ue-agent-interface
-description: 通过 ueagentinterfacecmd CLI、uai Python SDK 和项目生命周期入口操作 Unreal Editor；用于公开查询、HJSON 资产与场景编辑、资产预览、PIE 和真实读回。只使用公开接口与结果，不直接调用 HTTP 或处理机器身份。
+description: 通过 ueagentinterfacecmd CLI、uai Python SDK 和项目生命周期入口操作 Unreal Editor；用于公开查询、HJSON 资产编辑、场景制作与复核、资产预览、PIE 和真实读回。只使用公开接口与结果，不直接调用 HTTP 或处理机器身份。
 ---
 # UE Agent Interface
 
 通过公开 UAI 操作 UE。单次查询或命令用 `ueagentinterfacecmd`；需要连续处理结果、workspace 或会话 handle 时用 Python SDK。
 实际状态以公开调用结果为准；本 skill 不复制完整命令手册或领域 schema。
+UE 基础概念与内容设计原理由 [ue-essential-knowledge](../ue-essential-knowledge/SKILL.md) 维护；
+具体版本、API 行为和来源查证进入 [ue-kb](../ue-kb/SKILL.md)。按当前知识缺口选读，已知操作不要求先读知识库。
 
 ## 必要边界
 
@@ -19,15 +21,22 @@ description: 通过 ueagentinterfacecmd CLI、uai Python SDK 和项目生命周�
 | 当前目标 | 操作路径 |
 | --- | --- |
 | 查询命令、候选或资产状态；执行单次命令 | [CLI](references/cli.md)：内联参数，直接读取公开结果 |
+| 查找 Fab 用户库或免费资源、下载并导入 | [Fab 资源](references/fab.md)：原生分类、格式选择、下载缓存和导入恢复 |
+| 学习已导入包、比较文件夹内资产形制与名称 | [文件夹资产总览](references/asset-preview.md#文件夹资产总览)：批量原生缩略图、名称与资产定位，按页比较后再做单资产或场景预览 |
 | 新建资产目标 | [新增内容](references/hjson-workspace.md#新增内容)：按领域创建合同选择初始化文档或 factory，创建后导出 workspace |
 | 编辑已有目标的图、属性、曲线等内容 | [HJSON workspace](references/hjson-workspace.md)：查所需候选，直接编辑，再导入 |
-| 资产预览调试：观察材质、动画、Niagara 等资产自身效果 | [资产预览](references/asset-preview.md)：编辑 workspace 根下的 `preview/`，执行原生动作或截图 |
-| 场景制作：摆放内容并完成目标画面 | [场景制作](references/scene-creation.md)：在 Editor 中完成布局、材质、照明、曝光、后处理和视角 |
-| 运行时 PIE 调试：验证输入、交互及游戏运行逻辑 | [PIE 流程](references/pie.md)：输入、等待、截图；必要时才操作属性 |
+| 制作或调整材质、动画、Niagara 等资产的视觉效果 | [资产预览](references/asset-preview.md)：本体疑点需隔离时使用原生编辑器，已有有效场景画面可复用；动态效果按[预览截图与时间轴](references/preview-capture.md)采集连续多帧 |
+| 关卡 / 场景制作、修复或复核：设计图、用途、路线、布景、构造与目标画面 | [场景制作](references/scene-creation.md)：消费当前阶段设计，选择关卡/部件/功能蓝图的维护位置，落实阶段归属与旧内容退场，再按具体问题反馈 |
+| 已明确需要的运行时 PIE 调试：验证输入、交互及游戏运行逻辑 | [PIE 流程](references/pie.md)：输入、等待、截图；必要时才操作属性 |
 
 这里的“资产预览”也包括用户所称的“资产 PIE”，实际使用各资产编辑器的原生预览，不启动关卡 PIE。
-按目标选择路径；资产自身效果优先用资产预览，场景效果用 Editor 视口，依赖游戏运行的行为才用运行时 PIE。
-这些路径不是每次任务都要执行的固定阶段。
+视觉制作主动取得并查看实际截图，不以导入、编译成功代替效果判断。
+按疑点选原生资产预览或场景视口：本体形态、材质或动画可在资产编辑器隔离观察，实际受光、遮挡、尺度与组合关系看场景。已有画面能回答当前问题就复用，不固定执行两轮预览；
+运动、节奏、消隐或循环等动态目标用多帧/序列帧判断，单张静帧只说明该时刻的外观。
+PIE 调试是高成本操作。只有用户明确提出运行调试/验证需求且该需求确实需要 PIE，
+或已经明确授权当前范围的 PIE，才启动；没有明确需求时不自行开启。
+普通资产、场景或 Blueprint 编辑、一般修复、静态检查及“顺手验证”不自动构成 PIE 需求。
+复用当前会话仍有效的授权，不要求用户说出“PIE”术语，也不重复确认。
 
 ## 公共做法
 

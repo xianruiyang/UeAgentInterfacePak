@@ -1,39 +1,36 @@
 ---
 name: ue-essential-knowledge
-description: Unreal Engine 重要知识阅读导航。用于在分析、设计、排查或实现 UE 任务前，按分类读取已组织的核心知识，包括核心概念、编辑器资产、Blueprint 与节点图、UI/UMG、材质与着色、Niagara、动画与 Control Rig、世界与渲染、性能调试、C++ 插件 API 和 UAI authoring 工作流。
+description: Unreal Engine 关键基础知识与设计原理。用于需要理解 UE 概念、关卡与场景设计、白盒与资产替换、游戏框架、Blueprint、UI、材质、Niagara、动画、渲染或调试机制时；按问题选读，不承载工具命令或项目操作流程。
 ---
 
 # UE Essential Knowledge
 
-这个 skill 是 UE 重要知识的阅读入口。内容按 `references/` 下的主题目录组织，每个目录负责一类可复用知识。它不直接替代项目读回、UAI 指令、UE 源码或正式命令文档；它负责帮助 Codex 先选择需要阅读的知识分类，再把通用知识与当前任务结合。
+这里维护跨项目可复用的 UE 关键基础知识，以及在 UE 中制作内容所需的设计原理。正文解释概念、因果、取舍和适用条件；不规定代理的工作轮次、文件格式、工具调用或固定执行步骤。
 
-## 使用原则
+## 按需选读
 
-1. 先判断任务属于哪类 UE 知识，再只读取相关分类文件。
-2. 如果任务跨多个系统，按“核心概念 -> 具体系统 -> 调试/验证 -> UAI authoring”的顺序读取。
-3. 如果涉及当前项目真实状态，必须回到 UeAgentInterface、本地资产读回、源码或正式文档确认；不要把本 skill 的通用知识当成项目当前事实。
-4. 如果涉及空间、方向、坐标、transform、屏幕/世界/局部坐标，必须同时遵守 AgentBase-owned `understand-space` skill 的空间合同原则。
-5. 如果涉及 UAI 结构化 JSON 的实现细节，优先读取本地项目代码、正式 UAI 文档和实测记录；本 skill 只提供背景与阅读路由。
+已有知识足以支持当前判断时直接使用；缺少某个概念或关系时，只读对应条目。跨系统任务按实际依赖选读，没有统一的阅读顺序。工具使用交给对应操作 skill，知识正文不维护第二套操作规范。
 
 ## 阅读入口
 
-每个主题目录的正式入口是 `index.md`。读取时按下面的文件路径打开，不要把目录路径当作文件入口，也不要依赖通配符展开。
+| 知识范围 | 入口 |
+| --- | --- |
+| 知识、设计经验与项目事实的区别 | [阅读总则](references/00-reading-guide/index.md) |
+| UObject、World、Actor、Component、反射与生命周期 | [核心概念](references/01-core-concepts/index.md) |
+| 资产、包、引用、导入导出、保存与重定向器 | [编辑器与资产](references/02-editor-assets-content/index.md) |
+| Blueprint、Graph、节点、Pin、编译与类 | [Blueprint 与节点图](references/03-blueprint-nodegraph/index.md) |
+| 材质、着色、参数、UV 与编译 | [材质与着色](references/04-materials-shaders/index.md) |
+| System、Emitter、Module、Renderer 与属性 | [Niagara](references/05-niagara-vfx/index.md) |
+| Skeleton、动画、Control Rig、IK 与重定向 | [动画与 Control Rig](references/06-animation-controlrig/index.md) |
+| 场景设计链、SVG多层图与原画、三阶段组织和部件边界、UE组装、尺度材质、叙事引导、碰撞通行、光照与视口 | [世界、关卡与渲染](references/07-world-level-rendering/index.md) |
+| 日志、崩溃、CPU/GPU 性能与调试 | [性能与调试](references/08-performance-debugging/index.md) |
+| C++、反射宏、模块、插件与 API | [C++ 与插件](references/09-cpp-plugins-api/index.md) |
+| Pawn、控制、GameMode、机关状态、存档与重生 | [游戏框架与状态](references/10-gameplay-framework/index.md) |
+| UMG 布局、容器与组件关系 | [UI 与 UMG](references/11-ui-umg-authoring/index.md) |
 
-- `references/00-reading-guide/index.md`：阅读总则，用于不确定应读取哪类知识时先定位。
-- `references/01-core-concepts/index.md`：UE 对象、世界、组件、反射、生命周期等核心概念。
-- `references/02-editor-assets-content/index.md`：Content Browser、资产、包、引用、导入导出、保存与重定向器。
-- `references/03-blueprint-nodegraph/index.md`：Blueprint、K2 节点、Pin、Graph、UMG/AnimBlueprint 节点查询。
-- `references/04-materials-shaders/index.md`：Material、Material Function、Shader、参数、UV、编译和着色问题。
-- `references/05-niagara-vfx/index.md`：Niagara System、Emitter、Module、Renderer、Event、Ribbon 和属性输入。
-- `references/06-animation-controlrig/index.md`：Skeleton、Animation Sequence、Control Rig、IK、Retarget、Sequencer 动画。
-- `references/07-world-level-rendering/index.md`：Level、Actor、Lighting、Camera、Post Process、Lumen、Nanite 和渲染视图。
-- `references/08-performance-debugging/index.md`：编译、日志、崩溃、性能、GPU/CPU profiling 和验证方法。
-- `references/09-cpp-plugins-api/index.md`：UE C++、Editor module、Plugin、反射宏、源码定位和 API 使用边界。
-- `references/10-uai-authoring-workflow/index.md`：UAI 命令、结构化 authoring、apply/readback、节点与模块查询流程。
-- `references/11-ui-umg-authoring/index.md`：UI/UMG 布局、容器、组件归属、空间验收和反复编辑流程。
+## 知识边界
 
-## 输出要求
-
-- 回答用户时先给结论，再说明引用了哪些分类知识。
-- 如果知识文件还只是框架，明确说明“当前 skill 只有框架，具体条目待补充”，不要假装已经有完整知识库。
-- 对不确定、版本相关或项目相关的内容，明确写出需要继续用 UE 源码、UAI 读回、官方文档或项目实测确认。
+- 引擎机制、设计启发式和项目约定分开表达。设计经验帮助作选择，不能自动变成强制门禁、统一尺寸或固定制作顺序。
+- 涉及当前项目的角色能力、资产配置或实际结果时，以该项目事实为准；涉及版本差异和具体 API 时，按需使用 `ue-kb`、对应版本官方文档或引擎源码。
+- 坐标转换、方向、净空或投影关系本身需要推理时，结合 `understand-space`；这里负责 UE 语义。
+- 部分分类目前只有导航。条目未覆盖的问题继续查所属来源，不把目录列出的主题当成已经完整收录的知识。

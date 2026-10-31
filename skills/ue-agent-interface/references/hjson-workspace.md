@@ -34,6 +34,33 @@ if not workspace.result.ok:
     raise RuntimeError(workspace.result.error)
 ```
 
+Level 的摆放、挂接、基础可见性、网格/材质槽及原生 Engine 灯光强度/局部光衰减半径、
+PostProcessVolume `Settings` 可显式选 `profile_id="scene_editing"`，减少属性捕获与输出。
+默认 `llm_authoring` 仍为完整范围。精简工作区仍用同一 `import_changes()`，刷新保持原 profile，
+未导出属性不作删除或重置；修改曝光时保留 Settings 的其他成员及覆盖标志。
+其他灯光字段、碰撞/模拟、自定义玩法属性或 PCG 使用另一个名称的完整工作区；
+准确原生类/字段范围见 Plugin `docs/active/t26_level_world_domain.md`。
+完整状态恢复与持久化读回仍可能运行，不把导出提速外推为全部导入阶段同幅提速。
+
+需要在应用前了解 Level 编辑影响或几何交叠时，使用同一工作区的只读分析：
+
+```python
+context = workspace.scene_context(limit=40)
+overlap = context.geometry_overlap(limit=40)
+# 按结果判断用途，必要时继续修改 HJSON 并从 workspace 重新分析。
+import_result = workspace.import_changes(analysis=overlap)
+```
+
+`workspace.geometry_overlap()` 也可直接调用，不要求先取上下文。两个能力共用正式导入准备，
+分析的是增改删后的拟状态；不会应用内容、执行任意蓝图构造或把暂存字段当成真实读回。
+同一分析句柄可用 `offset`、`limit`、`object_ref` 展开上下文或几何事实；读取总数、分页和覆盖状态，
+不要将首屏或 unsupported 当作全部无问题。当前场景的精确对象或区域查询及字段沿 CMD T26 文档。
+工具提供共面、接触、穿交、包含等事实；允许嵌合与错误穿插按[完成面与连接](../../ue-essential-knowledge/references/07-world-level-rendering/blockout-and-traversal.md#完成面与连接)判断。
+`analysis=` 只应用与该报告绑定的编辑版本；文件、相关对象、网格或邻域成员变动后重新分析。
+普通 `import_changes()` 保持原行为，不以分析作为所有导入的前置门禁。
+带分析的成功导入还返回 `scene_analysis`：应用/保存成功与预测吻合分别表达；
+若需 `geometry_recheck_required`，沿该分析句柄分页取得具体对象，对实际结果补查，不能重放导入。
+
 `name` 是短名称，不是目录路径：以小写字母或数字开头，其余可用小写字母、数字、下划线和连字符。
 SDK 将 workspace 放在项目的 `tmp/uai-workspaces/<name>`；自写脚本和报告的输出目录与此独立。
 通过返回的 `workspace.path` 定位普通 HJSON，用文件补丁直接增删改；无需用 Python 解析再序列化整份文件。
@@ -73,7 +100,7 @@ SDK 将 workspace 放在项目的 `tmp/uai-workspaces/<name>`；自写脚本和�
   Niagara 可定向查询所选模块的 `input_schema`，其输入 `contract` 与 workspace definition 的 `value_definition` 共用来源；
   `description` 保留原生说明，`display_unit` 只是显示提示，不自动换算。单位缺失仍是未知；依赖模式/枚举或脚本版本时，改变后读取刷新定义。
   数值保存成功只能证明写入，不能证明解释的单位正确。这些说明不复制进业务 `inputs`，具体表示见公共类型与对应领域文档。
-- 创建结构项使用候选的可读 `name`，层级按该类型创建合同：组件行用顶层 `name`，图节点按其 `candidate` 合同。
+- 创建结构项使用候选的可读 `name`，层级按该类型创建合同：Blueprint/SCS组件行用顶层 `name`，图节点按其 `candidate` 合同。普通Level Actor及实例组件集合按[场景公开入口](scene-creation.md#使用公开入口搭建)；Level组件可消费候选 `describe` 的首批属性，归属和attachment仍使用Level合同，不照搬Blueprint层级。
   `choose.name` 替换该位置的名称并去掉旧 `select`；其他 `choose` 只在对应选择器位置补最短 `select`。
 - 节点接口、可变 pin、动态列表以当前查询或导出的 companion 为准。查询接口用
   `client.content_graph.items(target=target, input={"items": [node_alias], "fields": ["pin_interface"]})` 选定当前节点；
@@ -87,7 +114,7 @@ SDK 将 workspace 放在项目的 `tmp/uai-workspaces/<name>`；自写脚本和�
   `structure:eventgraph`、`item:doorleft`。十六进制 semantic unit id 只存在于隐藏 manifest；
   普通 HJSON 若要求模型处理这些内部身份，保留公开错误并交所属 owner，不手工搬运身份绕过。
 - 删除或改型后，未修改的关联内容交由 UE 原生编辑机制处理，再读刷新结果；不先手工清空所有引用。
-  同批显式编辑应保留或得到明确诊断。原生保留的失效引用显示为可读的 `Unresolved reference` 名称，不是新建候选。
+  同批显式编辑应保留或得到明确诊断。原生处理不等于自动把旧引用转向替代对象；需要承接的关系按实际owner显式处理，Level替换见[场景引用承接](scene-creation.md#资产替换与引用承接)。原生保留的失效引用显示为可读的 `Unresolved reference` 名称，不是新建候选。
 
 ## 新增内容
 
@@ -103,6 +130,10 @@ AI 行为资产见 `t20_ai_behavior_domain.md` 的 Root lifecycle、BehaviorTree
 `asset.factory.candidates` 只覆盖指定 create command 的候选，不覆盖所有 HJSON 领域；无命中不代表该类型不能创建。
 AnimBlueprint 的骨架绑定在创建合同的 `class_settings`，不能从 AnimInstance CDO 属性推断；
 角色使用具名骨架资产，无骨架 `template` 是另一种原生用途。现有类设置按本次导出的设置文件编辑。
+
+Control Rig 与 Sequencer 互相烘焙时，用 `rig.control.bake.context` 按已导出的 binding 名和 Rig 生成类查询，
+再通过公开 `result.rig_bake_context.bake_controls()` / `.bake_animation()` 调用既有原生烘焙；后者需查询时指定已存在的动画目标。
+SDK handle 保管绑定与修订，payload 只是摘要；编辑目标或重启 Editor 后重新查询。完整输入与 Operation 用法见 CMD `docs/active/t58_rig_spatial_command_migration.md`。
 
 在现有集合中新增成员，按该集合当前生成的示例及创建合同填写值。两种写法使用同一导入链：
 
