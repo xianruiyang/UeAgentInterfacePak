@@ -35,19 +35,20 @@ README、command 数量、binding、示例图或旧测试外推。
 
 ## 效果一览
 
-下面是项目在不同阶段、不同人工监督强度下得到的探索性展示。它们说明 UAI 工作流曾经介入过哪些
-方向，但不构成当前版本的稳定能力承诺，也不保证能自动复现同等结果。
+下面两段录像记录不同阶段的测试内容。这里的 **v0.0.1 / v0.0.2 是测试内容版本**，
+与 Plugin、SDK/CLI 的发行版本分开编号；展示的是阶段性测试结果，不代表成品关卡或全部能力验收。
 
-| 水面材质 | Niagara 火焰 |
-| --- | --- |
-| ![水面材质效果](docs/images/showcase/waterMaterial.png) | ![Niagara 火焰效果](docs/images/showcase/fireNiagara.png) |
-| 多轮观察与调整后的水面材质探索。 | 多轮调整形态、烟、余烬和热扰动后的 Niagara 探索。 |
-| PCG 建筑 | 白盒关卡 |
-| ![PCG 建筑体块效果](docs/images/showcase/pcgBuilding.png) | ![白盒关卡效果](docs/images/showcase/levelDesign.png) |
-| PCG 建筑体块探索。 | 空间、路线和尺度验证的白盒尝试。 |
-| UMG UI 复刻 |  |
-| ![反复交互后的 UMG UI 复刻展示](docs/images/showcase/uiCopy.png) |  |
-| 对照参考图与结构读回，多轮修正布局、字号、分组和局部细节。 |  |
+### v0.0.1 · 简单全流程测试
+
+以小型灰盒内容进行简单全流程测试，录像展示角色在测试场景中的运行片段。
+
+<!-- UAI_WORKFLOW_VIDEO_URL -->
+
+### v0.0.2 · 简易地编测试
+
+以新制作的场景进行简易地编测试，录像展示建筑、室内与楼梯等空间的游览片段。
+
+<!-- UAI_SCENE_VIDEO_URL -->
 
 ## 仓库内容与生命周期
 
@@ -60,7 +61,7 @@ README、command 数量、binding、示例图或旧测试外推。
 | `skills/ue-kb/` | Pak-owned UE 本地知识内容与索引分发候选 | 离线知识工作流使用；从 manifest/skill 进入 |
 | `skills/kbcli-knowledge-base/` | kbCli runtime submodule 发布引用 | 由其外部仓库和 gitlink 管理，不做 installed-to-Pak 复制 |
 | `understand-space`（外部） | AgentBase-owned 通用空间能力 | Pak 不保留同名副本；installed deployment 只跟随 AgentBase owner |
-| `docs/images/` | 本 README 的展示与菜单图片 | 随包 |
+| `docs/images/` | 菜单图片与保留的历史展示图片 | 随包；当前测试视频由上方 GitHub 附件播放 |
 | `retired/strict_v2/` | 重构前历史证据 | 不安装、不运行、不作为当前规范；逐消费者审计后才退出 |
 
 版本组合由 Pak 提交的 gitlink 固定；更新和恢复步骤见 [升级说明](docs/UPGRADING.md)。
