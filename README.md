@@ -42,13 +42,13 @@ README、command 数量、binding、示例图或旧测试外推。
 
 以小型灰盒内容进行简单全流程测试，录像展示角色在测试场景中的运行片段。
 
-<!-- UAI_WORKFLOW_VIDEO_URL -->
+https://github.com/user-attachments/assets/2cb24660-7e34-4d27-a46e-383c59d5cac0
 
 ### v0.0.2 · 简易地编测试
 
 以新制作的场景进行简易地编测试，录像展示建筑、室内与楼梯等空间的游览片段。
 
-<!-- UAI_SCENE_VIDEO_URL -->
+https://github.com/user-attachments/assets/491e91bc-ac50-4a95-aefd-33d6c977eb98
 
 ## 仓库内容与生命周期
 
