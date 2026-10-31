@@ -44,6 +44,8 @@ README、command 数量、binding、示例图或旧测试外推。
 
 https://github.com/user-attachments/assets/2cb24660-7e34-4d27-a46e-383c59d5cac0
 
+[完整视频（B站）](https://www.bilibili.com/video/BV1RDxC67EXB)
+
 ### v0.0.2 · 简易地编测试
 
 以新制作的场景进行简易地编测试，录像展示建筑、室内与楼梯等空间的游览片段。
