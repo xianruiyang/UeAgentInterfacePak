@@ -3,7 +3,8 @@
 本仓库统一分发 UAI 插件、Python SDK/CLI 的匹配 Git 引用、Codex skills 和 UE 知识内容。
 当前基线是 **Windows + 带配套原生补丁的 UE 5.6.1**，需要源码构建插件及相关引擎模块。
 从旧版升级请先阅读 [升级与旧版恢复](docs/UPGRADING.md)。
-本次版本与验证范围见 [2026-10-31 发行说明](docs/releases/2026-10-31.md)；上一版说明保留在对应日期文档中。
+当前组合为 **Plugin 0.4.0 / SDK、CLI 0.5.0 / v2026.11.15**，主要更新公共 HJSON 编辑、捕获与输出效率。
+版本、验证与已知限制见 [2026-11-15 发行说明](docs/releases/2026-11-15.md)；旧版说明及标签保留。
 
 ## 快速导航
 
@@ -194,6 +195,7 @@ vector service 与 embedding 环境；环境不完整时可降级到 keyword 或
 - 当前项目使用源码 SDK 与正式 runner。未来 packaged CLI 只有在出现独立真实消费者后，才作为单独发布
   能力从当前 CMD 构建、验证和登记；不把旧可执行文件或静态连接模板留作 skill fallback。
 - `release dev-mirror` 只用于本地镜像或排查，不是正式发布。
+- `v2026.11.15` 纳入当前公共数据流与连续会话文件观察实现，并固定匹配的 Plugin/CMD gitlink。开发混合工作树本身不作为分发包；具体能力、验证和恢复边界见本版发行说明。
 - 正式发布按当前项目政策直接核对分支、HEAD、拟提交 diff 与 submodule gitlink，只纳入本次发布范围。
 - GitHub push、tag 和 Release 需要用户明确授权；开发提交不会自动进入用户主线或远端。
 

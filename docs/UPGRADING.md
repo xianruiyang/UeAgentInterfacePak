@@ -41,8 +41,13 @@ Pak 是插件、CMD 和 skills 的版本组合入口。其子模块提交固定�
 当前 Plugin manifest 与 CMD generated binding 应来自同一发行组合。普通使用者无需重新生成 binding；
 维护者只从 `UeAgentInterface/Resources/UaiCommandManifest.json` 生成，不能从旧 schema 或文档恢复命令表。
 
-旧 HJSON 工作区先保留原件。对新版本目标重新导出 workspace，并按当前公开字段迁移用户修改；
-不要自行补造机器身份或将旧错误文本当作新诊断协议。导入错误应先按返回的具体原因和输入位置修正。
+旧 HJSON 工作区先保留原件。本版新空目录默认采用当前 `/4` 发布格式；新名称即使指定 incremental 也需要完整初始化。
+已有有效目录默认 committed 只发布该目标已有实际提交证据；独立 UE 变化使用显式 ordinary incremental，full 才表示完整重建。
+同代局部导入需要完整的 Source、inventory、layout、definition 与行跨度交接；缺失时返回具体 handoff 诊断，不隐式 full 或补造机器状态。
+进程/Editor 重启后的连续文件观察边界以诊断为准；本版没有 NTFS USN 跨服务重启续接保证。
+需要新当前基线时，保留作者和原收据，按当前公开字段迁移用户修改；不得重放已 committed 的原生动作。
+`ok=true` 或业务 `succeeded` 不等于 workspace 已刷新：同时检查 `workspace_refresh`、warnings、`retry_import` 和水位状态。
+不要自行补造机器身份或将旧错误文本当作新诊断协议。导入错误按返回的具体原因和输入位置修正。
 
 ## 恢复旧版
 
@@ -53,8 +58,8 @@ SDK/skills 和需要回退的引擎模块也要按旧版本恢复。切换 Git �
 
 ## 本次验证边界
 
-本次版本的实际验证和未覆盖范围见 [2026-10-31 发行说明](releases/2026-10-31.md)。
+本次版本的实际验证和未覆盖范围见 [2026-11-15 发行说明](releases/2026-11-15.md)。
 此前八项内容实践的两次连续结果仍只保留其原版本和流程范围，不替代新功能的独立证据。
-当前版本补充了公共 HJSON、碰撞/Blueprint 回归、原生截图与零尺寸初始化等有界验证，
+当前版本以公共 HJSON 的局部捕获、增量组合和输出复用为主，并保留各领域的有界实证，
 不代表全部 UAI 指令、所有 UE 版本或任意模型组合均已验证。发布整理另外核对源文件、安装说明、manifest/binding 和版本引用；
 历史 `retired/` 材料不参与运行或命令发现，也不是当前完成门禁。

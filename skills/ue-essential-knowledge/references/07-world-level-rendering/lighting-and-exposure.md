@@ -43,3 +43,7 @@
 Post Process Volume 可以有空间边界，也可以通过 Infinite Extent (Unbound) 作用于全场。Enabled、Priority、Blend Radius、Blend Weight 和各属性的覆盖开关共同影响实际混合；仅填写一个属性值不意味着它已经参与覆盖。相机还可贡献自己的后处理设置。参见 [Epic：Post Process Effects](https://dev.epicgames.com/documentation/unreal-engine/post-process-effects-in-unreal-engine)。
 
 光照也承担路线信息：关键开口、层间过渡和地标可以有不同明暗关系。亮度引导依赖相对对比；主线、支路和交互物全部使用最亮、最饱和的表达时，会相互争夺注意。具体引导设计及其照明落实由[美术白盒](scene-production-stages.md#玩家引导选择确认与空间记忆)负责。
+
+## 风格化轮廓的内部层次
+
+外围描边达到风格目标，不代表叠置物件与内部构造仍可辨认；抽屉分界、地毯上的椅子和桌面小物等真实组合可能需要不同的内部边界信息。缺线时可先隔离目标轮廓效果与相关遮罩，判断同一边界是否随之恢复，再决定修改后处理还是几何。某个距离遮罩在一处隐藏了所需线条，不推出整个遮罩组都应删除；保留它承担的其他作用，并结合所需近远距离与机位变化判断局部恢复是否带来乱线、消失或闪烁。静态两稿的机位和陈设变化不能证明具体节点因果。

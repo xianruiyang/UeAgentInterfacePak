@@ -13,6 +13,11 @@ HJSON 内容直接用文件工具编辑。已有 SDK 会话可复用其中的查
 PIE/session 的 `world:/...` 引用不是 Level workspace 的目标格式。
 部分资产入口接受包路径简写，不据此推断其他领域也接受。
 
+只读已知 Level 字段时，使用 `client.content_graph.properties(target,
+input={"owners":["actors/MyActor/components/MyComponent"],"fields":["bVisible"]})`；
+替换为当前公开层级中的真实名称。选择先于普通 Level 的属性值捕获，不必为了读一个值请求
+`compound` 或先导出整个工作区；字段与选择错误仍按公开合同报告。
+
 项目设置也使用同一 workspace 流程：先以
 `project.settings(input={"editor_project_capability":"project_settings.index"})`
 取得真实 `section_id` 和 `settings_object_path`；`parameters.container` 可按目标限定为 `Editor` 或 `Project`。
@@ -33,6 +38,31 @@ workspace = client.content_graph.export_workspace(
 if not workspace.result.ok:
     raise RuntimeError(workspace.result.error)
 ```
+
+默认 `export_mode="committed"`：以同一 target、name/workspace、profile 的成功发布基线，
+刷新已成功提交但尚未导出的累计 HJSON 修改及其真实 UE 联动；独立 UE/视口变化不在此模式中同步。
+需要同步 UE 全部累计净变化时显式传 `export_mode="incremental"`，主动完整重建传 `export_mode="full"`。
+三种方式均保留完整工作区；首次空目录完整初始化。`result.payload.export_mode` 是实际模式，
+`export_reason` 说明初始化，`consumed_commit_count` 表示本次消费的提交数。
+缺少完整提交观察或旧记录缺证时，返回有诊断的 `workspace_refresh.status="pending"`，不隐式退回 ordinary incremental，不推进水位或重放原生修改。
+导入后自动刷新使用同一 committed 机制；联动写回和格式/别名归一不是第二次 HJSON 作者编辑。
+成功发布同时更新基线并消费已覆盖记录，随后没有新修改就不再成为 import、committed 或 incremental 的变化。
+各工作区独立消费，失败不消费；期间未覆盖的新提交与独立 UE 变化仍保留。
+Level 在应用前后按实际组件、Actor及已知附着/结构/引用依赖观察；碰撞联动包含对应组件的真实变化。其他已接入领域消费原生 operation 的真实 before/持久读回。
+未观察或无法归因的范围明确 warning/pending，跨范围独立 UE 状态留给显式 incremental/full，不用全图旧基线归因。结构操作保留真实成员/依赖职责；不保证任意导入都走相同局部路径或达到固定耗时。
+提交后又有作者编辑时，committed 刷新按已接受意图、实际结果和最新作者值写回：已提交项不重放，独立的新编辑保留供下次导入。
+真实结构冲突或旧记录缺少接受证据时保持 pending 并诊断，整个 commit 的消费位置不越过缺证项。
+目标/profile 冲突、无关尚未应用输入及无法证明的旧水位仍按结果处理；任何模式都不能静默覆盖作者编辑。
+导出外部 `source` intent 到已有工作区仍需显式 full 或新名称。
+
+同一调用可传 `workspace_format="v2"|"v3"|"v4"`，对应实际 schema `/2`、`/3`、`/4`。
+新目录默认`/4`；回执`result.payload.workspace_format`是实际格式。当前开发树局部目录导入/committed只接资料齐全的同代`/4`；缺关键资料报`workspace_dataflow_handoff_missing`并在原接缝停止，不自动完整重建/升级或换目录。按诊断定位负责producer，保作者字节；不要靠重新导入恢复已提交native。显式v2/v3仍可生成旧完整格式输出，但不表示旧目录局部导入/committed仍兼容。实现与缺项边界见Plugin正式`docs/hjson-authoring/07_ImplementationConsistency.md`，skill不复制机器材料或旧算法。
+局部文件候选现由NTFS Windows观察先选，再由原parser处理选中文档；观察只在连续UAI服务会话有效，未实现USN重启续接。明确full/initialize建立起点，关闭SDK连接不结束观察；StopServer/Editor重开后缺起点会具体报错，不自动full或扫描全部文件。先保作者输入，只有明确需要完整输出时才选择full；不要对已committed请求重做import。原parser增量边界/旧版本/span缺项均原位置停止，不悄悄整doc/整bucket重试。平台和观察生命周期见Plugin正式`docs/workspace-file-changes.md`。
+`/3`、`/4` 的导入刷新只提交实际变化文件，工作区仍完整；reader 在发布中或代际变化时拒绝读取。
+两者需要受支持的 Windows 文件保护；其他 backend 可显式用 `v2`。旧插件 writer 不得续写
+已迁移的 `/4` 目录，不假定所有旧二进制都会安全识别新格式；切换沿正常 Editor 生命周期完成。
+如果回执说明原生已应用但刷新失败，不重试该次 import；按恢复信息执行 export。已有有效 committed 记录时可恢复同一工作区，
+记录/基线无法证明时按诊断使用普通 incremental/full 或新名称；不能通过重放 native 提交恢复文件。
 
 Level 的摆放、挂接、基础可见性、网格/材质槽及原生 Engine 灯光强度/局部光衰减半径、
 PostProcessVolume `Settings` 可显式选 `profile_id="scene_editing"`，减少属性捕获与输出。
@@ -88,6 +118,8 @@ SDK 将 workspace 放在项目的 `tmp/uai-workspaces/<name>`；自写脚本和�
 - 只修改目标变化需要的字段；新增字段依据当前类型的创建合同，不凭记忆补齐。
   workspace 中局部修改普通反射结构时，未改成员保留 UE 原生更新后的值；不必重写整份结构。
   创建合同未要求填写的默认字段交由 UE 补齐。导入刷新值包含原生数值/时间精度、布局和顺序归一化；继续编辑使用刷新后的 workspace。
+  `import_changes()` 按真实差异及必要联动应用，成功后自动增量刷新同一完整工作区；无需另做一次export。
+  普通属性从所属对象开始，只有实际导出内容、结构或引用有效性变化才继续传播；不把所有普通引用都当作重写或级联删除关系。
 - 保留导出给出的文件分工、对象边界和相邻结构。
 - 编辑分片的业务值；`content_ref` 仅负责定位，不需要改引用、hash 或隐藏 manifest 来提交普通值变化。
   不把已拆出的值再复制进主文件形成两个编辑位置。
@@ -102,6 +134,7 @@ SDK 将 workspace 放在项目的 `tmp/uai-workspaces/<name>`；自写脚本和�
   数值保存成功只能证明写入，不能证明解释的单位正确。这些说明不复制进业务 `inputs`，具体表示见公共类型与对应领域文档。
 - 创建结构项使用候选的可读 `name`，层级按该类型创建合同：Blueprint/SCS组件行用顶层 `name`，图节点按其 `candidate` 合同。普通Level Actor及实例组件集合按[场景公开入口](scene-creation.md#使用公开入口搭建)；Level组件可消费候选 `describe` 的首批属性，归属和attachment仍使用Level合同，不照搬Blueprint层级。
   `choose.name` 替换该位置的名称并去掉旧 `select`；其他 `choose` 只在对应选择器位置补最短 `select`。
+- StateTree 属性函数候选用 `client.ai.behavior_candidates(target, attachment_kind="property_function", parent=接收项别名, target_path=字段路径)`。同名函数按 `choose.type`、`choose.output` 消歧，绑定的 `source_path` 用选定的输出。SmartObject 用 `attachment_kind="definition_data"` 查询根或指定槽的数据结构。对 `behavior` 可按已知名 describe，创建时在实际元素上核验。追加行为的完整只读菜单若需要尚不存在的元素上下文，会返回 `candidate_catalog_incomplete`。
 - 节点接口、可变 pin、动态列表以当前查询或导出的 companion 为准。查询接口用
   `client.content_graph.items(target=target, input={"items": [node_alias], "fields": ["pin_interface"]})` 选定当前节点；
   字段属于所选条目，不对混合类型集合套用节点字段。字段错误先看诊断中的条目定位与 `choose`，按实际建议细化 `items`/`containers`；不把局部字段不兼容判为领域能力缺失。
@@ -188,6 +221,8 @@ print(import_result.payload.get("warnings"), import_result.payload.get("workspac
 
 `open_workspace` 只取得已有目录的句柄，不导出、不写文件、不读取隐藏清单，`result` 为 None；
 导入结果由 `import_changes()` 返回。复用导出时的 target 和短 name，服务端仍处理目标、基线及变更。
+已有项目内目录也可用 `open_workspace(target, path="tmp/my-existing-workspace")`，与 named handle
+走同一导入、诊断与恢复路径；`path` 使用项目相对路径，与非默认 `name` 不同时指定。
 失败时按 `result.error["diagnostic"]` 的文件/行列和 `diagnostics` 集中修正已报告错误；`unchecked` 是尚未
 检查的范围，不是额外错误，不能据当前错误列表声称已找齐全部问题。若标为
 `provider_field_location_not_reported`，来源仅指编辑单元上下文，不是已确认的出错字段。
@@ -197,15 +232,29 @@ print(import_result.payload.get("warnings"), import_result.payload.get("workspac
 
 - `refreshed`：原目录已按真实资产重新生成，含最新基线。可以继续使用同一 `workspace`，只重新读取目标文件。
 - `workspace_refresh.warnings`：已刷新后的清理警告，不表示资产或目录应用失败，不应据此重复 import。
+- `pending` 且 `retry_import=false`：原生修改已完成，观察或归因证据尚不足以完成本目录同步。
+  阅读公开 warnings，保留原输入与恢复句柄；相同已接受输入不会再次执行原生修改。显式选择
+  incremental/full 才能把完整当前UE事实同步到新的工作区，不把空delta当成已完成刷新。
 - 未返回该字段：旧版本或非目录输入没有自动刷新承诺，继续修改前取得新的 export。
 
 若 `Result.ok=false` 且错误为 `content_graph_import_applied_workspace_refresh_failed`，资产已经应用，
 目录刷新却未完成。错误会明确 `asset_applied=true; retry_import=false`；不要重复 import，处理该错误后
-重新 export 到新的短名称再继续，不能把原输入目录当作新基线。
+通过同一工作区的 committed export 续接已封存的实际变化；成功前不能把原输入目录当作新基线。
+旧记录确实缺少实际观察时保留其原输入与收据，按诊断另选 incremental/full 或新名称，不伪补历史。
+
+Editor重启后用原 `resume_import` 继续确认原operation，不重新发出导入。其结果可携带
+`durable_journals`；也可用 `client.asset_durable.discover()` 只读取得活动记录的typed handles。
+失败/pending的结果和本地恢复checkpoint同样保留已收到的typed custody；文字提示本身不是handle。
+恢复结果确认原生已提交、目录仍未同步时，只续刷新，不重做原字段设置。
+先 inspect 确认实际状态，再按其恢复选项处理。discover不接管、不恢复、不重放，记录存在或
+磁盘值正确都不证明原operation已经commit；未确认的内存恢复保留unknown。
 
 同一资产/图上下文内，集中查询已知所需候选并复用返回的可读名称；仅补查尚缺或上下文变化后失效的候选。
 可同时表达的变化合为一次 `import_changes()`；不需要模型追加清理、手动创建属性分片或同步机器字段。
 依赖生成结果时保留必要的多次导入，例如连线确定通配 pin 类型后再写默认值。
+继续编辑以刷新后的业务文件为基线，只写本批实际需要改变的字段；生成器也保留未编辑的
+变换和原生归一化结果，避免把旧输入重新铺回整个集合。留证按实际包含的结构、变换和属性
+变化描述批次，不从“材质”等脚本名称推断它只改了某一类值。
 跨资产编辑优先完成上游，再导出下游，避免摆放后又补改上游的固定几何或接口。
 公共导入会保留当前资产中的无关变化，并核对本次编辑及其显式类型/绑定依赖；不必因打开预览、未编辑子项重建或任意上游修改就重导出。
 本 workspace 的 `refreshed` 不保证其他目录也刷新。若返回 `hjson_import_stale_base_revision` 或
